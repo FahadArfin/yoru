@@ -1,0 +1,36 @@
+services:
+  yoru:
+    build:
+      context: .
+      args:
+        VITE_ANIME_EMBED_TEMPLATE: ${VITE_ANIME_EMBED_TEMPLATE:-}
+    image: yoru:local
+    init: true
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:${PORT:-5184}:5184'
+    environment:
+      NODE_ENV: production
+      PORT: 5184
+      DATA_DIR: /app/data
+      APP_ORIGIN: ${APP_ORIGIN:-http://localhost:5184}
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      DISCORD_CLIENT_ID: ${DISCORD_CLIENT_ID:-}
+      DISCORD_CLIENT_SECRET: ${DISCORD_CLIENT_SECRET:-}
+      DISCORD_REDIRECT_URI: ${DISCORD_REDIRECT_URI:-}
+      DISCORD_INVITE_URL: ${DISCORD_INVITE_URL:-}
+      MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
+      MAL_CLIENT_SECRET: ${MAL_CLIENT_SECRET:-}
+      MAL_REDIRECT_URI: ${MAL_REDIRECT_URI:-}
+      MAL_TOKEN_ENCRYPTION_KEY: ${MAL_TOKEN_ENCRYPTION_KEY:-}
+    volumes:
+      - yoru-data:/app/data
+    stop_grace_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+
+volumes:
+  yoru-data:

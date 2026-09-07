@@ -1,0 +1,185 @@
+import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import { api, cachedApi, peek, send, itemsOf } from './api';
+const Context = createContext(null);
+export function useApp() {
+  return useContext(Context);
+}
+export function useResource(path, cache = true) {
+  const [data, setData] = useState(() => (path && cache ? peek(path) : null));
+  const [error, setError] = useState('');
+  const [loading, setLoading] = useState(Boolean(path));
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (!path) {
+      setData(null);
+      setLoading(false);
+      return;
+    }
+    let alive = true;
+    const existing = cache && peek(path);
+    setData(existing || null);
+    setLoading(!existing);
+    setError('');
+    (cache ? cachedApi(path) : api(path))
+      .then((value) => {
+        if (alive) setData(value);
+      })
+      .catch((e) => {
+        if (alive) setError(e.message);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [path, cache, revision]);
+  return {
+    data,
+    setData,
+    error,
+    loading,
+    refresh: useCallback(() => setRevision((v) => v + 1), []),
+  };
+}
+export function AppProvider({ children }) {
+  const [user, setUser] = useState(null);
+  const [authLoading, setAuthLoading] = useState(true);
+  const [authOpen, setAuthOpen] = useState(false);
+  const [config, setConfig] = useState({});
+  const [library, setLibrary] = useState([]);
+  const [online, setOnline] = useState({ count: 0, users: [] });
+  const [connected, setConnected] = useState(false);
+  const [toast, setToast] = useState(null);
+  const toastTimer = useRef();
+  const [event, setEvent] = useState(null);
+  const activeUser = useRef(null);
+  activeUser.current = user?.id;
+  const notify = useCallback((text, type = 'success') => {
+    clearTimeout(toastTimer.current);
+    setToast({ text, type });
+    toastTimer.current = setTimeout(() => setToast(null), 4500);
+  }, []);
+  const refreshLibrary = useCallback(async () => {
+    const requestedUser = activeUser.current;
+    if (!requestedUser) {
+      setLibrary([]);
+      return;
+    }
+    try {
+      const data = await api('/api/library');
+      if (activeUser.current === requestedUser) setLibrary(itemsOf(data));
+    } catch {
+      if (activeUser.current === requestedUser) setLibrary([]);
+    }
+  }, []);
+  useEffect(() => {
+    api('/api/auth/me')
+      .then((data) => setUser(data.user))
+      .catch(() => {})
+      .finally(() => setAuthLoading(false));
+    api('/api/config')
+      .then(setConfig)
+      .catch(() => {});
+  }, []);
+  useEffect(() => {
+    if (user) refreshLibrary();
+    else setLibrary([]);
+  }, [user, refreshLibrary]);
+  useEffect(() => {
+    const stream = new EventSource('/api/events');
+    const handle = (e) => {
+      try {
+        const payload = JSON.parse(e.data);
+        setEvent({ type: e.type, data: payload, time: Date.now() });
+        const presence = e.type === 'online' ? payload : payload.online;
+        if (presence !== undefined)
+          setOnline(
+            typeof presence === 'number'
+              ? { count: presence, users: [] }
+              : Array.isArray(presence)
+                ? { count: presence.length, users: presence }
+                : presence,
+          );
+      } catch {
+        /* reconnect will bring the next snapshot */
+      }
+    };
+    for (const type of [
+      'snapshot',
+      'presence',
+      'online',
+      'chat',
+      'room',
+      'rooms',
+      'comments',
+      'reviews',
+      'library',
+    ])
+      stream.addEventListener(type, handle);
+    stream.onopen = () => setConnected(true);
+    stream.onerror = () => setConnected(false);
+    return () => stream.close();
+  }, [user?.id]);
+  useEffect(() => {
+    if (event?.type === 'library' && event.data.userId === user?.id) refreshLibrary();
+  }, [event, user?.id, refreshLibrary]);
+  const requireUser = useCallback(() => {
+    if (user) return true;
+    setAuthOpen(true);
+    return false;
+  }, [user]);
+  const updateEntry = useCallback(
+    async (media, patch) => {
+      if (!requireUser()) return false;
+      try {
+        await send(`/api/library/${encodeURIComponent(media.id)}`, patch, 'PUT');
+        await refreshLibrary();
+        notify('Saved to your library');
+        return true;
+      } catch (e) {
+        notify(e.message, 'error');
+        return false;
+      }
+    },
+    [requireUser, refreshLibrary, notify],
+  );
+  const logout = async () => {
+    try {
+      await send('/api/auth/logout', {});
+      setUser(null);
+      notify('Signed out');
+    } catch (e) {
+      notify(e.message, 'error');
+    }
+  };
+  const entryFor = (media) =>
+    library.find(
+      (item) => String(item.mediaId) === String(typeof media === 'object' ? media.id : media),
+    );
+  return (
+    <Context.Provider
+      value={{
+        user,
+        setUser,
+        authLoading,
+        authOpen,
+        setAuthOpen,
+        config,
+        library,
+        refreshLibrary,
+        entryFor,
+        updateEntry,
+        online,
+        connected,
+        event,
+        notify,
+        toast,
+        requireUser,
+        logout,
+      }}
+    >
+      {children}
+    </Context.Provider>
+  );
+}

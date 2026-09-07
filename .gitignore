@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+.env.*
+!.env.example
+data/
+*.log
+*.sqlite*
+test-results/
+playwright-report/
+coverage/
+.cache/
+docs/audit/*.png
+docs/qa/*.png

@@ -1,0 +1,77 @@
+name: Verify Yoru
+
+on:
+  push:
+    branches: [main, 'codex/**']
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: verify-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  application:
+    name: API, build, and browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - name: Formatting
+        run: npm run format:check
+      - name: Backend tests
+        run: npm test
+      - name: Production build
+        run: npm run build
+      - name: Install browser
+        run: npx playwright install --with-deps chromium
+      - name: Browser journeys against an isolated local database
+        run: npm run test:e2e
+      - name: Save browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: browser-test-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
+
+  container:
+    name: Container build and startup
+    needs: application
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - name: Build production image
+        run: docker build --tag yoru:ci .
+      - name: Start with an isolated persistent volume
+        run: docker run --detach --name yoru-ci --publish 127.0.0.1:5184:5184 --env CATALOG_OFFLINE=1 --volume yoru-ci-data:/app/data yoru:ci
+      - name: Wait for application health
+        run: |
+          for attempt in $(seq 1 30); do
+            if curl --fail --silent http://127.0.0.1:5184/api/health; then
+              exit 0
+            fi
+            sleep 2
+          done
+          docker logs yoru-ci
+          exit 1
+      - name: Check production assets
+        run: curl --fail --silent http://127.0.0.1:5184/ | grep -q '/assets/'
+      - name: Container logs
+        if: failure()
+        run: docker logs yoru-ci || true
+      - name: Clean up test container
+        if: always()
+        run: docker rm --force yoru-ci || true

@@ -1,0 +1,9 @@
+node_modules/
+dist/
+data/
+package-lock.json
+server/seed.json
+playwright-report/
+test-results/
+docs/audit/
+docs/qa/

@@ -1,0 +1,34 @@
+name: Downloadable container image
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e
+      - name: Build and export image
+        run: |
+          docker build --tag yoru:${{ github.sha }} --tag yoru:latest .
+          docker save yoru:latest yoru:${{ github.sha }} | gzip > yoru-image.tar.gz
+      - uses: actions/upload-artifact@v4
+        with:
+          name: yoru-container-${{ github.sha }}
+          path: yoru-image.tar.gz
+          compression-level: 0
+          retention-days: 7

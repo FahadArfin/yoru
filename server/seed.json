@@ -1,0 +1,4588 @@
+{
+  "version": 1,
+  "generatedAt": "2026-09-07T20:58:18.181Z",
+  "source": "Actual public metadata from Jikan and Kitsu. Score/count provenance is on each title; all values are provider snapshots.",
+  "items": [
+    {
+      "id": "mal-anime-52991",
+      "malId": 52991,
+      "idMal": 52991,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Frieren: Beyond Journey's End",
+      "titleEnglish": "Frieren: Beyond Journey's End",
+      "titleRomaji": "Sousou no Frieren",
+      "titleNative": "葬送のフリーレン",
+      "synonyms": [
+        "Frieren at the Funeral",
+        "Frieren The Slayer"
+      ],
+      "description": "During their decade-long quest to defeat the Demon King, the members of the hero's party—Himmel himself, the priest Heiter, the dwarf warrior Eisen, and the elven mage Frieren—forge bonds through adventures and battles, creating unforgettable precious memories for most of them.\n\nHowever, the time that Frieren spends with her comrades is equivalent to merely a fraction of her life, which has lasted over a thousand years. When the party disbands after their victory, Frieren casually returns to her \"usual\" routine of collecting spells across the continent. Due to her different sense of time, she seemingly holds no strong feelings toward the experiences she went through.\n\nAs the years pass, Frieren gradually realizes how her days in the hero's party truly impacted her. Witnessing the deaths of two of her former companions, Frieren begins to regret having taken their presence for granted; she vows to better understand humans and create real personal connections. Although the story of that once memorable journey has long ended, a new tale is about to begin.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1015/138006l.webp",
+      "banner": "https://media.kitsu.app/episode/356901/thumbnail/large-77438340d578786739ccc3537344c29f.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1015/138006l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1015/138006l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/episode/356901/thumbnail/large-77438340d578786739ccc3537344c29f.jpeg",
+      "genres": [
+        "Adventure",
+        "Award Winning",
+        "Drama",
+        "Fantasy"
+      ],
+      "genreIds": [
+        2,
+        46,
+        8,
+        10
+      ],
+      "score": 9.26,
+      "averageScore": 93,
+      "scoredBy": 911197,
+      "rank": 1,
+      "popularity": 102,
+      "members": 1477531,
+      "favorites": 91494,
+      "episodes": 28,
+      "chapters": null,
+      "volumes": null,
+      "total": 28,
+      "status": "Finished Airing",
+      "year": 2023,
+      "season": "fall",
+      "startDate": "2023-09-29T00:00:00+00:00",
+      "endDate": "2024-03-22T00:00:00+00:00",
+      "duration": "24 min per ep",
+      "rating": "PG-13 - Teens 13 or older",
+      "isAdult": false,
+      "studios": [
+        "Madhouse"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-283731",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Aniplus TV",
+          "url": "http://www.aniplustv.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bahamut Anime Crazy",
+          "url": "https://ani.gamer.com.tw/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bilibili Global",
+          "url": "https://www.bilibili.tv/en/index",
+          "type": "streaming"
+        },
+        {
+          "label": "CatchPlay",
+          "url": "https://www.catchplay.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "MeWatch",
+          "url": "https://www.mewatch.sg/",
+          "type": "streaming"
+        },
+        {
+          "label": "Muse Asia",
+          "url": "https://www.youtube.com/channel/UCGbshtvS9t-8CW11W7TooQg",
+          "type": "streaming"
+        },
+        {
+          "label": "iQIYI",
+          "url": "https://www.iq.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://frieren-anime.jp/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/52991/Sousou_no_Frieren",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/sousou-no-frieren",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "ZEkwCGJ3o7M",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=ZEkwCGJ3o7M"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-59978",
+          "title": "Sousou no Frieren 2nd Season",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-126287",
+          "title": "Sousou no Frieren",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-56885",
+          "title": "Sousou no Frieren: ●● no Mahou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-56805",
+          "title": "Yuusha",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-58313",
+          "title": "Haru (2024)",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/52991",
+      "metadataFetchedAt": "2026-09-07T20:53:43.105Z",
+      "detailed": true,
+      "kitsuId": "46474",
+      "imageSource": "Kitsu",
+      "bannerSource": "https://kitsu.io/api/edge/episodes/356901",
+      "bannerDimensions": {
+        "width": 960,
+        "height": 540
+      }
+    },
+    {
+      "id": "mal-anime-52299",
+      "malId": 52299,
+      "idMal": 52299,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Solo Leveling",
+      "titleEnglish": "Solo Leveling",
+      "titleRomaji": "Ore dake Level Up na Ken",
+      "titleNative": "俺だけレベルアップな件",
+      "synonyms": [
+        "Na Honjaman Level Up",
+        "나 혼자만 레벨업",
+        "I Level Up Alone"
+      ],
+      "description": "Humanity was caught at a precipice a decade ago when the first gates—portals linked with other dimensions that harbor monsters immune to conventional weaponry—emerged around the world. Alongside the appearance of the gates, various humans were transformed into hunters and bestowed superhuman abilities. Responsible for entering the gates and clearing the dungeons within, many hunters chose to form guilds to secure their livelihoods.\n\nSung Jin-Woo is an E-rank hunter dubbed as the weakest hunter of all mankind. While exploring a supposedly safe dungeon, he and his party encounter an unusual tunnel leading to a deeper area. Enticed by the prospect of treasure, the group presses forward, only to be confronted with horrors beyond their imagination. Miraculously, Jin-Woo survives the incident and soon finds that he now has access to an interface visible only to him. This mysterious system promises him the power he has long dreamed of—but everything comes at a price.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1801/142390l.webp",
+      "banner": "https://media.kitsu.app/anime/46231/cover_image/large-33273dc297cdc8b10cc1140de07d3dae.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1801/142390l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1801/142390l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/46231/cover_image/large-33273dc297cdc8b10cc1140de07d3dae.jpeg",
+      "genres": [
+        "Action",
+        "Adventure",
+        "Fantasy",
+        "Adult Cast",
+        "Urban Fantasy"
+      ],
+      "genreIds": [
+        1,
+        2,
+        10
+      ],
+      "score": 8.15,
+      "averageScore": 82,
+      "scoredBy": 724699,
+      "rank": 522,
+      "popularity": 147,
+      "members": 1164949,
+      "favorites": 20215,
+      "episodes": 12,
+      "chapters": null,
+      "volumes": null,
+      "total": 12,
+      "status": "Finished Airing",
+      "year": 2024,
+      "season": "winter",
+      "startDate": "2024-01-07T00:00:00+00:00",
+      "endDate": "2024-03-31T00:00:00+00:00",
+      "duration": "23 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "A-1 Pictures"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Ani-One Asia",
+          "url": "https://www.youtube.com/channel/UC0wNSTMWIL3qaorLx0jie6A",
+          "type": "streaming"
+        },
+        {
+          "label": "Aniplus TV",
+          "url": "http://www.aniplustv.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bahamut Anime Crazy",
+          "url": "https://ani.gamer.com.tw/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bilibili Global",
+          "url": "https://www.bilibili.tv/en/index",
+          "type": "streaming"
+        },
+        {
+          "label": "CatchPlay",
+          "url": "https://www.catchplay.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "iQIYI",
+          "url": "https://www.iq.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://sololeveling-anime.net/1st/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/52299/Ore_dake_Level_Up_na_Ken",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/solo-leveling",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "1kQwjK4rGYg",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=1kQwjK4rGYg"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-58567",
+          "title": "Ore dake Level Up na Ken Season 2: Arise from the Shadow",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-121496",
+          "title": "Solo Leveling",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-58224",
+          "title": "Ore dake Level Up na Ken: How to Get Stronger",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-59841",
+          "title": "Ore dake Level Up na Ken: ReAwakening",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-51321",
+          "title": "Echo",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/52299",
+      "metadataFetchedAt": "2026-09-07T20:53:44.470Z",
+      "detailed": true,
+      "kitsuId": "46231",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-40748",
+      "malId": 40748,
+      "idMal": 40748,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Jujutsu Kaisen",
+      "titleEnglish": "Jujutsu Kaisen",
+      "titleRomaji": "Jujutsu Kaisen",
+      "titleNative": "呪術廻戦",
+      "synonyms": [
+        "Sorcery Fight",
+        "JJK"
+      ],
+      "description": "Idly indulging in baseless paranormal activities with the Occult Club, high schooler Yuuji Itadori spends his days at either the clubroom or the hospital, where he visits his bedridden grandfather. However, this leisurely lifestyle soon takes a turn for the strange when he unknowingly encounters a cursed item. Triggering a chain of supernatural occurrences, Yuuji finds himself suddenly thrust into the world of Curses—dreadful beings formed from human malice and negativity—after swallowing the said item, revealed to be a finger belonging to the demon Sukuna Ryoumen, the King of Curses.\n\nYuuji experiences first-hand the threat these Curses pose to society as he discovers his own newfound powers. Introduced to the Tokyo Prefectural Jujutsu High School, he begins to walk down a path from which he cannot return—the path of a Jujutsu sorcerer.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1171/109222l.webp",
+      "banner": "https://media.kitsu.app/anime/cover_images/42765/large.jpg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1171/109222l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1171/109222l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/cover_images/42765/large.jpg",
+      "genres": [
+        "Action",
+        "Award Winning",
+        "Supernatural",
+        "School"
+      ],
+      "genreIds": [
+        1,
+        46,
+        37
+      ],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": 2027215,
+      "rank": 165,
+      "popularity": 11,
+      "members": 3075468,
+      "favorites": 96848,
+      "episodes": 24,
+      "chapters": null,
+      "volumes": null,
+      "total": 24,
+      "status": "Finished Airing",
+      "year": 2020,
+      "season": "fall",
+      "startDate": "2020-10-03T00:00:00+00:00",
+      "endDate": "2021-03-27T00:00:00+00:00",
+      "duration": "23 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "MAPPA"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-279979",
+          "type": "streaming"
+        },
+        {
+          "label": "Animax Mongolia",
+          "url": "https://www.animax.app/",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://jujutsukaisen.jp/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/40748/Jujutsu_Kaisen",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/jujutsu-kaisen",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "4A_X-Dvl0ws",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=4A_X-Dvl0ws"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Prequel",
+          "id": "mal-anime-48561",
+          "title": "Jujutsu Kaisen 0 Movie",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-51009",
+          "title": "Jujutsu Kaisen 2nd Season",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-113138",
+          "title": "Jujutsu Kaisen",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-56243",
+          "title": "Jujutsu Kaisen 2nd Season Recaps",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-38777",
+          "title": "Jujutsu Kaisen Official PVs",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-52558",
+          "title": "Vivid Vice",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-64080",
+          "title": "Jujutsu Kaisen Modulo Saishuu Sankan Hatsubai Kinen Special PV",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/40748",
+      "metadataFetchedAt": "2026-09-07T20:53:45.818Z",
+      "detailed": true,
+      "kitsuId": "42765",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-54492",
+      "malId": 54492,
+      "idMal": 54492,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "The Apothecary Diaries",
+      "titleEnglish": "The Apothecary Diaries",
+      "titleRomaji": "Kusuriya no Hitorigoto",
+      "titleNative": "薬屋のひとりごと",
+      "synonyms": [
+        "The Pharmacist's Monologue",
+        "Drugstore Soliloquy"
+      ],
+      "description": "Maomao, an apothecary's daughter, has been plucked from her peaceful life and sold to the lowest echelons of the imperial court. Now merely a maid, Maomao settles into her new mundane life and hides her extensive knowledge of medicine in order to avoid any unwanted attention.\n\nNot long after Maomao's arrival, the emperor's infant children inexplicably begin to experience grave symptoms—almost as if a curse has been cast. The curious Maomao easily solves the mystery and, to remain out of the limelight, attempts to leave an anonymous tip. Unfortunately, the dashing and perceptive eunuch Jinshi sees through it and manages to single her out.\n\nIn recognition of her talent, Maomao is promoted to lady-in-waiting for the emperor's favorite concubine, Gyokuyou. As Maomao continues to remedy the numerous ailments afflicting the imperial court, her pharmaceutical expertise quickly proves indispensable.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1708/138033l.webp",
+      "banner": "https://media.kitsu.app/anime/47083/cover_image/large-ac417aa57ca0bdbd466c4f721fa1e8a1.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1708/138033l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1708/138033l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/47083/cover_image/large-ac417aa57ca0bdbd466c4f721fa1e8a1.jpeg",
+      "genres": [
+        "Drama",
+        "Mystery",
+        "Historical",
+        "Medical"
+      ],
+      "genreIds": [
+        8,
+        7
+      ],
+      "score": 8.85,
+      "averageScore": 89,
+      "scoredBy": 491445,
+      "rank": 33,
+      "popularity": 253,
+      "members": 868428,
+      "favorites": 29489,
+      "episodes": 24,
+      "chapters": null,
+      "volumes": null,
+      "total": 24,
+      "status": "Finished Airing",
+      "year": 2023,
+      "season": "fall",
+      "startDate": "2023-10-22T00:00:00+00:00",
+      "endDate": "2024-03-24T00:00:00+00:00",
+      "duration": "22 min per ep",
+      "rating": "PG-13 - Teens 13 or older",
+      "isAdult": false,
+      "studios": [
+        "OLM",
+        "TOHO animation STUDIO"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-283766",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://kusuriyanohitorigoto.jp/season1/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/54492/Kusuriya_no_Hitorigoto",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/kusuriya-no-hitorigoto",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "hkflaNu6yAQ",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=hkflaNu6yAQ"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-58514",
+          "title": "Kusuriya no Hitorigoto 2nd Season",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-107562",
+          "title": "Kusuriya no Hitorigoto",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-110929",
+          "title": "Kusuriya no Hitorigoto: Maomao no Koukyuu Nazotoki Techou",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-86769",
+          "title": "Kusuriya no Hitorigoto",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-56975",
+          "title": "Maomao no Hitorigoto",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/54492",
+      "metadataFetchedAt": "2026-09-07T20:53:47.176Z",
+      "detailed": true,
+      "kitsuId": "47083",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-38000",
+      "malId": 38000,
+      "idMal": 38000,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Demon Slayer: Kimetsu no Yaiba",
+      "titleEnglish": "Demon Slayer: Kimetsu no Yaiba",
+      "titleRomaji": "Kimetsu no Yaiba",
+      "titleNative": "鬼滅の刃",
+      "synonyms": [
+        "Blade of Demon Destruction"
+      ],
+      "description": "Ever since the death of his father, the burden of supporting the family has fallen upon Tanjirou Kamado's shoulders. Though living impoverished on a remote mountain, the Kamado family are able to enjoy a relatively peaceful and happy life. One day, Tanjirou decides to go down to the local village to make a little money selling charcoal. On his way back, night falls, forcing Tanjirou to take shelter in the house of a strange man, who warns him of the existence of flesh-eating demons that lurk in the woods at night.\n\nWhen he finally arrives back home the next day, he is met with a horrifying sight—his whole family has been slaughtered. Worse still, the sole survivor is his sister Nezuko, who has been turned into a bloodthirsty demon. Consumed by rage and hatred, Tanjirou swears to avenge his family and stay by his only remaining sibling. Alongside the mysterious group calling themselves the Demon Slayer Corps, Tanjirou will do whatever it takes to slay the demons and protect the remnants of his beloved sister's humanity.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1286/99889l.webp",
+      "banner": "https://media.kitsu.app/anime/41370/cover_image/large-3de3cc6d2b33162c928de10aa201e4ba.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1286/99889l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1286/99889l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/41370/cover_image/large-3de3cc6d2b33162c928de10aa201e4ba.jpeg",
+      "genres": [
+        "Action",
+        "Award Winning",
+        "Supernatural",
+        "Historical"
+      ],
+      "genreIds": [
+        1,
+        46,
+        37
+      ],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": 2384496,
+      "rank": 235,
+      "popularity": 5,
+      "members": 3479828,
+      "favorites": 95186,
+      "episodes": 26,
+      "chapters": null,
+      "volumes": null,
+      "total": 26,
+      "status": "Finished Airing",
+      "year": 2019,
+      "season": "spring",
+      "startDate": "2019-04-06T00:00:00+00:00",
+      "endDate": "2019-09-28T00:00:00+00:00",
+      "duration": "23 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "ufotable"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-277768",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/title/81091393",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://demonslayer-anime.com/risshihen/",
+          "type": "official"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://kimetsu.com/anime/risshihen/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/38000/Kimetsu_no_Yaiba",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/kimetsu-no-yaiba",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "6vMuWuWlW4I",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=6vMuWuWlW4I"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-40456",
+          "title": "Kimetsu no Yaiba Movie: Mugen Ressha-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-49926",
+          "title": "Kimetsu no Yaiba: Mugen Ressha-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-160805",
+          "title": "Kimetsu no Yaiba Novelize",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-153037",
+          "title": "Gekijouban Kimetsu no Yaiba: Mugen Ressha-hen Novelize",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-96792",
+          "title": "Kimetsu no Yaiba",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-48861",
+          "title": "Chuukou Ikkan!! Kimetsu Gakuen Monogatari: Kimetsu no Utage Tokubetsu-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-47398",
+          "title": "Chuukou Ikkan!! Kimetsu Gakuen Monogatari: Valentine-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-61179",
+          "title": "Kimetsu no Yaiba x MLB",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/38000",
+      "metadataFetchedAt": "2026-09-07T20:53:48.533Z",
+      "detailed": true,
+      "kitsuId": "41370",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-44511",
+      "malId": 44511,
+      "idMal": 44511,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Chainsaw Man",
+      "titleEnglish": "Chainsaw Man",
+      "titleRomaji": "Chainsaw Man",
+      "titleNative": "チェンソーマン",
+      "synonyms": [
+        "CSM"
+      ],
+      "description": "Denji is robbed of a normal teenage life, left with nothing but his deadbeat father's overwhelming debt. His only companion is his pet, the chainsaw devil Pochita, with whom he slays devils for money that inevitably ends up in the yakuza's pockets. All Denji can do is dream of a good, simple life: one with delicious food and a beautiful girlfriend by his side. But an act of greedy betrayal by the yakuza leads to Denji's brutal, untimely death, crushing all hope of him ever achieving happiness.\n\nRemarkably, an old contract allows Pochita to merge with the deceased Denji and bestow devil powers on him, changing him into a hybrid able to transform his body parts into chainsaws. Because Denji's new abilities pose a significant risk to society, the Public Safety Bureau's elite devil hunter Makima takes him in, letting him live as long as he obeys her command. Guided by the promise of a content life alongside an attractive woman, Denji devotes everything and fights with all his might to make his naive dreams a reality.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1806/126216l.webp",
+      "banner": "https://media.kitsu.app/anime/43806/cover_image/large-964674a0f11524f62d65dde845ad8e1f.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1806/126216l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1806/126216l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/43806/cover_image/large-964674a0f11524f62d65dde845ad8e1f.jpeg",
+      "genres": [
+        "Action",
+        "Fantasy",
+        "Gore",
+        "Urban Fantasy"
+      ],
+      "genreIds": [
+        1,
+        10
+      ],
+      "score": 8.42,
+      "averageScore": 84,
+      "scoredBy": 1165811,
+      "rank": 208,
+      "popularity": 47,
+      "members": 1997754,
+      "favorites": 56434,
+      "episodes": 12,
+      "chapters": null,
+      "volumes": null,
+      "total": 12,
+      "status": "Finished Airing",
+      "year": 2022,
+      "season": "fall",
+      "startDate": "2022-10-12T00:00:00+00:00",
+      "endDate": "2022-12-28T00:00:00+00:00",
+      "duration": "24 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "MAPPA"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-283159",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Ani-One Asia",
+          "url": "https://www.youtube.com/channel/UC0wNSTMWIL3qaorLx0jie6A",
+          "type": "streaming"
+        },
+        {
+          "label": "Animax Korea",
+          "url": "https://www.animaxtv.co.kr/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bahamut Anime Crazy",
+          "url": "https://ani.gamer.com.tw/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bilibili",
+          "url": "https://www.bilibili.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Bilibili Global",
+          "url": "https://www.bilibili.tv/en/index",
+          "type": "streaming"
+        },
+        {
+          "label": "CatchPlay",
+          "url": "https://www.catchplay.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Hulu",
+          "url": "https://www.hulu.com/",
+          "type": "streaming"
+        },
+        {
+          "label": "Laftel",
+          "url": "https://laftel.net/",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://chainsawman.dog/tvseries/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/44511/Chainsaw_Man",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/chainsaw-man",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "jk7QSGwupPA",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=jk7QSGwupPA"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-57555",
+          "title": "Chainsaw Man Movie: Reze-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-116778",
+          "title": "Chainsaw Man",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-62352",
+          "title": "Chainsaw Man Recap",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-53405",
+          "title": "Zanki",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-53640",
+          "title": "Jouzai",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-53581",
+          "title": "In the Back Room",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-53641",
+          "title": "Dainouteki na Rendezvous",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-54026",
+          "title": "Fight Song",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/44511",
+      "metadataFetchedAt": "2026-09-07T20:53:49.884Z",
+      "detailed": true,
+      "kitsuId": "43806",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-16498",
+      "malId": 16498,
+      "idMal": 16498,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Attack on Titan",
+      "titleEnglish": "Attack on Titan",
+      "titleRomaji": "Shingeki no Kyojin",
+      "titleNative": "進撃の巨人",
+      "synonyms": [
+        "AoT",
+        "SnK"
+      ],
+      "description": "Centuries ago, mankind was slaughtered to near extinction by monstrous humanoid creatures called Titans, forcing humans to hide in fear behind enormous concentric walls. What makes these giants truly terrifying is that their taste for human flesh is not born out of hunger but what appears to be out of pleasure. To ensure their survival, the remnants of humanity began living within defensive barriers, resulting in one hundred years without a single titan encounter. However, that fragile calm is soon shattered when a colossal Titan manages to breach the supposedly impregnable outer wall, reigniting the fight for survival against the man-eating abominations.\n\nAfter witnessing a horrific personal loss at the hands of the invading creatures, Eren Yeager dedicates his life to their eradication by enlisting into the Survey Corps, an elite military unit that combats the merciless humanoids outside the protection of the walls. Eren, his adopted sister Mikasa Ackerman, and his childhood friend Armin Arlert join the brutal war against the Titans and race to discover a way of defeating them before the last walls are breached.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/10/47347l.webp",
+      "banner": "https://media.kitsu.app/anime/cover_images/7442/large.jpg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/10/47347l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/10/47347l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/cover_images/7442/large.jpg",
+      "genres": [
+        "Action",
+        "Award Winning",
+        "Drama",
+        "Suspense",
+        "Gore",
+        "Military",
+        "Survival"
+      ],
+      "genreIds": [
+        1,
+        46,
+        8,
+        41
+      ],
+      "score": 8.57,
+      "averageScore": 86,
+      "scoredBy": 3090314,
+      "rank": 125,
+      "popularity": 1,
+      "members": 4395758,
+      "favorites": 190706,
+      "episodes": 25,
+      "chapters": null,
+      "volumes": null,
+      "total": 25,
+      "status": "Finished Airing",
+      "year": 2013,
+      "season": "spring",
+      "startDate": "2013-04-07T00:00:00+00:00",
+      "endDate": "2013-09-29T00:00:00+00:00",
+      "duration": "24 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "Wit Studio"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-280312",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/title/70299043",
+          "type": "streaming"
+        },
+        {
+          "label": "Shahid",
+          "url": "https://shahid.mbc.net/en/series/Attack-On-Titan/series-922170",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "http://shingeki.tv/season1/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/16498/Shingeki_no_Kyojin",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/attack-on-titan",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "LHtdKWJdif4",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=LHtdKWJdif4"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-25777",
+          "title": "Shingeki no Kyojin Season 2",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-23390",
+          "title": "Shingeki no Kyojin",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-18397",
+          "title": "Shingeki no Kyojin OVA",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Spin-Off",
+          "id": "mal-anime-25781",
+          "title": "Shingeki no Kyojin: Kuinaki Sentaku",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Spin-Off",
+          "id": "mal-anime-31374",
+          "title": "Shingeki! Kyojin Chuugakkou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Spin-Off",
+          "id": "mal-anime-36106",
+          "title": "Shingeki no Kyojin: Lost Girls",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-19285",
+          "title": "Shingeki no Kyojin: Ano Hi Kara",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-23775",
+          "title": "Shingeki no Kyojin Movie 1: Guren no Yumiya",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-23777",
+          "title": "Shingeki no Kyojin Movie 2: Jiyuu no Tsubasa",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-42091",
+          "title": "Shingeki no Kyojin: Chronicle",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-49739",
+          "title": "Snickers x Shingeki no Kyojin",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-19391",
+          "title": "Shingeki no Kyojin Picture Drama",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-35122",
+          "title": "Shingeki no Kyotou",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/16498",
+      "metadataFetchedAt": "2026-09-07T20:53:51.235Z",
+      "detailed": true,
+      "kitsuId": "7442",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-37521",
+      "malId": 37521,
+      "idMal": 37521,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "Vinland Saga",
+      "titleEnglish": null,
+      "titleRomaji": "Vinland Saga",
+      "titleNative": "ヴィンランド・サガ",
+      "synonyms": [],
+      "description": "Young Thorfinn grew up listening to the stories of old sailors that had traveled the ocean and reached the place of legend, Vinland. It's said to be warm and fertile, a place where there would be no need for fighting—not at all like the frozen village in Iceland where he was born, and certainly not like his current life as a mercenary. War is his home now. Though his father once told him, \"You have no enemies, nobody does. There is nobody who it's okay to hurt,\" as he grew, Thorfinn knew that nothing was further from the truth.\n\nThe war between England and the Danes grows worse with each passing year. Death has become commonplace, and the viking mercenaries are loving every moment of it. Allying with either side will cause a massive swing in the balance of power, and the vikings are happy to make names for themselves and take any spoils they earn along the way. Among the chaos, Thorfinn must take his revenge and kill Askeladd, the man who murdered his father. The only paradise for the vikings, it seems, is the era of war and death that rages on.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1500/103005l.webp",
+      "banner": "https://media.kitsu.app/anime/41084/cover_image/large-2590d6aecb5433b5693f3224e7265bb9.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1500/103005l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1500/103005l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/41084/cover_image/large-2590d6aecb5433b5693f3224e7265bb9.jpeg",
+      "genres": [
+        "Action",
+        "Adventure",
+        "Drama",
+        "Gore",
+        "Historical"
+      ],
+      "genreIds": [
+        1,
+        2,
+        8
+      ],
+      "score": 8.78,
+      "averageScore": 88,
+      "scoredBy": 1077711,
+      "rank": 44,
+      "popularity": 61,
+      "members": 1845349,
+      "favorites": 58025,
+      "episodes": 24,
+      "chapters": null,
+      "volumes": null,
+      "total": 24,
+      "status": "Finished Airing",
+      "year": 2019,
+      "season": "summer",
+      "startDate": "2019-07-08T00:00:00+00:00",
+      "endDate": "2019-12-30T00:00:00+00:00",
+      "duration": "24 min per ep",
+      "rating": "R - 17+ (violence & profanity)",
+      "isAdult": false,
+      "studios": [
+        "Wit Studio"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-282925",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "https://vinlandsaga.jp/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/37521/Vinland_Saga",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/vinland-saga",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "f8JrZ7Q_p-8",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=f8JrZ7Q_p-8"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [
+        {
+          "relation": "Sequel",
+          "id": "mal-anime-49387",
+          "title": "Vinland Saga Season 2",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-642",
+          "title": "Vinland Saga",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-31647",
+          "title": "Ponkotsuland Saga",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/37521",
+      "metadataFetchedAt": "2026-09-07T20:53:52.582Z",
+      "detailed": true,
+      "kitsuId": "41084",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-anime-21",
+      "malId": 21,
+      "idMal": 21,
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "One Piece",
+      "titleEnglish": "One Piece",
+      "titleRomaji": "One Piece",
+      "titleNative": "ONE PIECE",
+      "synonyms": [
+        "OP"
+      ],
+      "description": "Barely surviving in a barrel after passing through a terrible whirlpool at sea, carefree Monkey D. Luffy ends up aboard a ship under attack by fearsome pirates. Despite being a naive-looking teenager, he is not to be underestimated. Unmatched in battle, Luffy is a pirate himself who resolutely pursues the coveted One Piece treasure and the King of the Pirates title that comes with it.\n\nThe late King of the Pirates, Gol D. Roger, stirred up the world before his death by disclosing the whereabouts of his hoard of riches and daring everyone to obtain it. Ever since then, countless powerful pirates have sailed dangerous seas for the prized One Piece only to never return. Although Luffy lacks a crew and a proper ship, he is endowed with a superhuman ability and an unbreakable spirit that make him not only a formidable adversary but also an inspiration to many.\n\nAs he faces numerous challenges with a big smile on his face, Luffy gathers one-of-a-kind companions to join him in his ambitious endeavor, together embracing perils and wonders on their once-in-a-lifetime adventure.\n\n[Written by MAL Rewrite]",
+      "cover": "https://cdn.myanimelist.net/images/anime/1244/138851l.webp",
+      "banner": "https://media.kitsu.app/anime/12/cover_image/large-3e72f400a87b5241780c5082f0582611.jpeg",
+      "coverImage": {
+        "large": "https://cdn.myanimelist.net/images/anime/1244/138851l.webp",
+        "extraLarge": "https://cdn.myanimelist.net/images/anime/1244/138851l.webp"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/12/cover_image/large-3e72f400a87b5241780c5082f0582611.jpeg",
+      "genres": [
+        "Action",
+        "Adventure",
+        "Fantasy"
+      ],
+      "genreIds": [
+        1,
+        2,
+        10
+      ],
+      "score": 8.73,
+      "averageScore": 87,
+      "scoredBy": 1545019,
+      "rank": 56,
+      "popularity": 17,
+      "members": 2705940,
+      "favorites": 254272,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Currently Airing",
+      "year": 1999,
+      "season": "fall",
+      "startDate": "1999-10-20T00:00:00+00:00",
+      "endDate": null,
+      "duration": "24 min",
+      "rating": "PG-13 - Teens 13 or older",
+      "isAdult": false,
+      "studios": [
+        "Toei Animation"
+      ],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Crunchyroll",
+          "url": "http://www.crunchyroll.com/series-257631",
+          "type": "streaming"
+        },
+        {
+          "label": "Netflix",
+          "url": "https://www.netflix.com/title/80107103",
+          "type": "streaming"
+        },
+        {
+          "label": "Shahid",
+          "url": "https://shahid.mbc.net/en/series/One-Piece/series-826519",
+          "type": "streaming"
+        },
+        {
+          "label": "Official Site",
+          "url": "http://www.toei-anim.co.jp/tv/onep/",
+          "type": "official"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/21/One_Piece",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/one-piece",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "-tviZNY6CSw",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=-tviZNY6CSw"
+      },
+      "broadcast": {
+        "day": "Sundays",
+        "time": "23:15",
+        "timezone": "Asia/Tokyo",
+        "string": "Sundays at 23:15 (JST)"
+      },
+      "airing": true,
+      "relations": [
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-13",
+          "title": "One Piece",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Adaptation",
+          "id": "mal-manga-94534",
+          "title": "One Piece: Loguetown-hen",
+          "type": "MANGA"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-466",
+          "title": "One Piece: Taose! Kaizoku Ganzack",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-459",
+          "title": "One Piece Movie 01",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-1094",
+          "title": "One Piece: Umi no Heso no Daibouken-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-460",
+          "title": "One Piece Movie 02: Nejimaki-jima no Daibouken",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-2385",
+          "title": "One Piece: Jango no Dance Carnival",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-461",
+          "title": "One Piece Movie 03: Chinjuu-jima no Chopper Oukoku",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-2386",
+          "title": "One Piece: Yume no Soccer Ou!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-462",
+          "title": "One Piece Movie 04: Dead End no Bouken",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-1237",
+          "title": "One Piece: Oounabara ni Hirake! Dekkai Dekkai Chichi no Yume!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-1238",
+          "title": "One Piece: Mamore! Saigo no Oobutai",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-463",
+          "title": "One Piece Movie 05: Norowareta Seiken",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-2490",
+          "title": "One Piece: Mezase! Kaizoku Yakyuu Ou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-464",
+          "title": "One Piece Movie 06: Omatsuri Danshaku to Himitsu no Shima",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-2020",
+          "title": "One Piece: Nenmatsu Tokubetsu Kikaku! Mugiwara no Luffy Oyabun Torimonochou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-465",
+          "title": "One Piece Movie 07: Karakuri-jou no Mecha Kyohei",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-53878",
+          "title": "One Piece: Uchuu tte Omoshiree! Hoshizora Jima-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-5252",
+          "title": "One Piece: Romance Dawn Story",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-4155",
+          "title": "One Piece Film: Strong World",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-8740",
+          "title": "One Piece Film: Strong World Episode 0",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-9999",
+          "title": "One Piece 3D: Mugiwara Chase",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-12001",
+          "title": "One Piece 3D: Gekisou! Trap Coaster",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-12859",
+          "title": "One Piece Film: Z",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-16239",
+          "title": "One Piece: Episode of Luffy - Hand Island no Bouken",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-16468",
+          "title": "One Piece: Glorious Island",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-53880",
+          "title": "One Piece The Planetarium",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-25161",
+          "title": "One Piece 3D2Y: Ace no Shi wo Koete! Luffy Nakama to no Chikai",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-32051",
+          "title": "One Piece: Adventure of Nebulandia",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-33606",
+          "title": "One Piece Film: Gold Episode 0 - 711 ver.",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-33338",
+          "title": "One Piece: Heart of Gold",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-31490",
+          "title": "One Piece Film: Gold",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-38234",
+          "title": "One Piece Movie 14: Stampede",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-50410",
+          "title": "One Piece Film: Red",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-60022",
+          "title": "One Piece Fan Letter",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-60790",
+          "title": "Luffy, Law",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Side Story",
+          "id": "mal-anime-62233",
+          "title": "One Piece: Heroines",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-16143",
+          "title": "One Piece: Kinkyuu Kikaku One Piece Kanzen Kouryakuhou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-51162",
+          "title": "One Piece: Otoshidama Special - Tokubetsu Hou Mugiwara Kaizokudan no Himitsu!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-2107",
+          "title": "One Piece Movie 08: Episode of Alabasta - Sabaku no Oujo to Kaizoku-tachi",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-8171",
+          "title": "One Piece Recap",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-28683",
+          "title": "One Piece: Episode of Alabasta - Prologue",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-15323",
+          "title": "One Piece: Episode of Nami - Koukaishi no Namida to Nakama no Kizuna",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-19123",
+          "title": "One Piece: Episode of Merry - Mou Hitori no Nakama no Monogatari",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-31289",
+          "title": "One Piece: Episode of Sabo - 3 Kyoudai no Kizuna Kiseki no Saikai to Uketsugareru Ishi",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-32437",
+          "title": "One Piece: Long Ring Long Land-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-50385",
+          "title": "One Piece Characters Log",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-36215",
+          "title": "One Piece: Episode of East Blue - Luffy to 4-nin no Nakama no Daibouken",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-37902",
+          "title": "One Piece: Episode of Sorajima",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-50696",
+          "title": "One Piece: Barto no Himitsu no Heya!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-52199",
+          "title": "One Piece: Dai Tettei Kaibou! Kouzuki Oden Densetsu!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-52921",
+          "title": "One Piece: Densetsu no Log! Akagami no Shanks!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-53235",
+          "title": "One Piece: Dai Tettei Kaibou! Gekitou! 5-nin no Shin Sedai",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-53890",
+          "title": "One Piece: Dai Gekisen Tokushuu! Mugiwara no Ichimi vs. Tobi Roppou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-55289",
+          "title": "One Piece: Dai Gekisen Tokushuu! Zoro vs. Ookanban!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-55647",
+          "title": "One Piece: Dai Gekisen Tokushuu! Hangeki Doumei vs. Big Mom",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-57556",
+          "title": "One Piece: Dai Tokushuu! Momonosuke no Mei Shougun e no Michi",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-58015",
+          "title": "One Piece: Dai Tannou Kikaku! \"Shi no Gekai\" Trafalgar Law",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-58663",
+          "title": "One Piece: Innen no Log! Mugiwara no Ichimi to Cipher Pol",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-59029",
+          "title": "One Piece: Kizamareru Rekishi! Gekidou no Shinkyuu Yonkou!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-59596",
+          "title": "One Piece: Araburu Henkaku no Log: Anyaku Suru Kakumeigun!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-59908",
+          "title": "One Piece: Yuruganu Seigi! Kaigun no Hokoritakaki Log!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-61393",
+          "title": "One Piece Egghead Arc Recap",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-61674",
+          "title": "One Piece: Dr. Chopper no Bouken Karte - Chichi to Musume no Ballad",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-61892",
+          "title": "One Piece: Dr. Chopper no Bouken Karte - Shinyuu-tachi no Crossroad",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-62394",
+          "title": "One Piece: Dr. Chopper no Bouken Karte - Hokoritakaki Gigant Dream",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-62593",
+          "title": "One Piece: Dr. Chopper no Bouken Karte - Uragirimono-tachi no Masquerade",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Summary",
+          "id": "mal-anime-62969",
+          "title": "One Piece: Dr. Chopper no Bouken Karte - Tensai ga Nokoshita \"Last Records\"",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Alternative Version",
+          "id": "mal-anime-3848",
+          "title": "One Piece Movie 09: Episode of Chopper Plus - Fuyu ni Saku, Kiseki no Sakura",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Alternative Version",
+          "id": "mal-anime-60108",
+          "title": "One Piece: Gyojin Tou-hen",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Alternative Version",
+          "id": "mal-anime-57557",
+          "title": "The One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-813",
+          "title": "Dragon Ball Z",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-23933",
+          "title": "Kyutai Panic Adventure!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-23935",
+          "title": "Kyutai Panic Adventure Returns!",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-10033",
+          "title": "Toriko",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-52139",
+          "title": "Hungry Days x Bump of Chicken: Kinen Satsuei",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-59832",
+          "title": "Annecy Festival 60th Anniversary PVs",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Character",
+          "id": "mal-anime-56055",
+          "title": "Monsters: Ippyaku Sanjou Hiryuu Jigoku",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-59959",
+          "title": "Schick x One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-59801",
+          "title": "UHA Mikakutou x One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-22661",
+          "title": "One Piece: Cry Heart",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-59822",
+          "title": "Star Wars x One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-57413",
+          "title": "Xfit x One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-34165",
+          "title": "Oishi-sa Hajikeru! One Piece",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-38419",
+          "title": "Tokyo One Piece Tower: Tongari Shima no Dai Hihou",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-36239",
+          "title": "Sono Me ga Mitsumeru Mono",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-40181",
+          "title": "Look Plus One Piece Special Movie",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-40970",
+          "title": "A-ra-shi: Reborn",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-51163",
+          "title": "One Piece: Mugiwara no Ichimi kara no Kansen Yobou Message",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-56015",
+          "title": "Miraijima",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-58307",
+          "title": "One Piece x Kawaisouni: Kono Boushi wo Omae ni Azukeru",
+          "type": "ANIME"
+        },
+        {
+          "relation": "Other",
+          "id": "mal-anime-63224",
+          "title": "Tenshi to Akuma",
+          "type": "ANIME"
+        }
+      ],
+      "source": "MyAnimeList via Jikan",
+      "sourceUrl": "https://myanimelist.net/anime/21",
+      "metadataFetchedAt": "2026-09-07T20:53:53.939Z",
+      "detailed": true,
+      "kitsuId": "12",
+      "imageSource": "Kitsu"
+    },
+    {
+      "id": "mal-manga-75989",
+      "malId": 75989,
+      "idMal": 75989,
+      "kitsuId": "26004",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "My Hero Academia",
+      "titleEnglish": "My Hero Academia",
+      "titleRomaji": "Boku no Hero Academia",
+      "titleNative": "僕のヒーローアカデミア",
+      "synonyms": [
+        "Boku no Hiiroo Akademia",
+        "My Hero Academia: Akademia Bohaterów",
+        "Kahramanlık Akademim",
+        "나의 영웅 아카데미아",
+        "Mano herojų akademija",
+        "Mitt Helteakademia",
+        "אקדמיית הגיבורים שלי",
+        "أكاديمية بطلي",
+        "فێرگەى پاڵەوانەكەم",
+        "मेरो हिरो एकेडेमिया",
+        "ഹീറോ അക്കാദമി",
+        "我的英雄學院",
+        "มายฮีโร่อคาเดเมีย",
+        "Моя геройская академия",
+        "Học viện anh hùng"
+      ],
+      "description": "What would the world be like if 80 percent of the population manifested superpowers called “Quirks” at age four? Heroes and villains would be battling it out everywhere! Being a hero would mean learning to use your power, but where would you go to study? The Hero Academy of course! But what would you do if you were one of the 20 percent who were born Quirkless?\n\nMiddle school student Izuku Midoriya wants to be a hero more than anything, but he hasn’t got an ounce of power in him. With no chance of ever getting into the prestigious U.A. High School for budding heroes, his life is looking more and more like a dead end. Then an encounter with All Might, the greatest hero of them all, gives him a chance to change his destiny…\n\n(Source: Viz Media)\n\nNote:\n- Winner of the 1st Next Manga Award in the Print Category in 2015.\n- Nominated for the 8th Manga Taisho Award in 2015.\n- Nominated for the 40th Kodansha Manga Award in the Shounen Category in 2016.\n- Chapter count includes a bonus chapter included in volume 10 “Tsuyu-chan no Kerokero Nikki“.",
+      "cover": "https://media.kitsu.app/manga/26004/poster_image/large-226bfa9e2bb2d77058802994345e1d7f.jpeg",
+      "banner": "https://media.kitsu.app/manga/26004/cover_image/large-377d7007411093643f31606c56547ad9.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/26004/poster_image/large-226bfa9e2bb2d77058802994345e1d7f.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/26004/poster_image/large-226bfa9e2bb2d77058802994345e1d7f.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/26004/cover_image/large-377d7007411093643f31606c56547ad9.jpeg",
+      "genres": [
+        "Comedy",
+        "Super Power",
+        "School Life",
+        "Action",
+        "Superhero",
+        "Shounen",
+        "Science Fiction"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 14,
+      "popularity": 1,
+      "members": 188165,
+      "favorites": 2129,
+      "episodes": null,
+      "chapters": 432,
+      "volumes": 42,
+      "total": 432,
+      "status": "Finished",
+      "year": 2014,
+      "season": null,
+      "startDate": "2014-07-07",
+      "endDate": "2024-08-05",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/75989",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/boku-no-hero-academia",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/boku-no-hero-academia",
+      "metadataFetchedAt": "2026-09-07T20:57:33.224Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-33327",
+      "malId": 33327,
+      "idMal": 33327,
+      "kitsuId": "7176",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Tokyo Ghoul",
+      "titleEnglish": "Tokyo Ghoul",
+      "titleRomaji": "Tokyo Ghoul",
+      "titleNative": "東京喰種トーキョーグール",
+      "synonyms": [
+        "Toukyou Kushu"
+      ],
+      "description": "Shy Ken Kaneki is thrilled to go on a date with the beautiful Rize. But it turns out that she’s only interested in his body—eating it, that is. When a morally questionable rescue transforms him into the first half-human half-Ghoul hybrid, Ken is drawn into the dark and violent world of Ghouls, which exists alongside our own.\n\n(Source: Viz Media)\n\nNote: Includes 1 extra chapter.",
+      "cover": "https://media.kitsu.app/manga/7176/poster_image/large-b444d6029fffc54ca5c7b161075a1adf.jpeg",
+      "banner": "https://media.kitsu.app/manga/7176/cover_image/large-57dabf7fbb87731cd97812499296679f.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/7176/poster_image/large-b444d6029fffc54ca5c7b161075a1adf.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/7176/poster_image/large-b444d6029fffc54ca5c7b161075a1adf.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/7176/cover_image/large-57dabf7fbb87731cd97812499296679f.jpeg",
+      "genres": [
+        "Horror",
+        "Drama",
+        "Action",
+        "Psychological",
+        "Mystery",
+        "Supernatural",
+        "Seinen"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 29,
+      "popularity": 2,
+      "members": 173719,
+      "favorites": 2219,
+      "episodes": null,
+      "chapters": 144,
+      "volumes": 14,
+      "total": 144,
+      "status": "Finished",
+      "year": 2011,
+      "season": null,
+      "startDate": "2011-09-08",
+      "endDate": "2014-09-18",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/33327",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/tokyo-ghoul-m",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/tokyo-ghoul-m",
+      "metadataFetchedAt": "2026-09-07T20:57:33.225Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-13",
+      "malId": 13,
+      "idMal": 13,
+      "kitsuId": "38",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "One Piece",
+      "titleEnglish": "One Piece",
+      "titleRomaji": "One Piece",
+      "titleNative": "ONE PIECE",
+      "synonyms": [
+        "Budak Getah",
+        "Đảo Hải Tặc",
+        "Большой куш",
+        "Ван Пис",
+        "Уан Пийс",
+        "Эйтиро Ода",
+        "Վան Փիս",
+        "וואן פיס",
+        "قطعة واحدة",
+        "وان پیس",
+        "ون بيس",
+        "وەن پیس",
+        "वान पिस",
+        "वान् पीस",
+        "ওয়ান পিস",
+        "ஒன் பீஸ்",
+        "วันพีซ",
+        "ဝမ်းပိစ်",
+        "ዋንፒስ",
+        "ワンピース",
+        "海盗路飞",
+        "海賊王",
+        "海贼王",
+        "航海王",
+        "원피스"
+      ],
+      "description": "Gol D. Roger was known as the Pirate King, the strongest and most infamous being to have sailed the Grand Line. The capture and death of Roger by the World Government brought a change throughout the world. His last words before his death revealed the location of the greatest treasure in the world, One Piece. It was this revelation that brought about the Grand Age of Pirates, men who dreamed of finding One Piece (which promises an unlimited amount of riches and fame), and quite possibly the most coveted of titles for the person who found it, the title of the Pirate King.\n\nEnter Monkey D. Luffy, a 17-year-old boy that defies your standard definition of a pirate. Rather than the popular persona of a wicked, hardened, toothless pirate who ransacks villages for fun, Luffy’s reason for being a pirate is one of pure wonder; the thought of an exciting adventure and meeting new and intriguing people, along with finding One Piece, are his reasons of becoming a pirate. Following in the footsteps of his childhood hero, Luffy and his crew travel across the Grand Line, experiencing crazy adventures, unveiling dark mysteries and battling strong enemies, all in order to reach One Piece.\n\n(Source: MAL Rewrite)",
+      "cover": "https://media.kitsu.app/manga/38/poster_image/large-676b91b69b775c6c240c41dbf8106d03.jpeg",
+      "banner": "https://media.kitsu.app/manga/38/cover_image/large-bd52b8f2fb81d3cf99b4fbe4c072d2b1.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/38/poster_image/large-676b91b69b775c6c240c41dbf8106d03.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/38/poster_image/large-676b91b69b775c6c240c41dbf8106d03.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/38/cover_image/large-bd52b8f2fb81d3cf99b4fbe4c072d2b1.jpeg",
+      "genres": [
+        "Comedy",
+        "Super Power",
+        "Fantasy",
+        "Action",
+        "Friendship",
+        "Adventure",
+        "Shounen",
+        "Pirate",
+        "Drama"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 2,
+      "popularity": 3,
+      "members": 163430,
+      "favorites": 3779,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 1997,
+      "season": null,
+      "startDate": "1997-07-22",
+      "endDate": null,
+      "duration": null,
+      "rating": "G",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "VIZ Shonen Jump",
+          "url": "https://www.viz.com/shonenjump/chapters/one-piece",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/13",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/one-piece",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/one-piece",
+      "metadataFetchedAt": "2026-09-07T20:57:33.225Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-23390",
+      "malId": 23390,
+      "idMal": 23390,
+      "kitsuId": "14916",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Attack on Titan",
+      "titleEnglish": "Attack on Titan",
+      "titleRomaji": "Shingeki no Kyojin",
+      "titleNative": "進撃の巨人",
+      "synonyms": [
+        "L'attaque sur les titans",
+        "Атака титанов",
+        "ھێرش بۆ سەر زەبەلاحەكان",
+        "進擊的巨人",
+        "SNK",
+        "AOT",
+        "Ilse no Techou",
+        "Rivai Heishichou"
+      ],
+      "description": "A century ago, the grotesque giants known as Titans appeared and consumed all but a few thousand humans. The survivors took refuge behind giant walls. Today, the threat of the Titans is a distant memory, and a boy named Eren yearns to explore the world beyond Wall Maria. But what began as a childish dream will become an all-too-real nightmare when the Titans return and humanity is once again on the brink of extinction … Attack on Titan is the award-winning and New York Times-bestselling series that is the manga hit of the decade! Spawning the monster hit anime TV series of the same name, Attack on Titan has become a pop culture sensation. \n\n(Source: Kodansha Comics)\n\nVolume 3 contains the special story \"Rivai Heishichou\" (リヴァイ兵士長, Captain Levi).\nVolume 5 contains the side story \"Ilse no Techou\" (イルゼの手帳, Ilse's Notebook).",
+      "cover": "https://media.kitsu.app/manga/poster_images/14916/large.jpg",
+      "banner": "https://media.kitsu.app/manga/14916/cover_image/large-9644285255bd494e3bdeb3be58075a4c.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/14916/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/14916/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/14916/cover_image/large-9644285255bd494e3bdeb3be58075a4c.jpeg",
+      "genres": [
+        "Super Power",
+        "Horror",
+        "Drama",
+        "Action",
+        "Fantasy",
+        "Mystery",
+        "Shounen"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 32,
+      "popularity": 4,
+      "members": 147524,
+      "favorites": 2511,
+      "episodes": null,
+      "chapters": 141,
+      "volumes": 34,
+      "total": 141,
+      "status": "Finished",
+      "year": 2009,
+      "season": null,
+      "startDate": "2009-09-09",
+      "endDate": "2021-04-09",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/23390",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/shingeki-no-kyojin",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/shingeki-no-kyojin",
+      "metadataFetchedAt": "2026-09-07T20:57:33.225Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-44347",
+      "malId": 44347,
+      "idMal": 44347,
+      "kitsuId": "24147",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "One-Punch Man",
+      "titleEnglish": "One-Punch Man",
+      "titleRomaji": "One Punch-Man",
+      "titleNative": "ワンパンマン",
+      "synonyms": [
+        "Onepunchman",
+        "Onepanman"
+      ],
+      "description": "Everything about a young man named Saitama screams \"AVERAGE,” from his lifeless expression, to his bald head, to his unimpressive physique. However, this average-looking fellow doesn't have your average problem... He's actually a superhero that's looking for tough opponents! The problem is, every time he finds a promising candidate he beats the snot out of them in one punch. Can Saitama finally find an evil villain strong enough to challenge him? Follow Saitama through his hilarious romps as he searches for new bad guys to challenge!\n\n(Source: Viz)",
+      "cover": "https://media.kitsu.app/manga/24147/poster_image/large-4f2d300b6f3485997a68c752de00a8f9.jpeg",
+      "banner": "https://media.kitsu.app/manga/24147/cover_image/large-3bf6d144f65a2c6f9c246578617df691.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/24147/poster_image/large-4f2d300b6f3485997a68c752de00a8f9.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/24147/poster_image/large-4f2d300b6f3485997a68c752de00a8f9.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/24147/cover_image/large-3bf6d144f65a2c6f9c246578617df691.jpeg",
+      "genres": [
+        "Comedy",
+        "Science Fiction",
+        "Super Power",
+        "Parody",
+        "Action",
+        "Violence",
+        "Superhero",
+        "Cyborg",
+        "Alien",
+        "Seinen",
+        "Supernatural"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 13,
+      "popularity": 5,
+      "members": 132946,
+      "favorites": 1819,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2012,
+      "season": null,
+      "startDate": "2012-06-14",
+      "endDate": null,
+      "duration": null,
+      "rating": "G",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/44347",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/one-punch-man",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/one-punch-man",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-21",
+      "malId": 21,
+      "idMal": 21,
+      "kitsuId": "57",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Death Note",
+      "titleEnglish": "Death Note",
+      "titleRomaji": "Death Note",
+      "titleNative": "DEATH NOTE",
+      "synonyms": [],
+      "description": "Light Yagami is a brilliant 17-year-old student, one of the top scorers on his exams in all of Japan. One day as he leaves school, he finds a mysterious black notebook on the ground with \"Death Note\" written on it. The first thing written inside: \"The human whose name is written in the notebook shall die.\" Light decides to use this to cleanse the world of evil by killing all the criminals. On the scene comes L, ace detective, who's determined to find Light—who the world now calls \"Kira\"—and track him down, thus bringing us an epic psychological thrill ride.",
+      "cover": "https://media.kitsu.app/manga/57/poster_image/large-c45932b7d7e5981ad4afb466befd7434.jpeg",
+      "banner": "https://media.kitsu.app/manga/57/cover_image/large-b5284e24c67ea44b58829339f9eaf6d1.gif",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/57/poster_image/large-c45932b7d7e5981ad4afb466befd7434.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/57/poster_image/large-c45932b7d7e5981ad4afb466befd7434.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/57/cover_image/large-b5284e24c67ea44b58829339f9eaf6d1.gif",
+      "genres": [
+        "Drama",
+        "Psychological",
+        "Mystery",
+        "Supernatural",
+        "Shounen",
+        "Thriller"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 19,
+      "popularity": 6,
+      "members": 107581,
+      "favorites": 1205,
+      "episodes": null,
+      "chapters": 108,
+      "volumes": 12,
+      "total": 108,
+      "status": "Finished",
+      "year": 2003,
+      "season": null,
+      "startDate": "2003-12-01",
+      "endDate": "2006-05-15",
+      "duration": null,
+      "rating": null,
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/21",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/death-note",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/death-note",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-96792",
+      "malId": 96792,
+      "idMal": 96792,
+      "kitsuId": "37280",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Demon Slayer: Kimetsu no Yaiba",
+      "titleEnglish": "Demon Slayer: Kimetsu no Yaiba",
+      "titleRomaji": "Kimetsu no Yaiba",
+      "titleNative": "鬼滅の刃",
+      "synonyms": [
+        "Blade of Demon Destruction"
+      ],
+      "description": "Since ancient times, rumors have abounded of man-eating demons lurking in the woods. Because of this, the local townsfolk never venture outside at night. Legend has it that a demon slayer also roams the night, hunting down these bloodthirsty demons. For young Tanjirou, these rumors will soon to become his harsh reality...\n\nEver since the death of his father, Tanjirou has taken it upon himself to support his family. Although their lives may be hardened by tragedy, they've found happiness. But that ephemeral warmth is shattered one day when Tanjirou finds his family slaughtered and the lone survivor, his sister Nezuko, turned into a demon. To his surprise, however, Nezuko still shows signs of human emotion and thought...\n\nThus begins Tanjirou's quest to fight demons and turn his sister human again.\n\n(Source: VIZ Media)\n\nVolume 7 contains a bonus chapter about Kanao Tsuyuri.\nVolume 10 contains a bonus chapter about Inosuke Hashibira.",
+      "cover": "https://media.kitsu.app/manga/37280/poster_image/large-e7e54c8f2b193ff53f645f46ee6608e1.jpeg",
+      "banner": "https://media.kitsu.app/manga/cover_images/37280/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/37280/poster_image/large-e7e54c8f2b193ff53f645f46ee6608e1.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/37280/poster_image/large-e7e54c8f2b193ff53f645f46ee6608e1.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/37280/large.jpg",
+      "genres": [
+        "Fantasy",
+        "Historical",
+        "Demon",
+        "Action",
+        "Adventure",
+        "Shounen",
+        "Japan"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 17,
+      "popularity": 7,
+      "members": 103624,
+      "favorites": 1159,
+      "episodes": null,
+      "chapters": 207,
+      "volumes": 23,
+      "total": 207,
+      "status": "Finished",
+      "year": 2016,
+      "season": null,
+      "startDate": "2016-02-15",
+      "endDate": "2020-05-18",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/96792",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/kimetsu-no-yaiba",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/kimetsu-no-yaiba",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-39883",
+      "malId": 39883,
+      "idMal": 39883,
+      "kitsuId": "19682",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Assassination Classroom",
+      "titleEnglish": "Assassination Classroom",
+      "titleRomaji": "Ansatsu Kyoushitsu",
+      "titleNative": "暗殺教室",
+      "synonyms": [
+        "Tokyo Department Sensou Taikenki",
+        "Tokyo Department Store War Chronicles"
+      ],
+      "description": "The students of class 3-E have a mission: kill their teacher before graduation. He has already destroyed the moon, and has promised to destroy the Earth if he can not be killed within a year. But how can this class of misfits kill a tentacled monster, capable of reaching Mach 20 speed, who may be the best teacher any of them have ever had?",
+      "cover": "https://media.kitsu.app/manga/19682/poster_image/large-de9cd7841c533fdb6b0c3a8b8f6a263f.jpeg",
+      "banner": "https://media.kitsu.app/manga/19682/cover_image/large-d5ccf51a010b6cad4d5089ca028f96f7.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/19682/poster_image/large-de9cd7841c533fdb6b0c3a8b8f6a263f.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/19682/poster_image/large-de9cd7841c533fdb6b0c3a8b8f6a263f.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/19682/cover_image/large-d5ccf51a010b6cad4d5089ca028f96f7.jpeg",
+      "genres": [
+        "Comedy",
+        "Science Fiction",
+        "Fantasy",
+        "School Life",
+        "Action",
+        "Psychological"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 30,
+      "popularity": 8,
+      "members": 86272,
+      "favorites": 526,
+      "episodes": null,
+      "chapters": 187,
+      "volumes": 21,
+      "total": 187,
+      "status": "Finished",
+      "year": 2012,
+      "season": null,
+      "startDate": "2012-07-02",
+      "endDate": "2016-03-19",
+      "duration": null,
+      "rating": null,
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/39883",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/ansatsu-kyoushitsu",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/ansatsu-kyoushitsu",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-56805",
+      "malId": 56805,
+      "idMal": 56805,
+      "kitsuId": "16554",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "A Silent Voice",
+      "titleEnglish": "A Silent Voice",
+      "titleRomaji": "Koe no Katachi",
+      "titleNative": "聲の形",
+      "synonyms": [
+        "The Shape of Voice"
+      ],
+      "description": "Shoya is a bully. When Shoko, a girl who can't hear, enters his elementary school class, she becomes their favorite target, and Shoya and his friends goad each other into devising new tortures for her. But the children's cruelty goes too far. Shoko is forced to leave the school, and Shoya ends up shouldering all the blame. Six years later, the two meet again. Can Shoya make up for his past mistakes, or is it too late?\n\n(Source: Kodansha Comics)",
+      "cover": "https://media.kitsu.app/manga/poster_images/16554/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/16554/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/16554/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/16554/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/16554/large.jpg",
+      "genres": [
+        "School Life",
+        "Drama",
+        "Romance",
+        "Coming Of Age",
+        "Japan",
+        "Present",
+        "Friendship"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 22,
+      "popularity": 9,
+      "members": 78405,
+      "favorites": 1189,
+      "episodes": null,
+      "chapters": 64,
+      "volumes": 7,
+      "total": 64,
+      "status": "Finished",
+      "year": 2013,
+      "season": null,
+      "startDate": "2013-08-07",
+      "endDate": "2014-11-19",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/56805",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/koe-no-katachi-manga",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/koe-no-katachi-manga",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-81117",
+      "malId": 81117,
+      "idMal": 81117,
+      "kitsuId": "26401",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Tokyo Ghoul:re",
+      "titleEnglish": "Tokyo Ghoul:re",
+      "titleRomaji": "Tokyo Ghoul:re",
+      "titleNative": "東京喰種-トーキョーグール-:re",
+      "synonyms": [
+        "トーキョーグール:re",
+        "Tokyo Ghoul: \"Joker\"",
+        "Tokyo Kushu:re",
+        "Toukyou Kuushu:re"
+      ],
+      "description": "The Commission of Counter Ghoul is the only organization fighting the Ghoul menace, and they will use every tool at their disposal to protect humanity from its ultimate predator. Their newest weapon in this hidden war is an experimental procedure that implants human investigators with a Ghoul's Kagune, giving them Ghoul powers and abilities. But both the procedure and the newly formed Qs Squad are untested. Will they become heroes… or monsters?\n\n(Source: Viz Media)",
+      "cover": "https://media.kitsu.app/manga/poster_images/26401/large.jpg",
+      "banner": "https://media.kitsu.app/manga/26401/cover_image/large-7ce73a85f24b331cea661466e2c70b24.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/26401/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/26401/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/26401/cover_image/large-7ce73a85f24b331cea661466e2c70b24.jpeg",
+      "genres": [
+        "Horror",
+        "Drama",
+        "Action",
+        "Psychological",
+        "Mystery",
+        "Supernatural",
+        "Seinen"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 45,
+      "popularity": 10,
+      "members": 77871,
+      "favorites": 1056,
+      "episodes": null,
+      "chapters": 179,
+      "volumes": 16,
+      "total": 179,
+      "status": "Finished",
+      "year": 2014,
+      "season": null,
+      "startDate": "2014-10-16",
+      "endDate": "2018-07-05",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/81117",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/tokyo-ghoul-re",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/tokyo-ghoul-re",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-26",
+      "malId": 26,
+      "idMal": 26,
+      "kitsuId": "68",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Hunter x Hunter",
+      "titleEnglish": "Hunter x Hunter",
+      "titleRomaji": "Hunter x Hunter",
+      "titleNative": "HUNTER×HUNTER",
+      "synonyms": [
+        "HxH"
+      ],
+      "description": "Hunters are a special breed, dedicated to tracking down treasures, magical beasts, and even other men. But such pursuits require a license, and less than one in a hundred thousand can pass the grueling qualification exam. Those who do pass gain access to restricted areas, amazing stores of information, and the right to call themselves Hunters.\n\n(Source: Shonen Jump)",
+      "cover": "https://media.kitsu.app/manga/68/poster_image/large-b9e2a0a9edbdabcd2434d638a08e0152.jpeg",
+      "banner": "https://media.kitsu.app/manga/68/cover_image/large-fdbdd2a7226529eca3d36218f1e1fcb8.gif",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/68/poster_image/large-b9e2a0a9edbdabcd2434d638a08e0152.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/68/poster_image/large-b9e2a0a9edbdabcd2434d638a08e0152.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/68/cover_image/large-fdbdd2a7226529eca3d36218f1e1fcb8.gif",
+      "genres": [
+        "Super Power",
+        "Fantasy",
+        "Action",
+        "Adventure",
+        "Psychological",
+        "Fantasy World",
+        "Shounen"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 24,
+      "popularity": 11,
+      "members": 73429,
+      "favorites": 931,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 1998,
+      "season": null,
+      "startDate": "1998-03-03",
+      "endDate": null,
+      "duration": null,
+      "rating": null,
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/26",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/hunter-x-hunter",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/hunter-x-hunter",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-44485",
+      "malId": 44485,
+      "idMal": 44485,
+      "kitsuId": "24208",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "The Seven Deadly Sins",
+      "titleEnglish": "The Seven Deadly Sins",
+      "titleRomaji": "Nanatsu no Taizai",
+      "titleNative": "七つの大罪",
+      "synonyms": [],
+      "description": "When they were accused of trying to overthrow the monarchy, the feared warriors the Seven Deadly Sins were sent into exile. Princess Elizabeth discovers the truth - the Sins were framed by the king's guard, the Holy Knights - too late to prevent them from assassinating her father and seizing the throne!\n\nNow the princess is on the run, seeking the Sins to help her reclaim the kingdom. But the first Sin she meets, Meliodas, is a little innkeeper with a talking pig. He doesn't even have a real sword! Have the legends of the Sins' strength been exaggerated?\n\n(Source: Kodansha Comics)",
+      "cover": "https://media.kitsu.app/manga/poster_images/24208/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/24208/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/24208/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/24208/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/24208/large.jpg",
+      "genres": [
+        "Fantasy",
+        "Fantasy",
+        "Action",
+        "Ecchi",
+        "Adventure"
+      ],
+      "genreIds": [],
+      "score": 8.3,
+      "averageScore": 83,
+      "scoredBy": null,
+      "rank": 81,
+      "popularity": 12,
+      "members": 68755,
+      "favorites": 557,
+      "episodes": null,
+      "chapters": 346,
+      "volumes": 41,
+      "total": 346,
+      "status": "Finished",
+      "year": 2012,
+      "season": null,
+      "startDate": "2012-10-10",
+      "endDate": "2020-03-25",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/44485",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/nanatsu-no-taizai",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/nanatsu-no-taizai",
+      "metadataFetchedAt": "2026-09-07T20:57:33.226Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-121496",
+      "malId": 121496,
+      "idMal": 121496,
+      "kitsuId": "54114",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Solo Leveling",
+      "titleEnglish": "Solo Leveling",
+      "titleRomaji": "Boku dake Level Up na Ken",
+      "titleNative": "俺だけレベルアップな件",
+      "synonyms": [
+        "Only I level up",
+        "I Level Up Alone",
+        "Поднятие уровня в одиночку",
+        "Na Honjaman Level-Up",
+        "Only I Level Up",
+        "Ore Dake Level Up na Ken",
+        "Поднятие уровня в одиночку",
+        "Тільки я візьму новий рівень",
+        "تکرو",
+        "我独自升级"
+      ],
+      "description": "In a world where awakened beings called “Hunters” must battle deadly monsters to protect humanity, Sung Jinwoo, nicknamed “the weakest hunter of all mankind,” finds himself in a constant struggle for survival. One day, after a brutal encounter in an overpowered dungeon wipes out his party and threatens to end his life, a mysterious System chooses him as its sole player: Jinwoo has been granted the rare opportunity to level up his abilities, possibly beyond any known limits. Follow Jinwoo’s journey as he takes on ever-stronger enemies, both human and monster, to discover the secrets deep within the dungeons and the ultimate extent of his powers.\n\n(Source: Tappytoon)\n\nNote: Chapter count includes a prologue and 21 side stories.",
+      "cover": "https://media.kitsu.app/manga/poster_images/54114/large.jpg",
+      "banner": "https://media.kitsu.app/manga/54114/cover_image/large-5ced5f4969b4e15202e7f08188ba093f.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/54114/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/54114/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/54114/cover_image/large-5ced5f4969b4e15202e7f08188ba093f.jpeg",
+      "genres": [
+        "Adventure",
+        "Action",
+        "Fantasy",
+        "Shounen"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 18,
+      "popularity": 18,
+      "members": 57375,
+      "favorites": 1906,
+      "episodes": null,
+      "chapters": 201,
+      "volumes": null,
+      "total": 201,
+      "status": "Finished",
+      "year": 2018,
+      "season": null,
+      "startDate": "2018-03-04",
+      "endDate": "2023-05-31",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "Tappytoon",
+          "url": "https://www.tappytoon.com/en/book/solo-leveling-official",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/121496",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/solo-levelling",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/solo-levelling",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-96573",
+      "malId": 96573,
+      "idMal": 96573,
+      "kitsuId": "37141",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Something About Us",
+      "titleEnglish": "Something About Us",
+      "titleRomaji": "Something About Us",
+      "titleNative": "우리사이느은",
+      "synonyms": [
+        "Our Relationship Is...",
+        "Woori",
+        "Our Relationship Is"
+      ],
+      "description": "They consider themselves the best of friends. Others seem to think otherwise. There's something about their relationship that's hard to describe. What will become of these two \"friends\"?\n\n(Source: Lezhin)\n\nNote: Chapter count includes the prologue, epilogue and side story chapters.",
+      "cover": "https://media.kitsu.app/manga/poster_images/37141/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/37141/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/37141/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/37141/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/37141/large.jpg",
+      "genres": [
+        "Comedy",
+        "School Life",
+        "Slice of Life",
+        "Romance"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 268,
+      "popularity": 35,
+      "members": 29989,
+      "favorites": 396,
+      "episodes": null,
+      "chapters": 117,
+      "volumes": 5,
+      "total": 117,
+      "status": "Finished",
+      "year": 2014,
+      "season": null,
+      "startDate": "2014-10-01",
+      "endDate": "2016-10-19",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/96573",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/something-about-us",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/something-about-us",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-111213",
+      "malId": 111213,
+      "idMal": 111213,
+      "kitsuId": "37696",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Bastard",
+      "titleEnglish": null,
+      "titleRomaji": "Bastard",
+      "titleNative": null,
+      "synonyms": [],
+      "description": "There is a serial killer in my house!",
+      "cover": "https://media.kitsu.app/manga/poster_images/37696/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/37696/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/37696/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/37696/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/37696/large.jpg",
+      "genres": [
+        "Thriller",
+        "School Life",
+        "Horror",
+        "Drama",
+        "Romance",
+        "Psychological",
+        "Mystery"
+      ],
+      "genreIds": [],
+      "score": 8.3,
+      "averageScore": 83,
+      "scoredBy": null,
+      "rank": 149,
+      "popularity": 59,
+      "members": 18131,
+      "favorites": 279,
+      "episodes": null,
+      "chapters": 94,
+      "volumes": 5,
+      "total": 94,
+      "status": "Finished",
+      "year": 2014,
+      "season": null,
+      "startDate": "2014-07-04",
+      "endDate": "2017-03-20",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/111213",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/bastard-manhwa",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/bastard-manhwa",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-122663",
+      "malId": 122663,
+      "idMal": 122663,
+      "kitsuId": "25436",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Tower of God",
+      "titleEnglish": "Tower of God",
+      "titleRomaji": "Sinui Tap",
+      "titleNative": "신의 탑",
+      "synonyms": [
+        "Dievo Bokštas",
+        "Shi-nui t'ap",
+        "Top of God",
+        "Torre de Deus",
+        "Torre de Dios",
+        "Башня Бога",
+        "神之塔",
+        "ทาวเวอร์ออฟก๊อด หอคอยเทพเจ้า"
+      ],
+      "description": "What do you desire? Fortune? Glory? Power? Revenge? Or something that surpasses all others? What ever you desire, that is here. Tower of God.\n\nJoin Baam as he climbs each level of the Tower to find his beloved friend, Rachel. Facing impossible missions to mind bending puzzles as he uses any means necessary to reach the top.",
+      "cover": "https://media.kitsu.app/manga/poster_images/25436/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/25436/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/25436/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/25436/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/25436/large.jpg",
+      "genres": [
+        "Fantasy",
+        "Action",
+        "Adventure",
+        "Mystery"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 447,
+      "popularity": 66,
+      "members": 16243,
+      "favorites": 569,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2010,
+      "season": null,
+      "startDate": "2010-09-04",
+      "endDate": null,
+      "duration": null,
+      "rating": "G",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "WEBTOON",
+          "url": "https://www.webtoons.com/en/fantasy/tower-of-god/list?title_no=95",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/122663",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/tower-of-god",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/tower-of-god",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-8586",
+      "malId": 8586,
+      "idMal": 8586,
+      "kitsuId": "17413",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "The Breaker",
+      "titleEnglish": null,
+      "titleRomaji": "The Breaker",
+      "titleNative": "브레이커",
+      "synonyms": [],
+      "description": "The new English teacher, Chun-Woo, is not your ordinary teacher. Shioon, a victim of constant bullying, unexpectedly witnesses Chun-Woo's fighting power, and begs him to make him his disciple. Chun-Woo claims he can teach Shioon only if he is truly determined, and Shioon must jump off a bridge into a deep river in order to prove it!\n\nIt turns out, however, that Chun-Woo and his powers are more than meets the eye. Shioon makes a grand entrance into the hidden world of martial arts, and he is about to be taught by the best there is!\n\n(Source: MU)",
+      "cover": "https://media.kitsu.app/manga/poster_images/17413/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/17413/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/17413/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/17413/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/17413/large.jpg",
+      "genres": [
+        "Comedy",
+        "School Life",
+        "Action",
+        "Martial Arts"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 365,
+      "popularity": 94,
+      "members": 12840,
+      "favorites": 260,
+      "episodes": null,
+      "chapters": 72,
+      "volumes": 10,
+      "total": 72,
+      "status": "Finished",
+      "year": 2007,
+      "season": null,
+      "startDate": "2007-06-01",
+      "endDate": "2010-07-20",
+      "duration": null,
+      "rating": null,
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/8586",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/the-breaker-manhwa",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/the-breaker-manhwa",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-132214",
+      "malId": 132214,
+      "idMal": 132214,
+      "kitsuId": "56452",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Omniscient Reader's Point of View",
+      "titleEnglish": "Omniscient Reader's Point of View",
+      "titleRomaji": "Jeonjijeok Dokja Sijeom",
+      "titleNative": "전지적 독자 시점",
+      "synonyms": [
+        "Omniscient Reader's Viewpoint",
+        "دیدگاه خواننده‌ی همه‌چی‌دون",
+        "Всеведущий читатель",
+        "전독시",
+        "全知读者",
+        "全知读者视角",
+        "Omniscient Reader"
+      ],
+      "description": "Back then, Dok-Ja had no idea. He had no idea his favorite web novel 'Three Ways to Survive the Apocalypse' was going to come to life, and that he would become the only person to know how the world was going to end. He also had no idea he would end up becoming the protagonist of this novel-turned-reality. Now, Dok-Ja will go on a journey to change the course of the story and save humankind once and for all.\n\n(Source: WEBTOONS, edited)",
+      "cover": "https://media.kitsu.app/manga/56452/poster_image/large-4070fcfd26798d8c39665f15cca618c2.jpeg",
+      "banner": "https://media.kitsu.app/manga/cover_images/56452/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/56452/poster_image/large-4070fcfd26798d8c39665f15cca618c2.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/56452/poster_image/large-4070fcfd26798d8c39665f15cca618c2.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/56452/large.jpg",
+      "genres": [
+        "Adventure",
+        "Action",
+        "Fantasy",
+        "Post Apocalypse"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 40,
+      "popularity": 84,
+      "members": 14112,
+      "favorites": 244,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2020,
+      "season": null,
+      "startDate": "2020-05-26",
+      "endDate": null,
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "WEBTOON",
+          "url": "https://www.webtoons.com/en/action/omniscient-reader/list?title_no=2154",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/132214",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/omniscient-readers-point-of-view",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/omniscient-readers-point-of-view",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-29983",
+      "malId": 29983,
+      "idMal": 29983,
+      "kitsuId": "23815",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Noblesse",
+      "titleEnglish": "Noblesse",
+      "titleRomaji": "Noblesse",
+      "titleNative": "노블레스",
+      "synonyms": [
+        "Дворянство",
+        "Благородство",
+        "Ноблесс",
+        "ノブレス",
+        "大貴族",
+        "النبلاء"
+      ],
+      "description": "For 820 years he had slumbered with no knowledge of mankind's advancement and scientific progress. The land which he once knew has become an unfamiliar place with new technology, attitudes, and lifestyles. Upon awakening, Cadis Etrama Di Raizel (aka Rai), seeks to familiarize himself with this era. He locates a loyal servant of his, Frankenstein, who is currently the principal of a South Korean High School. Rai decides that this school is the perfect place to help him learn about the modern world, enrolls, and begins associating with a group of good-natured students in order to 'blend in'. But this new world is no safer than the old; and the dignified, bewildered, technologically inept Rai finds himself embroiled in adventures both ridiculous and dangerous.\n\n(Source: Eat Manga)",
+      "cover": "https://media.kitsu.app/manga/poster_images/23815/large.jpg",
+      "banner": "https://media.kitsu.app/manga/poster_images/23815/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/23815/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/23815/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/poster_images/23815/large.jpg",
+      "genres": [
+        "Comedy",
+        "Fantasy",
+        "School Life",
+        "Action",
+        "Adventure",
+        "Drama",
+        "Seinen",
+        "Supernatural"
+      ],
+      "genreIds": [],
+      "score": 8.1,
+      "averageScore": 81,
+      "scoredBy": null,
+      "rank": 752,
+      "popularity": 114,
+      "members": 11235,
+      "favorites": 253,
+      "episodes": null,
+      "chapters": 544,
+      "volumes": null,
+      "total": 544,
+      "status": "Finished",
+      "year": 2007,
+      "season": null,
+      "startDate": "2007-12-30",
+      "endDate": "2019-01-08",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/29983",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/noblesse",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/noblesse",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-121079",
+      "malId": 121079,
+      "idMal": 121079,
+      "kitsuId": "38926",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Killing Stalking",
+      "titleEnglish": null,
+      "titleRomaji": "Killing Stalking",
+      "titleNative": "킬링 스토킹",
+      "synonyms": [],
+      "description": "Yoonbum, a scrawny quiet boy, has a crush on one of the most popular and handsome guys in school, Sangwoo. One day, with Yoonbum's obsession towards Sangwoo reaching its peak, Yoonbum decides to enter Sangwoo's home. But what he saw inside was not the Sangwoo he had dreamed of.\n\n(Source: MU)",
+      "cover": "https://media.kitsu.app/manga/poster_images/38926/large.jpg",
+      "banner": "https://media.kitsu.app/manga/poster_images/38926/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/38926/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/38926/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/poster_images/38926/large.jpg",
+      "genres": [
+        "Horror",
+        "Drama",
+        "Psychological",
+        "Yaoi"
+      ],
+      "genreIds": [],
+      "score": 7.7,
+      "averageScore": 77,
+      "scoredBy": null,
+      "rank": 2252,
+      "popularity": 134,
+      "members": 9737,
+      "favorites": 611,
+      "episodes": null,
+      "chapters": 67,
+      "volumes": 8,
+      "total": 67,
+      "status": "Finished",
+      "year": 2016,
+      "season": null,
+      "startDate": "2016-11-03",
+      "endDate": "2019-03-28",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/121079",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/killing-stalking",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/killing-stalking",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-124845",
+      "malId": 124845,
+      "idMal": 124845,
+      "kitsuId": "40731",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Sweet Home",
+      "titleEnglish": "Sweet Home",
+      "titleRomaji": "Seuwiteu Hom",
+      "titleNative": "스위트홈",
+      "synonyms": [
+        "Sweet Home (KIM Carnby)"
+      ],
+      "description": "A reclusive high school student is suddenly forced to leave his home due to an unexpected turn of events.(Source: MU)",
+      "cover": "https://media.kitsu.app/manga/poster_images/40731/large.jpg",
+      "banner": "https://media.kitsu.app/manga/40731/cover_image/large-24c5734cb999ba0c16bd7bdc72548757.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/40731/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/40731/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/40731/cover_image/large-24c5734cb999ba0c16bd7bdc72548757.jpeg",
+      "genres": [
+        "Action",
+        "Horror",
+        "Psychological"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 350,
+      "popularity": 142,
+      "members": 9370,
+      "favorites": 122,
+      "episodes": null,
+      "chapters": 141,
+      "volumes": null,
+      "total": 141,
+      "status": "Finished",
+      "year": 2017,
+      "season": null,
+      "startDate": "2017-10-12",
+      "endDate": "2020-08-23",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/124845",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/sweet-home-manhwa",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/sweet-home-manhwa",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-121269",
+      "malId": 121269,
+      "idMal": 121269,
+      "kitsuId": "54665",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Who Made Me a Princess",
+      "titleEnglish": "Who Made Me a Princess",
+      "titleRomaji": "Eoneu Nal Gongjuga Doeeobeoryeotda",
+      "titleNative": "어느 날 공주가 되어버렸다",
+      "synonyms": [
+        "Suddenly Became A Princess One Day",
+        "One Day I Became a Princess",
+        "Dites-Moi, Princesse!",
+        "One Day, I Became a Princess",
+        "Suddenly, I Became a Princess",
+        "WMMAP",
+        "ある日、お姫様になってしまった件について",
+        "Однажды я стала принцессой",
+        "อยู่ๆ ฉันก็กลายเป็นเจ้าหญิง",
+        "Plötzlich Prinzessin",
+        "Un dia me converti en una princesa",
+        "Princesa Encantadora",
+        "¿Cómo Me Convertí En Princesa?",
+        "某天成为公主",
+        "某天成為公主"
+      ],
+      "description": "The story of Athanasia, forsaken princess of the Obelian Empire, ends with her execution at the hands of her own father—or does it? Her tragic tale is the plot of the novel The Lovely Princess. But now, a modern woman who read the book has just woken up as baby Athanasia herself, filled with her own memories and knowledge of the story she’s stuck in! Determined to survive her doomed fate, infant Athanasia embarks on this new life with a plan: avoid attention and hoard valuables to fund her escape. When her plan goes awry, she suddenly needs to charm her way into the good graces of her father, the beautiful tyrant emperor, so he doesn’t kill her again!\n\n(Source: Seven Seas Entertainment)\n\nNote: Includes 10 extra chapters.",
+      "cover": "https://media.kitsu.app/manga/poster_images/54665/large.jpg",
+      "banner": "https://media.kitsu.app/manga/poster_images/54665/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/54665/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/54665/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/poster_images/54665/large.jpg",
+      "genres": [
+        "Comedy",
+        "Fantasy",
+        "Romance",
+        "Shoujo",
+        "Isekai",
+        "Magic",
+        "Slice of Life"
+      ],
+      "genreIds": [],
+      "score": 8.3,
+      "averageScore": 83,
+      "scoredBy": null,
+      "rank": 144,
+      "popularity": 164,
+      "members": 8551,
+      "favorites": 167,
+      "episodes": null,
+      "chapters": 135,
+      "volumes": 9,
+      "total": 135,
+      "status": "Finished",
+      "year": 2017,
+      "season": null,
+      "startDate": "2017-12-20",
+      "endDate": "2025-12-12",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/121269",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/who-made-me-a-princess",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/who-made-me-a-princess",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-22651",
+      "malId": 22651,
+      "idMal": 22651,
+      "kitsuId": "13806",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "The Breaker: New Waves",
+      "titleEnglish": null,
+      "titleRomaji": "The Breaker: New Waves",
+      "titleNative": "브레이커NW",
+      "synonyms": [
+        "The Breaker 2",
+        "The Breaker: Part 2",
+        "The Breaker: Martial Arts City",
+        "The Breaker: NW"
+      ],
+      "description": "After his master, Goomoonryong, destroys his ki-center, Shioon decides to leave the world of Murim for a normal life. But as the person who holds the Phoenix Medallion of the Sunwoo Clan, and the only disciple of the infamous Goomoonryong, the Murim world will not let Shioon leave so easily...\n\nNote: Volumes 1 and 2 contain the gaiden \"The Breaker: Martial Arts City\".",
+      "cover": "https://media.kitsu.app/manga/poster_images/13806/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/13806/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/13806/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/13806/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/13806/large.jpg",
+      "genres": [
+        "Comedy",
+        "School Life",
+        "Drama",
+        "Romance",
+        "Action",
+        "Martial Arts"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 229,
+      "popularity": 170,
+      "members": 8185,
+      "favorites": 157,
+      "episodes": null,
+      "chapters": 203,
+      "volumes": 20,
+      "total": 203,
+      "status": "Finished",
+      "year": 2010,
+      "season": null,
+      "startDate": "2010-10-08",
+      "endDate": "2015-05-08",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/22651",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/the-breaker-new-waves",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/the-breaker-new-waves",
+      "metadataFetchedAt": "2026-09-07T20:57:40.678Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-anime-57334",
+      "malId": 57334,
+      "idMal": 57334,
+      "kitsuId": "48269",
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "DAN DA DAN",
+      "titleEnglish": "DAN DA DAN",
+      "titleRomaji": "Dandadan",
+      "titleNative": "ダンダダン",
+      "synonyms": [
+        "ดันดาดัน",
+        "膽大黨",
+        "DAN DA DAN: FIRST ENCOUNTER",
+        "Dan Da Dan"
+      ],
+      "description": "This is a story about Momo, a high school girl who comes from a family of spirit mediums, and her classmate Okarun, an occult fanatic. After Momo rescues Okarun from being bullied, they begin talking. However, an argument ensues between them since Momo believes in ghosts but denies aliens exist, and Okarun believes in aliens but denies ghosts exist.\n\nTo prove to each other what they believe in is real, Momo goes to an abandoned hospital where a UFO has been spotted and Okarun goes to a tunnel rumored to be haunted. To their surprise, they each encounter overwhelming paranormal activities that transcend comprehension. Amid these predicaments, Momo awakens her hidden power and Okarun gains the power of a curse to overcome these new dangers! Their fateful love begins as well!?\n\nThe story of the occult battle and adolescence starts!\n\n(Source: Crunchyroll)\n\nNotes:\n- Worldwide premiere of Episode 1 before the Japanese television premiere occurred at Anime Expo July 6, 2024.\n- Episodes 1-3 titled as DAN DA DAN: FIRST ENCOUNTER was pre-screened in advance in theaters on September 13, 2024. The regular TV broadcast begins October 2024.",
+      "cover": "https://media.kitsu.app/anime/48269/poster_image/large-589c017798b98c69e3a615ca4191f49d.jpeg",
+      "banner": "https://media.kitsu.app/anime/48269/cover_image/large-2a78bed2943524035cc0146c6633d1bf.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/anime/48269/poster_image/large-589c017798b98c69e3a615ca4191f49d.jpeg",
+        "extraLarge": "https://media.kitsu.app/anime/48269/poster_image/large-589c017798b98c69e3a615ca4191f49d.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/48269/cover_image/large-2a78bed2943524035cc0146c6633d1bf.jpeg",
+      "genres": [
+        "Action",
+        "Comedy",
+        "Supernatural",
+        "Shounen",
+        "Science Fiction",
+        "Romance",
+        "Drama",
+        "Mystery",
+        "Ghost",
+        "Alien"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 32,
+      "popularity": 1346,
+      "members": 12599,
+      "favorites": 200,
+      "episodes": 12,
+      "chapters": null,
+      "volumes": null,
+      "total": 12,
+      "status": "Finished Airing",
+      "year": 2024,
+      "season": null,
+      "startDate": "2024-10-03",
+      "endDate": "2024-12-19",
+      "duration": "23 min",
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/57334",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/DAN-DA-DAN",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "vnRmIBoyfBM",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=vnRmIBoyfBM"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/anime/DAN-DA-DAN",
+      "metadataFetchedAt": "2026-09-07T20:57:53.033Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-anime-50265",
+      "malId": 50265,
+      "idMal": 50265,
+      "kitsuId": "45398",
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "SPY x FAMILY",
+      "titleEnglish": "SPY x FAMILY",
+      "titleRomaji": "SPY×FAMILY",
+      "titleNative": "SPY×FAMILY",
+      "synonyms": [
+        "SxF, 스파이 패밀리",
+        "SPY×FAMILY: WJ Special Extra Mission!!",
+        "间谍过家家"
+      ],
+      "description": "Everyone has a part of themselves they cannot show to anyone else.\n\nAt a time when all nations of the world were involved in a fierce war of information happening behind closed doors, Ostania and Westalis had been in a state of cold war against one another for decades. The Westalis Intelligence Services' Eastern-Focused Division (WISE) sends their most talented spy, \"Twilight,\" on a top-secret mission to investigate the movements of Donovan Desmond, the chairman of Ostania's National Unity Party, who is threatening peace efforts between the two nations.\n\nThis mission is known as \"Operation Strix.\" It consists of \"putting together a family in one week in order to infiltrate social gatherings organized by the elite school that Desmond's son attends.\"\n\n\"Twilight\" takes on the identity of psychiatrist Loid Forger and starts looking for family members. But Anya, the daughter he adopts, turns out to have the ability to read people's minds, while his wife, Yor, is an assassin! With it being in each of their own interests to keep these facts hidden, they start living together while concealing their true identities from one another.\nWorld peace is now in the hands of this brand-new family as they embark on an adventure full of surprises.\n\n(Source: Crunchyroll)",
+      "cover": "https://media.kitsu.app/anime/45398/poster_image/large-c26c1e0b77e881fcd66475af6bd22c57.jpeg",
+      "banner": "https://media.kitsu.app/anime/45398/cover_image/large-1e81255ff9bde22c072c555cc5998805.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/anime/45398/poster_image/large-c26c1e0b77e881fcd66475af6bd22c57.jpeg",
+        "extraLarge": "https://media.kitsu.app/anime/45398/poster_image/large-c26c1e0b77e881fcd66475af6bd22c57.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/45398/cover_image/large-1e81255ff9bde22c072c555cc5998805.jpeg",
+      "genres": [
+        "Action",
+        "Assassin",
+        "Comedy",
+        "Family",
+        "Slice of Life",
+        "Supernatural",
+        "Shounen"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 37,
+      "popularity": 143,
+      "members": 78580,
+      "favorites": 850,
+      "episodes": 12,
+      "chapters": null,
+      "volumes": null,
+      "total": 12,
+      "status": "Finished Airing",
+      "year": 2022,
+      "season": null,
+      "startDate": "2022-04-09",
+      "endDate": "2022-06-25",
+      "duration": "24 min",
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/50265",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/spy-x-family",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "ofXigq9aIpo",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=ofXigq9aIpo"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/anime/spy-x-family",
+      "metadataFetchedAt": "2026-09-07T20:58:15.762Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-anime-47917",
+      "malId": 47917,
+      "idMal": 47917,
+      "kitsuId": "44196",
+      "type": "ANIME",
+      "category": "ANIME",
+      "format": "TV",
+      "title": "BOCCHI THE ROCK!",
+      "titleEnglish": "BOCCHI THE ROCK!",
+      "titleRomaji": "Bocchi the Rock!",
+      "titleNative": "ぼっち・ざ・ろっく！",
+      "synonyms": [],
+      "description": "Hitori Gotoh, “Bocchi-chan,” is a girl who’s so introverted and shy around people that she’d always start her conversations with “Ah...”\n\nDuring her middle school years, she started playing the guitar, wanting to join a band because she thought it could be an opportunity for even someone shy like her to also shine. But because she had no friends, she ended up practicing guitar for six hours every day all by herself.\n\nAfter becoming a skilled guitar player, she uploaded videos of herself playing the guitar to the internet under the name “Guitar Hero” and fantasized about performing at her school’s cultural festival concert. But not only could she not find any bandmates, before she knew it, she was in high school and still wasn’t able to make a single friend!\n\nShe was really close to becoming a shut-in, but one day, Nijika Ijichi, the drummer in Kessoku Band, reached out to her. And because of that, her everyday life started to change little by little...\n\n(Source: Crunchyroll)",
+      "cover": "https://media.kitsu.app/anime/44196/poster_image/large-04fc7c066e52d4d2b9d0217b383597bb.jpeg",
+      "banner": "https://media.kitsu.app/anime/44196/cover_image/large-1b6608d1317ba4ffd5274f65a5af5b60.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/anime/44196/poster_image/large-04fc7c066e52d4d2b9d0217b383597bb.jpeg",
+        "extraLarge": "https://media.kitsu.app/anime/44196/poster_image/large-04fc7c066e52d4d2b9d0217b383597bb.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/anime/44196/cover_image/large-1b6608d1317ba4ffd5274f65a5af5b60.jpeg",
+      "genres": [
+        "Music",
+        "Slice of Life",
+        "Comedy",
+        "Musical Band"
+      ],
+      "genreIds": [],
+      "score": 8.3,
+      "averageScore": 83,
+      "scoredBy": null,
+      "rank": 78,
+      "popularity": 1149,
+      "members": 14947,
+      "favorites": 356,
+      "episodes": 12,
+      "chapters": null,
+      "volumes": null,
+      "total": 12,
+      "status": "Finished Airing",
+      "year": 2022,
+      "season": null,
+      "startDate": "2022-10-09",
+      "endDate": "2022-12-25",
+      "duration": "24 min",
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/anime/47917",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/anime/bocchi-the-rock",
+          "type": "metadata"
+        }
+      ],
+      "trailer": {
+        "id": "SyMMZF5zNW4",
+        "site": "youtube",
+        "url": "https://www.youtube.com/watch?v=SyMMZF5zNW4"
+      },
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/anime/bocchi-the-rock",
+      "metadataFetchedAt": "2026-09-07T20:58:18.181Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-2",
+      "malId": 2,
+      "idMal": 2,
+      "kitsuId": "8",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Berserk",
+      "titleEnglish": "Berserk",
+      "titleRomaji": "Berserk",
+      "titleNative": "ベルセルク",
+      "synonyms": [
+        "Berserk: The Prototype"
+      ],
+      "description": "His name is Guts, the Black Swordsman, a feared warrior spoken of only in whispers. Bearer of a gigantic sword, an iron hand, and the scars of countless battles and tortures, his flesh is also indelibly marked with The Brand, an unholy symbol that draws the forces of darkness to him and dooms him as their sacrifice. But Guts won't take his fate lying down; he'll cut a crimson swath of carnage through the ranks of the damned—and anyone else foolish enough to oppose him! Accompanied by Puck the Elf, more an annoyance than a companion, Guts relentlessly follows a dark, bloodstained path that leads only to death...or vengeance.\n\n(Source: Dark Horse)\n\nNotes:\n- Volumes 1-5 contain the 16 prequel chapters 0A - 0P.\n- Chapter 83 was omitted from Volume 13 due to the author’s request.\n- Volume 14 includes “Berserk: The Prototype”.\n- Due to the author's passing, starting from Chapter 365, the manga is illustrated by Studio Gaga (Miura's assistants) and supervised by Kouji Mori (a close friend of Miura's).",
+      "cover": "https://media.kitsu.app/manga/8/poster_image/large-f598ed525107bcb69ebda5bf36c6910d.jpeg",
+      "banner": "https://media.kitsu.app/manga/8/cover_image/large-d976a1baf3051d321608d4ebb7da4220.gif",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/8/poster_image/large-f598ed525107bcb69ebda5bf36c6910d.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/8/poster_image/large-f598ed525107bcb69ebda5bf36c6910d.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/8/cover_image/large-d976a1baf3051d321608d4ebb7da4220.gif",
+      "genres": [
+        "Military",
+        "Demon",
+        "Horror",
+        "Drama",
+        "Action",
+        "Adventure",
+        "Fantasy",
+        "Psychological",
+        "Dark Fantasy",
+        "Contemporary Fantasy",
+        "Alternative Past",
+        "Fantasy World"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 6,
+      "popularity": 17,
+      "members": 58454,
+      "favorites": 3999,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 1989,
+      "season": null,
+      "startDate": "1989-08-25",
+      "endDate": null,
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/2",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/berserk",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/berserk",
+      "metadataFetchedAt": "2026-09-07T20:59:27.794Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-131334",
+      "malId": 131334,
+      "idMal": 131334,
+      "kitsuId": "58159",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "SAKAMOTO DAYS",
+      "titleEnglish": "SAKAMOTO DAYS",
+      "titleRomaji": "Sakamoto Days",
+      "titleNative": "サカモトデイズ",
+      "synonyms": [
+        "SAKAMOTO -サカモト-",
+        "Sakamoto (SUZUKI Yuuto)"
+      ],
+      "description": "Tarou Sakamoto was the ultimate assassin, feared by villains and admired by hitmen. But one day...he fell in love! Retirement, marriage, fatherhood and then... Sakamoto gained weight! The chubby guy who runs the neighborhood store is actually a former legendary hitman! Can he protect his family from danger? Get ready to experience a new kind of action comedy series!\n\n(Source: MANGA Plus)",
+      "cover": "https://media.kitsu.app/manga/58159/poster_image/large-f812099474664e9aa9f7e8d2181c8011.jpeg",
+      "banner": "https://media.kitsu.app/manga/58159/cover_image/large-af9b69e4a4d02d35858da170030e1d98.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/58159/poster_image/large-f812099474664e9aa9f7e8d2181c8011.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/58159/poster_image/large-f812099474664e9aa9f7e8d2181c8011.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/58159/cover_image/large-af9b69e4a4d02d35858da170030e1d98.jpeg",
+      "genres": [
+        "Action",
+        "Comedy",
+        "Shounen",
+        "Supernatural"
+      ],
+      "genreIds": [],
+      "score": 7.9,
+      "averageScore": 79,
+      "scoredBy": null,
+      "rank": 1326,
+      "popularity": 253,
+      "members": 6092,
+      "favorites": 66,
+      "episodes": null,
+      "chapters": null,
+      "volumes": 29,
+      "total": null,
+      "status": "Publishing",
+      "year": 2020,
+      "season": null,
+      "startDate": "2020-11-21",
+      "endDate": null,
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "VIZ Shonen Jump",
+          "url": "https://www.viz.com/shonenjump/chapters/sakamoto-days?locale=en",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/131334",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/sakamoto-days",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/sakamoto-days",
+      "metadataFetchedAt": "2026-09-07T20:59:30.403Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-116778",
+      "malId": 116778,
+      "idMal": 116778,
+      "kitsuId": "54139",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Chainsaw Man",
+      "titleEnglish": "Chainsaw Man",
+      "titleRomaji": "Chainsaw Man",
+      "titleNative": "チェンソーマン",
+      "synonyms": [
+        "Chainsawman",
+        "Chensoo Man",
+        "CSM",
+        "Людина-бензопила",
+        "Человек-бензопила",
+        "رجل المنشار",
+        "مرد اره ای",
+        "មនុស្សរណា",
+        "チェンソーマン",
+        "チェンソーマン 第二部",
+        "电锯人",
+        "鏈鋸人",
+        "電鋸人",
+        "체인쏘맨",
+        "Chainsaw Man: Public Safety Saga"
+      ],
+      "description": "The name says it all! Denji's life of poverty is changed forever when he merges with his pet chainsaw dog, Pochita! Now he's living in the big city and an official Devil Hunter. But he's got a lot to learn about his new job and chainsaw powers!\n\n(Source: Mangaplus)\n\nNotes:\n- Nominated for the 2020 Manga Taisho Award.\n- Winner of the 2021 Kono Manga ga Sugoi Award.\n- Winner of the 66th Shogakukan Manga Award in the shounen category.\n- Winner of the 2021 and 2022 Harvey Award for Best Manga.",
+      "cover": "https://media.kitsu.app/manga/54139/poster_image/large-abe06849b6452458885bb1d22c29ed23.jpeg",
+      "banner": "https://media.kitsu.app/manga/54139/cover_image/large-259b90cae4de586d5b68e32253b183ca.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/54139/poster_image/large-abe06849b6452458885bb1d22c29ed23.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/54139/poster_image/large-abe06849b6452458885bb1d22c29ed23.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/54139/cover_image/large-259b90cae4de586d5b68e32253b183ca.jpeg",
+      "genres": [
+        "Action",
+        "Shounen",
+        "Supernatural",
+        "Violence",
+        "Cops",
+        "Magic",
+        "Juujin",
+        "Demon",
+        "Comedy",
+        "Ecchi",
+        "Psychological",
+        "Drama"
+      ],
+      "genreIds": [],
+      "score": 8.5,
+      "averageScore": 85,
+      "scoredBy": null,
+      "rank": 9,
+      "popularity": 25,
+      "members": 43740,
+      "favorites": 1588,
+      "episodes": null,
+      "chapters": 97,
+      "volumes": 11,
+      "total": 97,
+      "status": "Finished",
+      "year": 2018,
+      "season": null,
+      "startDate": "2018-12-03",
+      "endDate": "2020-12-14",
+      "duration": null,
+      "rating": "R",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "VIZ Shonen Jump",
+          "url": "https://www.viz.com/shonenjump/chapters/chainsaw-man?locale=en",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/116778",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/chainsawman",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/chainsawman",
+      "metadataFetchedAt": "2026-09-07T20:59:33.915Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-100035",
+      "malId": 100035,
+      "idMal": 100035,
+      "kitsuId": "38865",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Witch Hat Atelier",
+      "titleEnglish": "Witch Hat Atelier",
+      "titleRomaji": "Tongari Boushi no Atelier",
+      "titleNative": "とんがり帽子のアトリエ",
+      "synonyms": [],
+      "description": "In a world where everyone takes wonders like magic spells and dragons for granted, Coco is a girl with a simple dream: she wants to be a witch. But everybody knows magicians are born, not made, and Coco was not born with a gift for magic. Resigned to her un-magical life, Coco is about to give up on her dream to become a witch … until the day she meets Qifrey, a mysterious, traveling magician. After secretly seeing Qifrey perform magic in a way she’s never seen before, Coco soon learns what everybody “knows” might not be the truth, and discovers that her magical dream may not be as far away as it may seem …(Source: Kodansha Comics)",
+      "cover": "https://media.kitsu.app/manga/poster_images/38865/large.jpg",
+      "banner": "https://media.kitsu.app/manga/cover_images/38865/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/38865/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/38865/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/38865/large.jpg",
+      "genres": [
+        "Magic",
+        "Fantasy",
+        "Adventure",
+        "Seinen",
+        "Comedy",
+        "Drama"
+      ],
+      "genreIds": [],
+      "score": 8.3,
+      "averageScore": 83,
+      "scoredBy": null,
+      "rank": 103,
+      "popularity": 218,
+      "members": 6731,
+      "favorites": 197,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2016,
+      "season": null,
+      "startDate": "2016-07-22",
+      "endDate": null,
+      "duration": null,
+      "rating": "G",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/100035",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/tongari-boushi-no-atelier",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/tongari-boushi-no-atelier",
+      "metadataFetchedAt": "2026-09-07T20:59:34.109Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-656",
+      "malId": 656,
+      "idMal": 656,
+      "kitsuId": "1482",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Vagabond",
+      "titleEnglish": "Vagabond",
+      "titleRomaji": "Vagabond",
+      "titleNative": "バガボンド",
+      "synonyms": [],
+      "description": "In 16th century Japan, Shinmen Takezou is a wild, rough young man, in both his appearance and his actions. His aggressive nature has won him the collective reproach and fear of his village, leading him and his best friend, Matahachi Honiden, to run away in search of something grander than provincial life. The pair enlist in the Toyotomi army, yearning for glory—but when the Toyotomi suffer a crushing defeat at the hands of the Tokugawa Clan at the Battle of Sekigahara, the friends barely make it out alive.\n\nAfter the two are separated, Shinmen returns home on a self-appointed mission to notify the Hon'iden family of Matahachi's survival. He instead finds himself a wanted criminal, framed for his friend's supposed murder based on his history of violence. Upon being captured, he is strung up on a tree and left to die. An itinerant monk, the distinguished Takuan Soho, takes pity on the \"devil child,\" secretly freeing Shinmen and christening him with a new name to avoid pursuit by the authorities: Musashi Miyamoto.\n\nVagabond is the fictitious retelling of the life of one of Japan's most renowned swordsmen, the \"Sword Saint\" Musashi Miyamoto—his rise from a swordsman with no desire other than to become \"Invincible Under the Heavens\" to an enlightened warrior who slowly learns of the importance of close friends, self-reflection, and life itself.\n\n(Source: MAL)",
+      "cover": "https://media.kitsu.app/manga/1482/poster_image/large-4f73288f94d60d913e90c262e0041a09.jpeg",
+      "banner": "https://media.kitsu.app/manga/1482/cover_image/large-84746cb9375385dd61e41a13b2d00d8b.jpeg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/1482/poster_image/large-4f73288f94d60d913e90c262e0041a09.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/1482/poster_image/large-4f73288f94d60d913e90c262e0041a09.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/1482/cover_image/large-84746cb9375385dd61e41a13b2d00d8b.jpeg",
+      "genres": [
+        "Historical",
+        "Samurai",
+        "Drama",
+        "Action",
+        "Adventure",
+        "Swordplay",
+        "Japan",
+        "Sengoku Period"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 25,
+      "popularity": 41,
+      "members": 25895,
+      "favorites": 1133,
+      "episodes": null,
+      "chapters": 327,
+      "volumes": 37,
+      "total": 327,
+      "status": "Finished",
+      "year": 1999,
+      "season": null,
+      "startDate": "1999-03-23",
+      "endDate": "2015-05-21",
+      "duration": null,
+      "rating": null,
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/656",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/vagabond",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/vagabond",
+      "metadataFetchedAt": "2026-09-07T20:59:34.482Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-147171",
+      "malId": 147171,
+      "idMal": 147171,
+      "kitsuId": "54688",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "Eleceed",
+      "titleEnglish": null,
+      "titleRomaji": "Eleceed",
+      "titleNative": "일렉시드",
+      "synonyms": [],
+      "description": "Jiwoo is a kind-hearted young man who harnesses the lightning quick reflexes of a cat to secretly make the world a better place – one saved little child or foster pet at a time. Kayden is a secret agent on the run, who finds himself stuck in the body of a…um…decidedly fat old fluffy cat. Together, armed with Jiwoo’s super powers and Kayden’s uber-smarts, they’re out to fight those forces who would let evil rule this world. That is, if they can stand each other long enough to get the job done.",
+      "cover": "https://media.kitsu.app/manga/poster_images/54688/large.jpg",
+      "banner": "https://media.kitsu.app/manga/poster_images/54688/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/54688/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/54688/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/poster_images/54688/large.jpg",
+      "genres": [
+        "Action",
+        "Comedy",
+        "Supernatural",
+        "Shounen"
+      ],
+      "genreIds": [],
+      "score": 8.2,
+      "averageScore": 82,
+      "scoredBy": null,
+      "rank": 326,
+      "popularity": 319,
+      "members": 4987,
+      "favorites": 94,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2018,
+      "season": null,
+      "startDate": "2018-10-02",
+      "endDate": null,
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "WEBTOON",
+          "url": "https://www.webtoons.com/en/action/eleceed/list?title_no=1571",
+          "type": "reading",
+          "verifiedAt": "2026-09-07"
+        },
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/147171",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/eleceed",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/eleceed",
+      "metadataFetchedAt": "2026-09-07T20:59:36.227Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-134744",
+      "malId": 134744,
+      "idMal": 134744,
+      "kitsuId": "56632",
+      "type": "MANHWA",
+      "category": "MANHWA",
+      "format": "manhwa",
+      "title": "The Legend of the Northern Blade",
+      "titleEnglish": "The Legend of the Northern Blade",
+      "titleRomaji": "Buggeomjeongi",
+      "titleNative": "북검전기",
+      "synonyms": [
+        "Buk-geomjeon-gi",
+        "Legend of the Northern Blade"
+      ],
+      "description": "When the world was plunged into darkness martial artists gathered to form the ‘Northern Heavenly Sect’. With the help of the Northern Heavenly Sect people began to enjoy peace again. However, as time passed the martial artists began to conspire against the ‘Northern Heavenly Sect’, and eventually caused the death of the Sect Leader, Jin Kwan-Ho, destroying the sect with it. As everyone left the sect, Jin Kwan-Ho’s only son, Jin Mu-Won was left behind. Mu-Won has never learned martial arts, but he finds the Techniques secretly left behind by his father and begins to acquire the martial arts of the Northern Heavenly Sect.\n\n(Source: Leviatan Scans)",
+      "cover": "https://media.kitsu.app/manga/poster_images/56632/large.jpg",
+      "banner": "https://media.kitsu.app/manga/poster_images/56632/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/poster_images/56632/large.jpg",
+        "extraLarge": "https://media.kitsu.app/manga/poster_images/56632/large.jpg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/poster_images/56632/large.jpg",
+      "genres": [
+        "Adventure",
+        "Action",
+        "Fantasy",
+        "Martial Arts"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 44,
+      "popularity": 314,
+      "members": 5124,
+      "favorites": 57,
+      "episodes": null,
+      "chapters": 202,
+      "volumes": null,
+      "total": 202,
+      "status": "Finished",
+      "year": 2019,
+      "season": null,
+      "startDate": "2019-12-31",
+      "endDate": "2024-11-19",
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/134744",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/legend-of-the-northern-blade",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/legend-of-the-northern-blade",
+      "metadataFetchedAt": "2026-09-07T20:59:38.928Z",
+      "detailed": true
+    },
+    {
+      "id": "mal-manga-126287",
+      "malId": 126287,
+      "idMal": 126287,
+      "kitsuId": "56355",
+      "type": "MANGA",
+      "category": "MANGA",
+      "format": "manga",
+      "title": "Frieren: Beyond Journey’s End",
+      "titleEnglish": "Frieren: Beyond Journey’s End",
+      "titleRomaji": "Sousou no Frieren",
+      "titleNative": "葬送のフリーレン",
+      "synonyms": [
+        "Frieren at the Funeral",
+        "Frieren the Slayer"
+      ],
+      "description": "The adventure is over but life goes on for an elf mage just beginning to learn what living is all about.\n\nElf mage Frieren and her courageous fellow adventurers have defeated the Demon King and brought peace to the land. With the great struggle over, they all go their separate ways to live a quiet life. But as an elf, Frieren, nearly immortal, will long outlive the rest of her former party. How will she come to terms with the mortality of her friends? How can she find fulfillment in her own life, and can she learn to understand what life means to the humans around her? Frieren begins a new journey to find the answer.\n\n(Source: Viz Media)\n\nNotes:\n- Winner of the Grand Prize at the 14th Manga Taisho Awards.\n- Nominated for the 25th Annual Tezuka Osamu Cultural Prize.\n- Placed 3rd at the 7th Annual Next Manga Award.",
+      "cover": "https://media.kitsu.app/manga/56355/poster_image/large-265716645df8b8e0861ba826aa74486e.jpeg",
+      "banner": "https://media.kitsu.app/manga/cover_images/56355/large.jpg",
+      "coverImage": {
+        "large": "https://media.kitsu.app/manga/56355/poster_image/large-265716645df8b8e0861ba826aa74486e.jpeg",
+        "extraLarge": "https://media.kitsu.app/manga/56355/poster_image/large-265716645df8b8e0861ba826aa74486e.jpeg"
+      },
+      "bannerImage": "https://media.kitsu.app/manga/cover_images/56355/large.jpg",
+      "genres": [
+        "Elf",
+        "Shounen",
+        "Adventure",
+        "Fantasy",
+        "Magic",
+        "Drama",
+        "Slice of Life"
+      ],
+      "genreIds": [],
+      "score": 8.4,
+      "averageScore": 84,
+      "scoredBy": null,
+      "rank": 28,
+      "popularity": 186,
+      "members": 7646,
+      "favorites": 144,
+      "episodes": null,
+      "chapters": null,
+      "volumes": null,
+      "total": null,
+      "status": "Publishing",
+      "year": 2020,
+      "season": null,
+      "startDate": "2020-04-28",
+      "endDate": null,
+      "duration": null,
+      "rating": "PG",
+      "isAdult": false,
+      "studios": [],
+      "authors": [],
+      "externalLinks": [
+        {
+          "label": "MyAnimeList",
+          "url": "https://myanimelist.net/manga/126287",
+          "type": "metadata"
+        },
+        {
+          "label": "Kitsu",
+          "url": "https://kitsu.app/manga/sousou-no-frieren",
+          "type": "metadata"
+        }
+      ],
+      "trailer": null,
+      "broadcast": null,
+      "airing": false,
+      "relations": [],
+      "source": "Kitsu",
+      "sourceUrl": "https://kitsu.app/manga/sousou-no-frieren",
+      "metadataFetchedAt": "2026-09-07T21:02:16.920Z",
+      "detailed": true
+    }
+  ]
+}
