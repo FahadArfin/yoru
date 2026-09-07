@@ -20,7 +20,7 @@ npm run build
 npm start
 ```
 
-The production server opens at **http://localhost:5184** and serves both the website and API. Account data persists in `data/yoru.sqlite`. The website is also packaged for a single container with a persistent volume; see [hosting instructions](docs/DEPLOYMENT.md).
+The production server opens at **http://localhost:5184** and serves both the website and API. Account data persists in `data/yoru.sqlite`. Yoru also runs on **ChatGPT Sites**, with a Cloudflare Worker and managed D1 database. Both deployment options share the same React interface and metadata/import logic; see [hosting instructions](docs/DEPLOYMENT.md).
 
 ## Implemented
 
@@ -43,7 +43,7 @@ The production server opens at **http://localhost:5184** and serves both the web
 
 **Media providers:** official publisher/streaming links come from title metadata. Add an external source in the player, or configure `VITE_ANIME_EMBED_TEMPLATE` before building. The app distinguishes native synchronized playback from unsynchronized embeds. Provider availability, geographic restrictions, and embedding policies are external to Yoru.
 
-**Hosting:** use one Node process with persistent SQLite storage, HTTPS, and an exact `APP_ORIGIN`. Static-only hosting cannot run this backend. A PostgreSQL/multi-instance adapter, public moderation console, email verification, and password recovery are future work before broad open registration.
+**Hosting:** ChatGPT Sites uses `sites/worker.js` and persistent D1 records for accounts, lists, conversations, shared presence, and room state. The Node/Docker option uses one process and a persistent SQLite volume. Both require HTTPS and an exact `APP_ORIGIN`. The Sites publication starts owner-only. Moderation, email verification, and password recovery remain future work before broad open registration.
 
 **Android:** this release is an installable website. APK/AAB packaging is a later release after choosing the permanent HTTPS domain; see [Android delivery](docs/ANDROID.md).
 
@@ -56,6 +56,8 @@ npm run test:e2e
 ```
 
 Browser tests use a separate temporary database and offline metadata. They cover accounts, library persistence and isolation, MAL import, discussions/reviews, two-user reading rooms, synthetic-video play/pause/seek synchronization, and WebMCP. They do not rely on real third-party streams or publish messages to any external community.
+
+For the Sites backend, run `npm run build:sites`, `npm run test:sites`, and `npm run test:e2e:sites`. These exercise the actual Workers runtime, two independent isolates sharing D1, concurrent room joins, OAuth cancellation, event replay, and persistent records after restart. GitHub Actions runs both hosting variants.
 
 ## Code map
 

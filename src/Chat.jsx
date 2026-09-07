@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MessageCircle, Send, Wifi, WifiOff } from 'lucide-react';
-import { ago, itemsOf, send } from './api';
+import { ago, itemsOf, send, api } from './api';
 import { useApp, useResource } from './state';
 import { Avatar, Empty, ErrorNotice } from './components';
 export default function Chat({ roomId, roomEvent, enabled = true, live }) {
@@ -24,6 +24,23 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
     if (enabled) resource.refresh();
   }, [user?.id, enabled, path]);
   useEffect(() => {
+    if (enabled && currentEvent?.type === 'snapshot') {
+      const requestedIdentity = identityRef.current;
+      api(path)
+        .then((data) => {
+          if (identityRef.current !== requestedIdentity) return;
+          resource.setData((old) => ({
+            items: [
+              ...new Map(
+                [...itemsOf(data), ...itemsOf(old)].map((item) => [item.id, item]),
+              ).values(),
+            ]
+              .sort((a, b) => a.createdAt.localeCompare(b.createdAt))
+              .slice(-100),
+          }));
+        })
+        .catch(() => {});
+    }
     if (
       enabled &&
       currentEvent?.type === 'chat' &&

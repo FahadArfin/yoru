@@ -67,15 +67,24 @@ export default function Room() {
       try {
         const data = JSON.parse(e.data);
         setRoomEvent({ type: e.type, data, time: Date.now() });
-        if (data.room === null) {
+        if (e.type === 'left') {
+          stream.close();
+          setLive(false);
+          resource.setData((old) => ({ room: { ...old?.room, joined: false, sourceUrl: '' } }));
+          resource.refresh();
+        } else if (data.room === null) {
           notify('The room has closed.');
           navigate('/rooms');
-        } else if (data.room) resource.setData((old) => ({ room: { ...old?.room, ...data.room } }));
+        } else if (data.room)
+          resource.setData((old) =>
+            old?.room?.version > data.room.version ? old : { room: { ...old?.room, ...data.room } },
+          );
       } catch {}
     };
     stream.addEventListener('snapshot', handle);
     stream.addEventListener('room', handle);
     stream.addEventListener('chat', handle);
+    stream.addEventListener('left', handle);
     stream.onopen = () => {
       if (active) setLive(true);
     };
@@ -105,9 +114,11 @@ export default function Room() {
   const update = async (patch) => {
     const requestedIdentity = identityRef.current;
     try {
-      const data = await send(`/api/rooms/${id}`, patch, 'PATCH');
+      const data = await send(`/api/rooms/${id}`, { ...patch, version: room.version }, 'PATCH');
       if (identityRef.current === requestedIdentity)
-        resource.setData((old) => ({ room: { ...old?.room, ...data.room } }));
+        resource.setData((old) =>
+          old?.room?.version > data.room.version ? old : { room: { ...old?.room, ...data.room } },
+        );
     } catch (e) {
       if (identityRef.current === requestedIdentity) setError(e.message);
     }

@@ -1,6 +1,27 @@
 # Hosting Yoru
 
-Yoru is a Node.js application that serves the built React website and its API from the same origin. Accounts, sessions, saved lists, discussions, reviews, and rooms use SQLite. Run one application replica with a persistent disk. A static website host alone cannot run this application.
+Yoru supports ChatGPT Sites (Cloudflare Workers and managed D1) and Node/Docker (one application replica with persistent SQLite). Both serve the React website and API from the same origin.
+
+## ChatGPT Sites
+
+The Site is registered in `.openai/hosting.json`. Reuse that project; do not create another Site for updates. Its reserved address is **https://yoru.fwad101.chatgpt.site**. Site access starts owner-only, separate from Yoru's own email/Discord account sessions. Hosted accounts and records are separate from the local SQLite preview.
+
+```sh
+npm ci
+npm run build:sites
+npm run test:sites
+npm run test:e2e:sites
+```
+
+The build produces `dist/server/index.js`, `dist/client/`, and Sites metadata/migrations in `dist/.openai/`. The build removes the plugin's copied `.dev.vars` and rejects emitted environment files. Hosted secrets belong in Sites environment settings. Set `APP_ORIGIN` to the exact deployed HTTPS origin. The Worker derives Secure cookies from HTTPS; Node's `TRUST_PROXY`, filesystem paths, and daemon port do not apply to this deployment.
+
+Use the Sites hosting workflow to push the exact validated source, package the output, save a version, privately deploy it, and verify the deployment. `.openai/hosting.json` declares `d1: "DB"`; Sites provisions the real database. Wrangler's `local-only` database ID is for local development and must never be used as a production resource ID. Drizzle-generated schema migrations are applied by Sites before Worker publication. Once applied, retain migration files and their metadata unchanged; generate an additional migration for later schema changes.
+
+Run `npm run db:migrate:local` followed by `npm run dev:sites` for a local Worker preview. D1 owns all account, library, chat, room, OAuth-state, and import-preview records. Multi-statement mutations use atomic batches with session guards. Imports use bounded JSON SQL inputs instead of thousands of individual queries. Presence uses expiring database leases; indexed event records provide replay across isolates. SSE connections reconnect periodically to stay inside request query limits. Room/chat updates normally arrive within two seconds. External embeds retain their existing playback limitations.
+
+Discord and MAL use the environment variables documented below, with the deployed Site's `/api/auth/discord/callback` and `/api/mal/callback` URLs registered with the providers. They remain disabled until configured. R2 is available if uploads are added; linked videos and manga pages require no R2 storage.
+
+For releases, validate both the Sites and Node paths. The `Sites runtime, D1 concurrency, and browser journeys` CI job builds the Worker, exercises independent isolates against shared D1, and runs the existing desktop/mobile journeys. Test harness routes exist only in the local test bundle, never in the published Worker.
 
 ## Local production build
 

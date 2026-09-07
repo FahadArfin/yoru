@@ -5,7 +5,12 @@ export default defineConfig({
   server: { host: '127.0.0.1', port: 5183, proxy: { '/api': 'http://127.0.0.1:5184' } },
   build: {
     rollupOptions: {
-      output: { manualChunks: { react: ['react', 'react-dom', 'react-router-dom'] } },
+      output: {
+        manualChunks(id) {
+          if (/node_modules[\\/](react|react-dom|react-router|react-router-dom)[\\/]/.test(id))
+            return 'react';
+        },
+      },
     },
   },
 });

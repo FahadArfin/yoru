@@ -12,3 +12,5 @@ coverage/
 .cache/
 docs/audit/*.png
 docs/qa/*.png
+/.wrangler/
+/.dev.vars*

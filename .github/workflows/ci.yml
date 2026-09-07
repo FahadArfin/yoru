@@ -75,3 +75,29 @@ jobs:
       - name: Clean up test container
         if: always()
         run: docker rm --force yoru-ci || true
+
+  sites:
+    name: Sites runtime, D1 concurrency, and browser journeys
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: npm run build:sites
+      - run: npm run test:sites
+      - run: npx playwright install --with-deps chromium
+      - run: npm run test:e2e:sites
+      - name: Save Sites browser failure evidence
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sites-browser-test-evidence
+          path: |
+            playwright-report/
+            test-results/
+          if-no-files-found: ignore
+          retention-days: 7
