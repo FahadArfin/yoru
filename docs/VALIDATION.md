@@ -25,6 +25,8 @@ This release includes a hostable website and PWA assets. The Sites edition adds 
 
 The native Worker and generated D1 schema preserve the same frontend/API contract. Cross-isolate tests cover session ownership, atomic partial library updates, comments/votes/reviews, live presence deduplication, chat replay, private invitation isolation, final-seat join races, versioned host updates, and host transfer without rewinding playing video. Database data survives both Worker restarts.
 
+Live Sites verification confirmed D1-backed APIs, access checks, exact JavaScript/CSS bytes, and a successful provider-backed metadata search. A timed stream probe found that the Sites gateway buffered SSE bodies until completion. The hosted frontend therefore uses immediate JSON cursor polling, preserving burst messages and rechecking private membership; the Node frontend continues to use SSE.
+
 The import suite commits 5,000 titles with a set-based query, injects a failure at the last title, and verifies rollback of every earlier update. Provider fixtures exercise public-favorites preview on one Worker and commit on the other, single-use OAuth callback claims, encrypted tokens, MAL sync, provider failures, and cancellation/logout during network requests. These fixtures never contact a real provider account.
 
 GitHub Actions validates Node/Docker and Sites in separate jobs. Production credentials, third-party media availability, and actual provider authorization remain distinct from controlled test results. No local environment files, session records, test users, or database contents are included in the deployment artifact.

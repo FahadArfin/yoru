@@ -93,7 +93,7 @@ app.get('/api/config', (c) => {
       malImport: true,
       malSync: mal,
     },
-    realtime: { transport: 'sse', membershipTimeoutSeconds: 90 },
+    realtime: { transport: 'poll', membershipTimeoutSeconds: 90 },
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));

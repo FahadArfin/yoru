@@ -482,3 +482,64 @@ test('sessions, chat, comments and library records survive both Worker restarts'
     5000,
   );
 });
+
+test('hosted polling delivers bursts across Workers and rechecks private membership', async () => {
+  const connectionId = 'poll-test-connection';
+  const initial = await request(
+    'a',
+    `/api/poll?connectionId=${connectionId}&roomId=${privateRoom.id}`,
+    { session: bob },
+  );
+  assert.equal(initial.status, 200, JSON.stringify(initial.body));
+  assert.equal(initial.body.room.joined, true);
+  const first = await request('b', `/api/rooms/${privateRoom.id}/chat`, {
+    method: 'POST',
+    session: bob,
+    body: { body: 'First message in a burst' },
+  });
+  const second = await request('b', `/api/rooms/${privateRoom.id}/chat`, {
+    method: 'POST',
+    session: bob,
+    body: { body: 'Second message in a burst' },
+  });
+  const next = await request(
+    'a',
+    `/api/poll?connectionId=${connectionId}&roomId=${privateRoom.id}&cursor=${initial.body.cursor}`,
+    { session: bob },
+  );
+  assert.equal(next.status, 200);
+  assert.deepEqual(
+    next.body.events.filter((x) => x.event === 'chat').map((x) => x.data.message.id),
+    [first.body.message.id, second.body.message.id],
+  );
+  const outside = await request(
+    'b',
+    `/api/poll?connectionId=outsider&cursor=${initial.body.cursor}`,
+    { session: charlie },
+  );
+  assert.equal(
+    outside.body.events.some((x) => x.data.message?.id === first.body.message.id),
+    false,
+  );
+  assert.equal(
+    (
+      await request('a', `/api/poll?connectionId=outsider&roomId=${privateRoom.id}`, {
+        session: charlie,
+      })
+    ).status,
+    403,
+  );
+  await request('b', `/api/rooms/${privateRoom.id}/leave`, {
+    method: 'POST',
+    session: bob,
+    body: {},
+  });
+  assert.equal(
+    (
+      await request('a', `/api/poll?connectionId=${connectionId}&roomId=${privateRoom.id}`, {
+        session: bob,
+      })
+    ).status,
+    404,
+  );
+});

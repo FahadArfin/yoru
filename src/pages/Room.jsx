@@ -21,12 +21,13 @@ import { useApp, useResource } from '../state';
 import { Avatar, Badge, Button, Empty, ErrorNotice, Loading } from '../components';
 import Chat from '../Chat';
 import { ExternalPlayer, SourceForm, SyncedVideo } from '../Playback';
+import { connectEvents } from '../realtime';
 export default function Room() {
   const { id } = useParams();
   const [params] = useSearchParams();
   const invite = params.get('invite');
   const navigate = useNavigate();
-  const { user, requireUser, notify } = useApp();
+  const { user, requireUser, notify, config } = useApp();
   const resource = useResource(
     `/api/rooms/${id}${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`,
     false,
@@ -59,9 +60,8 @@ export default function Room() {
     }
   }, [room?.unit, room?.version]);
   useEffect(() => {
-    if (!joined) return;
+    if (!joined || !config.realtime?.transport) return;
     let active = true;
-    const stream = new EventSource(`/api/events?roomId=${id}`);
     const handle = (e) => {
       if (!active) return;
       try {
@@ -81,22 +81,23 @@ export default function Room() {
           );
       } catch {}
     };
-    stream.addEventListener('snapshot', handle);
-    stream.addEventListener('room', handle);
-    stream.addEventListener('chat', handle);
-    stream.addEventListener('left', handle);
-    stream.onopen = () => {
-      if (active) setLive(true);
-    };
-    stream.onerror = () => {
-      if (active) setLive(false);
-    };
+    const stream = connectEvents({
+      transport: config.realtime.transport,
+      roomId: id,
+      onEvent: handle,
+      onOpen: () => {
+        if (active) setLive(true);
+      },
+      onError: () => {
+        if (active) setLive(false);
+      },
+    });
     return () => {
       active = false;
       stream.close();
       setLive(false);
     };
-  }, [id, joined, user?.id]);
+  }, [id, joined, user?.id, config.realtime?.transport]);
   const join = async () => {
     if (!requireUser()) return;
     const requestedIdentity = identityRef.current;

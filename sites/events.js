@@ -5,6 +5,85 @@ import { activeMember, checkedRoom, roomShape, reconcileRooms } from './rooms.js
 import { apiError } from '../server/validation.js';
 
 export function eventRoutes(app) {
+  app.get('/api/poll', async (c) => {
+    const db = c.get('db'),
+      user = c.get('user'),
+      sessionHash = c.get('sessionHash'),
+      roomId = c.req.query('roomId') || null;
+    const connectionId = c.req.query('connectionId') || '';
+    if (!/^[a-zA-Z0-9-]{1,80}$/.test(connectionId)) throw apiError(400, 'Invalid live connection.');
+    let room;
+    if (roomId) {
+      await reconcileRooms(db);
+      room = await checkedRoom(db, roomId);
+      if (!(await activeMember(db, roomId, user?.id)))
+        throw apiError(403, 'Join this room to take part.');
+    }
+    if (user) {
+      await db.run(
+        `INSERT INTO presence_leases(connection_id,session_hash,user_id,room_id,expires_at)
+        SELECT ?,?,?,?,? WHERE EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?)
+        ON CONFLICT(connection_id) DO UPDATE SET expires_at=excluded.expires_at
+        WHERE presence_leases.session_hash=excluded.session_hash AND presence_leases.user_id=excluded.user_id AND presence_leases.room_id IS excluded.room_id`,
+        connectionId,
+        sessionHash,
+        user.id,
+        roomId,
+        Date.now() + 10000,
+        sessionHash,
+        Date.now(),
+      );
+      if (roomId)
+        await db.run(
+          'UPDATE room_members SET last_seen=? WHERE room_id=? AND user_id=?',
+          Date.now(),
+          roomId,
+          user.id,
+        );
+    }
+    const newest = await db.get('SELECT COALESCE(MAX(sequence),0) AS sequence FROM event_log');
+    const requested = c.req.query('cursor') === undefined ? null : Number(c.req.query('cursor'));
+    const cursor =
+      Number.isSafeInteger(requested) && requested >= 0
+        ? Math.min(requested, newest.sequence)
+        : newest.sequence;
+    const events = await db.all(
+      `SELECT sequence,event,payload FROM event_log WHERE sequence>? AND (room_id IS NULL OR room_id=?) AND (user_id IS NULL OR user_id=?)
+      AND (?='' OR EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?))
+      AND (room_id IS NULL OR EXISTS(SELECT 1 FROM room_members WHERE room_id=event_log.room_id AND user_id=? AND last_seen>?))
+      ORDER BY sequence LIMIT 100`,
+      cursor,
+      roomId,
+      user?.id || '',
+      sessionHash,
+      sessionHash,
+      Date.now(),
+      user?.id || '',
+      Date.now() - 90000,
+    );
+    const shaped = room ? await roomShape(db, room, user?.id) : undefined,
+      online = await onlineState(db);
+    if (
+      roomId &&
+      (!shaped?.joined ||
+        !(await db.get(
+          'SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?',
+          sessionHash,
+          Date.now(),
+        )))
+    )
+      throw apiError(403, 'Join this room to take part.');
+    return c.json({
+      cursor: events.length ? events.at(-1).sequence : Math.max(cursor, newest.sequence),
+      events: events.map((row) => ({
+        id: row.sequence,
+        event: row.event,
+        data: JSON.parse(row.payload),
+      })),
+      online,
+      ...(roomId ? { room: shaped } : {}),
+    });
+  });
   app.get('/api/events', async (c) => {
     const db = c.get('db'),
       user = c.get('user'),

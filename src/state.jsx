@@ -1,5 +1,6 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { api, cachedApi, peek, send, itemsOf } from './api';
+import { connectEvents } from './realtime';
 const Context = createContext(null);
 export function useApp() {
   return useContext(Context);
@@ -87,7 +88,7 @@ export function AppProvider({ children }) {
     else setLibrary([]);
   }, [user, refreshLibrary]);
   useEffect(() => {
-    const stream = new EventSource('/api/events');
+    if (!config.realtime?.transport) return;
     const handle = (e) => {
       try {
         const payload = JSON.parse(e.data);
@@ -105,22 +106,14 @@ export function AppProvider({ children }) {
         /* reconnect will bring the next snapshot */
       }
     };
-    for (const type of [
-      'snapshot',
-      'presence',
-      'online',
-      'chat',
-      'room',
-      'rooms',
-      'comments',
-      'reviews',
-      'library',
-    ])
-      stream.addEventListener(type, handle);
-    stream.onopen = () => setConnected(true);
-    stream.onerror = () => setConnected(false);
+    const stream = connectEvents({
+      transport: config.realtime.transport,
+      onEvent: handle,
+      onOpen: () => setConnected(true),
+      onError: () => setConnected(false),
+    });
     return () => stream.close();
-  }, [user?.id]);
+  }, [user?.id, config.realtime?.transport]);
   useEffect(() => {
     if (event?.type === 'library' && event.data.userId === user?.id) refreshLibrary();
   }, [event, user?.id, refreshLibrary]);
