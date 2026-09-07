@@ -44,7 +44,7 @@
     "@openai/sites-vite-plugin": "^0.2.0",
     "@playwright/test": "^1.55.0",
     "@vitejs/plugin-react": "^6.1.1",
-    "concurrently": "^9.2.1",
+    "concurrently": "^10.0.5",
     "drizzle-kit": "^0.31.10",
     "miniflare": "^5.20260907.0-alpha",
     "prettier": "^3.6.2",
