@@ -26,7 +26,7 @@ jobs:
         run: |
           docker build --tag yoru:${{ github.sha }} --tag yoru:latest .
           docker save yoru:latest yoru:${{ github.sha }} | gzip > yoru-image.tar.gz
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v7
         with:
           name: yoru-container-${{ github.sha }}
           path: yoru-image.tar.gz
