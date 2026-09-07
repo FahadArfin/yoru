@@ -10,7 +10,7 @@ export default function Community() {
   const { online, event, config } = useApp();
   const [filter, setFilter] = useState('all');
   useEffect(() => {
-    if (['comments', 'reviews'].includes(event?.type)) resource.refresh();
+    if (['comments', 'reviews', 'snapshot'].includes(event?.type)) resource.refresh();
   }, [event]);
   const feed = itemsOf(resource.data).filter((item) => filter === 'all' || item.kind === filter);
   return (

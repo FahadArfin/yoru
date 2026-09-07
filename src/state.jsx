@@ -55,6 +55,7 @@ export function AppProvider({ children }) {
   const toastTimer = useRef();
   const [event, setEvent] = useState(null);
   const activeUser = useRef(null);
+  const libraryRequest = useRef(0);
   activeUser.current = user?.id;
   const notify = useCallback((text, type = 'success') => {
     clearTimeout(toastTimer.current);
@@ -62,6 +63,7 @@ export function AppProvider({ children }) {
     toastTimer.current = setTimeout(() => setToast(null), 4500);
   }, []);
   const refreshLibrary = useCallback(async () => {
+    const requestId = ++libraryRequest.current;
     const requestedUser = activeUser.current;
     if (!requestedUser) {
       setLibrary([]);
@@ -69,9 +71,11 @@ export function AppProvider({ children }) {
     }
     try {
       const data = await api('/api/library');
-      if (activeUser.current === requestedUser) setLibrary(itemsOf(data));
+      if (activeUser.current === requestedUser && libraryRequest.current === requestId)
+        setLibrary(itemsOf(data));
     } catch {
-      if (activeUser.current === requestedUser) setLibrary([]);
+      if (activeUser.current === requestedUser && libraryRequest.current === requestId)
+        setLibrary([]);
     }
   }, []);
   useEffect(() => {
@@ -79,9 +83,23 @@ export function AppProvider({ children }) {
       .then((data) => setUser(data.user))
       .catch(() => {})
       .finally(() => setAuthLoading(false));
-    api('/api/config')
-      .then(setConfig)
-      .catch(() => {});
+    let active = true,
+      timer;
+    const controller = new AbortController();
+    const loadConfig = async () => {
+      try {
+        const value = await api('/api/config', { signal: controller.signal });
+        if (active) setConfig(value);
+      } catch {
+        if (active) timer = setTimeout(loadConfig, 3000);
+      }
+    };
+    loadConfig();
+    return () => {
+      active = false;
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, []);
   useEffect(() => {
     if (user) refreshLibrary();
@@ -89,7 +107,9 @@ export function AppProvider({ children }) {
   }, [user, refreshLibrary]);
   useEffect(() => {
     if (!config.realtime?.transport) return;
+    let active = true;
     const handle = (e) => {
+      if (!active) return;
       try {
         const payload = JSON.parse(e.data);
         setEvent({ type: e.type, data: payload, time: Date.now() });
@@ -111,11 +131,20 @@ export function AppProvider({ children }) {
       onEvent: handle,
       onOpen: () => setConnected(true),
       onError: () => setConnected(false),
+      onSession: async (viewerId) => {
+        if ((activeUser.current || null) === viewerId) return;
+        const data = await api('/api/auth/me');
+        if (active) setUser(data.user);
+      },
     });
-    return () => stream.close();
+    return () => {
+      active = false;
+      stream.close();
+    };
   }, [user?.id, config.realtime?.transport]);
   useEffect(() => {
-    if (event?.type === 'library' && event.data.userId === user?.id) refreshLibrary();
+    if (event?.type === 'snapshot' || (event?.type === 'library' && event.data.userId === user?.id))
+      refreshLibrary();
   }, [event, user?.id, refreshLibrary]);
   const requireUser = useCallback(() => {
     if (user) return true;

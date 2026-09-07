@@ -74,6 +74,7 @@ export function eventRoutes(app) {
     )
       throw apiError(403, 'Join this room to take part.');
     return c.json({
+      viewerId: user?.id || null,
       cursor: events.length ? events.at(-1).sequence : Math.max(cursor, newest.sequence),
       events: events.map((row) => ({
         id: row.sequence,

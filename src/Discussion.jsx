@@ -25,9 +25,10 @@ export default function Discussion({ mediaId, unit = 1 }) {
   const [sort, setSort] = useState('top');
   useEffect(() => {
     if (
-      event?.type === 'comments' &&
-      event.data.mediaId === mediaId &&
-      event.data.unit === Number(unit)
+      event?.type === 'snapshot' ||
+      (event?.type === 'comments' &&
+        event.data.mediaId === mediaId &&
+        event.data.unit === Number(unit))
     )
       resource.refresh();
   }, [event, mediaId]);
@@ -208,7 +209,8 @@ export function Reviews({ mediaId }) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   useEffect(() => {
-    if (event?.type === 'reviews' && event.data.mediaId === mediaId) resource.refresh();
+    if (event?.type === 'snapshot' || (event?.type === 'reviews' && event.data.mediaId === mediaId))
+      resource.refresh();
   }, [event, mediaId]);
   const submit = async (e) => {
     e.preventDefault();

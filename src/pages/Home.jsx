@@ -43,8 +43,8 @@ export default function Home() {
   const rooms = useResource('/api/rooms', false);
   const { user, library, updateEntry, entryFor, online, event } = useApp();
   useEffect(() => {
-    if (['comments', 'reviews'].includes(event?.type)) feed.refresh();
-    if (event?.type === 'rooms') rooms.refresh();
+    if (['comments', 'reviews', 'snapshot'].includes(event?.type)) feed.refresh();
+    if (['rooms', 'snapshot'].includes(event?.type)) rooms.refresh();
   }, [event]);
   const [heroIndex, setHeroIndex] = useState(0);
   const [tab, setTab] = useState('ANIME');

@@ -42,6 +42,57 @@ async function registerApi(request, baseURL, user = account()) {
   return user;
 }
 
+test('live startup retries configuration and reconciles a library changed before connection', async ({
+  page,
+  baseURL,
+}) => {
+  await registerApi(page.request, baseURL);
+  let configRequests = 0,
+    releaseConfig;
+  const ready = new Promise((resolve) => {
+    releaseConfig = resolve;
+  });
+  await page.route('**/api/config', async (route) => {
+    configRequests++;
+    if (configRequests === 1) {
+      await route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ error: 'Temporary outage' }),
+      });
+    } else {
+      await ready;
+      await route.continue();
+    }
+  });
+  await page.goto(`/title/${FRIEREN}`);
+  await expect(page.getByRole('button', { name: 'Add to list', exact: true })).toBeVisible();
+  const changed = await page.request.put(`/api/library/${FRIEREN}`, {
+    headers: { Origin: baseURL },
+    data: { status: 'watching', progress: 7 },
+  });
+  expect(changed.ok(), await changed.text()).toBeTruthy();
+  releaseConfig();
+  await expect(page.getByRole('button', { name: 'In your library', exact: true })).toBeVisible({
+    timeout: 10000,
+  });
+  await expect(page.getByLabel('Progress', { exact: true })).toHaveValue('7');
+  expect(configRequests).toBeGreaterThanOrEqual(2);
+  const config = await (await page.request.get('/api/config')).json();
+  if (config.realtime.transport === 'poll') {
+    // A logout in another tab clears the shared cookie without changing this page's React state.
+    const logout = await page.request.post('/api/auth/logout', {
+      headers: { Origin: baseURL },
+      data: {},
+    });
+    expect(logout.ok()).toBeTruthy();
+    await expect(page.getByRole('button', { name: 'Sign in', exact: true }).first()).toBeVisible({
+      timeout: 10000,
+    });
+    await expect(page.getByRole('button', { name: 'Add to list', exact: true })).toBeVisible();
+  }
+});
+
 test('browse anime, manga, and manhwa on desktop and mobile', async ({ page }) => {
   for (const [category, title] of [
     ['anime', 'Frieren'],

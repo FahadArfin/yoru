@@ -11,7 +11,7 @@ export default function Rooms() {
   const [creating, setCreating] = useState(false);
   const [type, setType] = useState('all');
   useEffect(() => {
-    if (event?.type === 'rooms') resource.refresh();
+    if (['rooms', 'snapshot'].includes(event?.type)) resource.refresh();
   }, [event]);
   const list = itemsOf(resource.data).filter((room) => type === 'all' || room.type === type);
   return (

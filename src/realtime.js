@@ -13,12 +13,13 @@ const names = [
   'library',
   'left',
 ];
-export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onError }) {
+export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onError, onSession }) {
   if (transport === 'sse') {
     const stream = new EventSource(
       `/api/events${roomId ? `?roomId=${encodeURIComponent(roomId)}` : ''}`,
     );
-    for (const name of names) stream.addEventListener(name, onEvent);
+    for (const name of names)
+      stream.addEventListener(name, (event) => flushSync(() => onEvent(event)));
     stream.onopen = onOpen;
     stream.onerror = onError;
     return { close: () => stream.close() };
@@ -43,6 +44,8 @@ export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onEr
         ...(cursor === undefined ? {} : { cursor: String(cursor) }),
       });
       const data = await api(`/api/poll?${params}`, { signal: controller.signal });
+      if (!active) return;
+      await onSession?.(data.viewerId);
       if (!active) return;
       onOpen?.();
       if (snapshot) {
