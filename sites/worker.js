@@ -117,7 +117,7 @@ app.all('*', async (c) => {
     asset.status === 404 &&
     ['GET', 'HEAD'].includes(c.req.method) &&
     !c.req.path.startsWith('/assets/') &&
-    !c.req.path.split('/').at(-1).includes('.')
+    !/\.[a-z][a-z0-9]*$/i.test(c.req.path)
   ) {
     // Sites provides the asset binding without Wrangler's SPA fallback option.
     // Resolve app deep links explicitly so chapter URLs and refreshes work there.
