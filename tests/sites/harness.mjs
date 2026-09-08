@@ -50,7 +50,8 @@ export function runtimeOptions({
               directory: resolve('dist/client'),
               binding: 'ASSETS',
               routerConfig: { has_user_worker: true },
-              assetConfig: { not_found_handling: 'single-page-application' },
+              // Match Sites: the application Worker owns the SPA fallback.
+              assetConfig: { not_found_handling: 'none' },
             },
           }
         : {}),

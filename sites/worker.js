@@ -111,7 +111,20 @@ eventRoutes(app);
 importRoutes(app);
 malRoutes(app);
 app.all('/api/*', (c) => c.json({ error: 'This API route does not exist.' }, 404));
-app.all('*', (c) => c.env.ASSETS.fetch(c.req.raw));
+app.all('*', async (c) => {
+  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  if (
+    asset.status === 404 &&
+    ['GET', 'HEAD'].includes(c.req.method) &&
+    !c.req.path.startsWith('/assets/') &&
+    !c.req.path.split('/').at(-1).includes('.')
+  ) {
+    // Sites provides the asset binding without Wrangler's SPA fallback option.
+    // Resolve app deep links explicitly so chapter URLs and refreshes work there.
+    return c.env.ASSETS.fetch(new Request(new URL('/', c.req.url), c.req.raw));
+  }
+  return asset;
+});
 app.onError((error, c) => {
   const status = error.status || (error instanceof SyntaxError ? 400 : 500);
   if (status >= 500 && !error.expose) console.error('[yoru]', error.message);
