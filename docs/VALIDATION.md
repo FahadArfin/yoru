@@ -1,5 +1,14 @@
 # Release validation
 
+## Automatic anime sources and WebMCP, September 12, 2026
+
+- Node production build and 43 backend tests passed, including exact ID/episode/language matching, provider failure, malformed directory responses and stable source IDs.
+- Sites production build and 19 Worker/D1 tests passed. Both runtimes passed 29 desktop/mobile browser journeys, with the existing mobile-only test skipped on desktop.
+- Browser tests exercise cancellation, account permissions, source discovery and selection, sub/dub changes, next episode, registration failures and discovery without interrupting the selected player.
+- All ten tools were discovered and exercised through the Codex browser's native WebMCP interface. A disposable local account verified library writes and visible refresh; anonymous reads/writes and invalid source/manga requests returned errors. Test accounts were confined to a temporary database.
+- The live MegaPlay MAL iframe for Frieren episode 1 advanced from 2:35 to 4:15 of 25:59 in the local preview. This confirms playback for that tested episode and environment, not universal provider availability.
+- Existing GitHub Actions jobs automatically cover the expanded Node, Sites, browser and Docker checks. No new credentials, database migrations or stored media are needed.
+
 Initial Yoru website, September 7, 2026.
 
 ## Local results

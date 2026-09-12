@@ -3425,6 +3425,15 @@ input[type='number'],
   gap: 5px;
   flex-wrap: wrap;
 }
+.source-discovery-note {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 0;
+  color: var(--muted);
+  font-size: 0.875rem;
+}
 .source-buttons button {
   display: flex;
   align-items: center;

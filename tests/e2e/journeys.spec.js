@@ -374,7 +374,7 @@ test('WebMCP tools register, search, and honor the active account session', asyn
     Object.defineProperty(document, 'modelContext', { configurable: true, value: modelContext });
   });
   await page.goto('/');
-  await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(6);
+  await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
   const catalog = await page.evaluate(() =>
     window.__yoruTestTools.yoru_search_catalog.execute({ query: 'Frieren', category: 'ANIME' }),
   );
@@ -387,7 +387,7 @@ test('WebMCP tools register, search, and honor the active account session', asyn
 
   await registerApi(page.request, baseURL);
   await page.reload();
-  await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(6);
+  await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
   const saved = await page.evaluate(
     (mediaId) =>
       window.__yoruTestTools.yoru_update_library.execute({
@@ -408,6 +408,137 @@ test('WebMCP tools register, search, and honor the active account session', asyn
   );
   await expect(page).toHaveURL(new RegExp(`/title/${FRIEREN}$`));
   await expect(page.getByRole('heading', { level: 1 })).toContainText('Frieren');
+  const aborted = await page.evaluate((mediaId) => {
+    const controller = new AbortController();
+    controller.abort();
+    return window.__yoruTestTools.yoru_open_episode.execute(
+      { mediaId },
+      { signal: controller.signal },
+    );
+  }, FRIEREN);
+  expect(aborted.isError).toBe(true);
+  expect(JSON.parse(aborted.content[0].text).code).toBe('CANCELLED');
+  await expect(page).toHaveURL(new RegExp(`/title/${FRIEREN}$`));
+  const wrongNamespace = await page.evaluate(
+    (mediaId) => window.__yoruTestTools.yoru_get_sources.execute({ mediaId }),
+    SOLO_LEVELING_MANHWA,
+  );
+  expect(wrongNamespace.isError).toBe(true);
+  const resolved = JSON.parse(
+    (
+      await page.evaluate(
+        (mediaId) =>
+          window.__yoruTestTools.yoru_get_sources.execute({ mediaId, episode: 2, language: 'dub' }),
+        FRIEREN,
+      )
+    ).content[0].text,
+  );
+  expect(resolved.items[0].url).toBe('https://megaplay.buzz/stream/mal/52991/2/dub');
+  const opened = await page.evaluate(
+    (mediaId) =>
+      window.__yoruTestTools.yoru_open_episode.execute({ mediaId, episode: 2, language: 'dub' }),
+    FRIEREN,
+  );
+  expect(opened.isError).not.toBe(true);
+  expect(JSON.parse(opened.content[0].text).playbackStarted).toBe(false);
+  await expect(page.locator('iframe')).toHaveAttribute('src', resolved.items[0].url);
+  await expect(page.locator('iframe')).not.toHaveAttribute('sandbox');
+  const external = resolved.items.find((x) => x.kind === 'external');
+  const selected = await page.evaluate(
+    (sourceId) => window.__yoruTestTools.yoru_select_source.execute({ sourceId }),
+    external.id,
+  );
+  expect(selected.isError).not.toBe(true);
+  await expect(page.getByRole('link', { name: 'Open provider', exact: true })).toHaveAttribute(
+    'href',
+    external.url,
+  );
+  const pageState = JSON.parse(
+    (await page.evaluate(() => window.__yoruTestTools.yoru_get_page_state.execute({}))).content[0]
+      .text,
+  );
+  expect(pageState.source.id).toBe(external.id);
+  expect(pageState.language).toBe('dub');
+  await page.getByRole('button', { name: 'MegaPlay', exact: true }).click();
+  await page.getByRole('button', { name: 'Next', exact: true }).click();
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    'https://megaplay.buzz/stream/mal/52991/3/dub',
+  );
+  await page.getByRole('button', { name: 'Sub', exact: true }).click();
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    'https://megaplay.buzz/stream/mal/52991/3/sub',
+  );
+});
+
+test('optional discovery adds alternatives without replacing the active player', async ({
+  page,
+}) => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/media/*/sources?*', async (route) => {
+    await gate;
+    const response = await route.fetch();
+    const result = await response.json();
+    result.items.push({
+      ...result.items[0],
+      id: 'megaplay-episode',
+      label: 'MegaPlay · episode match',
+      url: 'https://megaplay.buzz/stream/s-2/123/sub',
+    });
+    await route.fulfill({ json: result });
+  });
+  await page.goto(`/watch/${FRIEREN}/1`);
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    'https://megaplay.buzz/stream/mal/52991/1/sub',
+  );
+  release();
+  await expect(
+    page.getByRole('button', { name: 'MegaPlay · episode match', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('iframe')).toHaveAttribute(
+    'src',
+    'https://megaplay.buzz/stream/mal/52991/1/sub',
+  );
+});
+
+test('legacy WebMCP survives strict lifecycle cleanup and reports registration failures', async ({
+  page,
+}) => {
+  await page.addInitScript(() => {
+    window.__yoruTestTools = {};
+    Object.defineProperty(document, 'modelContext', { configurable: true, value: undefined });
+    Object.defineProperty(navigator, 'modelContext', {
+      configurable: true,
+      value: {
+        registerTool(tool) {
+          if (window.__yoruTestTools[tool.name]) throw new Error('Duplicate');
+          window.__yoruTestTools[tool.name] = tool;
+        },
+        unregisterTool(name) {
+          delete window.__yoruTestTools[name];
+        },
+      },
+    });
+  });
+  await page.goto('/settings');
+  await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
+  const result = await page.evaluate(() =>
+    window.__yoruTestTools.yoru_search_catalog.execute({ query: 'Frieren' }),
+  );
+  expect(result.isError).not.toBe(true);
+  await page.addInitScript(() => {
+    Object.defineProperty(document, 'modelContext', {
+      configurable: true,
+      value: { registerTool: () => Promise.reject(new Error('Unavailable')) },
+    });
+  });
+  await page.reload();
+  await expect(page.getByText(/could not register/i)).toBeVisible();
 });
 
 test('episode discussions preserve replies and votes without leaking into another episode', async ({

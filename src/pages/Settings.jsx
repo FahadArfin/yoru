@@ -16,7 +16,9 @@ import {
 import { useApp, useResource } from '../state';
 import { send } from '../api';
 import { Avatar, Badge, Button, ErrorNotice } from '../components';
+import { useWebMCPStatus } from '../webmcp-state';
 export default function Settings() {
+  const webmcp = useWebMCPStatus();
   const { user, setAuthOpen, config, refreshLibrary, notify } = useApp();
   const mal = useResource(user ? '/api/mal/status' : null, false);
   const [syncing, setSyncing] = useState(false);
@@ -252,12 +254,27 @@ export default function Settings() {
             <Badge>ANIME</Badge>
             <Badge>MANGA</Badge>
             <Badge>MANHWA</Badge>
-            <Badge>WEBMCP READY</Badge>
+            <Badge>
+              {webmcp.pending
+                ? 'CONNECTING WEBMCP'
+                : webmcp.registered
+                  ? `${webmcp.registered} WEBMCP TOOLS`
+                  : 'WEBMCP AVAILABLE'}
+            </Badge>
           </div>
           <p className="small muted">
             Metadata comes from MyAnimeList via Jikan and Kitsu; ratings display their source. Yoru
             links to external media and does not host video or comic files. Native WebMCP tools are
             enabled when supported by your browser.
+          </p>
+          <p className="small muted" role="status">
+            {!webmcp.supported
+              ? 'Agent tools need a browser with WebMCP support. All regular controls work in this browser.'
+              : webmcp.failed
+                ? 'Some agent tools could not register. Reload this page to retry.'
+                : webmcp.pending
+                  ? 'Registering agent tools…'
+                  : `${webmcp.registered} tools connected: search, library, sources, and episode navigation.`}
           </p>
         </section>
       </div>

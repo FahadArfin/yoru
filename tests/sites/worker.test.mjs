@@ -13,6 +13,13 @@ let runtime,
   charlie,
   media = 'mal-anime-52991';
 const streams = [];
+test('anime source endpoint works on D1 and rejects manga IDs and invalid episodes', async () => {
+  const result = await request('a', '/api/media/mal-anime-52991/sources?episode=2&language=dub');
+  assert.equal(result.status, 200);
+  assert.equal(result.body.items[0].url, 'https://megaplay.buzz/stream/mal/52991/2/dub');
+  assert.equal((await request('a', '/api/media/mal-manga-121496/sources')).status, 400);
+  assert.equal((await request('a', '/api/media/mal-anime-52991/sources?episode=1.5')).status, 400);
+});
 const hash = (value) => createHash('sha256').update(value).digest('hex');
 async function request(
   instance,

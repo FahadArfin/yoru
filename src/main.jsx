@@ -56,10 +56,12 @@ function Brand() {
   );
 }
 function Shell() {
-  const { user, setAuthOpen, online, connected, logout, toast, config } = useApp();
+  const { user, setAuthOpen, online, connected, logout, toast, config, refreshLibrary } = useApp();
   const [navOpen, setNavOpen] = useState(false);
   const [search, setSearch] = useState('');
   const navigate = useNavigate();
+  const navigateRef = useRef(navigate);
+  navigateRef.current = navigate;
   const location = useLocation();
   const input = useRef();
   const navigation = useRef();
@@ -122,7 +124,10 @@ function Shell() {
         localStorage.getItem('yoru:reduce-motion') || 'false';
     } catch {}
   }, []);
-  useEffect(() => setupWebMCP(navigate), [navigate]);
+  useEffect(
+    () => setupWebMCP((...args) => navigateRef.current(...args), { refreshLibrary }),
+    [refreshLibrary],
+  );
   const nav = (to, Icon, text, tag) => (
     <NavLink
       to={to}

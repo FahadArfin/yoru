@@ -65,6 +65,12 @@ export function SourceForm({ close, onSave, initial = {} }) {
   );
 }
 export function ExternalPlayer({ source, poster, title }) {
+  // This provider documents a normal cross-origin iframe. Keep custom embeds
+  // sandboxed; never delegate Yoru's WebMCP tools to an external player.
+  const providerFrame =
+    /^https:\/\/megaplay\.buzz\/stream\/(?:mal\/[1-9]\d*\/[1-9]\d*|ani\/[1-9]\d*\/[1-9]\d*|s-2\/[1-9]\d*)\/(sub|dub)$/.test(
+      source?.url || '',
+    );
   if (source?.kind === 'embed')
     return (
       <div className="embed-player">
@@ -72,13 +78,26 @@ export function ExternalPlayer({ source, poster, title }) {
           src={safeLink(source.url)}
           title={`${title} external player`}
           allow="autoplay; fullscreen; picture-in-picture; encrypted-media"
-          referrerPolicy="no-referrer"
-          sandbox="allow-scripts allow-same-origin allow-forms allow-presentation"
+          referrerPolicy={source.referrerPolicy || 'no-referrer'}
+          sandbox={
+            providerFrame
+              ? undefined
+              : 'allow-scripts allow-same-origin allow-forms allow-presentation'
+          }
           allowFullScreen
         />
-        <a className="embed-fallback" href={safeLink(source.url)} target="_blank" rel="noreferrer">
-          Player blocked? Open provider <ExternalLink size={13} />
-        </a>
+        {providerFrame ? (
+          <span className="embed-fallback">Not playing? Choose another source below.</span>
+        ) : (
+          <a
+            className="embed-fallback"
+            href={safeLink(source.url)}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Player blocked? Open provider <ExternalLink size={13} />
+          </a>
+        )}
       </div>
     );
   return (

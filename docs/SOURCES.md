@@ -2,6 +2,15 @@
 
 Reviewed September 7, 2026.
 
+Automatic anime source methodology reviewed September 12, 2026:
+
+- [Anixo Watch implementation](https://github.com/kingbee093-hue/Anixo2f/blob/719397a358bed7187116697163490f96badb3288/src/pages/Watch.jsx) resolves metadata IDs into player routes. Yoru independently implements that method; no Anixo source code was copied.
+- [MegaPlay embed API](https://megaplay.buzz/api) documents MAL, AniList and episode-ID routes. Yoru offers MAL episode links immediately, supports sub/dub, and embeds the provider using its documented ordinary cross-origin iframe. Only exact MegaPlay stream routes receive this iframe configuration; custom embeds retain their sandbox. MegaPlay routes are embed-only, so their fallback directs users to alternate choices instead of an unusable direct-open link.
+- [MALSync](https://github.com/MALSync/MALSync) and its [Frieren mapping response](https://api.malsync.moe/mal/anime/52991) provide title-to-provider links. A unique AniList ID is accepted only alongside an exact MAL ID match. This uses MALSync mapping data and does not call the AniList API.
+- [Anikoto API](https://anikotoapi.site/) provides recent catalog rows and series episode records. Yoru only resolves a series when its recent row matches the exact MAL ID, then verifies the series MAL ID, episode number and requested language. No title guessing or whole-catalog crawling is performed.
+
+`GET /api/media/:id/sources?episode=1&language=sub` has the same implementation on Node and Sites. Optional directory requests have time/size limits and completed-response caches; their failure never removes the primary ID-based choice. Source IDs remain stable across directory reordering. Discovering alternatives does not replace a running default player. Providers control content, regional and language availability; these are links to try, not a promise of universal playback. Embedded providers remain independent of synchronized native room playback.
+
 - [Anixo live site](https://anixo.online/) — visual and interaction reference. No branding, source code, or media assets copied from Anixo.
 - [Supplied Anixo repository](https://github.com/kingbee093-hue/Anixo2f) — inspected its structure and licensing. The README conflicts about reuse, and no LICENSE file is present. Live rooms/chat/Discord features are not represented in the supplied repository.
 - [AniList API terms](https://docs.anilist.co/guide/terms-of-use) — competing trackers are restricted. Yoru does not call the AniList API.

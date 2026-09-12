@@ -17,6 +17,7 @@ import { malConfiguration } from '../server/mal-core.js';
 import { searchCatalog, getMedia, getCalendar, parseMediaId } from '../server/catalog-core.js';
 import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
+import { resolveAnimeSources } from '../server/sources-core.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -97,6 +98,9 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.get('/api/media/:id/sources', async (c) =>
+  c.json(await resolveAnimeSources(c.req.param('id'), c.req.query())),
+);
 app.get('/api/media/:id', async (c) => {
   if (!parseMediaId(c.req.param('id'))) throw apiError(400, 'Invalid media ID');
   const media = await getMedia(c.req.param('id'));

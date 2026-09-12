@@ -1,8 +1,16 @@
 import { Router } from 'express';
 import { searchCatalog, getMedia, getCalendar, parseMediaId } from './catalog-core.js';
+import { resolveAnimeSources } from './sources-core.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get('/media/:id/sources', async (req, res, next) => {
+  try {
+    res.json(await resolveAnimeSources(req.params.id, req.query));
+  } catch (error) {
+    next(error);
+  }
+});
 catalogRouter.get('/catalog', async (req, res, next) => {
   try {
     res.set('Cache-Control', 'private, max-age=30').json(await searchCatalog(req.query));

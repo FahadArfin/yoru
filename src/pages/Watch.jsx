@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -18,6 +18,8 @@ import { Button, Empty, ErrorNotice, Loading } from '../components';
 import SourcePlayer from '../SourcePlayer';
 import Discussion from '../Discussion';
 import { ExternalPlayer, SourceForm } from '../Playback';
+import { defaultAnimeSources } from '../../shared/anime-sources';
+import { setWatchPage } from '../webmcp-state';
 const readSource = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -34,15 +36,31 @@ export default function Watch() {
   const { entryFor, updateEntry, notify } = useApp();
   const entry = entryFor(id);
   const [sourceOpen, setSourceOpen] = useState(false);
-  const [language, setLanguage] = useState('sub');
-  const [selected, setSelected] = useState('');
+  const [params, setParams] = useSearchParams();
+  const language = params.get('language') === 'dub' ? 'dub' : 'sub';
+  const selected = params.get('source') || '';
+  const setSelected = (value) =>
+    setParams(
+      (old) => {
+        old.set('source', value);
+        return old;
+      },
+      { replace: true },
+    );
+  const setLanguage = (value) =>
+    setParams(
+      (old) => {
+        old.set('language', value);
+        return old;
+      },
+      { replace: true },
+    );
   const [custom, setCustom] = useState(() => readSource(`yoru:source:${id}`));
   const [unitDraft, setUnitDraft] = useState(unit);
   const [resume, setResume] = useState(0);
   const [playerSaved, setPlayerSaved] = useState(false);
   useEffect(() => {
     setCustom(readSource(`yoru:source:${id}`));
-    setSelected('');
   }, [id]);
   useEffect(() => {
     setUnitDraft(unit);
@@ -50,6 +68,10 @@ export default function Watch() {
     setPlayerSaved(false);
   }, [id, unit]);
   const anime = isAnime(media);
+  const automatic = useResource(
+    anime ? `/api/media/${id}/sources?episode=${unit}&language=${language}` : null,
+    false,
+  );
   const total = anime ? media?.episodes : media?.chapters;
   const sources = useMemo(() => {
     if (!media) return [];
@@ -66,23 +88,47 @@ export default function Watch() {
         if (safeLink(url))
           result.push({ id: 'configured', label: 'Anime player', kind: 'embed', url });
       }
+      const resolved = automatic.data;
+      if (resolved?.mediaId === id && resolved.episode === unit && resolved.language === language)
+        result.push(...resolved.items);
+      else {
+        try {
+          result.push(...defaultAnimeSources(id, unit, language));
+        } catch {}
+      }
     }
-    result.push(
-      ...(media.externalLinks || [])
-        .filter((item) => ['streaming', 'reading'].includes(item.type) && safeLink(item.url))
-        .map((item, i) => ({
-          id: `external-${i}`,
-          label: item.label,
-          url: item.url,
-          kind: 'external',
-        })),
-    );
+    if (!anime)
+      result.push(
+        ...(media.externalLinks || [])
+          .filter((item) => ['streaming', 'reading'].includes(item.type) && safeLink(item.url))
+          .map((item, i) => ({
+            id: `external-${i}`,
+            label: item.label,
+            url: item.url,
+            kind: 'external',
+          })),
+      );
     return result;
-  }, [media, custom, unit, language]);
+  }, [media, custom, unit, language, automatic.data, id]);
   const source = sources.find((item) => item.id === selected) || sources[0];
+  useEffect(() => {
+    setWatchPage({
+      path: window.location.pathname,
+      mediaId: id,
+      title: titleOf(media),
+      unit,
+      category: anime ? 'ANIME' : media?.category,
+      language: anime ? language : null,
+      source: source || null,
+      sources,
+      loadingSources: automatic.loading,
+      controlSupported: ['video', 'hls'].includes(source?.kind),
+    });
+    return () => setWatchPage(null);
+  }, [id, unit, anime, language, media, source, sources, automatic.loading]);
   const nextUnit = (number) =>
     navigate(
-      `/${anime ? 'watch' : 'read'}/${id}/${Math.max(1, total ? Math.min(total, number) : number)}`,
+      `/${anime ? 'watch' : 'read'}/${id}/${Math.max(1, total ? Math.min(total, number) : number)}${anime ? `?${params}` : ''}`,
     );
   const mark = async () => {
     const saved = await updateEntry(media, {
@@ -155,7 +201,7 @@ export default function Watch() {
               <h2>{anime ? 'Choose where to watch.' : 'Your next chapter is out there.'}</h2>
               <p>
                 {anime
-                  ? 'Add an external provider or a video URL to get started.'
+                  ? 'Try another episode or add a source of your own.'
                   : 'Open a publisher’s reader or add your own reading source.'}
               </p>
               <Button onClick={() => setSourceOpen(true)}>
@@ -170,6 +216,7 @@ export default function Watch() {
                 <button
                   key={item.id}
                   className={source?.id === item.id ? 'active' : ''}
+                  aria-pressed={source?.id === item.id}
                   onClick={() => setSelected(item.id)}
                 >
                   {item.label}
@@ -198,6 +245,20 @@ export default function Watch() {
               </div>
             )}
           </div>
+          {anime && (
+            <div className="source-discovery-note" role="status">
+              {automatic.loading
+                ? 'Finding more providers…'
+                : automatic.error ||
+                  automatic.data?.warnings?.[0] ||
+                  'Sources matched automatically. Try another match if this episode does not play.'}
+              {(automatic.error || automatic.data?.warnings?.length > 0) && (
+                <button className="text-link" onClick={automatic.refresh}>
+                  Retry lookup
+                </button>
+              )}
+            </div>
+          )}
           <div className="watch-progress-row">
             <button
               className="btn btn-subtle"
