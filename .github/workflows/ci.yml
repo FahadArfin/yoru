@@ -48,7 +48,6 @@ jobs:
 
   container:
     name: Container build and startup
-    needs: application
     runs-on: ubuntu-latest
     timeout-minutes: 15
     steps:
@@ -69,6 +68,9 @@ jobs:
           exit 1
       - name: Check production assets
         run: curl --fail --silent http://127.0.0.1:5184/ | grep -q '/assets/'
+      - name: Check automatic episode sources in the packaged runtime
+        run: |
+          curl --fail --silent 'http://127.0.0.1:5184/api/media/mal-anime-52991/sources?episode=2&language=dub' | python3 -c 'import json,sys; data=json.load(sys.stdin); assert data["items"][0]["url"] == "https://megaplay.buzz/stream/mal/52991/2/dub"'
       - name: Container logs
         if: failure()
         run: docker logs yoru-ci || true
