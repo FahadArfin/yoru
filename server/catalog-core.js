@@ -5,13 +5,17 @@ import {
   getRequestState,
   isOffline,
   background,
+  loadSearch,
+  saveSearch,
+  loadMedia,
+  saveMedia,
 } from './catalog-storage.js';
 const TTL = 6 * 60 * 60 * 1000;
 const JIKAN = 'https://api.jikan.moe/v4';
 const KITSU = 'https://kitsu.io/api/edge';
 const categories = ['ANIME', 'MANGA', 'MANHWA'];
 const cache = new Map();
-const searches = new Map();
+const searches = new Map(persisted?.searches || []);
 const failures = new Map();
 const genreLists = new Map();
 const MAX_PENDING = 16;
@@ -45,12 +49,17 @@ for (const item of persisted?.items || []) {
     cache.set(item.id, restored);
   }
 }
+// Older snapshots may have truncated media while retaining query ID lists.
+for (const [key, result] of searches) {
+  if (!Array.isArray(result?.ids) || result.ids.some((id) => !cache.has(id))) searches.delete(key);
+}
 
 function persist() {
   saveCatalog(() => ({
     version: 1,
-    items: [...cache.values()].slice(-2000),
+    items: [...cache.values()],
     schedules: [...scheduleCaches],
+    searches: [...searches].slice(-200),
   }));
 }
 
@@ -344,6 +353,7 @@ function mergeMedia(item) {
     ];
   }
   cache.set(item.id, merged);
+  background(saveMedia(merged));
   persist();
   return merged;
 }
@@ -426,6 +436,14 @@ async function refreshDetail(id) {
 
 export async function getMedia(id) {
   if (!parseMediaId(id)) return null;
+  const stored = await loadMedia(id).catch(() => null);
+  if (
+    stored &&
+    (!cache.has(id) ||
+      (stored.detailed && !cache.get(id).detailed) ||
+      Date.parse(stored.metadataFetchedAt) > Date.parse(cache.get(id).metadataFetchedAt || 0))
+  )
+    cache.set(id, stored);
   const cached = cache.get(id);
   if (cached) {
     if (
@@ -501,7 +519,8 @@ function optionsFor(input = {}) {
     sort: ['trending', 'popular', 'score', 'title', 'newest'].includes(query.sort)
       ? query.sort
       : 'trending',
-    page: Math.min(100, Math.max(1, Math.floor(Number(query.page) || 1))),
+    page:
+      Number.isSafeInteger(Number(query.page)) && Number(query.page) > 0 ? Number(query.page) : 1,
     limit: Math.min(48, Math.max(1, Math.floor(Number(query.limit) || 24))),
     curated: query.curated === '1' || query.curated === true,
   };
@@ -597,7 +616,7 @@ async function categoryPage(query, category) {
 async function refreshSearch(query) {
   const key = catalogQueryKey(query);
   const previous = searches.get(key);
-  if (previous && Date.now() - previous.fetchedAt < TTL) return previous;
+  if (previous && !previous.partial && Date.now() - previous.fetchedAt < TTL) return previous;
   return uniqueRequest(`search:${key}`, async () => {
     const kinds = query.category ? [query.category] : categories;
     const results = await Promise.allSettled(
@@ -624,8 +643,15 @@ async function refreshSearch(query) {
       ),
       partial: results.some((result) => result.status === 'rejected'),
     };
+    if (result.partial && previous && (!previous.partial || previous.retainedComplete)) {
+      const retained = { ...previous, partial: true, retainedComplete: true };
+      searches.set(key, retained);
+      return retained;
+    }
     searches.set(key, result);
     if (searches.size > 200) searches.delete(searches.keys().next().value);
+    await saveSearch(key, result, items).catch(() => {});
+    persist();
     return result;
   });
 }
@@ -672,22 +698,39 @@ export async function searchCatalog(input = {}) {
       pageInfo: { currentPage: query.page, hasNextPage: query.page * query.limit < total, total },
     };
   }
-  let items = [...cache.values()].filter((item) => matches(item, query));
-  let providerUnavailable = false;
-  let remote = searches.get(catalogQueryKey(query));
-  if (!isOffline()) {
-    const fresh = remote && Date.now() - remote.fetchedAt < TTL;
-    if (!fresh) {
-      const refresh = refreshSearch(query);
-      if (query.search || query.genre || query.page > 1 || query.sort !== 'trending') {
-        try {
-          remote = await withDeadline(refresh);
-        } catch {
-          providerUnavailable = true;
-        }
-      } else refresh.catch(() => {});
+  let providerUnavailable = isOffline();
+  const key = catalogQueryKey(query);
+  let remote = searches.get(key);
+  if (!remote || Date.now() - remote.fetchedAt >= TTL) {
+    const stored = await loadSearch(key).catch(() => null);
+    if (stored && (!remote || stored.result.fetchedAt > remote.fetchedAt)) {
+      for (const item of stored.items) {
+        const current = cache.get(item.id);
+        if (
+          !current ||
+          Date.parse(item.metadataFetchedAt) > Date.parse(current.metadataFetchedAt || 0)
+        )
+          cache.set(item.id, item);
+      }
+      remote = stored.result;
+      searches.set(key, remote);
+      if (searches.size > 200) searches.delete(searches.keys().next().value);
     }
   }
+  if (!isOffline()) {
+    const fresh = remote && !remote.partial && Date.now() - remote.fetchedAt < TTL;
+    if (!fresh) {
+      const refresh = refreshSearch(query);
+      // Retain work if the response deadline wins, including on hosted Workers.
+      background(refresh);
+      try {
+        remote = await withDeadline(refresh);
+      } catch {
+        providerUnavailable = true;
+      }
+    }
+  }
+  let items = [...cache.values()].filter((item) => matches(item, query));
   items.sort((a, b) => {
     if (query.sort === 'title') return a.title.localeCompare(b.title);
     if (query.sort === 'score') return (b.score || 0) - (a.score || 0);
@@ -714,7 +757,9 @@ export async function searchCatalog(input = {}) {
     pages: remote?.pages ?? Math.max(1, Math.ceil(total / query.limit)),
     limit: query.limit,
     categories,
-    source: 'MyAnimeList via Jikan and Kitsu',
+    source: remote ? 'MyAnimeList via Jikan and Kitsu' : 'offline-cache',
+    catalogState: remote ? (providerUnavailable || remote.partial ? 'stale' : 'live') : 'fallback',
+    totalIsEstimate: !remote,
     updatedAt,
     cached: true,
     providerUnavailable: providerUnavailable || !!remote?.partial,

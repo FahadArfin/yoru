@@ -16,9 +16,10 @@ export async function api(path, options = {}) {
 }
 export const send = (path, body, method = 'POST') =>
   api(path, { method, body: JSON.stringify(body) });
-export function cachedApi(path) {
+export function cachedApi(path, force = false) {
   const saved = cache.get(path);
-  if (saved && Date.now() - saved.time < 120000) return Promise.resolve(saved.data);
+  const ttl = saved?.data?.providerUnavailable || saved?.data?.totalIsEstimate ? 10000 : 120000;
+  if (!force && saved && Date.now() - saved.time < ttl) return Promise.resolve(saved.data);
   if (inflight.has(path)) return inflight.get(path);
   const request = api(path)
     .then((data) => {

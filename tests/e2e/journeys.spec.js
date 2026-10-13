@@ -33,6 +33,31 @@ function account() {
   };
 }
 
+test('catalog retries saved results immediately and enables live pagination', async ({ page }) => {
+  let requests = 0;
+  await page.route('**/api/catalog?**', async (route) => {
+    requests++;
+    await route.fulfill({
+      json: {
+        items: [],
+        total: requests === 1 ? 12 : 22500,
+        page: 1,
+        pages: requests === 1 ? 1 : 938,
+        providerUnavailable: requests === 1,
+        totalIsEstimate: requests === 1,
+        source: requests === 1 ? 'offline-cache' : 'MyAnimeList via Jikan and Kitsu',
+      },
+    });
+  });
+  await page.goto('/browse/anime');
+  await expect(page.getByText('12 saved stories available')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Retry live catalog' }).click();
+  await expect(page.getByText('22,500 stories to discover')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeEnabled();
+  expect(requests).toBe(2);
+});
+
 async function registerApi(request, baseURL, user = account()) {
   const response = await request.post('/api/auth/register', {
     headers: { Origin: baseURL },

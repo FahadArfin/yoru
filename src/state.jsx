@@ -21,7 +21,7 @@ export function useResource(path, cache = true) {
     setData(existing || null);
     setLoading(!existing);
     setError('');
-    (cache ? cachedApi(path) : api(path))
+    (cache ? cachedApi(path, revision > 0) : api(path))
       .then((value) => {
         if (alive) setData(value);
       })

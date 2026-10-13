@@ -21,6 +21,11 @@ export const persisted = existsSync(diskPath) ? loadFile(diskPath) : null;
 const requestState = { pending: new Map(), requestQueue: Promise.resolve() };
 export const getRequestState = () => requestState;
 export const isOffline = () => process.env.CATALOG_OFFLINE === '1';
+// Node persists the shared in-memory snapshot; Sites implements these hooks in D1.
+export const loadSearch = async () => null;
+export const loadMedia = async () => null;
+export const saveSearch = async () => {};
+export const saveMedia = async () => {};
 export const background = (promise) => {
   promise.catch(() => {});
 };

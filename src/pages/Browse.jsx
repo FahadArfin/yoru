@@ -130,7 +130,7 @@ export default function Browse() {
       <div className="results-bar">
         <span>
           {data?.total
-            ? `${data.total.toLocaleString()} stories to discover`
+            ? `${data.total.toLocaleString()} ${data.totalIsEstimate ? 'saved stories available' : 'stories to discover'}`
             : loading
               ? 'Finding stories…'
               : `${itemsOf(data).length} stories`}
@@ -146,10 +146,15 @@ export default function Browse() {
           </button>
         )}
         <span>
-          {data?.source === 'offline-cache'
-            ? 'Saved catalog · live search will return when connected'
+          {data?.providerUnavailable || data?.source === 'offline-cache'
+            ? 'Showing saved results · live catalog is temporarily unavailable'
             : 'Find a favorite. Stay a while.'}
         </span>
+        {(data?.providerUnavailable || data?.totalIsEstimate) && (
+          <button onClick={refresh} disabled={loading}>
+            Retry live catalog
+          </button>
+        )}
       </div>
       {error ? (
         <ErrorNotice message={error} retry={refresh} />

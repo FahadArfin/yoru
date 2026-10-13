@@ -10,6 +10,17 @@ import {
   check,
 } from 'drizzle-orm/sqlite-core';
 
+export const catalogPages = sqliteTable('catalog_pages', {
+  query_key: text().primaryKey(),
+  payload: text().notNull(),
+  fetched_at: integer().notNull(),
+});
+export const catalogMedia = sqliteTable('catalog_media', {
+  id: text().primaryKey(),
+  payload: text().notNull(),
+  fetched_at: integer().notNull(),
+});
+
 export const users = sqliteTable('users', {
   id: text().primaryKey(),
   name: text().notNull(),

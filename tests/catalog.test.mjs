@@ -130,6 +130,10 @@ test('MAL import deterministically deduplicates titles and clamps invalid progre
 });
 
 test('catalog cache keys and provider windows distinguish filters and later pages', () => {
+  assert.deepEqual(catalogWindow({ category: 'ANIME', page: 101, limit: 24 }, 'ANIME'), {
+    offset: 2400,
+    limit: 24,
+  });
   const base = {
     category: 'MANGA',
     search: 'Hero',
@@ -151,6 +155,42 @@ test('catalog cache keys and provider windows distinguish filters and later page
     limit: 24,
   });
   assert.deepEqual(catalogWindow({ page: 2, limit: 24 }, 'MANHWA'), { offset: 8, limit: 8 });
+});
+
+test('default browse waits for live totals instead of returning the starter catalog', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async () =>
+    Response.json({
+      data: [{ mal_id: 920001, title: 'Live browse title', type: 'TV', genres: [] }],
+      pagination: { has_next_page: true, items: { total: 22500 } },
+    });
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const result = await searchCatalog({ category: 'ANIME' });
+    assert.equal(result.total, 22500);
+    assert.equal(result.items[0].id, 'mal-anime-920001');
+    assert.equal(result.pages, 938);
+    assert.equal(result.catalogState, 'live');
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('provider failure labels a limited fallback instead of advertising a complete catalog', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async () => new Response('{}', { status: 503 });
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const result = await searchCatalog({ category: 'ANIME', search: 'Attack on Titan' });
+    assert.equal(result.providerUnavailable, true);
+    assert.equal(result.catalogState, 'fallback');
+    assert.equal(result.source, 'offline-cache');
+    assert.equal(result.totalIsEstimate, true);
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
 });
 
 test('curated discovery preserves featured seed order independently of ranking pages', async () => {
@@ -253,6 +293,52 @@ test('calendar fetches later schedule pages and preserves successful data on pro
     );
     assert.equal(recovered.updatedAt, first.updatedAt);
   } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('retry refreshes a partial catalog after a category provider recovers', async () => {
+  const previousFetch = globalThis.fetch;
+  const previousNow = Date.now;
+  let unavailable = true;
+  globalThis.fetch = async (input) => {
+    const url = new URL(input);
+    if (unavailable && !url.pathname.endsWith('/anime')) return new Response('{}', { status: 503 });
+    const anime = url.pathname.endsWith('/anime');
+    const manhwa = url.searchParams.get('type') === 'manhwa';
+    return Response.json({
+      data: [
+        {
+          mal_id: anime ? 940001 : manhwa ? 940003 : 940002,
+          title: 'Partial recovery title',
+          type: anime ? 'TV' : manhwa ? 'Manhwa' : 'Manga',
+          genres: [],
+        },
+      ],
+      pagination: { has_next_page: false, items: { total: 1 } },
+    });
+  };
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const first = await searchCatalog({ search: 'Partial recovery' });
+    assert.equal(first.providerUnavailable, true);
+    unavailable = false;
+    const recovered = await searchCatalog({ search: 'Partial recovery' });
+    assert.equal(recovered.providerUnavailable, false);
+    assert.equal(recovered.total, 3);
+    Date.now = () => previousNow() + 7 * 60 * 60 * 1000;
+    unavailable = true;
+    for (let retry = 0; retry < 2; retry++) {
+      const retained = await searchCatalog({ search: 'Partial recovery' });
+      assert.equal(retained.total, 3, 'Repeated partial refreshes retain the complete saved page');
+      assert.deepEqual(
+        retained.items.map((x) => x.id),
+        recovered.items.map((x) => x.id),
+      );
+    }
+  } finally {
+    Date.now = previousNow;
     process.env.CATALOG_OFFLINE = '1';
     globalThis.fetch = previousFetch;
   }

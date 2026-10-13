@@ -8,6 +8,13 @@
       "when": 1788821697082,
       "tag": "0000_striped_frightful_four",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "6",
+      "when": 1791859156418,
+      "tag": "0001_catalog_cache",
+      "breakpoints": true
     }
   ]
 }

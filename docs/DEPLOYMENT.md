@@ -155,6 +155,9 @@ These workflows do not deploy a public website, publish a public package, or req
 
 ## Operational boundaries
 
+- Catalog browsing waits up to 12 seconds for live provider results, then explicitly labels saved fallback results. Successful query pages are reused for six hours. Sites stores fetched public title metadata and complete query pages in D1; Node retains discovered metadata and recent queries in its catalog snapshot. The catalog grows as visitors browse/search, without bulk scraping or a scheduled crawler. Curated home-page shelves remain intentionally selected.
+- During provider outages, exact previously fetched pages retain their ordering and reported totals. Limited starter/cache results are labeled as saved stories and expose an immediate retry. Provider totals describe upstream metadata entries; records without a verified MAL mapping or excluded by content filters can reduce the number of visible cards.
+
 - SQLite and in-process realtime presence are designed for a single running application process. Multiple replicas require a shared database and shared event/presence service.
 - External metadata providers and player/read links can be unavailable or restrict embedding. The app's catalog and community features must remain usable when an external provider fails.
 - Embedding a third-party page does not guarantee synchronized playback. Rooms coordinate the supported player state and conversation; third-party iframe controls may not expose playback events.
