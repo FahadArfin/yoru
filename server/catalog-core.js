@@ -520,7 +520,11 @@ function optionsFor(input = {}) {
       ? query.sort
       : 'trending',
     page:
-      Number.isSafeInteger(Number(query.page)) && Number(query.page) > 0 ? Number(query.page) : 1,
+      Number.isSafeInteger(Number(query.page)) &&
+      Number.isSafeInteger(Number(query.page) * 48) &&
+      Number(query.page) > 0
+        ? Number(query.page)
+        : 1,
     limit: Math.min(48, Math.max(1, Math.floor(Number(query.limit) || 24))),
     curated: query.curated === '1' || query.curated === true,
   };

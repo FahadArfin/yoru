@@ -134,6 +134,10 @@ test('catalog cache keys and provider windows distinguish filters and later page
     offset: 2400,
     limit: 24,
   });
+  assert.equal(
+    catalogWindow({ category: 'ANIME', page: Number.MAX_SAFE_INTEGER, limit: 48 }, 'ANIME').offset,
+    0,
+  );
   const base = {
     category: 'MANGA',
     search: 'Hero',
