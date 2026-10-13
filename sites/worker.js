@@ -18,6 +18,8 @@ import { searchCatalog, getMedia, getCalendar, parseMediaId } from '../server/ca
 import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
+import { getSchedule } from '../server/schedule-core.js';
+import { scheduleOptions } from './schedule-storage.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -107,7 +109,9 @@ app.get('/api/media/:id', async (c) => {
   if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
   return c.json(media);
 });
-app.get('/api/calendar', async (c) => c.json(await getCalendar(c.req.query())));
+app.get('/api/calendar', async (c) =>
+  c.json(await getSchedule(c.req.query(), scheduleOptions(c.env))),
+);
 authRoutes(app, { onLogout: reconcileRooms });
 socialRoutes(app);
 roomRoutes(app);

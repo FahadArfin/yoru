@@ -165,3 +165,9 @@ These workflows do not deploy a public website, publish a public package, or req
 - This repository's private visibility does not make a deployed website private. Configure host access controls separately if the deployment should be limited to invited testers.
 
 References: [Docker multistage builds](https://docs.docker.com/build/building/multi-stage/), [Playwright on CI](https://playwright.dev/docs/ci-intro), [Node.js SQLite](https://nodejs.org/api/sqlite.html).
+
+### AnimeSchedule token
+
+Create an application in AnimeSchedule account settings, API tab. Copy its **application token**, not the OAuth client ID or secret. No OAuth scopes are needed for timetable requests. If the form requires a redirect URI, use your site's `/schedule` URL; this integration does not perform an OAuth redirect.
+
+Set `ANIMESCHEDULE_API_TOKEN` as a server-only secret through native Sites environment tools and deploy a version to apply the updated environment. For local development, place the value in an ignored `.env` file, or start Node with `--env-file=.env.animeschedule`. Never use a `VITE_` prefix. Verify `/api/calendar` returns `state: ready` with current provider data; a missing or rejected token is not a valid empty schedule.

@@ -28,3 +28,9 @@ Metadata artwork remains remotely served by its attributed provider and belongs 
 The native solo player derives from the user’s original FahadList project. Other application code is a new implementation. Runtime library licenses are included in their npm packages: React (MIT), React Router (MIT), Lucide (ISC), Express (MIT), Vite (MIT), and HLS.js (Apache-2.0). The Yoru application is private and is not licensed for public reuse.
 
 The `qs` transitive dependency is overridden to 6.16.0 to include its current denial-of-service fixes while retaining Express 4 compatibility. See the [upstream security advisory](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx).
+
+## Airing schedule
+
+Yoru uses the [AnimeSchedule v3 API](https://animeschedule.net/api/v3/documentation/anime) for episode dates. It fetches three neighboring UTC ISO weeks so a visitor's local Monday–Sunday week includes either date-line boundary. Dates and daylight-saving offsets are converted with the browser's IANA timezone; raw/broadcast, English sub, and English dub remain separate. Provider delays and missing times are retained. Cards link to the provider because timetable entries do not supply verified MAL identities.
+
+Complete timetables are cached for 30 minutes in D1 on Sites, or under the Node data directory. Failed refreshes retain saved data and display its stale status. Unknown dates are shown only from the requested central week. Credentials and provider response errors are never returned to the browser.

@@ -1,6 +1,8 @@
 import { Router } from 'express';
 import { searchCatalog, getMedia, getCalendar, parseMediaId } from './catalog-core.js';
 import { resolveAnimeSources } from './sources-core.js';
+import { getSchedule } from './schedule-core.js';
+import { scheduleOptions } from './schedule-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
@@ -31,7 +33,7 @@ catalogRouter.get('/media/:id', async (req, res, next) => {
 });
 catalogRouter.get('/calendar', async (req, res, next) => {
   try {
-    res.json(await getCalendar(req.query));
+    res.json(await getSchedule(req.query, scheduleOptions));
   } catch (error) {
     next(error);
   }
