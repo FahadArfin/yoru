@@ -36,6 +36,7 @@ import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { lockDocumentScroll } from './overlays';
 import './styles.css';
+import './home.css';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -63,6 +64,7 @@ function Shell() {
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
   const location = useLocation();
+  const isHome = location.pathname === '/';
   const input = useRef();
   const navigation = useRef();
   const navigationTrigger = useRef();
@@ -140,7 +142,7 @@ function Shell() {
     </NavLink>
   );
   return (
-    <>
+    <div className={isHome ? 'home-shell' : undefined}>
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -239,6 +241,18 @@ function Shell() {
           >
             <Menu />
           </button>
+          {isHome && (
+            <>
+              <Brand />
+              <nav className="home-topnav" aria-label="Explore Yoru">
+                <Link to="/browse/anime">Anime</Link>
+                <Link to="/browse/manga">Manga</Link>
+                <Link to="/browse/manhwa">Manhwa</Link>
+                <Link to="/schedule">Schedule</Link>
+                <Link to="/community">Community</Link>
+              </nav>
+            </>
+          )}
           <div className="topbar-context">
             <span className="live-dot" />
             YOUR NEXT OBSESSION STARTS HERE
@@ -328,7 +342,7 @@ function Shell() {
           {toast.text}
         </div>
       )}
-    </>
+    </div>
   );
 }
 class ErrorBoundary extends React.Component {

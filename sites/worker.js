@@ -20,6 +20,8 @@ import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
 import { getSchedule } from '../server/schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
+import { getHome } from '../server/home-core.js';
+import { seed } from './catalog-storage.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -109,6 +111,9 @@ app.get('/api/media/:id', async (c) => {
   if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
   return c.json(media);
 });
+app.get('/api/home', async (c) =>
+  c.json(await getHome(c.req.query(), { ...scheduleOptions(c.env), artwork: seed.items })),
+);
 app.get('/api/calendar', async (c) =>
   c.json(await getSchedule(c.req.query(), scheduleOptions(c.env))),
 );

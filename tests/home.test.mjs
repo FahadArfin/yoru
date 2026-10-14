@@ -1,0 +1,90 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+import { getHome, releasedEpisodes, normalizeHomeAnime } from '../server/home-core.js';
+
+const now = Date.parse('2026-10-13T18:00:00Z');
+const airing = (route, time, extras = {}) => ({
+  id: route,
+  route,
+  title: route,
+  airType: 'sub',
+  episode: 2,
+  airingAt: new Date(time).toISOString(),
+  ...extras,
+});
+test('recent releases exclude future, delayed, unknown and wrong-language episodes, newest first', () => {
+  const recent = airing('recent', now - 1000);
+  assert.deepEqual(
+    releasedEpisodes(
+      [
+        airing('old', now - 9 * 86400000),
+        airing('future', now + 1000),
+        airing('delay', now - 1000, { delayed: true }),
+        airing('dub', now - 1000, { airType: 'dub' }),
+        airing('unknown', now - 1000, { episode: null }),
+        airing('recent', now - 60000, { episode: 1 }),
+        recent,
+        airing('yesterday', now - 86400000),
+      ],
+      'sub',
+      now,
+    ).map((x) => x.route),
+    ['recent', 'yesterday'],
+  );
+});
+test('only exact provider MAL anime links become native watch targets', () => {
+  const base = {
+    route: 'test',
+    title: 'Test',
+    websites: { mal: 'myanimelist.net/anime/21/One_Piece' },
+  };
+  assert.equal(normalizeHomeAnime(base).id, 'mal-anime-21');
+  for (const mal of [
+    'myanimelist.net/manga/21',
+    'https://myanimelist.net.evil.test/anime/21',
+    '21',
+    'https://evil.test/?id=21',
+  ]) {
+    assert.equal(normalizeHomeAnime({ ...base, websites: { mal } }).id, null);
+  }
+});
+test('homepage joins current week popularity with releases, persists metadata and keeps last good data', async () => {
+  const cache = new Map();
+  let calls = 0,
+    fail = false;
+  const anime = {
+    route: 'test',
+    title: 'Test',
+    websites: { mal: 'myanimelist.net/anime/21' },
+    stats: { trackedCount: 100 },
+  };
+  const options = {
+    now,
+    token: 'secret',
+    load: async (k) => cache.get(k),
+    save: async (k, v) => cache.set(k, v),
+    schedule: async () => ({
+      items: [airing('test', now - 1000)],
+      state: 'ready',
+      updatedAt: new Date(now).toISOString(),
+    }),
+    fetchImpl: async (url, init) => {
+      calls++;
+      assert.equal(init.redirect, 'manual');
+      if (fail) throw Error('offline');
+      assert.equal(init.headers.Authorization, 'Bearer secret');
+      return Response.json(url.includes('/anime?') ? { anime: [anime] } : anime);
+    },
+  };
+  const first = await getHome({ language: 'sub' }, options);
+  assert.equal(first.hot[0].id, 'mal-anime-21');
+  assert.equal(first.releases[0].media.id, 'mal-anime-21');
+  assert.ok(!JSON.stringify(first).includes('secret'));
+  const total = calls;
+  await getHome({ language: 'sub' }, options);
+  assert.equal(calls, total);
+  fail = true;
+  const stale = await getHome({}, { ...options, now: now + 7 * 3600000 });
+  assert.equal(stale.hot[0].id, 'mal-anime-21');
+  assert.equal(stale.stale, true);
+});

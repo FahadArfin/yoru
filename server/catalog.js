@@ -3,9 +3,18 @@ import { searchCatalog, getMedia, getCalendar, parseMediaId } from './catalog-co
 import { resolveAnimeSources } from './sources-core.js';
 import { getSchedule } from './schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
+import { getHome } from './home-core.js';
+import { seed } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get('/home', async (req, res, next) => {
+  try {
+    res.json(await getHome(req.query, { ...scheduleOptions, artwork: seed.items }));
+  } catch (error) {
+    next(error);
+  }
+});
 catalogRouter.get('/media/:id/sources', async (req, res, next) => {
   try {
     res.json(await resolveAnimeSources(req.params.id, req.query));
