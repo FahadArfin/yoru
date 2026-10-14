@@ -33,7 +33,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
             media: one,
             episode: 5,
             airType: language,
-            airingAt: new Date(Date.now() - 3600000).toISOString(),
+            airingAt: new Date(today.getTime() - 3600000).toISOString(),
             cover: '/icon.svg',
           },
         ],
@@ -45,8 +45,8 @@ test('weekly banner and release feed navigate with exact identity and selected l
       json: { mostViewed: [{ ...one, viewers: 3 }], upcoming: [two], stale: false },
     }),
   );
-  const today = new Date();
-  today.setHours(12, 0, 0, 0);
+  const today = new Date('2026-10-13T16:00:00Z');
+  await page.clock.install({ time: today });
   await page.route('**/api/calendar?**', (route) =>
     route.fulfill({
       json: {
