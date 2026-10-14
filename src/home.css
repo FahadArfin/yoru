@@ -1,4 +1,4 @@
-/* The homepage has its own cinematic layout; interior pages retain their workspace navigation. */
+/* Home and catalog share top navigation; other interior pages retain workspace navigation. */
 .home-shell {
   background: #181d28;
   color: #f4f4f6;

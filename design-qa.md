@@ -39,3 +39,17 @@ Local visual inspection at 1786 x 1234 verified Apothecary artwork decoding at 3
 ## Restore banner variety, 2026-10-14
 
 The initial quality correction left only one qualified source. Verified additional series artwork from TMDB: Heavy Knight, Black Clover, Returner's Magic, and Reincarnated Aristocrat decode at 3840 x 2160; Sword decodes at 1920 x 1080. Gallery provenance is recorded in `server/home-artwork.js`. Series promotional artwork is cosmetic and does not change MAL season IDs or release metadata. Local preview showed six slides at 1266 x 714, five at larger sizes where Sword does not qualify. Inspected all four new 4K images in the carousel. Expanded the weekly candidate pool to twelve, showing up to eight qualified slides and preserving the current slide when later images load. Existing image-quality requirements remain unchanged.
+
+## Dense catalog correction, 2026-10-14
+
+final result: passed
+
+Reference: `C:/Users/fahad/AppData/Local/Temp/codex-clipboard-887fc0dc-185a-47b9-abe5-0b62ea4b8ea5.png` (2382 x 1308, including approximately 114px of browser chrome). Compared the content layout at a 2382 x 1194 viewport. Implementation evidence: `C:/Users/fahad/AppData/Local/Temp/yoru-browse-wide.png` and `yoru-browse-phone.png` (393 x 852 viewport). Captures omit browser chrome; the browser capture surface can clip a small part of the viewport height.
+
+- Layout: removed the permanent browse sidebar and reused the homepage pill navigation. Nine columns on wide desktop, seven on medium desktop, three on phones; two below 360px. The first poster starts at y=208 rather than below the former large introduction. Live catalog returned 48 titles; previously the page requested 24. Full-page structure and focused header/poster spacing were compared against the reference.
+- Typography: compact 18px heading and 11px centered two-line poster titles; existing DM Sans and Yoru branding retained.
+- Spacing: unified search/category/genre/sort controls, narrow poster gutters, 2:3 covers and restrained vertical gaps. Phone controls wrap into two rows with no horizontal overflow.
+- Colors and imagery: homepage blue-charcoal background and dark filter bar; actual catalog covers, format and score badges. No copied logo, fabricated subtitle availability, or placeholder production content.
+- Content and behavior: preserved live search, category routing, filters, saved-result recovery and exact namespaced title links. New regression covers 48-result pagination, scroll reset, filter reset, manga navigation and hamburger dismissal on desktop and phone.
+
+Intentional differences: Yoru navigation, nine equal responsive columns, live catalog order and real score badges; reference subtitle/dub counters are not available from this metadata source. Other interior pages keep their existing navigation.

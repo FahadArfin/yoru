@@ -37,6 +37,7 @@ import { setupWebMCP } from './webmcp';
 import { lockDocumentScroll } from './overlays';
 import './styles.css';
 import './home.css';
+import './browse.css';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -65,6 +66,8 @@ function Shell() {
   navigateRef.current = navigate;
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isBrowse = location.pathname.startsWith('/browse/');
+  const hasTopNavigation = isHome || isBrowse;
   const input = useRef();
   const navigation = useRef();
   const navigationTrigger = useRef();
@@ -142,7 +145,7 @@ function Shell() {
     </NavLink>
   );
   return (
-    <div className={isHome ? 'home-shell' : undefined}>
+    <div className={hasTopNavigation ? `home-shell${isBrowse ? ' browse-shell' : ''}` : undefined}>
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -241,7 +244,7 @@ function Shell() {
           >
             <Menu />
           </button>
-          {isHome && (
+          {hasTopNavigation && (
             <>
               <Brand />
               <nav className="home-topnav" aria-label="Explore Yoru">

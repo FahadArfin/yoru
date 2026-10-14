@@ -87,7 +87,7 @@ export function Avatar({ user, size = 'normal' }) {
 export function Badge({ children, tone = '' }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
-export function Poster({ media, rank }) {
+export function Poster({ media, rank, compact = false }) {
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(media);
   return (
@@ -113,7 +113,7 @@ export function Poster({ media, rank }) {
           </span>
         </Link>
         <span className={`media-kind kind-${kindOf(media).toLowerCase()}`}>
-          {kindOf(media).toLowerCase()}
+          {compact ? media.format || kindOf(media) : kindOf(media).toLowerCase()}
         </span>
         <button
           className={`save-poster ${entry ? 'saved' : ''}`}

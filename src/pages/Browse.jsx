@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 import { itemsOf } from '../api';
 import { useResource } from '../state';
@@ -12,6 +12,7 @@ const labels = {
 };
 export default function Browse() {
   const { category } = useParams();
+  const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') || '';
   const [search, setSearch] = useState(q);
@@ -20,12 +21,16 @@ export default function Browse() {
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
   useEffect(() => setSearch(q), [q]);
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page, chosen]);
   const query = new URLSearchParams({
     category: chosen.toUpperCase(),
     search: q,
     genre,
     sort,
     page,
+    limit: '48',
   });
   const { data, error, loading, refresh } = useResource(`/api/catalog?${query}`);
   const update = (changes) => {
@@ -38,21 +43,17 @@ export default function Browse() {
   };
   return (
     <div className="page browse-page">
-      <div className="page-heading">
-        <span className="eyebrow">YOUR CURIOSITY LOOKS GOOD ON YOU</span>
+      <div className="browse-heading">
         <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
-        <p>{labels[chosen][1]}</p>
-      </div>
-      <div className="browse-types">
-        {Object.entries(labels).map(([key, value]) => (
-          <Link
-            key={key}
-            to={`/browse/${key}${q ? `?q=${encodeURIComponent(q)}` : ''}`}
-            className={key === chosen ? 'active' : ''}
-          >
-            {value[0]}
-          </Link>
-        ))}
+        <button
+          className="browse-reset"
+          onClick={() => {
+            setParams({});
+            setSearch('');
+          }}
+        >
+          Reset filters <X size={13} />
+        </button>
       </div>
       <div className="filter-bar">
         <form
@@ -87,6 +88,21 @@ export default function Browse() {
             Search
           </button>
         </form>
+        <label className="filter-select">
+          <select
+            aria-label="Catalog type"
+            value={chosen}
+            onChange={(e) =>
+              navigate(`/browse/${e.target.value}${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+            }
+          >
+            {Object.entries(labels).map(([key, value]) => (
+              <option key={key} value={key}>
+                {value[0]}
+              </option>
+            ))}
+          </select>
+        </label>
         <label className="filter-select">
           <SlidersHorizontal size={15} />
           <select
@@ -135,20 +151,10 @@ export default function Browse() {
               ? 'Finding stories…'
               : `${itemsOf(data).length} stories`}
         </span>
-        {(q || genre || sort !== 'trending') && (
-          <button
-            onClick={() => {
-              setParams({});
-              setSearch('');
-            }}
-          >
-            Reset filters <X size={13} />
-          </button>
-        )}
         <span>
           {data?.providerUnavailable || data?.source === 'offline-cache'
             ? 'Showing saved results · live catalog is temporarily unavailable'
-            : 'Find a favorite. Stay a while.'}
+            : `${itemsOf(data).length} titles on this page`}
         </span>
         {(data?.providerUnavailable || data?.totalIsEstimate) && (
           <button onClick={refresh} disabled={loading}>
@@ -163,7 +169,7 @@ export default function Browse() {
       ) : itemsOf(data).length ? (
         <div className="poster-grid browse-grid">
           {itemsOf(data).map((media) => (
-            <Poster key={media.id} media={media} />
+            <Poster key={media.id} media={media} compact />
           ))}
         </div>
       ) : (
