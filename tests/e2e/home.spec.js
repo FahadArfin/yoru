@@ -187,6 +187,47 @@ test('a sharp banner can recover after a slow connection timeout', async ({
   await expect(hero.locator('.weekly-backdrop')).toHaveAttribute('src', '/slow-banner.png');
 });
 
+test('late artwork cannot evict the current slide from the larger weekly pool', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  let releaseGroup;
+  const pending = new Promise((resolve) => {
+    releaseGroup = resolve;
+  });
+  await page.route('**/late-group.png', async (route) => {
+    await pending;
+    await route.fulfill({ path: fixture('banner-4k') });
+  });
+  await page.route('**/first-loaded.png', (route) => route.fulfill({ path: fixture('banner-4k') }));
+  await page.route('**/api/home?**', (route) =>
+    route.fulfill({
+      json: {
+        state: 'ready',
+        releases: [],
+        hot: Array.from({ length: 9 }, (_, i) => ({
+          id: `mal-anime-${100 + i}`,
+          title: `Weekly pick ${i + 1}`,
+          banner: i === 8 ? '/first-loaded.png' : '/late-group.png',
+        })),
+      },
+    }),
+  );
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const hero = page.getByRole('region', { name: 'Hot this week' });
+  await expect(hero.getByRole('heading', { name: 'Weekly pick 9', exact: true })).toBeVisible();
+  releaseGroup();
+  await expect(hero.locator('.weekly-dot')).toHaveCount(8);
+  await expect(hero.getByRole('heading', { name: 'Weekly pick 9', exact: true })).toBeVisible();
+  await hero.getByRole('button', { name: 'Next featured title' }).click();
+  await expect(hero.getByRole('heading', { name: 'Weekly pick 1', exact: true })).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
 test('sidebar schedule shows the selected day timezone across daylight saving changes', async ({
   page,
   context,

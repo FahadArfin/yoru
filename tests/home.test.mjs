@@ -12,6 +12,31 @@ const airing = (route, time, extras = {}) => ({
   airingAt: new Date(time).toISOString(),
   ...extras,
 });
+test('weekly picks look beyond the first six titles and retain popular airing order', async () => {
+  const anime = Array.from({ length: 14 }, (_, i) => ({
+    route: `weekly-${i}`,
+    title: `Weekly ${i}`,
+    websites: { mal: `myanimelist.net/anime/${100 + i}` },
+    stats: { trackedCount: 1000 - i },
+  }));
+  const result = await getHome(
+    {},
+    {
+      now,
+      token: 'test',
+      schedule: async () => ({
+        items: anime.map((x) => airing(x.route, now - 1000)),
+        state: 'ready',
+      }),
+      fetchImpl: async () => Response.json({ anime }),
+    },
+  );
+  assert.equal(result.hot.length, 12);
+  assert.deepEqual(
+    result.hot.map((x) => x.id),
+    anime.slice(0, 12).map((_, i) => `mal-anime-${100 + i}`),
+  );
+});
 test('homepage upgrades old cached resized artwork to the original source', async () => {
   const cache = new Map([
     ['home:v1:art:21', { value: 'https://example.test/small.jpg', fetchedAt: now }],

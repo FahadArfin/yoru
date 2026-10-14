@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { isBannerSharp } from './banner-quality';
 
-export function useBannerArtwork(candidates) {
+export function useBannerArtwork(candidates, selectedId) {
   const ref = useRef(null);
   const [box, setBox] = useState({ width: 0, height: 0 });
   const [images, setImages] = useState({});
@@ -47,9 +47,14 @@ export function useBannerArtwork(candidates) {
       cleanups.forEach((cleanup) => cleanup());
     };
   }, [urls]);
+  const qualified = candidates.filter((x) => isBannerSharp(images[x.banner], box));
+  const featured = qualified.slice(0, 8);
+  const selected = qualified.find((x) => x.id === selectedId);
+  // Late artwork must not evict the slide a visitor is currently looking at.
+  if (selected && !featured.includes(selected)) featured[featured.length - 1] = selected;
   return {
     ref,
-    featured: candidates.filter((x) => isBannerSharp(images[x.banner], box)),
+    featured,
     loading: JSON.parse(urls).some((url) => images[url] === undefined),
     reject: (url) => setImages((previous) => ({ ...previous, [url]: null })),
   };

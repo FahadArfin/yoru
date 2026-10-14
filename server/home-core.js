@@ -154,7 +154,7 @@ export async function getHome(input = {}, options = {}) {
   const hot = popular
     .filter((x) => x.id && weeklyRoutes.has(x.route))
     .sort((a, b) => b.trackedCount - a.trackedCount)
-    .slice(0, 6)
+    .slice(0, 12)
     .map((x) => ({ ...x }));
   const releases = releasedEpisodes(calendar.items, language, now).map((x) => ({ ...x }));
   const metadata = new Map(popular.map((x) => [x.route, x]));

@@ -31,7 +31,7 @@ export default function HomeLead({ children }) {
   const [, tick] = useState(0);
   const { entryFor, updateEntry } = useApp();
   const popular = home.data?.hot || [];
-  const artwork = useBannerArtwork(popular);
+  const artwork = useBannerArtwork(popular, selectedId);
   const { featured } = artwork;
   const index = Math.max(
     0,
