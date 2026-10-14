@@ -20,6 +20,7 @@ import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
 import { getSchedule } from '../server/schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
+import { getHomeSidebar, mostViewedQuery } from '../server/home-sidebar.js';
 import { getHome } from '../server/home-core.js';
 import { seed } from './catalog-storage.js';
 
@@ -111,6 +112,15 @@ app.get('/api/media/:id', async (c) => {
   if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
   return c.json(media);
 });
+app.get('/api/home/sidebar', async (c) =>
+  c.json(
+    await getHomeSidebar({
+      ...scheduleOptions(c.env),
+      viewed: () => c.get('db').all(mostViewedQuery),
+      media: getMedia,
+    }),
+  ),
+);
 app.get('/api/home', async (c) =>
   c.json(await getHome(c.req.query(), { ...scheduleOptions(c.env), artwork: seed.items })),
 );

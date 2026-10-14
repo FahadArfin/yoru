@@ -45,6 +45,17 @@ test('homepage shares cached releases and popularity across Workers without leak
     assert.deepEqual(first, second);
     assert.equal(calls, 4);
     assert.equal(JSON.stringify(second).includes('private-home-token'), false);
+    const sidebar = await (await runtime.dispatchFetch('http://a.test/api/home/sidebar')).json();
+    assert.equal(sidebar.upcoming[0].id, 'mal-anime-21');
+    assert.deepEqual(sidebar.mostViewed, []);
+    assert.equal(sidebar.stale, false);
+    assert.equal(calls, 5);
+    const sharedSidebar = await (
+      await runtime.dispatchFetch('http://b.test/api/home/sidebar')
+    ).json();
+    assert.deepEqual(sidebar, sharedSidebar);
+    assert.equal(calls, 5);
+    assert.equal(JSON.stringify(sharedSidebar).includes('private-home-token'), false);
   } finally {
     await runtime.dispose();
   }

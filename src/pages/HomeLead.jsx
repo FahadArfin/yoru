@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import HomeSidebar from './HomeSidebar';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -13,7 +14,7 @@ import {
   RotateCw,
 } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { ago, bannerOf, coverOf, plainText, titleOf } from '../api';
+import { ago, bannerOf, coverOf, titleOf } from '../api';
 
 const fallbackImage = (event) => {
   const image = event.currentTarget;
@@ -21,13 +22,16 @@ const fallbackImage = (event) => {
   image.dataset.failed = '1';
   image.src = '/icon.svg';
 };
-export default function HomeLead() {
+export default function HomeLead({ children }) {
   const [language, setLanguage] = useState('sub');
   const home = useResource(`/api/home?language=${language}`);
+  const [failedLogo, setFailedLogo] = useState(null);
   const [index, setIndex] = useState(0);
   const [, tick] = useState(0);
   const { entryFor, updateEntry } = useApp();
-  const featured = home.data?.hot || [];
+  const featured = [...(home.data?.hot || [])].sort(
+    (a, b) => Number(Boolean(b.banner)) - Number(Boolean(a.banner)),
+  );
   const hero = featured[index % (featured.length || 1)];
   useEffect(() => {
     const timer = setInterval(() => {
@@ -63,17 +67,30 @@ export default function HomeLead() {
           </span>
           {hero ? (
             <>
-              <h1 key={hero.id}>{titleOf(hero)}</h1>
+              <h1
+                key={hero.id}
+                className={hero.logo && failedLogo !== hero.id ? 'has-title-logo' : undefined}
+              >
+                {hero.logo && failedLogo !== hero.id ? (
+                  <>
+                    <img
+                      className="weekly-title-logo"
+                      src={hero.logo}
+                      alt=""
+                      onError={() => setFailedLogo(hero.id)}
+                    />
+                    <span className="sr-only">{titleOf(hero)}</span>
+                  </>
+                ) : (
+                  titleOf(hero)
+                )}
+              </h1>
               <div className="weekly-meta">
                 <span>{hero.format}</span>
                 {hero.year && <span>{hero.year}</span>}
                 <span className="weekly-airing">Airing now</span>
                 <span className="weekly-genres">{hero.genres?.slice(0, 2).join(' · ')}</span>
               </div>
-              <p className="weekly-description">
-                {plainText(hero.description).slice(0, 165)}
-                {plainText(hero.description).length > 165 ? '…' : ''}
-              </p>
               <div className="weekly-actions">
                 <Link className="weekly-watch" to={`/title/${hero.id}`}>
                   <Play size={17} fill="currentColor" /> Explore series
@@ -147,128 +164,136 @@ export default function HomeLead() {
           </div>
         )}
       </section>
-      <section className="release-section home-width" aria-labelledby="released-heading">
-        <div className="release-heading">
-          <div>
-            <span className="release-eyebrow">
-              <span /> FRESH OFF THE SCHEDULE
-            </span>
-            <h2 id="released-heading">
-              Just released<span className="heading-period">.</span>
-            </h2>
-          </div>
-          <div className="release-tools">
-            <div className="release-language" aria-label="Release language">
-              {['sub', 'dub'].map((value) => (
-                <button
-                  key={value}
-                  aria-label={`English ${value}`}
-                  aria-pressed={language === value}
-                  className={language === value ? 'active' : ''}
-                  onClick={() => setLanguage(value)}
-                >
-                  {value === 'sub' ? 'Sub' : 'Dub'}
-                </button>
-              ))}
-            </div>
-            <Link className="release-schedule" to="/schedule">
-              <CalendarDays size={15} /> Full schedule <ArrowRight size={15} />
-            </Link>
-          </div>
-        </div>
-        {home.data?.stale && releases.length > 0 && (
-          <div className="release-notice">
-            Showing the latest saved releases.{' '}
-            <button onClick={home.refresh}>
-              Refresh <RotateCw size={12} />
-            </button>
-          </div>
-        )}
-        {home.loading && !home.data ? (
-          <div className="release-grid" aria-label="Loading releases">
-            {Array.from({ length: 12 }, (_, i) => (
-              <div key={i} className="release-skeleton" />
-            ))}
-          </div>
-        ) : releases.length ? (
-          <div className="release-grid">
-            {releases.map((entry) => {
-              const content = (
-                <>
-                  <div className="release-poster">
-                    <img
-                      src={entry.cover || coverOf(entry.media)}
-                      alt=""
-                      loading="lazy"
-                      onError={fallbackImage}
-                    />
-                    <span className="release-play">
-                      <Play size={23} fill="currentColor" />
-                    </span>
-                    <span className="release-badges">
-                      <span>{language.toUpperCase()}</span>
-                      <strong>EP {entry.episode}</strong>
-                    </span>
-                  </div>
-                  <div className="release-info">
-                    <h3>{entry.title}</h3>
-                    <span>
-                      <Clock3 size={11} />
-                      <time
-                        dateTime={entry.airingAt}
-                        title={new Date(entry.airingAt).toLocaleString()}
-                      >
-                        {ago(entry.airingAt)}
-                      </time>
-                      <i>·</i>
-                      {entry.media?.format || 'Anime'}
-                    </span>
-                  </div>
-                </>
-              );
-              return entry.media?.id ? (
-                <Link
-                  className="release-card"
-                  key={entry.id}
-                  to={`/watch/${entry.media.id}/${entry.episode}?language=${language}`}
-                >
-                  {content}
+      <div className="home-content-layout home-width">
+        <div className="home-release-column">
+          <section className="release-section" aria-labelledby="released-heading">
+            <div className="release-heading">
+              <div>
+                <span className="release-eyebrow">
+                  <span /> FRESH OFF THE SCHEDULE
+                </span>
+                <h2 id="released-heading">
+                  Just released<span className="heading-period">.</span>
+                </h2>
+              </div>
+              <div className="release-tools">
+                <div className="release-language" aria-label="Release language">
+                  {['sub', 'dub'].map((value) => (
+                    <button
+                      key={value}
+                      aria-label={`English ${value}`}
+                      aria-pressed={language === value}
+                      className={language === value ? 'active' : ''}
+                      onClick={() => setLanguage(value)}
+                    >
+                      {value === 'sub' ? 'Sub' : 'Dub'}
+                    </button>
+                  ))}
+                </div>
+                <Link className="release-schedule" to="/schedule">
+                  <CalendarDays size={15} /> Full schedule <ArrowRight size={15} />
                 </Link>
-              ) : (
-                <a
-                  className="release-card"
-                  key={entry.id}
-                  href={entry.providerUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  aria-label={`${entry.title} — episode ${entry.episode} details on AnimeSchedule`}
-                >
-                  {content}
-                </a>
-              );
-            })}
-          </div>
-        ) : (
-          <div className="release-empty">
-            <Clock3 size={28} />
-            <h3>{unavailable ? 'The release feed is taking a break.' : 'You’re all caught up.'}</h3>
-            <p>
-              {unavailable
-                ? 'We couldn’t refresh the episode feed. Try again in a moment.'
-                : `No new English ${language} episodes in the last seven days.`}
-            </p>
-            <button className="btn btn-subtle" onClick={home.refresh}>
-              <RotateCw size={14} /> Refresh releases
-            </button>
-          </div>
-        )}
-        <div className="release-footer">
-          <span>Latest episodes · Past 7 days</span>
-          <Link to="/browse/anime">
-            Discover more anime <ArrowRight size={14} />
-          </Link>
+              </div>
+            </div>
+            {home.data?.stale && releases.length > 0 && (
+              <div className="release-notice">
+                Showing the latest saved releases.{' '}
+                <button onClick={home.refresh}>
+                  Refresh <RotateCw size={12} />
+                </button>
+              </div>
+            )}
+            {home.loading && !home.data ? (
+              <div className="release-grid" aria-label="Loading releases">
+                {Array.from({ length: 12 }, (_, i) => (
+                  <div key={i} className="release-skeleton" />
+                ))}
+              </div>
+            ) : releases.length ? (
+              <div className="release-grid">
+                {releases.map((entry) => {
+                  const content = (
+                    <>
+                      <div className="release-poster">
+                        <img
+                          src={entry.cover || coverOf(entry.media)}
+                          alt=""
+                          loading="lazy"
+                          onError={fallbackImage}
+                        />
+                        <span className="release-play">
+                          <Play size={23} fill="currentColor" />
+                        </span>
+                        <span className="release-badges">
+                          <span>{language.toUpperCase()}</span>
+                          <strong>EP {entry.episode}</strong>
+                        </span>
+                      </div>
+                      <div className="release-info">
+                        <h3>{entry.title}</h3>
+                        <span>
+                          <Clock3 size={11} />
+                          <time
+                            dateTime={entry.airingAt}
+                            title={new Date(entry.airingAt).toLocaleString()}
+                          >
+                            {ago(entry.airingAt)}
+                          </time>
+                          <i>·</i>
+                          {entry.media?.format || 'Anime'}
+                        </span>
+                      </div>
+                    </>
+                  );
+                  return entry.media?.id ? (
+                    <Link
+                      className="release-card"
+                      key={entry.id}
+                      to={`/watch/${entry.media.id}/${entry.episode}?language=${language}`}
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <a
+                      className="release-card"
+                      key={entry.id}
+                      href={entry.providerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      aria-label={`${entry.title} — episode ${entry.episode} details on AnimeSchedule`}
+                    >
+                      {content}
+                    </a>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="release-empty">
+                <Clock3 size={28} />
+                <h3>
+                  {unavailable ? 'The release feed is taking a break.' : 'You’re all caught up.'}
+                </h3>
+                <p>
+                  {unavailable
+                    ? 'We couldn’t refresh the episode feed. Try again in a moment.'
+                    : `No new English ${language} episodes in the last seven days.`}
+                </p>
+                <button className="btn btn-subtle" onClick={home.refresh}>
+                  <RotateCw size={14} /> Refresh releases
+                </button>
+              </div>
+            )}
+            <div className="release-footer">
+              <span>Latest episodes · Past 7 days</span>
+              <Link to="/browse/anime">
+                Discover more anime <ArrowRight size={14} />
+              </Link>
+            </div>
+          </section>
+          {children}
         </div>
-      </section>
+        <HomeSidebar popular={featured} language={language} />
+      </div>
     </>
   );
 }

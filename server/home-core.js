@@ -1,3 +1,4 @@
+import { homeArtwork } from './home-artwork.js';
 import { getSchedule } from './schedule-core.js';
 import { DAY_MS, weekStart } from '../shared/schedule.js';
 const API = 'https://animeschedule.net/api/v3';
@@ -62,7 +63,7 @@ export function releasedEpisodes(items, language, now) {
     })
     .slice(0, 18);
 }
-async function json(response) {
+export async function providerJson(response) {
   if (!response.ok) throw Error('Provider unavailable');
   const reader = response.body.getReader();
   let size = 0;
@@ -115,7 +116,7 @@ export async function getHome(input = {}, options = {}) {
       headers: { Authorization: `Bearer ${token.trim()}`, Accept: 'application/json' },
       signal: AbortSignal.timeout(6000),
       redirect: 'manual',
-    }).then(json);
+    }).then(providerJson);
   async function cached(key, ttl, run) {
     const saved = await load(key).catch(() => null);
     if (saved && now - saved.fetchedAt < ttl) return saved.value;
@@ -173,9 +174,10 @@ export async function getHome(input = {}, options = {}) {
   for (const entry of releases) entry.media = metadata.get(entry.route) || null;
   if (options.artwork)
     await pooled(hot, async (media) => {
-      const known = options.artwork.find((x) => x.id === media.id);
+      const known = homeArtwork[media.id] || options.artwork.find((x) => x.id === media.id);
       if (known?.banner) {
         media.banner = known.banner;
+        if (known.logo) media.logo = known.logo;
         return;
       }
       const artwork = await cached(`home:v1:art:${media.malId}`, 7 * DAY_MS, async () => {
@@ -188,7 +190,7 @@ export async function getHome(input = {}, options = {}) {
           headers: { Accept: 'application/vnd.api+json' },
           signal: AbortSignal.timeout(4000),
           redirect: 'manual',
-        }).then(json);
+        }).then(providerJson);
         const mapping = data.data?.find(
           (x) =>
             x.attributes?.externalSite === 'myanimelist/anime' &&
