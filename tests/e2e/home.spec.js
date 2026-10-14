@@ -1,4 +1,6 @@
 import { test, expect } from '@playwright/test';
+import { fileURLToPath } from 'node:url';
+const fixture = (name) => fileURLToPath(new URL(`../fixtures/${name}.png`, import.meta.url));
 test.use({ timezoneId: 'America/New_York' });
 test('weekly banner and release feed navigate with exact identity and selected language', async ({
   page,
@@ -12,13 +14,14 @@ test('weekly banner and release feed navigate with exact identity and selected l
     id,
     title,
     cover: '/icon.svg',
-    banner: '/icon.svg',
+    banner: '/banner-4k.png',
     category: 'ANIME',
     genres: ['Adventure'],
     format: 'TV',
   });
   const one = media('mal-anime-21', 'Weekly One'),
     two = media('mal-anime-52991', 'Weekly Two');
+  await page.route('**/banner-4k.png', (route) => route.fulfill({ path: fixture('banner-4k') }));
   await page.route('**/api/home?**', (route) => {
     const language = new URL(route.request().url()).searchParams.get('language');
     return route.fulfill({
@@ -98,6 +101,90 @@ test('weekly banner and release feed navigate with exact identity and selected l
   await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
   await page.getByRole('dialog').getByRole('link', { name: 'Schedule', exact: true }).click();
   await expect(page).toHaveURL(/\/schedule$/);
+});
+
+test('banner rejects blurry, missing and portrait artwork, and rechecks resolution on resize', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.route('**/api/home?**', (route) =>
+    route.fulfill({
+      json: {
+        state: 'ready',
+        releases: [],
+        hot: [
+          { id: 'mal-anime-1', title: 'Low resolution', banner: '/banner-720p.png' },
+          { id: 'mal-anime-2', title: 'Missing artwork', banner: '/missing-banner.png' },
+          { id: 'mal-anime-3', title: 'Poster only', cover: '/icon.svg' },
+          { id: 'mal-anime-4', title: 'Sharp artwork', banner: '/banner-hd.png' },
+        ],
+      },
+    }),
+  );
+  for (const name of ['banner-720p', 'banner-hd'])
+    await page.route(`**/${name}.png`, (route) => route.fulfill({ path: fixture(name) }));
+  await page.route('**/missing-banner.png', (route) => route.abort());
+  await page.setViewportSize({ width: 800, height: 600 });
+  await page.goto('/');
+  const hero = page.getByRole('region', { name: 'Hot this week' });
+  // Mobile density needs more pixels for the tall crop, even at narrow widths.
+  const density = await page.evaluate(() => Math.min(devicePixelRatio, 2));
+  if (density === 1) {
+    await expect(hero.getByRole('heading', { name: 'Sharp artwork' })).toBeVisible();
+    await expect(hero.locator('.weekly-backdrop')).toHaveAttribute('src', '/banner-hd.png');
+  }
+  await page.setViewportSize({ width: 2400, height: 1200 });
+  await expect(hero.getByRole('link', { name: 'Explore anime' })).toBeVisible();
+  await expect(hero.locator('.weekly-backdrop')).toHaveCount(0);
+  await expect(
+    hero.getByRole('button', { name: /Feature (Low resolution|Missing artwork|Poster only)/ }),
+  ).toHaveCount(0);
+});
+
+test('a sharp banner can recover after a slow connection timeout', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.clock.install();
+  let releaseImage;
+  let imageRequested;
+  const requested = new Promise((resolve) => {
+    imageRequested = resolve;
+  });
+  const pendingImage = new Promise((resolve) => {
+    releaseImage = resolve;
+  });
+  await page.route('**/slow-banner.png', async (route) => {
+    imageRequested();
+    await pendingImage;
+    await route.fulfill({ path: fixture('banner-4k') });
+  });
+  await page.route('**/api/home?**', (route) =>
+    route.fulfill({
+      json: {
+        state: 'ready',
+        releases: [],
+        hot: [{ id: 'mal-anime-21', title: 'Late sharp banner', banner: '/slow-banner.png' }],
+      },
+    }),
+  );
+  await page.goto('/', { waitUntil: 'domcontentloaded' });
+  const hero = page.getByRole('region', { name: 'Hot this week' });
+  await expect(hero.getByLabel('Loading weekly picks')).toBeVisible();
+  await requested;
+  await page.clock.runFor(11000);
+  await expect(hero.getByRole('link', { name: 'Explore anime' })).toBeVisible();
+  releaseImage();
+  await expect(hero.getByRole('heading', { name: 'Late sharp banner' })).toBeVisible();
+  await expect(hero.locator('.weekly-backdrop')).toHaveAttribute('src', '/slow-banner.png');
 });
 
 test('sidebar schedule shows the selected day timezone across daylight saving changes', async ({

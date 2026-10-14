@@ -12,6 +12,53 @@ const airing = (route, time, extras = {}) => ({
   airingAt: new Date(time).toISOString(),
   ...extras,
 });
+test('homepage upgrades old cached resized artwork to the original source', async () => {
+  const cache = new Map([
+    ['home:v1:art:21', { value: 'https://example.test/small.jpg', fetchedAt: now }],
+  ]);
+  const result = await getHome(
+    {},
+    {
+      now,
+      token: 'test',
+      artwork: [],
+      load: async (key) => cache.get(key),
+      save: async (key, value) => cache.set(key, value),
+      schedule: async () => ({ items: [airing('test', now - 1000)], state: 'ready' }),
+      fetchImpl: async (url) =>
+        Response.json(
+          url.includes('kitsu.io')
+            ? {
+                data: [
+                  {
+                    attributes: { externalSite: 'myanimelist/anime', externalId: '21' },
+                    relationships: { item: { data: { type: 'anime', id: '12' } } },
+                  },
+                ],
+                included: [
+                  {
+                    type: 'anime',
+                    id: '12',
+                    attributes: {
+                      coverImage: {
+                        large: 'https://example.test/large.jpg',
+                        original: 'https://example.test/original.jpg',
+                      },
+                    },
+                  },
+                ],
+              }
+            : {
+                anime: [
+                  { route: 'test', title: 'Test', websites: { mal: 'myanimelist.net/anime/21' } },
+                ],
+              },
+        ),
+    },
+  );
+  assert.equal(result.hot[0].banner, 'https://example.test/original.jpg');
+  assert.equal(cache.get('home:v2:art:21').value, result.hot[0].banner);
+});
 test('recent releases exclude future, delayed, unknown and wrong-language episodes, newest first', () => {
   const recent = airing('recent', now - 1000);
   assert.deepEqual(

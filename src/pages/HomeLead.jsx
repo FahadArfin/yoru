@@ -14,7 +14,8 @@ import {
   RotateCw,
 } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { ago, bannerOf, coverOf, titleOf } from '../api';
+import { ago, coverOf, titleOf } from '../api';
+import { useBannerArtwork } from '../useBannerArtwork';
 
 const fallbackImage = (event) => {
   const image = event.currentTarget;
@@ -26,13 +27,20 @@ export default function HomeLead({ children }) {
   const [language, setLanguage] = useState('sub');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
-  const [index, setIndex] = useState(0);
+  const [selectedId, setSelectedId] = useState(null);
   const [, tick] = useState(0);
   const { entryFor, updateEntry } = useApp();
-  const featured = [...(home.data?.hot || [])].sort(
-    (a, b) => Number(Boolean(b.banner)) - Number(Boolean(a.banner)),
+  const popular = home.data?.hot || [];
+  const artwork = useBannerArtwork(popular);
+  const { featured } = artwork;
+  const index = Math.max(
+    0,
+    featured.findIndex((x) => x.id === selectedId),
   );
-  const hero = featured[index % (featured.length || 1)];
+  const hero = featured[index];
+  useEffect(() => {
+    if (hero) setSelectedId(hero.id);
+  }, [hero?.id]);
   useEffect(() => {
     const timer = setInterval(() => {
       if (!document.hidden) {
@@ -46,18 +54,15 @@ export default function HomeLead({ children }) {
   const unavailable = home.error || ['not-configured', 'unavailable'].includes(home.data?.state);
   return (
     <>
-      <section
-        className={`weekly-hero ${hero?.banner ? 'has-wide-art' : 'has-poster-art'}`}
-        aria-label="Hot this week"
-      >
+      <section ref={artwork.ref} className="weekly-hero has-wide-art" aria-label="Hot this week">
         {hero && (
           <img
             key={hero.id}
             className="weekly-backdrop"
-            src={bannerOf(hero)}
+            src={hero.banner}
             alt=""
             fetchPriority="high"
-            onError={fallbackImage}
+            onError={() => artwork.reject(hero.banner)}
           />
         )}
         <div className="weekly-shade" />
@@ -105,7 +110,7 @@ export default function HomeLead({ children }) {
                 </button>
               </div>
             </>
-          ) : home.loading ? (
+          ) : home.loading || artwork.loading ? (
             <div className="weekly-loading" aria-label="Loading weekly picks">
               <span />
               <span />
@@ -137,17 +142,19 @@ export default function HomeLead({ children }) {
             <div className="weekly-controls" aria-label="Featured anime">
               <button
                 aria-label="Previous featured title"
-                onClick={() => setIndex((index - 1 + featured.length) % featured.length)}
+                onClick={() =>
+                  setSelectedId(featured[(index - 1 + featured.length) % featured.length].id)
+                }
               >
                 <ChevronLeft size={18} />
               </button>
-              {featured.map((media, i) => (
+              {featured.map((media) => (
                 <button
                   key={media.id}
                   className={`weekly-dot ${hero.id === media.id ? 'active' : ''}`}
                   aria-label={`Feature ${titleOf(media)}`}
                   aria-current={hero.id === media.id ? 'true' : undefined}
-                  onClick={() => setIndex(i)}
+                  onClick={() => setSelectedId(media.id)}
                 />
               ))}
               <span>
@@ -156,7 +163,7 @@ export default function HomeLead({ children }) {
               </span>
               <button
                 aria-label="Next featured title"
-                onClick={() => setIndex((index + 1) % featured.length)}
+                onClick={() => setSelectedId(featured[(index + 1) % featured.length].id)}
               >
                 <ChevronRight size={18} />
               </button>
@@ -292,7 +299,7 @@ export default function HomeLead({ children }) {
           </section>
           {children}
         </div>
-        <HomeSidebar popular={featured} language={language} />
+        <HomeSidebar popular={popular} language={language} />
       </div>
     </>
   );

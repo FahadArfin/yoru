@@ -180,7 +180,7 @@ export async function getHome(input = {}, options = {}) {
         if (known.logo) media.logo = known.logo;
         return;
       }
-      const artwork = await cached(`home:v1:art:${media.malId}`, 7 * DAY_MS, async () => {
+      const artwork = await cached(`home:v2:art:${media.malId}`, 7 * DAY_MS, async () => {
         const params = new URLSearchParams({
           'filter[externalSite]': 'myanimelist/anime',
           'filter[externalId]': String(media.malId),
@@ -200,7 +200,7 @@ export async function getHome(input = {}, options = {}) {
         const item = data.included?.find(
           (x) => x.type === 'anime' && x.id === identity?.id && identity?.type === 'anime',
         );
-        const url = item?.attributes?.coverImage?.large || item?.attributes?.coverImage?.original;
+        const url = item?.attributes?.coverImage?.original || item?.attributes?.coverImage?.large;
         return typeof url === 'string' && /^https:\/\//.test(url) ? url : null;
       });
       if (artwork) media.banner = artwork;
