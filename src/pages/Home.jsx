@@ -3,16 +3,14 @@ import HomeLead from './HomeLead';
 import { Link } from 'react-router-dom';
 import { ArrowRight, BookOpen, Play } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { bannerOf, coverOf, isAnime, itemsOf, titleOf } from '../api';
-import { ErrorNotice, Loading, Poster, PosterRail, Section } from '../components';
+import { bannerOf, isAnime, itemsOf, titleOf } from '../api';
+import { ErrorNotice, Loading, Poster, Section } from '../components';
 export default function Home() {
   const anime = useResource('/api/catalog?category=ANIME&curated=1');
   const manga = useResource('/api/catalog?category=MANGA&curated=1');
   const manhwa = useResource('/api/catalog?category=MANHWA&curated=1');
   const { library } = useApp();
   const [tab, setTab] = useState('ANIME');
-  const mangaItems = itemsOf(manga.data),
-    manhwaItems = itemsOf(manhwa.data);
   const current = tab === 'ANIME' ? anime : tab === 'MANGA' ? manga : manhwa;
   const inProgress = library.filter(
     (item) =>
@@ -92,51 +90,8 @@ export default function Home() {
                   </div>
                 )}
               </Section>
-              <Section
-                eyebrow="JUST ONE MORE CHAPTER"
-                title="Beyond the screen"
-                href="/browse/manhwa"
-              >
-                <div className="editorial-grid">
-                  <Link to="/browse/manga" className="editorial-card manga-editorial">
-                    {mangaItems[0] && <img src={coverOf(mangaItems[0])} alt="" loading="lazy" />}
-                    <div>
-                      <span className="eyebrow">INK. PANELS. OBSESSION.</span>
-                      <h3>
-                        Made for
-                        <br />
-                        page-turners.
-                      </h3>
-                      <span>
-                        Explore manga <ArrowRight size={16} />
-                      </span>
-                    </div>
-                  </Link>
-                  <Link to="/browse/manhwa" className="editorial-card manhwa-editorial">
-                    {manhwaItems[0] && <img src={coverOf(manhwaItems[0])} alt="" loading="lazy" />}
-                    <div>
-                      <span className="eyebrow">COLOR OUTSIDE THE LINES</span>
-                      <h3>
-                        Scroll into
-                        <br />
-                        another world.
-                      </h3>
-                      <span>
-                        Explore manhwa <ArrowRight size={16} />
-                      </span>
-                    </div>
-                  </Link>
-                </div>
-              </Section>
             </div>
           </div>
-          <Section
-            eyebrow="YOUR NEXT READING RABBIT HOLE"
-            title="Manhwa worth the scroll"
-            href="/browse/manhwa"
-          >
-            <PosterRail items={manhwaItems.slice(0, 8)} />
-          </Section>
           <div className="home-ending">
             <span>✦</span>
             <p>
