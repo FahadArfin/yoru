@@ -15,6 +15,9 @@ test('adult section guards direct category links and can be hidden again', async
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Adult manhwa', exact: true })).toHaveCount(0);
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  await expect(page.getByRole('heading', { name: 'NSFW collections' })).toBeFocused();
+  await page.keyboard.press('Tab');
+  await expect(page.getByRole('button', { name: 'Leave this section' })).toBeFocused();
   await expect(page.getByRole('heading', { name: 'Adult manhwa', exact: true })).toBeVisible();
   await expect(page.getByText('Catalog not connected', { exact: true })).toBeVisible();
   await page.reload();

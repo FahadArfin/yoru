@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Library, LockKeyhole, ShieldCheck } from 'lucide-react';
 import { nsfwCategories } from '../nsfw';
@@ -8,6 +8,7 @@ const confirmationKey = 'yoru:nsfw:confirmed';
 export default function NsfwPage() {
   const { category } = useParams();
   const navigate = useNavigate();
+  const heading = useRef(null);
   const [confirmed, setConfirmed] = useState(() => {
     try {
       return sessionStorage.getItem(confirmationKey) === '1';
@@ -15,6 +16,9 @@ export default function NsfwPage() {
       return false;
     }
   });
+  useEffect(() => {
+    if (confirmed) heading.current?.focus();
+  }, [confirmed]);
   const selected = nsfwCategories.find((item) => item.id === category);
   const confirm = () => {
     try {
@@ -66,7 +70,9 @@ export default function NsfwPage() {
       <header className="nsfw-page-heading">
         <div>
           <span className="nsfw-eyebrow">A separate space · 18+</span>
-          <h1 id="nsfw-title">NSFW collections</h1>
+          <h1 id="nsfw-title" ref={heading} tabIndex={-1}>
+            NSFW collections
+          </h1>
           <p>Choose a collection.</p>
         </div>
         <button className="nsfw-leave" onClick={leave}>
