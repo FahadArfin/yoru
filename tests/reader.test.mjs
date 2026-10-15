@@ -115,3 +115,14 @@ test('bonus chapters sort by their decimal value rather than digit chunks', () =
     ['1.05', '1.1', '1.10', '1.2', '1.25', '1.9'],
   );
 });
+test('mixed numeric and bonus chapter names have consistent order regardless of import order', () => {
+  const values = ['1.05', '1.1 Extra', '1.1'];
+  for (const numbers of [values, [...values].reverse(), ['1.1', '1.05', '1.1 Extra']]) {
+    assert.deepEqual(
+      sortChapters(numbers.map((number) => ({ number, volume: '1', group: 'A' }))).map(
+        (c) => c.number,
+      ),
+      ['1.05', '1.1', '1.1 Extra'],
+    );
+  }
+});

@@ -86,13 +86,19 @@ export function parseManifest(value) {
   if (!rows.length) throw new Error('No chapters were found in this manifest.');
   return sortChapters(rows);
 }
+function compareChapterNumbers(left, right) {
+  const a = chapterUnit(left),
+    b = chapterUnit(right);
+  if (a !== null && b !== null) return a - b;
+  if (a !== null) return -1;
+  if (b !== null) return 1;
+  return naturalCompare(left, right);
+}
 export const sortChapters = (chapters) =>
   [...chapters].sort(
     (a, b) =>
       naturalCompare(a.volume, b.volume) ||
-      (chapterUnit(a.number) !== null && chapterUnit(b.number) !== null
-        ? chapterUnit(a.number) - chapterUnit(b.number)
-        : naturalCompare(a.number, b.number)) ||
+      compareChapterNumbers(a.number, b.number) ||
       naturalCompare(a.group, b.group),
   );
 export function filterChapters(chapters, filters = {}, states = {}) {
