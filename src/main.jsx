@@ -44,6 +44,7 @@ const Community = lazy(() => import('./pages/Community'));
 const Rooms = lazy(() => import('./pages/Rooms'));
 const Room = lazy(() => import('./pages/Room'));
 const Watch = lazy(() => import('./pages/Watch'));
+const Reader = lazy(() => import('./reader/Reader'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const MangaPage = lazy(() => import('./pages/MangaPage'));
@@ -68,6 +69,7 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isBrowse = location.pathname.startsWith('/browse/');
+  const isReader = location.pathname.startsWith('/read/');
   const readingLanding =
     ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
     !['q', 'genre', 'sort', 'page'].some((key) => new URLSearchParams(location.search).get(key));
@@ -151,9 +153,11 @@ function Shell() {
   return (
     <div
       className={
-        hasTopNavigation
-          ? `home-shell${isBrowse && !readingLanding ? ' browse-shell' : ''}`
-          : undefined
+        isReader
+          ? 'reader-shell'
+          : hasTopNavigation
+            ? `home-shell${isBrowse && !readingLanding ? ' browse-shell' : ''}`
+            : undefined
       }
     >
       <a href="#main-content" className="skip-link">
@@ -313,7 +317,7 @@ function Shell() {
               <Route path="/browse/:category" element={<Browse />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />
-              <Route path="/read/:id/:unit" element={<Watch />} />
+              <Route path="/read/:id/:unit" element={<Reader />} />
               <Route path="/library" element={<Library />} />
               <Route path="/community" element={<Community />} />
               <Route path="/rooms" element={<Rooms />} />

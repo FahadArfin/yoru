@@ -18,8 +18,12 @@ import { bannerOf, coverOf, isAnime, kindOf, plainText, safeLink, scoreOf, title
 import { useApp, useResource } from '../state';
 import { Badge, Button, ErrorNotice, Loading } from '../components';
 import Discussion, { Reviews } from '../Discussion';
+import { ChapterCollection } from '../reader/ReadingCollection';
+import { useReadingState } from '../reader/hooks';
+import { readerLink } from '../reader/model';
 export default function Title() {
   const { id } = useParams();
+  const readingState = useReadingState(id);
   const [params, setParams] = useSearchParams();
   const resource = useResource(`/api/media/${id}`);
   const media = resource.data?.media || resource.data;
@@ -64,7 +68,14 @@ export default function Title() {
   const anime = isAnime(media);
   const knownTotal = anime ? media.episodes : media.chapters;
   const startUnit = Math.max(1, entry?.progress || 1);
-  const watchPath = `/${anime ? 'watch' : 'read'}/${id}/${startUnit}`;
+  const watchPath =
+    !anime && readingState.lastChapter
+      ? readerLink(
+          id,
+          { id: readingState.lastChapter, number: readingState.number },
+          readingState.chapters[readingState.lastChapter]?.page,
+        )
+      : `/${anime ? 'watch' : 'read'}/${id}/${startUnit}`;
   const unitName = anime ? 'Episode' : 'Chapter';
   return (
     <div className="title-page">
@@ -108,7 +119,11 @@ export default function Title() {
             <div className="detail-actions">
               <Link className="btn btn-primary" to={watchPath}>
                 {anime ? <Play size={17} fill="currentColor" /> : <BookOpen size={18} />}{' '}
-                {anime ? 'Watch' : 'Read'} & discuss
+                {anime
+                  ? 'Watch & discuss'
+                  : readingState.lastChapter
+                    ? 'Continue reading'
+                    : 'Open reader'}
               </Link>
               <Button
                 variant="secondary"
@@ -196,7 +211,8 @@ export default function Title() {
                 )}
               </section>
             )}
-            {tab === 'units' && (
+            {tab === 'units' && !anime && <ChapterCollection key={id} media={media} />}
+            {tab === 'units' && anime && (
               <section>
                 <div className="section-heading">
                   <h2>{anime ? 'Episode guide' : 'Your next chapter'}</h2>

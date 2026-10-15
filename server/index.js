@@ -27,7 +27,7 @@ app.use(
         scriptSrc: ["'self'"],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
-        imgSrc: ["'self'", 'https:', 'data:'],
+        imgSrc: ["'self'", 'https:', 'data:', 'blob:'],
         connectSrc: ["'self'", 'https:', 'blob:'],
         frameSrc: ['https:'],
         mediaSrc: ["'self'", 'https:', 'blob:'],

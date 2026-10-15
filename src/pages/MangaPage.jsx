@@ -14,6 +14,7 @@ import { bannerOf, coverOf, itemsOf, titleOf } from '../api';
 import Browse from './Browse';
 import MangaHero from './MangaHero';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';
+import { ContinueReading } from '../reader/ReadingCollection';
 import '../manga.css';
 
 function MangaRow({ media }) {
@@ -66,6 +67,7 @@ function MangaLanding({ category, label }) {
       </div>
       <div className="home-content-layout home-width">
         <div className="home-release-column">
+          <ContinueReading category={category} />
           <MangaDiscovery popular={popular} category={category} label={label} />
         </div>
         <aside className="home-right-rail" aria-label={`${label} highlights`}>
