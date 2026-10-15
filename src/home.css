@@ -333,7 +333,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 15px;
-  margin-bottom: 23px;
+  margin-bottom: 10px;
 }
 .release-eyebrow {
   display: flex;
@@ -371,6 +371,7 @@
   display: flex;
   align-items: center;
   gap: 2px;
+  margin-bottom: 18px;
 }
 .release-language button {
   border: 0;
@@ -511,23 +512,6 @@
   aspect-ratio: 2/3.3;
   background: #14161c;
   border-radius: 8px;
-}
-.release-notice {
-  font-size: 11px;
-  color: #b1a7c0;
-  margin: -5px 0 20px;
-  display: flex;
-  gap: 10px;
-}
-.release-notice button {
-  display: inline-flex;
-  align-items: center;
-  gap: 5px;
-  border: 0;
-  background: none;
-  color: inherit;
-  text-decoration: underline;
-  cursor: pointer;
 }
 .release-empty {
   padding: 65px 20px;
@@ -737,7 +721,6 @@
     padding-top: 25px;
   }
   .release-heading {
-    margin-bottom: 18px;
     gap: 10px;
   }
   .release-heading h2 {

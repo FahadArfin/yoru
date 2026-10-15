@@ -215,34 +215,26 @@ export default function HomeLead({ children }) {
                   Just released<span className="heading-period">.</span>
                 </h2>
               </div>
-              <div className="release-language" role="group" aria-label="Release filter">
-                {releaseFilters.map(({ value, label, name }) => (
-                  <button
-                    key={value}
-                    aria-label={name}
-                    title={name}
-                    aria-pressed={language === value}
-                    className={language === value ? 'active' : ''}
-                    onClick={() => setLanguage(value)}
-                  >
-                    {label}
-                  </button>
-                ))}
-              </div>
               <div className="release-tools">
                 <Link className="release-schedule" to="/schedule">
                   <CalendarDays size={15} /> Full schedule <ArrowRight size={15} />
                 </Link>
               </div>
             </div>
-            {home.data?.stale && releases.length > 0 && (
-              <div className="release-notice">
-                Showing the latest saved releases.{' '}
-                <button onClick={home.refresh}>
-                  Refresh <RotateCw size={12} />
+            <div className="release-language" role="group" aria-label="Release filter">
+              {releaseFilters.map(({ value, label, name }) => (
+                <button
+                  key={value}
+                  aria-label={name}
+                  title={name}
+                  aria-pressed={language === value}
+                  className={language === value ? 'active' : ''}
+                  onClick={() => setLanguage(value)}
+                >
+                  {label}
                 </button>
-              </div>
-            )}
+              ))}
+            </div>
             {home.loading && !home.data ? (
               <div className="release-grid" aria-label="Loading releases">
                 {Array.from({ length: 12 }, (_, i) => (
