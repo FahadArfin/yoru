@@ -126,6 +126,35 @@ async function waitEvent(connection, event, predicate = () => true) {
 }
 
 before(start);
+test('manga discovery and reader counts keep manga separate and require same-origin writes', async () => {
+  const first = await request('/api/media/mal-manga-21/read-view', { method: 'POST', body: {} });
+  assert.equal(first.status, 200);
+  assert.match(first.headers.get('set-cookie'), /HttpOnly/);
+  const session = { cookie: first.headers.get('set-cookie').split(';')[0] };
+  await request('/api/media/mal-manga-21/read-view', { method: 'POST', body: {}, session });
+  const ranked = await request('/api/manga/discovery?mode=trending');
+  assert.deepEqual(
+    ranked.body.items.map((item) => [item.id, item.viewers]),
+    [['mal-manga-21', 1]],
+  );
+  assert.equal(
+    (await request('/api/media/mal-anime-21/read-view', { method: 'POST', body: {} })).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request('/api/media/mal-manga-21/read-view', {
+        method: 'POST',
+        body: {},
+        origin: 'https://evil.test',
+      })
+    ).status,
+    403,
+  );
+  const feed = await request('/api/manga/discovery?mode=new');
+  assert.equal(feed.body.state, 'unavailable');
+  assert.equal(feed.body.source, 'Kitsu');
+});
 test('anonymous watch views use a private cookie and count one visitor per anime', async () => {
   const first = await request('/api/media/mal-anime-21/view', { method: 'POST', body: {} });
   assert.equal(first.status, 200);

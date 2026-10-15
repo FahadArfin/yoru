@@ -16,7 +16,14 @@ import { eventRoutes } from './events.js';
 import { importRoutes } from './imports.js';
 import { malRoutes } from './mal.js';
 import { malConfiguration } from '../server/mal-core.js';
-import { searchCatalog, getMedia, getCalendar, parseMediaId } from '../server/catalog-core.js';
+import {
+  searchCatalog,
+  getMedia,
+  getCalendar,
+  parseMediaId,
+  rememberDiscoveredMedia,
+} from '../server/catalog-core.js';
+import { getMangaDiscovery } from '../server/manga-discovery.js';
 import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
@@ -27,11 +34,13 @@ import { getHome } from '../server/home-core.js';
 import { getPopularAnime } from '../server/home-discovery.js';
 import {
   getTrendingAnime,
+  getTrendingManga,
+  recordReadView,
   recordWatchView,
   VIEW_COOKIE,
   VIEW_COOKIE_SECONDS,
 } from '../server/watch-views.js';
-import { seed } from './catalog-storage.js';
+import { seed, isOffline } from './catalog-storage.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -112,6 +121,25 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.get('/api/manga/discovery', async (c) =>
+  c.json(
+    c.req.query('mode') === 'trending'
+      ? await getTrendingManga({ db: c.get('db'), media: getMedia })
+      : await getMangaDiscovery(c.req.query(), {
+          ...scheduleOptions(c.env),
+          offline: isOffline(),
+          remember: rememberDiscoveredMedia,
+        }),
+  ),
+);
+app.post('/api/media/:id/read-view', async (c) => {
+  const visitor = await recordReadView(c.req.param('id'), getCookie(c, VIEW_COOKIE), {
+    db: c.get('db'),
+    media: getMedia,
+  });
+  setCookie(c, VIEW_COOKIE, visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
+  return c.json({ ok: true });
+});
 app.get('/api/media/:id/sources', async (c) =>
   c.json(await resolveAnimeSources(c.req.param('id'), c.req.query())),
 );

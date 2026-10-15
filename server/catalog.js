@@ -1,5 +1,12 @@
 import { Router } from 'express';
-import { searchCatalog, getMedia, getCalendar, parseMediaId } from './catalog-core.js';
+import {
+  searchCatalog,
+  getMedia,
+  getCalendar,
+  parseMediaId,
+  rememberDiscoveredMedia,
+} from './catalog-core.js';
+import { getMangaDiscovery } from './manga-discovery.js';
 import { resolveAnimeSources } from './sources-core.js';
 import { getSchedule } from './schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
@@ -9,15 +16,50 @@ import { cookie } from './auth.js';
 import { getPopularAnime } from './home-discovery.js';
 import {
   getTrendingAnime,
+  getTrendingManga,
+  recordReadView,
   recordWatchView,
   VIEW_COOKIE,
   VIEW_COOKIE_SECONDS,
 } from './watch-views.js';
 import { getHome } from './home-core.js';
-import { seed } from './catalog-storage.js';
+import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get('/manga/discovery', async (req, res, next) => {
+  try {
+    res.json(
+      req.query.mode === 'trending'
+        ? await getTrendingManga({ db: { all, run }, media: getMedia })
+        : await getMangaDiscovery(req.query, {
+            ...scheduleOptions,
+            offline: isOffline(),
+            remember: rememberDiscoveredMedia,
+          }),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+catalogRouter.post('/media/:id/read-view', async (req, res, next) => {
+  try {
+    const visitor = await recordReadView(req.params.id, cookie(req, VIEW_COOKIE), {
+      db: { all, run },
+      media: getMedia,
+    });
+    res.cookie(VIEW_COOKIE, visitor, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: VIEW_COOKIE_SECONDS * 1000,
+      secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
 catalogRouter.get('/home/discovery', async (req, res, next) => {
   try {
     res.json(

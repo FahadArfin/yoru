@@ -10,8 +10,9 @@ const labels = {
   manhwa: ['Manhwa', 'Your next scroll-stopping obsession.'],
   all: ['Explore everything', 'One universe. Endless ways to escape.'],
 };
-export default function Browse() {
-  const { category } = useParams();
+export default function Browse({ embedded = false, categoryOverride }) {
+  const route = useParams();
+  const category = categoryOverride || route.category;
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
   const q = params.get('q') || '';
@@ -22,8 +23,8 @@ export default function Browse() {
   const chosen = labels[category] ? category : 'all';
   useEffect(() => setSearch(q), [q]);
   useEffect(() => {
-    window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [page, chosen]);
+    if (!embedded) window.scrollTo({ top: 0, behavior: 'instant' });
+  }, [page, chosen, embedded]);
   const query = new URLSearchParams({
     category: chosen.toUpperCase(),
     search: q,
@@ -42,9 +43,13 @@ export default function Browse() {
     setParams(next);
   };
   return (
-    <div className="page browse-page">
+    <div className="page browse-page" id={embedded ? 'manga-catalog' : undefined}>
       <div className="browse-heading">
-        <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
+        {embedded ? (
+          <h2>The manga collection</h2>
+        ) : (
+          <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
+        )}
         <button
           className="browse-reset"
           onClick={() => {

@@ -2,7 +2,49 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync } from 'node:fs';
-import { recordWatchView, getTrendingAnime, VIEW_WINDOW } from '../server/watch-views.js';
+import {
+  recordWatchView,
+  recordReadView,
+  getTrendingAnime,
+  getTrendingManga,
+  VIEW_WINDOW,
+} from '../server/watch-views.js';
+
+test('manga readership is unique per browser and isolated from anime before the ranking limit', async () => {
+  const sqlite = new DatabaseSync(':memory:');
+  sqlite.exec(readFileSync(new URL('../drizzle/0002_watch_views.sql', import.meta.url), 'utf8'));
+  const db = {
+    run: async (sql, ...values) => sqlite.prepare(sql).run(...values),
+    all: async (sql, ...values) => sqlite.prepare(sql).all(...values),
+  };
+  const media = async (id) => ({ id, category: id.includes('-manga-') ? 'MANGA' : 'ANIME' });
+  const now = Date.now();
+  try {
+    const visitor = await recordReadView('mal-manga-21', '', { db, media, now });
+    await recordReadView('mal-manga-21', visitor, { db, media, now });
+    for (let id = 1; id <= 20; id++)
+      await recordWatchView(`mal-anime-${id}`, visitor, { db, media, now: now + 1 });
+    assert.equal((await getTrendingAnime({ db, media, now })).items.length, 18);
+    assert.deepEqual(
+      (await getTrendingManga({ db, media, now })).items.map((item) => [item.id, item.viewers]),
+      [['mal-manga-21', 1]],
+    );
+    assert.deepEqual((await getTrendingManga({ db, media, now: now + VIEW_WINDOW })).items, []);
+    await assert.rejects(recordReadView('mal-anime-21', visitor, { db, media, now }), {
+      status: 400,
+    });
+    await assert.rejects(
+      recordReadView('mal-manga-21', visitor, {
+        db,
+        media: async (id) => ({ id, category: 'MANHWA' }),
+        now,
+      }),
+      { status: 404 },
+    );
+  } finally {
+    sqlite.close();
+  }
+});
 
 test('weekly views deduplicate browsers, expire after seven days, and only expose aggregate counts', async () => {
   const sqlite = new DatabaseSync(':memory:');

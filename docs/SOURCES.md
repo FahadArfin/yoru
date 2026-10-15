@@ -58,3 +58,15 @@ The homepage switches one card grid between Just released, Most popular, and Tre
 Trending measures watch-page visits, not verified playback inside external iframes. Historical views are not fabricated or backfilled from library progress. An honest empty state is displayed until views arrive. Both SQLite and Sites D1 use the same tracking and ranking implementation. No SIMKL integration is used.
 
 Two hero artwork overrides in `server/home-artwork.js` use the exact TMDB image URLs observed in the user's Anixo reference (2026-10-13): Heavy Knight (MAL 59741) and Apothecary Diaries season 3 (MAL 61987). These cosmetic series backdrops/logos do not determine episode data, identity mapping, or availability. Wide-art picks lead the carousel; remaining picks retain their original relative popularity order. Other titles retain existing artwork fallbacks.
+
+### Manga discovery
+
+`/browse/manga` opens a manga landing page with eight featured titles, New series / Most popular / Trending tabs, reader favorites, completed stories, reading-list and community links. The searchable 48-title catalog remains below; applying catalog filters opens a compact results view with a return link. Other browse categories keep their existing layout.
+
+`GET /api/manga/discovery?mode=new|popular&period=all|year|month` uses Kitsu's manga metadata and verified `myanimelist/manga` mappings. New series is ordered by first publication date, not chapter updates. Popular uses Kitsu reader counts; Last year/month selects first-publication dates in the previous UTC calendar period. Month queries scan date-ordered pages through the entire month before ranking. Future/unknown dates, adult entries, manhwa, and missing mappings are excluded. Requests are bounded to 20 pages and 12 seconds; incomplete scans are unavailable or use the matching last-good cache. Each query is cached for six hours with shared refresh leases. Discovered titles are also saved to the catalog metadata cache. This uses Kitsu's public API, with no new credentials.
+
+Hero art uses original Kitsu landscape images only when they pass the homepage's Full HD and crop-resolution checks. A fitted manga cover composition keeps every featured title available when landscape art is absent, too small, or fails to load. It does not stretch a poster into a full-screen backdrop.
+
+`POST /api/media/:id/read-view` records visible loaded manga reading pages using the existing first-party viewer cookie and hashed visitor storage. `GET /api/manga/discovery?mode=trending` returns unique readers over seven days. Manga and anime ranking queries filter their ID namespace before applying the limit. Manga tracking does not imply verified reading on an external provider, and historical counts are not backfilled. Manhwa is excluded from this manga-only feed. Both backends enforce the same origin, rate-limit, and identity rules.
+
+Provider query reference: [Kitsu MediaResource](https://github.com/hummingbird-me/kitsu-server/blob/master/app/resources/media_resource.rb) documents the year/status filters; [Kitsu API](https://kitsu.docs.apiary.io/) supplies publication dates, reader counts, mappings, and artwork.

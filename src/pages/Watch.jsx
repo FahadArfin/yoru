@@ -70,17 +70,23 @@ export default function Watch() {
   }, [id, unit]);
   const anime = isAnime(media);
   useEffect(() => {
-    if (!anime || media?.id !== id || resource.loading || resource.error) return;
+    if (
+      (!anime && media?.category !== 'MANGA') ||
+      media?.id !== id ||
+      resource.loading ||
+      resource.error
+    )
+      return;
     let recorded = false;
     const record = () => {
       if (recorded || document.hidden) return;
       recorded = true;
-      recordView(id).catch(() => {});
+      recordView(id, !anime).catch(() => {});
     };
     record();
     document.addEventListener('visibilitychange', record);
     return () => document.removeEventListener('visibilitychange', record);
-  }, [id, anime, media?.id, resource.loading, resource.error]);
+  }, [id, anime, media?.id, media?.category, resource.loading, resource.error]);
   const automatic = useResource(
     anime ? `/api/media/${id}/sources?episode=${unit}&language=${language}` : null,
     false,

@@ -358,6 +358,14 @@ function mergeMedia(item) {
   return merged;
 }
 
+export function rememberDiscoveredMedia(items) {
+  // Discovery cards are partial metadata. Never downgrade enriched title pages.
+  for (const item of items) {
+    if (!cache.get(item.id)?.detailed) mergeMedia({ ...item, detailed: false });
+  }
+  return items;
+}
+
 export function parseMediaId(id) {
   const match = String(id || '').match(/^mal-(anime|manga)-([1-9]\d{0,8})$/);
   return match ? { kind: match[1], malId: Number(match[2]) } : null;

@@ -46,6 +46,7 @@ const Room = lazy(() => import('./pages/Room'));
 const Watch = lazy(() => import('./pages/Watch'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Schedule = lazy(() => import('./pages/Schedule'));
+const MangaPage = lazy(() => import('./pages/MangaPage'));
 function Brand() {
   return (
     <Link to="/" className="brand" aria-label="Yoru home">
@@ -67,6 +68,9 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isBrowse = location.pathname.startsWith('/browse/');
+  const mangaLanding =
+    location.pathname === '/browse/manga' &&
+    !['q', 'genre', 'sort', 'page'].some((key) => new URLSearchParams(location.search).get(key));
   const hasTopNavigation = isHome || isBrowse;
   const input = useRef();
   const navigation = useRef();
@@ -145,7 +149,13 @@ function Shell() {
     </NavLink>
   );
   return (
-    <div className={hasTopNavigation ? `home-shell${isBrowse ? ' browse-shell' : ''}` : undefined}>
+    <div
+      className={
+        hasTopNavigation
+          ? `home-shell${isBrowse && !mangaLanding ? ' browse-shell' : ''}`
+          : undefined
+      }
+    >
       <a href="#main-content" className="skip-link">
         Skip to content
       </a>
@@ -298,6 +308,7 @@ function Shell() {
           <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/browse/manga" element={<MangaPage />} />
               <Route path="/browse/:category" element={<Browse />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />
