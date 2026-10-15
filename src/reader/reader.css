@@ -246,6 +246,9 @@
   max-width: 100%;
   object-fit: contain;
 }
+.reader-canvas[data-fit='original'] .comic-page {
+  aspect-ratio: auto !important;
+}
 .reader-canvas[data-fit='original'] .comic-page img {
   width: auto;
   max-width: 100%;

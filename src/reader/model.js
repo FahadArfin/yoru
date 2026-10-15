@@ -90,7 +90,9 @@ export const sortChapters = (chapters) =>
   [...chapters].sort(
     (a, b) =>
       naturalCompare(a.volume, b.volume) ||
-      naturalCompare(a.number, b.number) ||
+      (chapterUnit(a.number) !== null && chapterUnit(b.number) !== null
+        ? chapterUnit(a.number) - chapterUnit(b.number)
+        : naturalCompare(a.number, b.number)) ||
       naturalCompare(a.group, b.group),
   );
 export function filterChapters(chapters, filters = {}, states = {}) {
@@ -126,6 +128,7 @@ export function readerPreferences(saved = {}, category = 'MANGA') {
   };
 }
 export function pageStep(page, direction, total, mode) {
+  if (direction > 0 && mode === 'double' && page + 1 >= total) return page;
   return Math.max(1, Math.min(Math.max(1, total), page + direction * (mode === 'double' ? 2 : 1)));
 }
 export function chapterUnit(value) {

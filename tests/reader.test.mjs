@@ -101,4 +101,17 @@ test('page navigation never skips the last odd spread or exceeds chapter bounds'
   assert.equal(pageStep(5, 1, 5, 'double'), 5);
   assert.equal(pageStep(1, -1, 5, 'single'), 1);
   assert.equal(pageStep(5, -1, 5, 'double'), 3);
+  assert.equal(pageStep(3, 1, 4, 'double'), 3);
+  assert.equal(pageStep(1, 1, 2, 'double'), 1);
+});
+test('bonus chapters sort by their decimal value rather than digit chunks', () => {
+  const chapters = ['1.05', '1.1', '1.2', '1.9', '1.10', '1.25'].map((number) => ({
+    number,
+    volume: '1',
+    group: 'A',
+  }));
+  assert.deepEqual(
+    sortChapters(chapters).map((c) => c.number),
+    ['1.05', '1.1', '1.10', '1.2', '1.25', '1.9'],
+  );
 });

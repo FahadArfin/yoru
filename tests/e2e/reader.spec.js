@@ -133,6 +133,22 @@ test('manhwa defaults to webtoon and image files stay on the device after reload
     .toBeLessThan(5);
   await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.getByRole('button', { name: 'Reader settings', exact: true }).click();
+  await page.getByLabel('Image fit').selectOption('original');
+  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await page.setViewportSize({ width: 1600, height: 1000 });
+  await expect
+    .poll(async () =>
+      page
+        .locator('[data-page="2"]')
+        .evaluate((element) =>
+          Math.abs(
+            element.getBoundingClientRect().height -
+              element.querySelector('img').getBoundingClientRect().height,
+          ),
+        ),
+    )
+    .toBeLessThan(5);
 });
 
 test('reader keyboard, spread layout, retry and modal focus preserve the correct page', async ({
@@ -176,4 +192,54 @@ test('reader keyboard, spread layout, retry and modal focus preserve the correct
   await expect(
     page.getByRole('link', { name: 'Title discussion', exact: true, includeHidden: true }),
   ).toHaveAttribute('href', '/title/mal-manga-21?unit=0');
+  // Follow the destination on phones too, where the compact footer hides this shortcut.
+  const discussion = await page
+    .getByRole('link', { name: 'Title discussion', exact: true, includeHidden: true })
+    .getAttribute('href');
+  const request = page.waitForRequest(
+    (r) => new URL(r.url()).pathname === '/api/comments/mal-manga-21',
+  );
+  await page.goto(discussion);
+  expect(new URL((await request).url()).searchParams.get('unit')).toBe('0');
+  await expect(page.getByText('Discussion for the whole title.', { exact: true })).toBeVisible();
+});
+
+test('dismissing an image import prevents a late redirect or chapter save', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.addInitScript(() => {
+    const decode = window.createImageBitmap.bind(window);
+    window.createImageBitmap = async (...args) => {
+      window.readerDecodeWaiting = true;
+      await new Promise((resolve) => {
+        window.resumeReaderDecode = resolve;
+      });
+      const image = await decode(...args);
+      window.readerDecodeDone = true;
+      return image;
+    };
+  });
+  await page.goto('/read/mal-manga-121496/1');
+  await page.getByRole('button', { name: 'Add chapters', exact: true }).click();
+  await page.getByRole('tab', { name: 'Image files', exact: true }).click();
+  await page
+    .getByLabel('Chapter images')
+    .setInputFiles({ name: 'page.png', mimeType: 'image/png', buffer: pixel });
+  await page.getByRole('button', { name: 'Import chapter', exact: true }).click();
+  await expect.poll(() => page.evaluate(() => window.readerDecodeWaiting)).toBe(true);
+  await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
+  await page.getByRole('link', { name: 'Back to Solo Leveling', exact: true }).click();
+  await expect(page).toHaveURL(/\/title\/mal-manga-121496$/);
+  await page.evaluate(() => window.resumeReaderDecode());
+  await expect.poll(() => page.evaluate(() => window.readerDecodeDone)).toBe(true);
+  const redirected = await page.waitForURL(/\/read\//, { timeout: 1000 }).then(
+    () => true,
+    () => false,
+  );
+  expect(redirected).toBe(false);
+  await page.getByRole('tab', { name: 'Chapters', exact: true }).click();
+  await expect(page.getByText('Your chapters belong here.', { exact: true })).toBeVisible();
 });

@@ -35,7 +35,10 @@ export default function Title() {
   const [unitPage, setUnitPage] = useState(0);
   const progressDirty = useRef(false);
   const [progress, setProgress] = useState(entry?.progress || 0);
-  const unit = Math.max(1, Number(params.get('unit')) || 1);
+  const unit =
+    params.get('unit') === '0'
+      ? 0
+      : Math.max(1, Math.min(100000, Math.trunc(Number(params.get('unit')) || 1)));
   useEffect(() => {
     if (!progressDirty.current) setProgress(entry?.progress || 0);
   }, [entry?.progress]);
@@ -273,15 +276,23 @@ export default function Title() {
             )}
             {tab === 'discussion' && (
               <>
+                {unit === 0 && <p className="muted">Discussion for the whole title.</p>}
                 <label className="unit-picker">
                   {unitName}
                   <input
                     aria-label={`Discussion ${unitName.toLowerCase()}`}
                     type="number"
-                    min="1"
+                    min="0"
                     max={knownTotal || 100000}
                     value={unit}
-                    onChange={(e) => setParams({ unit: Math.max(1, Number(e.target.value) || 1) })}
+                    onChange={(e) =>
+                      setParams({
+                        unit: Math.max(
+                          0,
+                          Math.min(100000, Math.trunc(Number(e.target.value) || 0)),
+                        ),
+                      })
+                    }
                   />
                 </label>
                 <Discussion key={`${id}-${unit}`} mediaId={id} unit={unit} />

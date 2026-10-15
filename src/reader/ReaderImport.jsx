@@ -1,4 +1,4 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { FileJson, Images, Upload } from 'lucide-react';
 import { Button, ErrorNotice, Modal } from '../components';
 import { titleOf } from '../api';
@@ -13,6 +13,18 @@ export default function ReaderImport({ media, close, onImport, initialNumber = '
   const [busy, setBusy] = useState(false);
   const [filename, setFilename] = useState('');
   const selection = useRef(0);
+  const active = useRef(true);
+  useEffect(() => {
+    active.current = true;
+    return () => {
+      active.current = false;
+    };
+  }, []);
+  const dismiss = () => {
+    active.current = false;
+    selection.current++;
+    close();
+  };
   const readManifest = async (event) => {
     const selected = ++selection.current;
     setChapters([]);
@@ -36,18 +48,20 @@ export default function ReaderImport({ media, close, onImport, initialNumber = '
     try {
       const data = Object.fromEntries(new FormData(event.currentTarget));
       const incoming = tab === 'manifest' ? chapters : [await imageChapter(files, data)];
+      if (!active.current) return;
       if (!incoming.length) throw new Error('Choose a chapter manifest first.');
       const all = await saveChapters(media.id, incoming);
+      if (!active.current) return;
       onImport(all, incoming[0]);
-      close();
+      dismiss();
     } catch (error) {
-      setError(error.message);
+      if (active.current) setError(error.message);
     } finally {
-      setBusy(false);
+      if (active.current) setBusy(false);
     }
   };
   return (
-    <Modal title="Add chapters" close={close} wide>
+    <Modal title="Add chapters" close={dismiss} wide>
       <span className="eyebrow">YOUR PERSONAL READER</span>
       <h2>Add chapters for {titleOf(media)}</h2>
       <p className="muted">

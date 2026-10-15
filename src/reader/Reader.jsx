@@ -531,7 +531,7 @@ function ReaderSession({ media, unit }) {
           <button
             aria-label="Next page"
             title="Next page"
-            disabled={!chapter || page >= total}
+            disabled={!chapter || pageStep(page, 1, total, preferences.mode) === page}
             onClick={() => turn(1)}
           >
             <ArrowRight size={18} />
