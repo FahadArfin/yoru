@@ -46,19 +46,30 @@ export function normalizeHomeAnime(raw) {
 }
 export function releasedEpisodes(items, language, now) {
   const seen = new Set();
-  return items
-    .filter(
-      (x) =>
-        x.airType === language &&
-        !x.delayed &&
-        x.episode > 0 &&
-        Date.parse(x.airingAt) <= now &&
-        Date.parse(x.airingAt) >= now - 7 * DAY_MS,
-    )
+  const recent = items.filter(
+    (x) =>
+      !x.delayed &&
+      x.episode > 0 &&
+      Date.parse(x.airingAt) <= now &&
+      Date.parse(x.airingAt) >= now - 7 * DAY_MS,
+  );
+  const subtitled = new Set(
+    recent.filter((x) => x.airType === 'sub').map((x) => `${x.route}:${x.episode}`),
+  );
+  return recent
+    .filter((x) => {
+      const chineseOriginal =
+        x.donghua === true && x.airType === 'raw' && !subtitled.has(`${x.route}:${x.episode}`);
+      if (language === 'chinese')
+        return x.donghua === true && (x.airType === 'sub' || chineseOriginal);
+      if (language === 'all') return x.airType === 'sub' || x.airType === 'dub' || chineseOriginal;
+      return x.airType === language;
+    })
     .sort((a, b) => Date.parse(b.airingAt) - Date.parse(a.airingAt))
     .filter((x) => {
-      if (seen.has(x.route)) return false;
-      seen.add(x.route);
+      const key = `${x.route}:${x.airType}`;
+      if (seen.has(key)) return false;
+      seen.add(key);
       return true;
     })
     .slice(0, 18);
@@ -108,7 +119,9 @@ export async function getHome(input = {}, options = {}) {
     fetchImpl = fetch,
     schedule = getSchedule,
   } = options;
-  const language = input.language === 'dub' ? 'dub' : 'sub';
+  const language = ['all', 'sub', 'dub', 'chinese'].includes(input.language)
+    ? input.language
+    : 'all';
   const calendar = await schedule({}, options);
   let stale = calendar.state !== 'ready';
   const request = (path) =>
@@ -159,7 +172,7 @@ export async function getHome(input = {}, options = {}) {
   const releases = releasedEpisodes(calendar.items, language, now).map((x) => ({ ...x }));
   const metadata = new Map(popular.map((x) => [x.route, x]));
   await pooled(
-    releases.filter((x) => !metadata.has(x.route)),
+    [...new Map(releases.map((x) => [x.route, x])).values()].filter((x) => !metadata.has(x.route)),
     async (entry) => {
       const media = await cached(`home:v1:anime:${entry.route}`, 7 * DAY_MS, async () => {
         const data = await request(`/anime/${entry.route}`);

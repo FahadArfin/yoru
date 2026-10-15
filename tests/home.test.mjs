@@ -120,6 +120,50 @@ test('only exact provider MAL anime links become native watch targets', () => {
     assert.equal(normalizeHomeAnime({ ...base, websites: { mal } }).id, null);
   }
 });
+
+test('release filters include Chinese originals, preserve dub identity and avoid duplicate originals', () => {
+  const items = [
+    airing('japan', now - 1000),
+    airing('japan', now - 2000, { airType: 'dub' }),
+    airing('china', now - 3000, { donghua: true, airType: 'raw' }),
+    airing('china', now - 4000, { donghua: true }),
+    airing('china-only', now - 5000, { donghua: true, airType: 'raw' }),
+    airing('japan-raw', now - 500, { airType: 'raw' }),
+    airing('future-china', now + 1000, { donghua: true, airType: 'raw' }),
+    airing('delayed-china', now - 100, { donghua: true, airType: 'raw', delayed: true }),
+  ];
+  const keys = (filter) =>
+    releasedEpisodes(items, filter, now).map((x) => `${x.route}:${x.airType}`);
+  assert.deepEqual(keys('all'), ['japan:sub', 'japan:dub', 'china:sub', 'china-only:raw']);
+  assert.deepEqual(keys('sub'), ['japan:sub', 'china:sub']);
+  assert.deepEqual(keys('dub'), ['japan:dub']);
+  assert.deepEqual(keys('chinese'), ['china:sub', 'china-only:raw']);
+});
+
+test('home accepts every release filter and defaults to all', async () => {
+  const options = {
+    now,
+    schedule: async () => ({
+      state: 'ready',
+      items: [
+        airing('japan', now - 1000),
+        airing('dub', now - 2000, { airType: 'dub' }),
+        airing('china', now - 3000, { donghua: true, airType: 'raw' }),
+      ],
+    }),
+  };
+  for (const [language, expected] of [
+    ['all', 3],
+    ['sub', 1],
+    ['dub', 1],
+    ['chinese', 1],
+  ]) {
+    const result = await getHome({ language }, options);
+    assert.equal(result.language, language);
+    assert.equal(result.releases.length, expected);
+  }
+  assert.equal((await getHome({}, options)).language, 'all');
+});
 test('homepage joins current week popularity with releases, persists metadata and keeps last good data', async () => {
   const cache = new Map();
   let calls = 0,

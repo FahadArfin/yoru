@@ -35,7 +35,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
             route: 'release',
             media: one,
             episode: 5,
-            airType: language,
+            airType: language === 'dub' ? 'dub' : 'sub',
             airingAt: new Date(today.getTime() - 3600000).toISOString(),
             cover: '/icon.svg',
           },

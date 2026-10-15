@@ -23,14 +23,43 @@ const fallbackImage = (event) => {
   image.dataset.failed = '1';
   image.src = '/icon.svg';
 };
+const releaseFilters = [
+  {
+    value: 'all',
+    label: 'All',
+    name: 'All releases',
+    empty: 'No new episodes in the last seven days.',
+  },
+  {
+    value: 'sub',
+    label: 'Sub',
+    name: 'English sub',
+    empty: 'No new English sub episodes in the last seven days.',
+  },
+  {
+    value: 'dub',
+    label: 'Dub',
+    name: 'English dub',
+    empty: 'No new English dub episodes in the last seven days.',
+  },
+  {
+    value: 'chinese',
+    label: 'Chinese',
+    name: 'Chinese releases',
+    empty: 'No new Chinese episodes in the last seven days.',
+  },
+];
 export default function HomeLead({ children }) {
-  const [language, setLanguage] = useState('sub');
+  const [language, setLanguage] = useState('all');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
   const [, tick] = useState(0);
   const { entryFor, updateEntry } = useApp();
-  const popular = home.data?.hot || [];
+  const [popular, setPopular] = useState([]);
+  useEffect(() => {
+    if (home.data?.hot) setPopular(home.data.hot);
+  }, [home.data]);
   const artwork = useBannerArtwork(popular, selectedId);
   const { featured } = artwork;
   const index = Math.max(
@@ -51,7 +80,10 @@ export default function HomeLead({ children }) {
     return () => clearInterval(timer);
   }, [language]);
   const releases = home.data?.releases || [];
-  const unavailable = home.error || ['not-configured', 'unavailable'].includes(home.data?.state);
+  const unavailable =
+    home.error ||
+    ['not-configured', 'unavailable', 'partial'].includes(home.data?.state) ||
+    (home.data?.stale && !releases.length);
   return (
     <>
       <section ref={artwork.ref} className="weekly-hero has-wide-art" aria-label="Hot this week">
@@ -136,7 +168,7 @@ export default function HomeLead({ children }) {
         </div>
         {featured.length > 0 && (
           <div className="weekly-bottom">
-            <span className="weekly-caption" title={home.data.ranking}>
+            <span className="weekly-caption" title={home.data?.ranking}>
               Popular anime airing this week <span> / </span> AnimeSchedule
             </span>
             <div className="weekly-controls" aria-label="Featured anime">
@@ -183,20 +215,21 @@ export default function HomeLead({ children }) {
                   Just released<span className="heading-period">.</span>
                 </h2>
               </div>
+              <div className="release-language" role="group" aria-label="Release filter">
+                {releaseFilters.map(({ value, label, name }) => (
+                  <button
+                    key={value}
+                    aria-label={name}
+                    title={name}
+                    aria-pressed={language === value}
+                    className={language === value ? 'active' : ''}
+                    onClick={() => setLanguage(value)}
+                  >
+                    {label}
+                  </button>
+                ))}
+              </div>
               <div className="release-tools">
-                <div className="release-language" aria-label="Release language">
-                  {['sub', 'dub'].map((value) => (
-                    <button
-                      key={value}
-                      aria-label={`English ${value}`}
-                      aria-pressed={language === value}
-                      className={language === value ? 'active' : ''}
-                      onClick={() => setLanguage(value)}
-                    >
-                      {value === 'sub' ? 'Sub' : 'Dub'}
-                    </button>
-                  ))}
-                </div>
                 <Link className="release-schedule" to="/schedule">
                   <CalendarDays size={15} /> Full schedule <ArrowRight size={15} />
                 </Link>
@@ -232,7 +265,13 @@ export default function HomeLead({ children }) {
                           <Play size={23} fill="currentColor" />
                         </span>
                         <span className="release-badges">
-                          <span>{language.toUpperCase()}</span>
+                          <span>
+                            {entry.airType === 'dub'
+                              ? 'ENG DUB'
+                              : entry.airType === 'sub'
+                                ? 'SUB'
+                                : 'CHINESE'}
+                          </span>
                           <strong>EP {entry.episode}</strong>
                         </span>
                       </div>
@@ -252,11 +291,11 @@ export default function HomeLead({ children }) {
                       </div>
                     </>
                   );
-                  return entry.media?.id ? (
+                  return entry.media?.id && ['sub', 'dub'].includes(entry.airType) ? (
                     <Link
                       className="release-card"
                       key={entry.id}
-                      to={`/watch/${entry.media.id}/${entry.episode}?language=${language}`}
+                      to={`/watch/${entry.media.id}/${entry.episode}?language=${entry.airType}`}
                     >
                       {content}
                     </Link>
@@ -283,7 +322,7 @@ export default function HomeLead({ children }) {
                 <p>
                   {unavailable
                     ? 'We couldn’t refresh the episode feed. Try again in a moment.'
-                    : `No new English ${language} episodes in the last seven days.`}
+                    : releaseFilters.find((x) => x.value === language).empty}
                 </p>
                 <button className="btn btn-subtle" onClick={home.refresh}>
                   <RotateCw size={14} /> Refresh releases
@@ -299,7 +338,7 @@ export default function HomeLead({ children }) {
           </section>
           {children}
         </div>
-        <HomeSidebar popular={popular} language={language} />
+        <HomeSidebar popular={popular} language={language === 'dub' ? 'dub' : 'sub'} />
       </div>
     </>
   );

@@ -329,6 +329,7 @@
 }
 .release-heading {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 15px;
@@ -362,20 +363,19 @@
 }
 .release-tools {
   display: flex;
+  margin-left: auto;
   align-items: center;
   gap: 24px;
 }
 .release-language {
   display: flex;
-  padding: 3px;
-  border: 1px solid #ffffff0d;
-  border-radius: 7px;
-  background: #14161d;
+  align-items: center;
+  gap: 2px;
 }
 .release-language button {
   border: 0;
   border-radius: 5px;
-  padding: 7px 16px;
+  padding: 8px 10px;
   background: transparent;
   color: #8b8e9a;
   font-size: 11px;
@@ -383,8 +383,8 @@
   cursor: pointer;
 }
 .release-language button.active {
-  background: #28232f;
-  color: #e1d2ff;
+  background: #ffffff08;
+  color: #fff;
 }
 .release-schedule {
   display: flex;
@@ -754,7 +754,7 @@
     display: none;
   }
   .release-language button {
-    padding: 7px 12px;
+    padding: 8px;
     font-size: 10px;
   }
   .release-grid {

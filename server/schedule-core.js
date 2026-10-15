@@ -31,6 +31,7 @@ export function normalizeAiring(raw) {
     title: plain(raw.english || raw.title || raw.romaji) || 'Untitled',
     route: raw.route,
     airType: raw.airType,
+    donghua: raw.donghua === true,
     episode,
     airingAt,
     delayed:
@@ -69,7 +70,7 @@ async function readTimetable(response) {
   if (!Array.isArray(data) || data.length > 5000) throw new Error('Invalid timetable');
   const items = data.map(normalizeAiring).filter(Boolean);
   if (data.length && !items.length) throw new Error('Invalid timetable entries');
-  return { items, complete: items.length === data.length };
+  return { items, complete: items.length === data.length, schemaVersion: 2 };
 }
 export async function getSchedule(input = {}, options = {}) {
   const {
@@ -109,12 +110,13 @@ export async function getSchedule(input = {}, options = {}) {
   for (const [index, { year, week }] of weeks.entries()) {
     const key = `airing:v1:${year}:${week}`;
     let cached = await load(key).catch(() => null);
-    if (!cached || now - cached.fetchedAt > TTL) {
+    if (!cached || cached.schemaVersion !== 2 || now - cached.fetchedAt > TTL) {
       if (token.trim()) {
         // A shared two-minute lease bounds concurrent cold starts and outage retries.
         if (!(await claim(key, now).catch(() => false))) {
           cached = await load(key).catch(() => cached);
-          result.providerUnavailable ||= !cached || now - cached.fetchedAt > TTL;
+          result.providerUnavailable ||=
+            !cached || cached.schemaVersion !== 2 || now - cached.fetchedAt > TTL;
         } else {
           try {
             const url = `${API}/timetables/all?year=${year}&week=${week}&tz=UTC`;

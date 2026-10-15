@@ -46,6 +46,9 @@ test('schedule entries retain unknown times, delay state, and provider identity'
   assert.equal(airingLabel(delayed, now), 'Delayed');
   assert.equal(normalizeAiring({ ...fixture, route: '../bad' }), null);
   assert.ok(normalizeAiring({ ...fixture, route: 'a'.repeat(220) }));
+  assert.equal(normalizeAiring({ ...fixture, donghua: true }).donghua, true);
+  assert.equal(normalizeAiring({ ...fixture, donghua: false }).donghua, false);
+  assert.equal(normalizeAiring({ ...fixture, donghua: 'false' }).donghua, false);
 });
 test('shared UTC weeks are cached, stale data survives outages, and secrets stay server-side', async () => {
   const rows = new Map();
@@ -98,6 +101,33 @@ test('missing credentials and malformed upstream data never masquerade as an emp
   assert.equal(invalid.state, 'unavailable');
   assert.equal(invalid.complete, false);
   await assert.rejects(() => getSchedule({ week: '1900-01-01' }, { now }), /week/i);
+});
+
+test('fresh old timetable caches refresh Chinese flags and survive a failed schema refresh', async () => {
+  const old = {
+    items: [{ ...normalizeAiring(fixture), donghua: undefined }],
+    fetchedAt: now,
+    complete: true,
+  };
+  const rows = new Map();
+  const options = {
+    now,
+    token: 'test',
+    load: async (key) => rows.get(key) || old,
+    save: async (key, value) => rows.set(key, value),
+  };
+  const upgraded = await getSchedule(
+    {},
+    { ...options, fetchImpl: async () => Response.json([{ ...fixture, donghua: true }]) },
+  );
+  assert.equal(upgraded.items[0].donghua, true);
+  assert.ok([...rows.values()].every((x) => x.schemaVersion === 2));
+  const failed = await getSchedule(
+    {},
+    { ...options, load: async () => old, fetchImpl: async () => new Response('', { status: 503 }) },
+  );
+  assert.equal(failed.items.length, 1);
+  assert.equal(failed.state, 'stale');
 });
 
 test('an outage lease bounds concurrent refreshes and permits a later retry', async () => {
