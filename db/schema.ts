@@ -249,6 +249,18 @@ export const importedMedia = sqliteTable('imported_media', {
   media_id: text().primaryKey(),
   metadata: text().notNull(),
 });
+export const watchViews = sqliteTable(
+  'watch_views',
+  {
+    media_id: text().notNull(),
+    visitor_hash: text().notNull(),
+    last_seen: integer().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.media_id, t.visitor_hash] }),
+    index('watch_views_expiry').on(t.last_seen),
+  ],
+);
 export const limits = sqliteTable(
   'rate_limits',
   {

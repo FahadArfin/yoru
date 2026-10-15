@@ -4,12 +4,49 @@ import { resolveAnimeSources } from './sources-core.js';
 import { getSchedule } from './schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
-import { all } from './db.js';
+import { all, run } from './db.js';
+import { cookie } from './auth.js';
+import { getPopularAnime } from './home-discovery.js';
+import {
+  getTrendingAnime,
+  recordWatchView,
+  VIEW_COOKIE,
+  VIEW_COOKIE_SECONDS,
+} from './watch-views.js';
 import { getHome } from './home-core.js';
 import { seed } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get('/home/discovery', async (req, res, next) => {
+  try {
+    res.json(
+      req.query.mode === 'trending'
+        ? await getTrendingAnime({ db: { all, run }, media: getMedia })
+        : await getPopularAnime(req.query, scheduleOptions),
+    );
+  } catch (error) {
+    next(error);
+  }
+});
+catalogRouter.post('/media/:id/view', async (req, res, next) => {
+  try {
+    const visitor = await recordWatchView(req.params.id, cookie(req, VIEW_COOKIE), {
+      db: { all, run },
+      media: getMedia,
+    });
+    res.cookie(VIEW_COOKIE, visitor, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: VIEW_COOKIE_SECONDS * 1000,
+      secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
+    });
+    res.json({ ok: true });
+  } catch (error) {
+    next(error);
+  }
+});
 catalogRouter.get('/home/sidebar', async (req, res, next) => {
   try {
     res.json(

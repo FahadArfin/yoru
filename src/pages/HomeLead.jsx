@@ -1,54 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import HomeSidebar from './HomeSidebar';
+import HomeDiscovery from './HomeDiscovery';
 import { Link } from 'react-router-dom';
-import {
-  ArrowRight,
-  CalendarDays,
-  Check,
-  ChevronLeft,
-  ChevronRight,
-  Clock3,
-  Flame,
-  Play,
-  Plus,
-  RotateCw,
-} from 'lucide-react';
+import { ArrowRight, Check, ChevronLeft, ChevronRight, Flame, Play, Plus } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { ago, coverOf, titleOf } from '../api';
+import { titleOf } from '../api';
 import { useBannerArtwork } from '../useBannerArtwork';
 
-const fallbackImage = (event) => {
-  const image = event.currentTarget;
-  if (image.dataset.failed) return;
-  image.dataset.failed = '1';
-  image.src = '/icon.svg';
-};
-const releaseFilters = [
-  {
-    value: 'all',
-    label: 'All',
-    name: 'All releases',
-    empty: 'No new episodes in the last seven days.',
-  },
-  {
-    value: 'sub',
-    label: 'Sub',
-    name: 'English sub',
-    empty: 'No new English sub episodes in the last seven days.',
-  },
-  {
-    value: 'dub',
-    label: 'Dub',
-    name: 'English dub',
-    empty: 'No new English dub episodes in the last seven days.',
-  },
-  {
-    value: 'chinese',
-    label: 'Chinese',
-    name: 'Chinese releases',
-    empty: 'No new Chinese episodes in the last seven days.',
-  },
-];
 export default function HomeLead({ children }) {
   const [language, setLanguage] = useState('all');
   const home = useResource(`/api/home?language=${language}`);
@@ -205,129 +163,7 @@ export default function HomeLead({ children }) {
       </section>
       <div className="home-content-layout home-width">
         <div className="home-release-column">
-          <section className="release-section" aria-labelledby="released-heading">
-            <div className="release-heading">
-              <div>
-                <span className="release-eyebrow">
-                  <span /> FRESH OFF THE SCHEDULE
-                </span>
-                <h2 id="released-heading">
-                  Just released<span className="heading-period">.</span>
-                </h2>
-              </div>
-              <div className="release-tools">
-                <Link className="release-schedule" to="/schedule">
-                  <CalendarDays size={15} /> Full schedule <ArrowRight size={15} />
-                </Link>
-              </div>
-            </div>
-            <div className="release-language" role="group" aria-label="Release filter">
-              {releaseFilters.map(({ value, label, name }) => (
-                <button
-                  key={value}
-                  aria-label={name}
-                  title={name}
-                  aria-pressed={language === value}
-                  className={language === value ? 'active' : ''}
-                  onClick={() => setLanguage(value)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
-            {home.loading && !home.data ? (
-              <div className="release-grid" aria-label="Loading releases">
-                {Array.from({ length: 12 }, (_, i) => (
-                  <div key={i} className="release-skeleton" />
-                ))}
-              </div>
-            ) : releases.length ? (
-              <div className="release-grid">
-                {releases.map((entry) => {
-                  const content = (
-                    <>
-                      <div className="release-poster">
-                        <img
-                          src={entry.cover || coverOf(entry.media)}
-                          alt=""
-                          loading="lazy"
-                          onError={fallbackImage}
-                        />
-                        <span className="release-play">
-                          <Play size={23} fill="currentColor" />
-                        </span>
-                        <span className="release-badges">
-                          <span>
-                            {entry.airType === 'dub'
-                              ? 'ENG DUB'
-                              : entry.airType === 'sub'
-                                ? 'SUB'
-                                : 'CHINESE'}
-                          </span>
-                          <strong>EP {entry.episode}</strong>
-                        </span>
-                      </div>
-                      <div className="release-info">
-                        <h3>{entry.title}</h3>
-                        <span>
-                          <Clock3 size={11} />
-                          <time
-                            dateTime={entry.airingAt}
-                            title={new Date(entry.airingAt).toLocaleString()}
-                          >
-                            {ago(entry.airingAt)}
-                          </time>
-                          <i>·</i>
-                          {entry.media?.format || 'Anime'}
-                        </span>
-                      </div>
-                    </>
-                  );
-                  return entry.media?.id && ['sub', 'dub'].includes(entry.airType) ? (
-                    <Link
-                      className="release-card"
-                      key={entry.id}
-                      to={`/watch/${entry.media.id}/${entry.episode}?language=${entry.airType}`}
-                    >
-                      {content}
-                    </Link>
-                  ) : (
-                    <a
-                      className="release-card"
-                      key={entry.id}
-                      href={entry.providerUrl}
-                      target="_blank"
-                      rel="noreferrer"
-                      aria-label={`${entry.title} — episode ${entry.episode} details on AnimeSchedule`}
-                    >
-                      {content}
-                    </a>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="release-empty">
-                <Clock3 size={28} />
-                <h3>
-                  {unavailable ? 'The release feed is taking a break.' : 'You’re all caught up.'}
-                </h3>
-                <p>
-                  {unavailable
-                    ? 'We couldn’t refresh the episode feed. Try again in a moment.'
-                    : releaseFilters.find((x) => x.value === language).empty}
-                </p>
-                <button className="btn btn-subtle" onClick={home.refresh}>
-                  <RotateCw size={14} /> Refresh releases
-                </button>
-              </div>
-            )}
-            <div className="release-footer">
-              <span>Latest episodes · Past 7 days</span>
-              <Link to="/browse/anime">
-                Discover more anime <ArrowRight size={14} />
-              </Link>
-            </div>
-          </section>
+          <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
           {children}
         </div>
         <HomeSidebar popular={popular} language={language === 'dub' ? 'dub' : 'sub'} />

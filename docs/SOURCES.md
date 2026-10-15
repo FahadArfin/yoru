@@ -47,4 +47,14 @@ The homepage right rail uses `GET /api/home/sidebar` for upcoming anime (popular
 
 The compact calendar uses the same timetable, local-date grouping, selected-date UTC offset, sub/dub selection, and delayed/airing labels as the full schedule. Community rows use real existing discussions and hide spoiler bodies.
 
+### Homepage discovery tabs
+
+The homepage switches one card grid between Just released, Most popular, and Trending. Language selection is retained when returning to Just released. The tabs support keyboard navigation, and card entrance animations respect reduced motion.
+
+`GET /api/home/discovery?mode=popular&period=all|year|month` uses AnimeSchedule's popularity order. Last year and Last month mean anime whose first episode premiered in the previous UTC calendar year or month, with the exact period printed below the tabs. These are release cohorts, not historical view counts. The monthly query walks the corresponding season's popularity pages to find up to 18 matching premiere dates; unknown and future dates are excluded. A six-hour cache and shared refresh leases prevent repeated provider scans. Unavailable refreshes retain the matching last-good list; a different month or year never reuses the previous period's list.
+
+`GET /api/home/discovery?mode=trending` ranks Yoru's own unique watch-page visitors within the preceding seven days. `POST /api/media/:id/view` records a visible, successfully loaded anime watch page. A random first-party HttpOnly, SameSite cookie identifies the browser; only its SHA-256 hash, the exact anime ID, and the server timestamp are stored in `watch_views`. A unique database key makes refreshes, repeat episodes, and concurrent writes idempotent for the visitor/anime pair. Revisits update the last-seen timestamp. Expired rows are removed on subsequent view writes, and all ranking queries exclude them immediately. Cookies last 30 days; separate browsers or cleared cookies can count separately. Existing origin protection and write rate limits apply. Only aggregated viewer counts are public; no account IDs, visitor tokens, or IP addresses are saved in this table.
+
+Trending measures watch-page visits, not verified playback inside external iframes. Historical views are not fabricated or backfilled from library progress. An honest empty state is displayed until views arrive. Both SQLite and Sites D1 use the same tracking and ranking implementation. No SIMKL integration is used.
+
 Two hero artwork overrides in `server/home-artwork.js` use the exact TMDB image URLs observed in the user's Anixo reference (2026-10-13): Heavy Knight (MAL 59741) and Apothecary Diaries season 3 (MAL 61987). These cosmetic series backdrops/logos do not determine episode data, identity mapping, or availability. Wide-art picks lead the carousel; remaining picks retain their original relative popularity order. Other titles retain existing artwork fallbacks.

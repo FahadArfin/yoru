@@ -126,6 +126,34 @@ async function waitEvent(connection, event, predicate = () => true) {
 }
 
 before(start);
+test('anonymous watch views use a private cookie and count one visitor per anime', async () => {
+  const first = await request('/api/media/mal-anime-21/view', { method: 'POST', body: {} });
+  assert.equal(first.status, 200);
+  assert.match(first.headers.get('set-cookie'), /HttpOnly/);
+  const session = { cookie: first.headers.get('set-cookie').split(';')[0] };
+  assert.equal(
+    (await request('/api/media/mal-anime-21/view', { method: 'POST', session, body: {} })).status,
+    200,
+  );
+  await request('/api/media/mal-anime-21/view', { method: 'POST', body: {} });
+  const trending = await request('/api/home/discovery?mode=trending');
+  assert.equal(trending.body.items[0].viewers, 2);
+  assert.equal(JSON.stringify(trending.body).includes('visitor_hash'), false);
+  assert.equal(
+    (await request('/api/media/mal-manga-21/view', { method: 'POST', body: {} })).status,
+    400,
+  );
+  assert.equal(
+    (
+      await request('/api/media/mal-anime-21/view', {
+        method: 'POST',
+        origin: 'https://evil.test',
+        body: {},
+      })
+    ).status,
+    403,
+  );
+});
 after(async () => {
   for (const item of streams) item.controller.abort();
   await Promise.allSettled(streams.map((item) => item.reading));

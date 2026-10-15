@@ -76,6 +76,11 @@ db.exec(`
     room_id TEXT REFERENCES rooms(id) ON DELETE CASCADE, body TEXT NOT NULL, created_at TEXT NOT NULL
   );
   CREATE INDEX IF NOT EXISTS messages_room_time ON messages(room_id, created_at);
+  CREATE TABLE IF NOT EXISTS watch_views (
+    media_id TEXT NOT NULL, visitor_hash TEXT NOT NULL, last_seen INTEGER NOT NULL,
+    PRIMARY KEY(media_id, visitor_hash)
+  );
+  CREATE INDEX IF NOT EXISTS watch_views_expiry ON watch_views(last_seen);
 `);
 if (
   !db

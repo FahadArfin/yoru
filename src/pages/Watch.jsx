@@ -13,6 +13,7 @@ import {
   Users,
 } from 'lucide-react';
 import { bannerOf, isAnime, safeLink, titleOf } from '../api';
+import { recordView } from '../watch-views';
 import { useApp, useResource } from '../state';
 import { Button, Empty, ErrorNotice, Loading } from '../components';
 import SourcePlayer from '../SourcePlayer';
@@ -68,6 +69,18 @@ export default function Watch() {
     setPlayerSaved(false);
   }, [id, unit]);
   const anime = isAnime(media);
+  useEffect(() => {
+    if (!anime || media?.id !== id || resource.loading || resource.error) return;
+    let recorded = false;
+    const record = () => {
+      if (recorded || document.hidden) return;
+      recorded = true;
+      recordView(id).catch(() => {});
+    };
+    record();
+    document.addEventListener('visibilitychange', record);
+    return () => document.removeEventListener('visibilitychange', record);
+  }, [id, anime, media?.id, resource.loading, resource.error]);
   const automatic = useResource(
     anime ? `/api/media/${id}/sources?episode=${unit}&language=${language}` : null,
     false,

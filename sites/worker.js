@@ -1,4 +1,5 @@
 import { Hono } from 'hono';
+import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
 import { store } from './store.js';
 import {
@@ -7,6 +8,7 @@ import {
   originGuard,
   discordEnabled,
   rateLimit,
+  cookieOptions,
 } from './security.js';
 import { socialRoutes } from './social.js';
 import { roomRoutes, reconcileRooms } from './rooms.js';
@@ -22,6 +24,13 @@ import { getSchedule } from '../server/schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from '../server/home-sidebar.js';
 import { getHome } from '../server/home-core.js';
+import { getPopularAnime } from '../server/home-discovery.js';
+import {
+  getTrendingAnime,
+  recordWatchView,
+  VIEW_COOKIE,
+  VIEW_COOKIE_SECONDS,
+} from '../server/watch-views.js';
 import { seed } from './catalog-storage.js';
 
 const app = new Hono();
@@ -112,6 +121,21 @@ app.get('/api/media/:id', async (c) => {
   if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
   return c.json(media);
 });
+app.post('/api/media/:id/view', async (c) => {
+  const visitor = await recordWatchView(c.req.param('id'), getCookie(c, VIEW_COOKIE), {
+    db: c.get('db'),
+    media: getMedia,
+  });
+  setCookie(c, VIEW_COOKIE, visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
+  return c.json({ ok: true });
+});
+app.get('/api/home/discovery', async (c) =>
+  c.json(
+    c.req.query('mode') === 'trending'
+      ? await getTrendingAnime({ db: c.get('db'), media: getMedia })
+      : await getPopularAnime(c.req.query(), scheduleOptions(c.env)),
+  ),
+);
 app.get('/api/home/sidebar', async (c) =>
   c.json(
     await getHomeSidebar({
