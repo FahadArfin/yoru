@@ -553,8 +553,8 @@
   .home-topnav {
     gap: 15px;
   }
-  .home-topnav a:nth-child(3),
-  .home-topnav a:nth-child(5) {
+  .home-topnav > a:nth-child(3),
+  .home-topnav > a:nth-child(5) {
     display: none;
   }
   .home-shell .topbar {

@@ -25,6 +25,7 @@ import {
   Moon,
   Search,
   Settings,
+  Shield,
   Sparkles,
   Users,
   X,
@@ -35,9 +36,11 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { lockDocumentScroll } from './overlays';
+import { NsfwMenu } from './nsfw';
 import './styles.css';
 import './home.css';
 import './browse.css';
+import './nsfw.css';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -48,6 +51,7 @@ const Reader = lazy(() => import('./reader/Reader'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const MangaPage = lazy(() => import('./pages/MangaPage'));
+const NsfwPage = lazy(() => import('./pages/NsfwPage'));
 function Brand() {
   return (
     <Link to="/" className="brand" aria-label="Yoru home">
@@ -70,10 +74,11 @@ function Shell() {
   const isHome = location.pathname === '/';
   const isBrowse = location.pathname.startsWith('/browse/');
   const isReader = location.pathname.startsWith('/read/');
+  const isNsfw = location.pathname === '/nsfw' || location.pathname.startsWith('/nsfw/');
   const readingLanding =
     ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
     !['q', 'genre', 'sort', 'page'].some((key) => new URLSearchParams(location.search).get(key));
-  const hasTopNavigation = isHome || isBrowse;
+  const hasTopNavigation = isHome || isBrowse || isNsfw;
   const input = useRef();
   const navigation = useRef();
   const navigationTrigger = useRef();
@@ -156,7 +161,7 @@ function Shell() {
         isReader
           ? 'reader-shell'
           : hasTopNavigation
-            ? `home-shell${isBrowse && !readingLanding ? ' browse-shell' : ''}`
+            ? `home-shell${(isBrowse && !readingLanding) || isNsfw ? ' browse-shell' : ''}`
             : undefined
       }
     >
@@ -196,6 +201,7 @@ function Shell() {
           {nav('/browse/anime', MonitorPlay, 'Anime')}
           {nav('/browse/manga', BookOpen, 'Manga')}
           {nav('/browse/manhwa', Sparkles, 'Manhwa')}
+          {nav('/nsfw', Shield, 'NSFW', '18+')}
           {nav('/library', Bookmark, 'My library')}
           {nav('/schedule', CalendarDays, 'Schedule')}
           <span className="nav-label nav-label-second">BETTER TOGETHER</span>
@@ -267,6 +273,7 @@ function Shell() {
                 <Link to="/browse/manhwa">Manhwa</Link>
                 <Link to="/schedule">Schedule</Link>
                 <Link to="/community">Community</Link>
+                <NsfwMenu />
               </nav>
             </>
           )}
@@ -315,6 +322,8 @@ function Shell() {
               <Route path="/browse/manga" element={<MangaPage key="manga" />} />
               <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />
+              <Route path="/nsfw" element={<NsfwPage />} />
+              <Route path="/nsfw/:category" element={<NsfwPage />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />
               <Route path="/read/:id/:unit" element={<Reader />} />
