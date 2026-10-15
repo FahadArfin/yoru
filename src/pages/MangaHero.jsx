@@ -5,7 +5,7 @@ import { coverOf, titleOf } from '../api';
 import { useApp } from '../state';
 import { useBannerArtwork } from '../useBannerArtwork';
 
-export default function MangaHero({ items }) {
+export default function MangaHero({ items, category, label }) {
   const [selected, setSelected] = useState(null);
   const { entryFor, updateEntry } = useApp();
   const picks = items.slice(0, 8);
@@ -21,7 +21,7 @@ export default function MangaHero({ items }) {
     <section
       ref={artwork.ref}
       className={`weekly-hero manga-hero ${wide ? 'has-wide-art' : 'manga-cover-layout'}`}
-      aria-label="Featured manga"
+      aria-label={`Featured ${category}`}
     >
       {wide && (
         <img
@@ -45,14 +45,17 @@ export default function MangaHero({ items }) {
               event.currentTarget.style.visibility = 'hidden';
             }}
           />
-          <span className="manga-cover-label">INK. PANELS. OBSESSION.</span>
+          <span className="manga-cover-label">
+            {category === 'manhwa' ? 'COLOR. SCROLL. OBSESSION.' : 'INK. PANELS. OBSESSION.'}
+          </span>
         </div>
       )}
       <div className="weekly-content">
         <span className="weekly-kicker">
-          <BookOpen size={16} /> THE MANGA COLLECTION <span className="weekly-line" />
+          <BookOpen size={16} /> THE {category.toUpperCase()} COLLECTION{' '}
+          <span className="weekly-line" />
         </span>
-        <h1 className="sr-only">Manga</h1>
+        <h1 className="sr-only">{label}</h1>
         <h2 key={hero?.id}>
           {hero ? (
             titleOf(hero)
@@ -67,7 +70,7 @@ export default function MangaHero({ items }) {
         {hero ? (
           <>
             <div className="weekly-meta">
-              <span>MANGA</span>
+              <span>{category.toUpperCase()}</span>
               {hero.year && <span>{hero.year}</span>}
               <span className="weekly-airing">{hero.status}</span>
               {hero.score > 0 && (
@@ -82,7 +85,7 @@ export default function MangaHero({ items }) {
             </p>
             <div className="weekly-actions">
               <Link className="weekly-watch" to={`/title/${hero.id}`}>
-                <BookOpen size={17} /> Explore manga
+                <BookOpen size={17} /> Explore {category}
               </Link>
               <button
                 className="weekly-save"
@@ -103,10 +106,10 @@ export default function MangaHero({ items }) {
       {picks.length > 0 && (
         <div className="weekly-bottom">
           <span className="weekly-caption">
-            Your next reading obsession <span> / </span> Manga
+            Your next reading obsession <span> / </span> {label}
           </span>
-          <div className="weekly-controls" aria-label="Featured manga controls">
-            <button aria-label="Previous featured manga" onClick={() => change(-1)}>
+          <div className="weekly-controls" aria-label={`Featured ${category} controls`}>
+            <button aria-label={`Previous featured ${category}`} onClick={() => change(-1)}>
               <ChevronLeft size={18} />
             </button>
             {picks.map((item) => (
@@ -122,7 +125,7 @@ export default function MangaHero({ items }) {
               {String(index + 1).padStart(2, '0')}
               <small> / {String(picks.length).padStart(2, '0')}</small>
             </span>
-            <button aria-label="Next featured manga" onClick={() => change(1)}>
+            <button aria-label={`Next featured ${category}`} onClick={() => change(1)}>
               <ChevronRight size={18} />
             </button>
           </div>

@@ -24,7 +24,7 @@ function MangaRow({ media }) {
       <div className="rail-row-copy">
         <strong>{titleOf(media)}</strong>
         <span className="rail-meta">
-          MANGA {media.year && <span>· {media.year}</span>}
+          {media.category} {media.year && <span>· {media.year}</span>}
           {media.score > 0 && (
             <span className="rail-score">
               <Star size={11} fill="currentColor" />
@@ -37,32 +37,38 @@ function MangaRow({ media }) {
   );
 }
 
-function MangaLanding() {
-  const popular = useMangaFeed('popular');
-  const curated = useResource('/api/catalog?category=MANGA&curated=1');
+function MangaLanding({ category, label }) {
+  const popular = useMangaFeed('popular', 'all', category);
+  const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
   const picks = popular.data?.items?.length ? popular.data.items : itemsOf(curated.data);
   const { user, setAuthOpen } = useApp();
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (
-    <div className="home-page cinema-home manga-home">
-      <MangaHero items={picks} />
+    <div
+      className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''}`}
+    >
+      <MangaHero items={picks} category={category} label={label} />
       <div className="manga-intro home-width">
         <div>
           <BookOpen size={19} />
           <span>
-            <strong>A little more obsessed. One chapter at a time.</strong>
+            <strong>
+              {category === 'manhwa'
+                ? 'A little more obsessed. One scroll at a time.'
+                : 'A little more obsessed. One chapter at a time.'}
+            </strong>
             <small>Discover something new, or fall back into an old favorite.</small>
           </span>
         </div>
-        <a href="#manga-catalog">
+        <a href={`#${category}-catalog`}>
           Explore the collection <ArrowRight size={15} />
         </a>
       </div>
       <div className="home-content-layout home-width">
         <div className="home-release-column">
-          <MangaDiscovery popular={popular} />
+          <MangaDiscovery popular={popular} category={category} label={label} />
         </div>
-        <aside className="home-right-rail" aria-label="Manga highlights">
+        <aside className="home-right-rail" aria-label={`${label} highlights`}>
           <section className="home-rail-panel" aria-label="Reader favorites">
             <div className="rail-heading">
               <h2>
@@ -94,7 +100,7 @@ function MangaLanding() {
           <section className="home-rail-panel manga-rail-cta" aria-label="Your reading list">
             <Bookmark size={24} />
             <h2>Your next chapter.</h2>
-            <p>Keep your favorites close. Save a manga and pick up where you left off.</p>
+            <p>Keep your favorites close. Save a {category} and pick up where you left off.</p>
             {user ? (
               <Link to="/library">
                 Open your library <ArrowRight size={14} />
@@ -105,7 +111,7 @@ function MangaLanding() {
               </button>
             )}
           </section>
-          <section className="home-rail-panel manga-rail-cta" aria-label="Manga community">
+          <section className="home-rail-panel manga-rail-cta" aria-label={`${label} community`}>
             <MessageSquare size={22} />
             <h2>Better with your people.</h2>
             <p>
@@ -118,23 +124,24 @@ function MangaLanding() {
         </aside>
       </div>
       <div className="manga-catalog-wrap home-width">
-        <Browse embedded categoryOverride="manga" />
+        <Browse embedded categoryOverride={category} />
       </div>
     </div>
   );
 }
 
-export default function MangaPage() {
+export default function MangaPage({ category = 'manga' }) {
+  const label = category === 'manhwa' ? 'Manhwa' : 'Manga';
   const [params] = useSearchParams();
   const filtered = ['q', 'genre', 'sort', 'page'].some((key) => params.get(key));
   return filtered ? (
     <>
       <div className="manga-return">
-        <Link to="/browse/manga">← Manga discovery</Link>
+        <Link to={`/browse/${category}`}>← {label} discovery</Link>
       </div>
-      <Browse categoryOverride="manga" />
+      <Browse categoryOverride={category} />
     </>
   ) : (
-    <MangaLanding />
+    <MangaLanding category={category} label={label} />
   );
 }

@@ -45,6 +45,29 @@
     radial-gradient(ellipse at 72% 40%, #57407399, transparent 55%),
     radial-gradient(ellipse at 20% 80%, #303c5544, transparent 65%), #11141e;
 }
+.manhwa-home .manga-cover-layout {
+  background:
+    radial-gradient(ellipse at 72% 40%, #286d6899, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, #29445a44, transparent 65%), #10191e;
+}
+.manhwa-home .weekly-watch {
+  background: #83d9c3;
+  color: #102b28;
+}
+.manhwa-home .weekly-watch:hover {
+  background: #a7ead9;
+}
+.manhwa-home .manga-intro > div,
+.manhwa-home .manga-intro > a,
+.manhwa-home .manga-rail-cta > svg,
+.manhwa-home .manga-rail-cta a,
+.manhwa-home .manga-rail-cta button,
+.manhwa-home .manga-cover-label {
+  color: #9ddacb;
+}
+.manhwa-home .manga-rail-cta {
+  background: linear-gradient(135deg, #223735, #22252b);
+}
 .manga-cover-stage {
   position: absolute;
   inset: 13% 4% 13% 52%;

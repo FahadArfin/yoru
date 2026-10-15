@@ -92,6 +92,15 @@ test('D1 manga readers are shared across Workers and isolated from anime ranking
     const cookie = first.headers.get('set-cookie').split(';')[0];
     assert.match(first.headers.get('set-cookie'), /HttpOnly/);
     await Promise.all([post('b', cookie), post('a', cookie)]);
+    assert.equal((await post('a', cookie, 'mal-manga-121496')).status, 200);
+    await post('b', cookie, 'mal-manga-121496');
+    const manhwa = await (
+      await runtime.dispatchFetch('https://b.test/api/manhwa/discovery?mode=trending')
+    ).json();
+    assert.deepEqual(
+      manhwa.items.map((item) => [item.id, item.viewers]),
+      [['mal-manga-121496', 1]],
+    );
     const result = await (
       await runtime.dispatchFetch('https://b.test/api/manga/discovery?mode=trending')
     ).json();

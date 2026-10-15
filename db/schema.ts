@@ -255,10 +255,12 @@ export const watchViews = sqliteTable(
     media_id: text().notNull(),
     visitor_hash: text().notNull(),
     last_seen: integer().notNull(),
+    category: text().notNull().default('ANIME'),
   },
   (t) => [
     primaryKey({ columns: [t.media_id, t.visitor_hash] }),
     index('watch_views_expiry').on(t.last_seen),
+    index('watch_views_category_expiry').on(t.category, t.last_seen),
   ],
 );
 export const limits = sqliteTable(

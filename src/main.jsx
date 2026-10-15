@@ -68,8 +68,8 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isBrowse = location.pathname.startsWith('/browse/');
-  const mangaLanding =
-    location.pathname === '/browse/manga' &&
+  const readingLanding =
+    ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
     !['q', 'genre', 'sort', 'page'].some((key) => new URLSearchParams(location.search).get(key));
   const hasTopNavigation = isHome || isBrowse;
   const input = useRef();
@@ -152,7 +152,7 @@ function Shell() {
     <div
       className={
         hasTopNavigation
-          ? `home-shell${isBrowse && !mangaLanding ? ' browse-shell' : ''}`
+          ? `home-shell${isBrowse && !readingLanding ? ' browse-shell' : ''}`
           : undefined
       }
     >
@@ -308,7 +308,8 @@ function Shell() {
           <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<Home />} />
-              <Route path="/browse/manga" element={<MangaPage />} />
+              <Route path="/browse/manga" element={<MangaPage key="manga" />} />
+              <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />

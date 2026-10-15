@@ -35,6 +35,7 @@ import { getPopularAnime } from '../server/home-discovery.js';
 import {
   getTrendingAnime,
   getTrendingManga,
+  getTrendingManhwa,
   recordReadView,
   recordWatchView,
   VIEW_COOKIE,
@@ -121,17 +122,19 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
-app.get('/api/manga/discovery', async (c) =>
-  c.json(
+app.on('GET', ['/api/manga/discovery', '/api/manhwa/discovery'], async (c) => {
+  const manhwa = c.req.path === '/api/manhwa/discovery';
+  return c.json(
     c.req.query('mode') === 'trending'
-      ? await getTrendingManga({ db: c.get('db'), media: getMedia })
+      ? await (manhwa ? getTrendingManhwa : getTrendingManga)({ db: c.get('db'), media: getMedia })
       : await getMangaDiscovery(c.req.query(), {
           ...scheduleOptions(c.env),
+          category: manhwa ? 'MANHWA' : 'MANGA',
           offline: isOffline(),
           remember: rememberDiscoveredMedia,
         }),
-  ),
-);
+  );
+});
 app.post('/api/media/:id/read-view', async (c) => {
   const visitor = await recordReadView(c.req.param('id'), getCookie(c, VIEW_COOKIE), {
     db: c.get('db'),

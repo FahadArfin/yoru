@@ -84,6 +84,20 @@ db.exec(`
 `);
 if (
   !db
+    .prepare('PRAGMA table_info(watch_views)')
+    .all()
+    .some((column) => column.name === 'category')
+) {
+  db.exec(`
+    ALTER TABLE watch_views ADD COLUMN category TEXT NOT NULL DEFAULT 'ANIME';
+    UPDATE watch_views SET category='MANGA' WHERE media_id LIKE 'mal-manga-%';
+  `);
+}
+db.exec(
+  'CREATE INDEX IF NOT EXISTS watch_views_category_expiry ON watch_views(category,last_seen)',
+);
+if (
+  !db
     .prepare('PRAGMA table_info(library)')
     .all()
     .some((column) => column.name === 'score')

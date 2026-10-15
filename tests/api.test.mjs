@@ -132,6 +132,24 @@ test('manga discovery and reader counts keep manga separate and require same-ori
   assert.match(first.headers.get('set-cookie'), /HttpOnly/);
   const session = { cookie: first.headers.get('set-cookie').split(';')[0] };
   await request('/api/media/mal-manga-21/read-view', { method: 'POST', body: {}, session });
+  assert.equal(
+    (await request('/api/media/mal-manga-121496/read-view', { method: 'POST', body: {}, session }))
+      .status,
+    200,
+  );
+  const manhwa = await request('/api/manhwa/discovery?mode=trending');
+  assert.deepEqual(
+    manhwa.body.items.map((item) => [item.id, item.viewers]),
+    [['mal-manga-121496', 1]],
+  );
+  for (const path of ['/api/manhwa/discovery/', '/api/MANHWA/discovery']) {
+    const alternate = await request(`${path}?mode=trending&category=MANGA`);
+    assert.equal(alternate.body.category, 'MANHWA');
+    assert.deepEqual(
+      alternate.body.items.map((item) => item.id),
+      ['mal-manga-121496'],
+    );
+  }
   const ranked = await request('/api/manga/discovery?mode=trending');
   assert.deepEqual(
     ranked.body.items.map((item) => [item.id, item.viewers]),
@@ -154,6 +172,9 @@ test('manga discovery and reader counts keep manga separate and require same-ori
   const feed = await request('/api/manga/discovery?mode=new');
   assert.equal(feed.body.state, 'unavailable');
   assert.equal(feed.body.source, 'Kitsu');
+  const manhwaFeed = await request('/api/manhwa/discovery?mode=new');
+  assert.equal(manhwaFeed.body.category, 'MANHWA');
+  assert.equal(manhwaFeed.body.state, 'unavailable');
 });
 test('anonymous watch views use a private cookie and count one visitor per anime', async () => {
   const first = await request('/api/media/mal-anime-21/view', { method: 'POST', body: {} });

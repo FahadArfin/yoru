@@ -28,6 +28,48 @@ const payload = (items, next = false) => ({
   })),
 });
 
+test('manhwa discovery isolates its subtype and cache from manga, including period filters', async () => {
+  const cache = new Map();
+  let calls = 0;
+  const options = {
+    now,
+    load: async (key) => cache.get(key),
+    save: async (key, value) => cache.set(key, value),
+    fetchImpl: async (url) => {
+      calls++;
+      const params = new URL(url).searchParams;
+      const subtype = params.get('filter[subtype]');
+      return Response.json(
+        payload([
+          manga(10, '2026-09-01', 20, { subtype }),
+          manga(11, '2026-09-01', 50, { subtype: subtype === 'manhwa' ? 'manga' : 'manhwa' }),
+          manga(12, '2026-10-01', 100, { subtype }),
+        ]),
+      );
+    },
+  };
+  const first = await getMangaDiscovery({ mode: 'popular', period: 'month' }, options);
+  const manhwa = await getMangaDiscovery(
+    { mode: 'popular', period: 'month' },
+    { ...options, category: 'MANHWA' },
+  );
+  assert.equal(manhwa.items[0].category, 'MANHWA');
+  assert.deepEqual(
+    manhwa.items.map((x) => x.id),
+    ['mal-manga-10'],
+  );
+  assert.equal(first.items[0].category, 'MANGA');
+  assert.equal(calls, 2);
+  assert.deepEqual(
+    await getMangaDiscovery(
+      { mode: 'popular', period: 'month' },
+      { ...options, category: 'MANHWA' },
+    ),
+    manhwa,
+  );
+  assert.equal(calls, 2);
+});
+
 test('new manga uses publication dates, strict manga identities, and original art', async () => {
   const result = await getMangaDiscovery(
     { mode: 'new' },

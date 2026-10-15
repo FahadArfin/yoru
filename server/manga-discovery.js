@@ -11,17 +11,20 @@ export async function getMangaDiscovery(input = {}, options = {}) {
     fetchImpl = fetch,
     remember = (items) => items,
   } = options;
+  const category = options.category === 'MANHWA' ? 'MANHWA' : 'MANGA';
+  const subtype = category.toLowerCase();
   const mode = input.mode === 'new' ? 'new' : 'popular';
   const period = popularityPeriod(mode === 'popular' ? input.period : 'all', now);
-  const key = `manga-discovery:v1:${mode}:${period.period}:${period.year || ''}:${period.month ?? ''}`;
+  const key = `${subtype}-discovery:v2:${mode}:${period.period}:${period.year || ''}:${period.month ?? ''}`;
   const saved = await load(key).catch(() => null);
   const response = (items, state, fetchedAt) => ({
     mode,
+    category,
     period: period.period,
     items: items || [],
     state,
     source: 'Kitsu',
-    caption: mode === 'new' ? 'Recently published manga series' : period.label,
+    caption: mode === 'new' ? `Recently published ${subtype} series` : period.label,
     updatedAt: fetchedAt ? new Date(fetchedAt).toISOString() : null,
   });
   if (saved && now - saved.fetchedAt < 6 * 3600000)
@@ -34,8 +37,7 @@ export async function getMangaDiscovery(input = {}, options = {}) {
     const params = new URLSearchParams({
       include: 'mappings,categories',
       'page[limit]': '20',
-      'filter[subtype]': 'manga',
-      'filter[status]': 'current,finished',
+      'filter[subtype]': subtype,
       sort: mode === 'new' || monthly ? '-startDate' : '-userCount',
     });
     if (period.year) params.set('filter[year]', String(period.year));
@@ -53,13 +55,16 @@ export async function getMangaDiscovery(input = {}, options = {}) {
       if (!Array.isArray(data.data)) throw Error('Invalid manga response');
       let passedMonth = false;
       for (const raw of data.data) {
+        // Kitsu currently ignores subtype when combined with a comma-separated status filter.
+        // Keep that check local so each feed remains restricted to its own publication type.
+        if (!['current', 'finished'].includes(raw.attributes?.status)) continue;
         const date = Date.parse(raw.attributes?.startDate);
         if (!Number.isFinite(date) || date > now || date < Date.UTC(1900, 0, 1)) continue;
         if (monthly && date < Date.UTC(period.year, period.month, 1)) passedMonth = true;
         if (period.year && new Date(date).getUTCFullYear() !== period.year) continue;
         if (monthly && new Date(date).getUTCMonth() !== period.month) continue;
         const media = normalizeKitsu(raw, data.included || []);
-        if (!media || media.category !== 'MANGA' || media.isAdult) continue;
+        if (!media || media.category !== category || media.isAdult) continue;
         items.set(media.id, {
           ...media,
           detailed: false,

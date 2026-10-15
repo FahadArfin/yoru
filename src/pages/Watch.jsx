@@ -71,7 +71,7 @@ export default function Watch() {
   const anime = isAnime(media);
   useEffect(() => {
     if (
-      (!anime && media?.category !== 'MANGA') ||
+      (!anime && !['MANGA', 'MANHWA'].includes(media?.category)) ||
       media?.id !== id ||
       resource.loading ||
       resource.error

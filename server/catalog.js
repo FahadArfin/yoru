@@ -17,6 +17,7 @@ import { getPopularAnime } from './home-discovery.js';
 import {
   getTrendingAnime,
   getTrendingManga,
+  getTrendingManhwa,
   recordReadView,
   recordWatchView,
   VIEW_COOKIE,
@@ -27,13 +28,18 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
-catalogRouter.get('/manga/discovery', async (req, res, next) => {
+catalogRouter.get(['/manga/discovery', '/manhwa/discovery'], async (req, res, next) => {
   try {
+    const manhwa = req.path.toLowerCase().replace(/\/$/, '') === '/manhwa/discovery';
     res.json(
       req.query.mode === 'trending'
-        ? await getTrendingManga({ db: { all, run }, media: getMedia })
+        ? await (manhwa ? getTrendingManhwa : getTrendingManga)({
+            db: { all, run },
+            media: getMedia,
+          })
         : await getMangaDiscovery(req.query, {
             ...scheduleOptions,
+            category: manhwa ? 'MANHWA' : 'MANGA',
             offline: isOffline(),
             remember: rememberDiscoveredMedia,
           }),

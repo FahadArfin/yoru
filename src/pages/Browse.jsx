@@ -43,10 +43,10 @@ export default function Browse({ embedded = false, categoryOverride }) {
     setParams(next);
   };
   return (
-    <div className="page browse-page" id={embedded ? 'manga-catalog' : undefined}>
+    <div className="page browse-page" id={embedded ? `${chosen}-catalog` : undefined}>
       <div className="browse-heading">
         {embedded ? (
-          <h2>The manga collection</h2>
+          <h2>The {chosen} collection</h2>
         ) : (
           <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
         )}

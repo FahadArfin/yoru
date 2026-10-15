@@ -25,8 +25,10 @@ const periods = [
   { value: 'month', label: 'Last month' },
 ];
 
-export function useMangaFeed(mode, period = 'all') {
-  const resource = useResource(mode ? `/api/manga/discovery?mode=${mode}&period=${period}` : null);
+export function useMangaFeed(mode, period = 'all', category = 'manga') {
+  const resource = useResource(
+    mode ? `/api/${category}/discovery?mode=${mode}&period=${period}` : null,
+  );
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
     if (!mode) return;
@@ -77,7 +79,7 @@ function MangaCard({ media, index, mode }) {
           <BookOpen size={25} />
         </span>
         <span className="release-badges">
-          <span>MANGA</span>
+          <span>{media.category}</span>
           {media.score > 0 && (
             <strong className="discovery-score">
               <Star size={10} fill="currentColor" />
@@ -106,7 +108,7 @@ function MangaCard({ media, index, mode }) {
             </time>
           ) : (
             <>
-              {media.year || 'Manga'}
+              {media.year || media.category}
               {media.chapters > 0 && (
                 <>
                   <i>·</i>
@@ -121,13 +123,13 @@ function MangaCard({ media, index, mode }) {
   );
 }
 
-export default function MangaDiscovery({ popular }) {
+export default function MangaDiscovery({ popular, category, label }) {
   const [mode, setMode] = useState('new');
   const [period, setPeriod] = useState('all');
   const refs = useRef([]);
   const activePeriod = mode === 'trending' ? 'week' : mode === 'popular' ? period : 'all';
   const usePopular = mode === 'popular' && period === 'all';
-  const feed = useMangaFeed(usePopular ? null : mode, activePeriod);
+  const feed = useMangaFeed(usePopular ? null : mode, activePeriod, category);
   const resource = usePopular ? popular : feed;
   const data =
     resource.data?.mode === mode && resource.data?.period === activePeriod ? resource.data : null;
@@ -154,19 +156,19 @@ export default function MangaDiscovery({ popular }) {
     refs.current[next]?.focus();
   };
   return (
-    <section className="release-section discovery-section" aria-label="Discover manga">
+    <section className="release-section discovery-section" aria-label={`Discover ${category}`}>
       <div className="release-heading discovery-heading">
-        <div className="discovery-tabs" role="tablist" aria-label="Discover manga">
+        <div className="discovery-tabs" role="tablist" aria-label={`Discover ${category}`}>
           {tabs.map(({ value, label, icon: Icon }, index) => (
             <button
               key={value}
               ref={(node) => {
                 refs.current[index] = node;
               }}
-              id={`manga-tab-${value}`}
+              id={`${category}-tab-${value}`}
               role="tab"
               aria-selected={mode === value}
-              aria-controls={`manga-panel-${value}`}
+              aria-controls={`${category}-panel-${value}`}
               tabIndex={mode === value ? 0 : -1}
               className={mode === value ? 'active' : ''}
               onClick={() => setMode(value)}
@@ -182,9 +184,9 @@ export default function MangaDiscovery({ popular }) {
       {tabs.map((tab) => (
         <div
           key={tab.value}
-          id={`manga-panel-${tab.value}`}
+          id={`${category}-panel-${tab.value}`}
           role="tabpanel"
-          aria-labelledby={`manga-tab-${tab.value}`}
+          aria-labelledby={`${category}-tab-${tab.value}`}
           hidden={mode !== tab.value}
           tabIndex={0}
         >
@@ -195,7 +197,7 @@ export default function MangaDiscovery({ popular }) {
                   <div
                     className="release-language"
                     role="group"
-                    aria-label="Manga publication period"
+                    aria-label={`${label} publication period`}
                   >
                     {periods.map(({ value, label }) => (
                       <button
@@ -220,12 +222,13 @@ export default function MangaDiscovery({ popular }) {
                 <span className="discovery-caption">
                   {mode === 'trending'
                     ? 'Most read on Yoru'
-                    : data?.caption || (mode === 'new' ? 'Recently published manga series' : '')}
+                    : data?.caption ||
+                      (mode === 'new' ? `Recently published ${category} series` : '')}
                 </span>
               </div>
               <div className="discovery-body" aria-busy={loading}>
                 {loading ? (
-                  <div className="release-grid discovery-enter" aria-label="Loading manga">
+                  <div className="release-grid discovery-enter" aria-label={`Loading ${category}`}>
                     {Array.from({ length: 12 }, (_, i) => (
                       <div key={i} className="release-skeleton" />
                     ))}
@@ -254,9 +257,9 @@ export default function MangaDiscovery({ popular }) {
                     </h3>
                     <p>
                       {unavailable
-                        ? 'The manga feed is temporarily unavailable. Your catalog is still below.'
+                        ? `The ${category} feed is temporarily unavailable. Your catalog is still below.`
                         : mode === 'trending'
-                          ? 'Manga appear here as visitors open their reading pages.'
+                          ? `${label} appear here as visitors open their reading pages.`
                           : 'Try All time for more stories to discover.'}
                     </p>
                     {unavailable ? (
@@ -264,7 +267,7 @@ export default function MangaDiscovery({ popular }) {
                         <RotateCw size={14} /> Try again
                       </button>
                     ) : (
-                      <a className="btn btn-subtle" href="#manga-catalog">
+                      <a className="btn btn-subtle" href={`#${category}-catalog`}>
                         Explore the collection <ArrowRight size={14} />
                       </a>
                     )}
@@ -280,8 +283,8 @@ export default function MangaDiscovery({ popular }) {
                       ? 'Series publication dates · Kitsu'
                       : 'Ranked by Kitsu readers'}
                 </span>
-                <a href="#manga-catalog">
-                  Browse all manga <ArrowRight size={13} />
+                <a href={`#${category}-catalog`}>
+                  Browse all {category} <ArrowRight size={13} />
                 </a>
               </div>
             </>
