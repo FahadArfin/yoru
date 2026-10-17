@@ -469,6 +469,15 @@ test('WebMCP tools register, search, and honor the active account session', asyn
   await expect(page.locator('iframe')).toHaveAttribute('src', resolved.items[0].url);
   await expect(page.locator('iframe')).not.toHaveAttribute('sandbox');
   const external = resolved.items.find((x) => x.kind === 'external');
+  // The default player can appear before the full provider directory has loaded.
+  await expect
+    .poll(() =>
+      page.evaluate(async (sourceId) => {
+        const result = await window.__yoruTestTools.yoru_get_page_state.execute({});
+        return JSON.parse(result.content[0].text).sources?.some((item) => item.id === sourceId);
+      }, external.id),
+    )
+    .toBe(true);
   const selected = await page.evaluate(
     (sourceId) => window.__yoruTestTools.yoru_select_source.execute({ sourceId }),
     external.id,
