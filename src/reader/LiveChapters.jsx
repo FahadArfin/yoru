@@ -20,7 +20,7 @@ const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Specia
 
 export default function LiveChapters({ media }) {
   const { user, setAuthOpen, notify } = useApp();
-  const [language, setLanguage] = useState('all');
+  const [language, setLanguage] = useState('en');
   const [group, setGroup] = useState('all');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -184,8 +184,9 @@ export default function LiveChapters({ media }) {
           />
           <button type="submit">Search</button>
         </form>
-        <label>
-          <Languages size={15} />
+        <label className="chapter-translation-filter">
+          <Languages size={15} aria-hidden="true" />
+          <span>Translation</span>
           <select
             aria-label="Translation language"
             value={language}
@@ -194,12 +195,15 @@ export default function LiveChapters({ media }) {
               setGroup('all');
             }}
           >
+            <option value="en">English</option>
             <option value="all">All translations</option>
-            {languages.map((code) => (
-              <option value={code} key={code}>
-                {languageLabel(code)}
-              </option>
-            ))}
+            {languages
+              .filter((code) => code !== 'en')
+              .map((code) => (
+                <option value={code} key={code}>
+                  {languageLabel(code)}
+                </option>
+              ))}
           </select>
         </label>
         <label title="Groups found in the editions loaded so far">
@@ -226,13 +230,13 @@ export default function LiveChapters({ media }) {
           {sort === 'desc' ? 'Newest' : 'Oldest'}
         </button>
       </div>
-      {(query || language !== 'all' || group !== 'all') && (
+      {(query || language !== 'en' || group !== 'all') && (
         <button
           className="text-link chapter-clear"
           onClick={() => {
             setSearch('');
             setQuery('');
-            setLanguage('all');
+            setLanguage('en');
             setGroup('all');
           }}
         >
@@ -275,11 +279,26 @@ export default function LiveChapters({ media }) {
                   <div className="chapter-catalog-empty">
                     <BookOpen size={28} />
                     <h3>
-                      {query || language !== 'all' || group !== 'all'
-                        ? 'No chapters match these filters'
-                        : 'No published chapters listed yet'}
+                      {language === 'en' && !query && group === 'all'
+                        ? 'No English chapters available'
+                        : query || language !== 'all' || group !== 'all'
+                          ? 'No chapters match these filters'
+                          : 'No published chapters listed yet'}
                     </h3>
                     <p>Try another translation or check back for new releases.</p>
+                    {language !== 'all' && (
+                      <Button
+                        variant="secondary"
+                        onClick={() => {
+                          setSearch('');
+                          setQuery('');
+                          setLanguage('all');
+                          setGroup('all');
+                        }}
+                      >
+                        Show all translations
+                      </Button>
+                    )}
                   </div>
                 )}
                 {data.nextOffset !== null && (

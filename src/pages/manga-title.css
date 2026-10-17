@@ -309,6 +309,20 @@
 .manga-title-page .live-chapter-controls label {
   flex: 1 1 145px;
 }
+.manga-title-page .live-chapter-controls .chapter-translation-filter {
+  flex-basis: 205px;
+  background: #302d38;
+  border-color: #625674;
+  color: #e4d9fa;
+}
+.chapter-translation-filter > span {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 650;
+}
+.chapter-translation-filter > svg {
+  flex-shrink: 0;
+}
 .manga-title-page .live-chapter-controls option {
   background: #282e2e;
 }
@@ -699,6 +713,9 @@
   }
   .manga-title-page .live-chapter-controls label {
     flex-basis: 120px;
+  }
+  .manga-title-page .live-chapter-controls .chapter-translation-filter {
+    flex-basis: 100%;
   }
   .manga-title-page .live-chapter-search {
     flex-basis: 100%;

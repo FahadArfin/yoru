@@ -84,6 +84,12 @@ for (const [category, id] of [
     const requests = await setup(page, context, baseURL);
     await page.goto(`/title/${id}`);
     const list = page.getByRole('region', { name: 'Live chapter catalog' });
+    await expect(list.getByLabel('Translation language')).toHaveValue('en');
+    await expect(list.getByText('2 of 2 editions')).toBeVisible();
+    expect(requests[0].get('language')).toBe('en');
+    await expect(list.locator('.live-chapter-link')).toHaveCount(2);
+    await expect(list.getByRole('link', { name: /The little interlude/ })).toHaveCount(0);
+    await list.getByLabel('Translation language').selectOption('all');
     await expect(list.getByText('2 of 3 editions')).toBeVisible();
     await expect(list.locator('.live-chapter-row')).toHaveCount(2);
     await list.getByRole('button', { name: 'Load more editions' }).click();
@@ -94,6 +100,7 @@ for (const [category, id] of [
     await expect(list.getByText('The little interlude', { exact: false })).toBeVisible();
     expect(requests.at(-1).get('language')).toBe('es-la');
     await list.getByRole('button', { name: 'Clear filters' }).click();
+    await expect(list.getByLabel('Translation language')).toHaveValue('en');
     await list.getByLabel('Release group').selectOption(groups[0].id);
     await expect(list.locator('.live-chapter-row')).toHaveCount(2);
     expect(requests.at(-1).get('group')).toBe(groups[0].id);
@@ -165,6 +172,28 @@ test('signed-in chapter ratings save and failed feeds have a retry without inven
   await expect(region.getByText('MangaDex is unavailable.', { exact: false })).toBeVisible();
   await expect(region.locator('.live-chapter-row')).toHaveCount(0);
   await expect(region.getByRole('button', { name: /Try again/i })).toBeVisible();
+  await page.route('**/api/media/*/chapters?*', (route) => {
+    const language = new URL(route.request().url()).searchParams.get('language');
+    const items = language === 'en' ? [] : [editions[1]];
+    return route.fulfill({
+      json: {
+        state: 'ready',
+        source: 'MangaDex',
+        languages: ['es-la'],
+        items,
+        total: items.length,
+        nextOffset: null,
+      },
+    });
+  });
+  await region.getByRole('button', { name: /Try again/i }).click();
+  await expect(region.getByLabel('Translation language')).toHaveValue('en');
+  await expect(
+    region.getByRole('heading', { name: 'No English chapters available' }),
+  ).toBeVisible();
+  await region.getByRole('button', { name: 'Show all translations' }).click();
+  await expect(region.getByLabel('Translation language')).toHaveValue('all');
+  await expect(region.getByRole('link', { name: /The little interlude/ })).toBeVisible();
 });
 
 test('compact manga directory groups translations and volumes with working collapse, index and sorting', async ({
@@ -193,6 +222,7 @@ test('compact manga directory groups translations and volumes with working colla
     });
   });
   await page.goto('/title/mal-manga-21');
+  await page.getByLabel('Translation language').selectOption('all');
   await expect(page.getByRole('tab', { name: 'Chapters', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
