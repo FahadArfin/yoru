@@ -354,7 +354,7 @@ function Shell() {
             <span>Stories hit different when you share them.</span>
           </div>
           <p>
-            Metadata from MyAnimeList via Jikan and Kitsu. Media belongs to its respective owners.
+            Metadata from MyAnimeList via Tenrai and Kitsu. Media belongs to its respective owners.
             <br />
             Yoru links to external providers. No video or comic files are hosted here.
           </p>

@@ -12,7 +12,9 @@ test('live catalog pages and title metadata survive independent Worker instances
       calls++;
       if (unavailable) return new Response('{}', { status: 503 });
       const url = new URL(request.url);
-      assert.equal(url.hostname, 'api.jikan.moe');
+      assert.equal(url.hostname, 'api.tenrai.org');
+      assert.equal(url.pathname, '/v1/anime');
+      assert.equal(url.searchParams.get('sfw'), 'true');
       const page = Number(url.searchParams.get('page'));
       return Response.json({
         data: Array.from({ length: 25 }, (_, i) => ({
@@ -53,6 +55,7 @@ test('live catalog pages and title metadata survive independent Worker instances
     const first = await get('a', '/api/catalog?category=ANIME');
     assert.equal(first.total, 22500);
     assert.equal(first.items.length, 24);
+    assert.equal(first.items[0].source, 'MyAnimeList via Tenrai');
     const count = calls;
     const shared = await get('b', '/api/catalog?category=ANIME');
     assert.deepEqual(

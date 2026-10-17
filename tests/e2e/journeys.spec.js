@@ -45,7 +45,7 @@ test('catalog retries saved results immediately and enables live pagination', as
         pages: requests === 1 ? 1 : 938,
         providerUnavailable: requests === 1,
         totalIsEstimate: requests === 1,
-        source: requests === 1 ? 'offline-cache' : 'MyAnimeList via Jikan and Kitsu',
+        source: requests === 1 ? 'offline-cache' : 'MyAnimeList and Kitsu',
       },
     });
   });

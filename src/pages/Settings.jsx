@@ -263,7 +263,7 @@ export default function Settings() {
             </Badge>
           </div>
           <p className="small muted">
-            Metadata comes from MyAnimeList via Jikan and Kitsu; ratings display their source. Yoru
+            Metadata comes from MyAnimeList via Tenrai and Kitsu; ratings display their source. Yoru
             links to external media and does not host video or comic files. Native WebMCP tools are
             enabled when supported by your browser.
           </p>

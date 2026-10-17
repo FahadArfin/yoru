@@ -94,7 +94,7 @@ Set `DISCORD_CLIENT_ID`, `DISCORD_CLIENT_SECRET`, and `DISCORD_REDIRECT_URI` in 
 
 ## MyAnimeList account connection
 
-XML import and public-profile favorites import need no application credentials. The favorites flow reads Jikan’s public endpoint for the username entered by the member and requires a reviewed, session-bound import before changing the library. It depends on Jikan availability and public MAL profile data. For account connection, register a web application with [MyAnimeList](https://myanimelist.net/apiconfig) and use your public callback:
+XML import needs no application credentials. The legacy public-profile favorites flow depends on Jikan’s discontinued public endpoint and is unavailable; Tenrai supplies catalog metadata, not user profiles. Use XML import or the official account connection. For account connection, register a web application with [MyAnimeList](https://myanimelist.net/apiconfig) and use your public callback:
 
 ```text
 https://yoru.example.com/api/mal/callback
@@ -155,6 +155,7 @@ These workflows do not deploy a public website, publish a public package, or req
 
 ## Operational boundaries
 
+- The shared catalog uses `https://api.tenrai.org/v1` without an API key on Node and Sites. Keep the request queue, `Retry-After` handling, safe-content filters, and Kitsu fallback. Existing saved title IDs, libraries, provider attributions, and query caches are preserved; cached pages refresh through Tenrai when their six-hour lifetime expires. The public-profile favorites import is a separate legacy Jikan integration; Tenrai has no user-profile endpoints and does not restore that flow after Jikan's October 2026 shutdown. Use XML import or a configured official MAL account connection for library imports.
 - Catalog browsing waits up to 12 seconds for live provider results, then explicitly labels saved fallback results. Successful query pages are reused for six hours. Sites stores fetched public title metadata and complete query pages in D1; Node retains discovered metadata and recent queries in its catalog snapshot. The catalog grows as visitors browse/search, without bulk scraping or a scheduled crawler. Curated home-page shelves remain intentionally selected.
 - During provider outages, exact previously fetched pages retain their ordering and reported totals. Limited starter/cache results are labeled as saved stories and expose an immediate retry. Provider totals describe upstream metadata entries; records without a verified MAL mapping or excluded by content filters can reduce the number of visible cards.
 

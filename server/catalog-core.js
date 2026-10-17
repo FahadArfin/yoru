@@ -11,7 +11,8 @@ import {
   saveMedia,
 } from './catalog-storage.js';
 const TTL = 6 * 60 * 60 * 1000;
-const JIKAN = 'https://api.jikan.moe/v4';
+// Tenrai v1 preserves the Jikan v4 catalog schema and MyAnimeList IDs.
+const TENRAI = 'https://api.tenrai.org/v1';
 const KITSU = 'https://kitsu.io/api/edge';
 const categories = ['ANIME', 'MANGA', 'MANHWA'];
 const cache = new Map();
@@ -72,7 +73,7 @@ function safeUrl(value) {
   }
 }
 
-export function normalizeJikan(item, requestedCategory = 'ANIME', detailed = false) {
+export function normalizeTenrai(item, requestedCategory = 'ANIME', detailed = false) {
   if (!Number.isInteger(Number(item?.mal_id)) || Number(item.mal_id) <= 0) return null;
   const type =
     requestedCategory === 'ANIME' ? 'ANIME' : /manhwa/i.test(item.type || '') ? 'MANHWA' : 'MANGA';
@@ -165,7 +166,7 @@ export function normalizeJikan(item, requestedCategory = 'ANIME', detailed = fal
         type: entry.type.toUpperCase(),
       })),
     ),
-    source: 'MyAnimeList via Jikan',
+    source: 'MyAnimeList via Tenrai',
     sourceUrl: `https://myanimelist.net/${kind}/${item.mal_id}`,
     metadataFetchedAt: new Date().toISOString(),
     detailed,
@@ -371,7 +372,7 @@ export function parseMediaId(id) {
   return match ? { kind: match[1], malId: Number(match[2]) } : null;
 }
 
-async function jikan(path) {
+async function tenrai(path) {
   if (isOffline()) throw new Error('Catalog is in offline mode');
   const state = getRequestState();
   const queuedAt = Date.now();
@@ -380,7 +381,7 @@ async function jikan(path) {
     if (Date.now() + delay - queuedAt > 15000) throw new Error('The metadata queue is busy');
     nextRequest = Date.now() + delay + 1100;
     await new Promise((resolve) => setTimeout(resolve, delay));
-    const response = await fetch(`${JIKAN}${path}`, {
+    const response = await fetch(`${TENRAI}${path}`, {
       signal: AbortSignal.timeout(7000),
       headers: { Accept: 'application/json' },
     });
@@ -420,9 +421,9 @@ async function refreshDetail(id) {
   if (!parsed) return null;
   return uniqueRequest(id, async () => {
     try {
-      const data = await jikan(`/${parsed.kind}/${parsed.malId}/full`);
+      const data = await tenrai(`/${parsed.kind}/${parsed.malId}/full?sfw=true`);
       return mergeMedia(
-        normalizeJikan(data.data, parsed.kind === 'anime' ? 'ANIME' : 'MANGA', true),
+        normalizeTenrai(data.data, parsed.kind === 'anime' ? 'ANIME' : 'MANGA', true),
       );
     } catch {
       const params = new URLSearchParams({
@@ -579,7 +580,7 @@ export function catalogWindow(input, category) {
 async function genreIdFor(kind, genre) {
   if (!genre) return null;
   if (!genreLists.has(kind)) {
-    const data = await jikan(`/genres/${kind}`);
+    const data = await tenrai(`/genres/${kind}`);
     genreLists.set(kind, data.data || []);
   }
   const match = genreLists.get(kind).find((item) => genreKey(item.name) === genreKey(genre));
@@ -609,8 +610,8 @@ async function categoryPage(query, category) {
       if (category !== 'ANIME') params.set('type', category.toLowerCase());
       if (query.search) params.set('q', query.search);
       if (genreId) params.set('genres', String(genreId));
-      const data = await jikan(`/${kind}?${params}`);
-      items.push(...(data.data || []).map((raw) => normalizeJikan(raw, category)).filter(Boolean));
+      const data = await tenrai(`/${kind}?${params}`);
+      items.push(...(data.data || []).map((raw) => normalizeTenrai(raw, category)).filter(Boolean));
       total = Number(data.pagination?.items?.total) || items.length;
       if (!data.pagination?.has_next_page) break;
     }
@@ -697,7 +698,7 @@ export async function searchCatalog(input = {}) {
       pages: Math.max(1, Math.ceil(total / query.limit)),
       limit: query.limit,
       categories,
-      source: 'MyAnimeList via Jikan and Kitsu',
+      source: 'MyAnimeList and Kitsu',
       updatedAt:
         items
           .map((item) => item.metadataFetchedAt)
@@ -769,7 +770,7 @@ export async function searchCatalog(input = {}) {
     pages: remote?.pages ?? Math.max(1, Math.ceil(total / query.limit)),
     limit: query.limit,
     categories,
-    source: remote ? 'MyAnimeList via Jikan and Kitsu' : 'offline-cache',
+    source: remote ? 'MyAnimeList and Kitsu' : 'offline-cache',
     catalogState: remote ? (providerUnavailable || remote.partial ? 'stale' : 'live') : 'fallback',
     totalIsEstimate: !remote,
     updatedAt,
@@ -827,10 +828,10 @@ export async function getCalendar(input = {}) {
       for (let page = 1; page <= 12; page++) {
         const params = new URLSearchParams({ sfw: 'true', limit: '25', page: String(page) });
         if (day) params.set('filter', day);
-        const data = await jikan(`/schedules?${params}`);
+        const data = await tenrai(`/schedules?${params}`);
         items.push(
           ...(data.data || [])
-            .map((raw) => mergeMedia(normalizeJikan(raw, 'ANIME')))
+            .map((raw) => mergeMedia(normalizeTenrai(raw, 'ANIME')))
             .filter(Boolean)
             .filter((item) => item.airing && item.broadcast?.day)
             .map((item) => ({
@@ -866,7 +867,7 @@ export async function getCalendar(input = {}) {
     items: schedule ? schedule.items : fallback,
     updatedAt: schedule?.updatedAt || seed.generatedAt,
     timezone: 'Asia/Tokyo',
-    source: 'MyAnimeList broadcast schedule via Jikan',
+    source: 'MyAnimeList broadcast schedule',
     stale: !schedule || Date.now() - Date.parse(schedule.updatedAt) > TTL,
     providerUnavailable,
     complete: schedule?.complete ?? false,

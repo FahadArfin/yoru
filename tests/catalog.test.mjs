@@ -7,7 +7,7 @@ import { join } from 'node:path';
 process.env.CATALOG_OFFLINE = '1';
 process.env.DATA_DIR = mkdtempSync(join(tmpdir(), 'yoru-catalog-test-'));
 const {
-  normalizeJikan,
+  normalizeTenrai,
   normalizeKitsu,
   parseMediaId,
   searchCatalog,
@@ -32,7 +32,7 @@ test('anime and manga MAL IDs stay distinct; invalid IDs cannot become provider 
 });
 
 test('metadata retains actual provider values and identifies manhwa', () => {
-  const item = normalizeJikan(
+  const item = normalizeTenrai(
     {
       mal_id: 123,
       type: 'Manhwa',
@@ -214,7 +214,8 @@ test('remote search expands a matching seed result and fetches actual subsequent
   globalThis.fetch = async (input) => {
     const url = new URL(input);
     urls.push(url);
-    assert.equal(url.hostname, 'api.jikan.moe');
+    assert.equal(url.hostname, 'api.tenrai.org');
+    assert.equal(url.pathname, '/v1/anime');
     const page = Number(url.searchParams.get('page'));
     return new Response(
       JSON.stringify({
@@ -249,6 +250,126 @@ test('remote search expands a matching seed result and fetches actual subsequent
     const calls = urls.length;
     await searchCatalog({ category: 'ANIME', search: 'Frieren', page: 2, limit: 24 });
     assert.equal(urls.length, calls, 'Fresh query page should reuse its exact result');
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('Tenrai catalog preserves category filters, safe discovery, and provider attribution', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = new URL(input);
+    if (url.hostname !== 'api.tenrai.org') return new Response('{}', { status: 503 });
+    const anime = url.pathname === '/v1/anime';
+    assert.ok(anime || url.pathname === '/v1/manga');
+    assert.equal(url.searchParams.get('sfw'), 'true');
+    assert.equal(url.searchParams.get('order_by'), 'score');
+    assert.equal(url.searchParams.get('sort'), 'desc');
+    const type = anime ? 'TV' : url.searchParams.get('type') === 'manhwa' ? 'Manhwa' : 'Manga';
+    if (!anime) assert.ok(['manga', 'manhwa'].includes(url.searchParams.get('type')));
+    return Response.json({
+      data: [
+        { mal_id: 980001, title: `Tenrai contract ${type}`, type, score: 8.1, genres: [] },
+        {
+          mal_id: 980002,
+          title: `Tenrai contract excluded ${type}`,
+          type,
+          genres: [],
+          explicit_genres: [{ mal_id: 12, name: 'Explicit' }],
+        },
+      ],
+      pagination: { has_next_page: false, items: { total: 2 } },
+    });
+  };
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    for (const category of ['ANIME', 'MANGA', 'MANHWA']) {
+      const result = await searchCatalog({ category, search: 'Tenrai contract', sort: 'score' });
+      assert.equal(result.catalogState, 'live');
+      assert.equal(result.items.length, 1);
+      assert.equal(result.items[0].category, category);
+      assert.equal(result.items[0].source, 'MyAnimeList via Tenrai');
+      assert.equal(result.items[0].score, 8.1);
+      assert.equal(
+        result.items[0].id,
+        category === 'ANIME' ? 'mal-anime-980001' : 'mal-manga-980001',
+      );
+    }
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('Tenrai detail uses the correct MAL namespace and filters related content', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    if (input !== 'https://api.tenrai.org/v1/manga/981001/full?sfw=true')
+      return new Response('{}', { status: 503 });
+    return Response.json({
+      data: {
+        mal_id: 981001,
+        title: 'Detail contract title',
+        type: 'Manhwa',
+        genres: [],
+        explicit_genres: [],
+        images: { jpg: { large_image_url: 'https://example.com/cover.jpg' } },
+        chapters: 100,
+      },
+    });
+  };
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const result = await getMedia('mal-manga-981001');
+    assert.ok(result);
+    assert.equal(result.id, 'mal-manga-981001');
+    assert.equal(result.category, 'MANHWA');
+    assert.equal(result.source, 'MyAnimeList via Tenrai');
+    assert.equal(result.chapters, 100);
+    assert.equal(result.cover, 'https://example.com/cover.jpg');
+    assert.equal(result.detailed, true);
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
+});
+
+test('a Tenrai outage falls back to mapped Kitsu titles without relabeling their ratings', async () => {
+  const previousFetch = globalThis.fetch;
+  globalThis.fetch = async (input) => {
+    const url = new URL(input);
+    if (url.hostname !== 'kitsu.io') return new Response('{}', { status: 503 });
+    return Response.json({
+      data: [
+        {
+          id: '55',
+          type: 'manga',
+          attributes: {
+            canonicalTitle: 'Fallback contract title',
+            subtype: 'manhwa',
+            averageRating: '85.62',
+          },
+          relationships: { mappings: { data: [{ type: 'mappings', id: '8' }] } },
+        },
+      ],
+      included: [
+        {
+          type: 'mappings',
+          id: '8',
+          attributes: { externalSite: 'myanimelist/manga', externalId: '982001' },
+        },
+      ],
+      meta: { count: 1 },
+    });
+  };
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const result = await searchCatalog({ category: 'MANHWA', search: 'Fallback contract' });
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].id, 'mal-manga-982001');
+    assert.equal(result.items[0].source, 'Kitsu');
+    assert.equal(result.items[0].score, 8.6);
   } finally {
     process.env.CATALOG_OFFLINE = '1';
     globalThis.fetch = previousFetch;
