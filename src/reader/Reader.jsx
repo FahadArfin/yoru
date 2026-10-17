@@ -1,18 +1,13 @@
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
   ArrowLeft,
-  ArrowRight,
   BookOpen,
   Bookmark,
-  Check,
-  ChevronLeft,
   ChevronRight,
   ExternalLink,
-  Focus,
   List,
-  Maximize,
-  MessageCircle,
+  Menu,
   Plus,
   Settings2,
   X,
@@ -30,7 +25,9 @@ import ChapterList from './ChapterList';
 import ReaderCanvas from './ReaderCanvas';
 import ReaderImport from './ReaderImport';
 import ReaderSettings from './ReaderSettings';
+import ReaderMenu, { ReaderPagePicker } from './ReaderMenu';
 import './reader.css';
+import './reader-layout.css';
 
 function ReadingSources({ media, close }) {
   const { notify } = useApp();
@@ -128,18 +125,56 @@ function ReaderSession({ media, unit }) {
   );
   const [dialog, setDialog] = useState('');
   const [focus, setFocus] = useState(false);
+  const [wide, setWide] = useState(() => window.matchMedia('(min-width: 901px)').matches);
+  const [menuOpen, setMenuOpen] = useState(() => window.matchMedia('(min-width: 901px)').matches);
+  const [headerVisible, setHeaderVisible] = useState(true);
   const [page, setPage] = useState(1);
-  const [draft, setDraft] = useState('1');
   const [jump, setJump] = useState(0);
   const [error, setError] = useState('');
   const [loadedChapter, setLoadedChapter] = useState('');
   const root = useRef();
+  const menuToggle = useRef();
+  const restoreMenuFocus = useRef(false);
   const requested = params.get('chapter');
   const chapter = requested
     ? chapters.items.find((item) => item.id === requested)
     : chapters.items.find((item) => item.number === String(unit)) || chapters.items[0];
   const currentSaved = chapter ? saved.chapters[chapter.id] || {} : {};
   const total = chapter?.pages.length || 0;
+  useEffect(() => {
+    const query = window.matchMedia('(min-width: 901px)');
+    const resize = () => {
+      setWide(query.matches);
+      setMenuOpen(query.matches);
+    };
+    query.addEventListener('change', resize);
+    return () => query.removeEventListener('change', resize);
+  }, []);
+  useEffect(() => setHeaderVisible(!chapter), [chapter?.id]);
+  const scrollDirection = useCallback(
+    (direction) => {
+      if (focus) return;
+      if (
+        direction === 'down' &&
+        root.current?.querySelector('.reader-top-header')?.contains(document.activeElement)
+      ) {
+        root.current.querySelector('.reader-canvas')?.focus({ preventScroll: true });
+      }
+      setHeaderVisible(direction === 'up');
+    },
+    [focus],
+  );
+  const closeMenu = () => {
+    restoreMenuFocus.current = true;
+    setMenuOpen(false);
+    setHeaderVisible(true);
+  };
+  useLayoutEffect(() => {
+    if (restoreMenuFocus.current && !menuOpen && headerVisible) {
+      restoreMenuFocus.current = false;
+      menuToggle.current?.focus({ preventScroll: true });
+    }
+  }, [menuOpen, headerVisible]);
   const numericChapter = chapterUnit(chapter ? chapter.number : unit);
   const hasChapterDiscussion = Number.isInteger(numericChapter) && numericChapter > 0;
   const write = useCallback(
@@ -168,13 +203,11 @@ function ReaderSession({ media, unit }) {
     );
     if (loadedChapter === chapter.id && page === next) return;
     setPage(next);
-    setDraft(String(next));
     setJump((n) => n + 1);
     setLoadedChapter(chapter.id);
   }, [chapter?.id, params.get('page')]);
   useEffect(() => {
     if (!chapter || loadedChapter !== chapter.id) return;
-    setDraft(String(page));
     write(
       {
         title: titleOf(media),
@@ -248,9 +281,14 @@ function ReaderSession({ media, unit }) {
   const bookmark = useCallback(() => {
     if (chapter) write({}, chapter.id, { bookmark: currentSaved.bookmark === page ? null : page });
   }, [chapter?.id, page, currentSaved.bookmark, write]);
-  const toggleFocus = useCallback(() => setFocus((old) => !old), []);
+  const toggleFocus = useCallback(() => {
+    setFocus((old) => !old);
+    setHeaderVisible(true);
+  }, []);
   const selectChapter = (next, startPage) => {
+    if (!next) return;
     setDialog('');
+    if (!wide) setMenuOpen(false);
     navigate(readerLink(media.id, next, startPage));
   };
   // Stay in the same language, favor the same edition, and skip alternative releases of the current number.
@@ -286,6 +324,7 @@ function ReaderSession({ media, unit }) {
         return;
       if (event.key === 'Escape') {
         setFocus(false);
+        setHeaderVisible(true);
         return;
       }
       const key = event.key.toLowerCase();
@@ -327,81 +366,82 @@ function ReaderSession({ media, unit }) {
   };
   const read = (item, value) => write({}, item.id, { read: value });
   const openImport = () => setDialog('import');
+  const menu = (close) => (
+    <ReaderMenu
+      media={media}
+      chapter={chapter}
+      chapters={chapters.items}
+      page={page}
+      total={total}
+      preferences={preferences}
+      setPrefs={setPrefs}
+      previous={chooseEdition(previous)}
+      next={chooseEdition(next)}
+      selectChapter={selectChapter}
+      goPage={goPage}
+      turn={turn}
+      close={close}
+      fullscreen={fullscreen}
+      openDialog={setDialog}
+      toggleFocus={toggleFocus}
+      bookmark={bookmark}
+      currentSaved={currentSaved}
+      read={read}
+      discussionUnit={hasChapterDiscussion ? numericChapter : 0}
+    />
+  );
   return (
     <section
-      className={`comic-reader ${focus ? 'reader-focus' : ''}`}
+      className={`comic-reader reader-dex ${focus ? 'reader-focus' : ''} ${wide && menuOpen && !focus ? 'reader-menu-open' : ''}`}
       data-background={preferences.background}
       ref={root}
     >
-      <header className="reader-header">
-        <Link
-          className="reader-back"
-          to={`/title/${media.id}`}
-          aria-label={`Back to ${titleOf(media)}`}
-        >
-          <ArrowLeft size={19} />
-          <img src="/icon.svg" alt="Yoru" />
-        </Link>
-        <div className="reader-heading">
-          <Link to={`/title/${media.id}`}>{titleOf(media)}</Link>
-          <span>
-            {chapter
-              ? `Chapter ${chapter.number}${chapter.title ? ` · ${chapter.title}` : ''}`
-              : 'Your reading space'}
-          </span>
+      <header
+        className={`reader-top-header ${headerVisible && !focus ? '' : 'is-hidden'}`}
+        aria-hidden={!headerVisible || focus}
+        inert={!headerVisible || focus}
+      >
+        <div className="reader-top-title">
+          <Link
+            className="reader-exit"
+            to={`/title/${media.id}`}
+            aria-label={`Back to ${titleOf(media)}`}
+          >
+            <ArrowLeft size={19} />
+          </Link>
+          <div>
+            <strong>
+              {chapter?.title || (chapter ? `Chapter ${chapter.number}` : 'Your reading space')}
+            </strong>
+            <Link to={`/title/${media.id}`}>{titleOf(media)}</Link>
+          </div>
         </div>
-        <div className="reader-header-actions">
-          <button aria-label="Chapters" title="Chapters" onClick={() => setDialog('chapters')}>
-            <List size={20} />
-            <span>Chapters</span>
+        <nav className="reader-quick-bar" aria-label="Reader navigation">
+          <button onClick={() => setDialog('chapters')} aria-label="Choose chapter">
+            {chapter ? `Ch. ${chapter.number}` : 'Chapters'}
+            <ChevronRight size={14} />
+          </button>
+          <button disabled={!chapter} onClick={() => setDialog('pages')} aria-label="Choose page">
+            Pg. {chapter ? page : '—'} / {total || '—'}
+            <ChevronRight size={14} />
           </button>
           <button
-            aria-label="Reader settings"
-            title="Reader settings"
-            onClick={() => setDialog('settings')}
+            ref={menuToggle}
+            onClick={() => setMenuOpen((value) => !value)}
+            aria-label="Reader menu"
+            aria-expanded={menuOpen}
           >
-            <Settings2 size={20} />
+            <span>Menu</span>
+            <Menu size={16} />
           </button>
-          <button
-            aria-label="Focus mode"
-            title="Focus mode (F)"
-            aria-pressed={focus}
-            onClick={toggleFocus}
-          >
-            <Focus size={20} />
-          </button>
-          <button
-            className="reader-fullscreen"
-            aria-label="Fullscreen"
-            title="Fullscreen"
-            onClick={fullscreen}
-          >
-            <Maximize size={19} />
-          </button>
-        </div>
+        </nav>
+        {chapter && (
+          <div className="reader-top-edition">
+            {chapter.group} · {languageName(chapter.language)}
+          </div>
+        )}
       </header>
       <div className="reader-body">
-        {!focus && (
-          <aside className="reader-desktop-rail">
-            <div className="reader-rail-title">
-              <span>CHAPTERS</span>
-              <button aria-label="Import more chapters" title="Add chapters" onClick={openImport}>
-                <Plus size={18} />
-              </button>
-            </div>
-            <ChapterList
-              chapters={chapters.items}
-              states={saved.chapters}
-              currentId={chapter?.id}
-              onSelect={selectChapter}
-              onRead={read}
-            />
-            <button className="reader-source-link" onClick={() => setDialog('sources')}>
-              Reading sources
-              <ExternalLink size={14} />
-            </button>
-          </aside>
-        )}
         <div className="reader-stage">
           {error && (
             <div className="reader-warning" role="status">
@@ -422,7 +462,8 @@ function ReaderSession({ media, unit }) {
               jump={jump}
               onVisiblePage={visiblePage}
               onTurn={turn}
-              onToggleFocus={toggleFocus}
+              onToggleControls={() => setHeaderVisible((value) => !value)}
+              onScrollDirection={scrollDirection}
             />
           ) : (
             <div className="reader-welcome">
@@ -474,97 +515,27 @@ function ReaderSession({ media, unit }) {
           )}
         </div>
       </div>
-      <footer className="reader-controls">
-        <div className="reader-chapter-controls">
-          <button
-            aria-label="Previous chapter"
-            title="Previous chapter"
-            disabled={!previous}
-            onClick={() => selectChapter(chooseEdition(previous))}
-          >
-            <ChevronLeft size={18} />
-          </button>
-          <button className="reader-chapter-label" onClick={() => setDialog('chapters')}>
-            {chapter ? `Ch. ${chapter.number}` : 'Chapters'}
-          </button>
-          <button
-            aria-label="Next chapter"
-            title="Next chapter"
-            disabled={!next}
-            onClick={() => selectChapter(chooseEdition(next))}
-          >
-            <ChevronRight size={18} />
-          </button>
-        </div>
-        <div className="reader-page-controls">
-          <button
-            aria-label="Previous page"
-            title="Previous page"
-            disabled={!chapter || page <= 1}
-            onClick={() => turn(-1)}
-          >
-            <ArrowLeft size={18} />
-          </button>
-          <form
-            onSubmit={(event) => {
-              event.preventDefault();
-              goPage(draft);
-            }}
-          >
-            <label>
-              <span className="sr-only">Page number</span>
-              <input
-                aria-label="Page number"
-                type="number"
-                min="1"
-                max={total || 1}
-                value={draft}
-                disabled={!chapter}
-                onChange={(e) => setDraft(e.target.value)}
-                onBlur={() => {
-                  if (chapter) goPage(draft);
-                }}
-              />
-            </label>
-            <span>/ {total || '—'}</span>
-          </form>
-          <button
-            aria-label="Next page"
-            title="Next page"
-            disabled={!chapter || pageStep(page, 1, total, preferences.mode) === page}
-            onClick={() => turn(1)}
-          >
-            <ArrowRight size={18} />
-          </button>
-        </div>
-        <div className="reader-extra-controls">
-          <button
-            aria-label={currentSaved.bookmark === page ? 'Remove bookmark' : 'Bookmark page'}
-            title="Bookmark page (B)"
-            disabled={!chapter}
-            aria-pressed={currentSaved.bookmark === page}
-            onClick={bookmark}
-          >
-            <Bookmark size={18} fill={currentSaved.bookmark === page ? 'currentColor' : 'none'} />
-          </button>
-          <button
-            aria-label={currentSaved.read ? 'Mark chapter unread' : 'Mark chapter read'}
-            title="Mark read"
-            aria-pressed={Boolean(currentSaved.read)}
-            disabled={!chapter}
-            onClick={() => read(chapter, !currentSaved.read)}
-          >
-            <Check size={19} />
-          </button>
-          <Link
-            title={hasChapterDiscussion ? 'Chapter discussion' : 'Title discussion'}
-            aria-label={hasChapterDiscussion ? 'Chapter discussion' : 'Title discussion'}
-            to={`/title/${media.id}?unit=${hasChapterDiscussion ? numericChapter : 0}`}
-          >
-            <MessageCircle size={18} />
-          </Link>
-        </div>
-      </footer>
+      {wide && menuOpen && !focus && (
+        <aside className="reader-side-menu" aria-label="Reader menu">
+          {menu(closeMenu)}
+        </aside>
+      )}
+      {!wide && menuOpen && !focus && !dialog && (
+        <Modal title="Reader menu" close={closeMenu}>
+          {menu()}
+        </Modal>
+      )}
+      {!headerVisible && !focus && (!wide || !menuOpen) && (
+        <button
+          className="reader-reveal-controls"
+          aria-label="Show chapter and page controls"
+          onClick={() => setHeaderVisible(true)}
+        >
+          <List size={16} />
+          {chapter ? `Ch. ${chapter.number} · Pg. ${page}/${total}` : 'Reader controls'}
+          <Menu size={16} />
+        </button>
+      )}
       {focus && (
         <button className="reader-leave-focus" onClick={() => setFocus(false)}>
           <X size={16} />
@@ -573,6 +544,9 @@ function ReaderSession({ media, unit }) {
       )}
       {dialog === 'settings' && (
         <ReaderSettings preferences={preferences} onChange={setPrefs} close={() => setDialog('')} />
+      )}
+      {dialog === 'pages' && chapter && (
+        <ReaderPagePicker page={page} total={total} goPage={goPage} close={() => setDialog('')} />
       )}
       {dialog === 'import' && (
         <ReaderImport

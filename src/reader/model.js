@@ -120,14 +120,20 @@ export function filterChapters(chapters, filters = {}, states = {}) {
 export function readerPreferences(saved = {}, category = 'MANGA') {
   saved = saved && typeof saved === 'object' ? saved : {};
   const choose = (key, options, fallback) => (options.includes(saved[key]) ? saved[key] : fallback);
+  const mode = choose(
+    'mode',
+    ['single', 'double', 'vertical', 'webtoon'],
+    category === 'MANHWA' ? 'webtoon' : 'single',
+  );
+  const fit = choose(
+    'fit',
+    ['both', 'width', 'height', 'original'],
+    category === 'MANHWA' ? 'width' : 'both',
+  );
   return {
-    mode: choose(
-      'mode',
-      ['single', 'double', 'vertical', 'webtoon'],
-      category === 'MANHWA' ? 'webtoon' : 'single',
-    ),
+    mode,
     direction: choose('direction', ['rtl', 'ltr'], category === 'MANHWA' ? 'ltr' : 'rtl'),
-    fit: choose('fit', ['width', 'height', 'original'], 'width'),
+    fit: !['single', 'double'].includes(mode) && ['both', 'height'].includes(fit) ? 'width' : fit,
     width: Math.min(1600, Math.max(400, Number(saved.width) || 900)),
     background: choose('background', ['dark', 'black', 'sepia', 'light'], 'dark'),
     gap: Math.min(48, Math.max(0, Number.isFinite(Number(saved.gap)) ? Number(saved.gap) : 16)),

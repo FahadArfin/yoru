@@ -50,6 +50,29 @@ async function importManifest(page) {
   await page.getByRole('button', { name: 'Import chapters', exact: true }).click();
 }
 
+async function openMenu(page) {
+  await expect(page.locator('.reader-canvas [data-page]').first()).toBeVisible();
+  if (await page.getByLabel('Page number', { exact: true }).isVisible()) return;
+  const reveal = page.getByRole('button', { name: 'Show chapter and page controls', exact: true });
+  if (await reveal.isVisible()) await reveal.click();
+  await page.getByRole('button', { name: 'Reader menu', exact: true }).click();
+}
+async function closeMobileMenu(page) {
+  const menu = page.getByRole('dialog', { name: 'Reader menu', exact: true });
+  if (await menu.isVisible())
+    await menu.getByRole('button', { name: 'Close dialog', exact: true }).click();
+}
+async function menuAction(page, name) {
+  await openMenu(page);
+  await page.getByRole('button', { name, exact: true }).click();
+  await closeMobileMenu(page);
+}
+async function expectPage(page, value) {
+  await openMenu(page);
+  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue(String(value));
+  await closeMobileMenu(page);
+}
+
 test('native reader preserves page, edition, bookmarks and settings through reload', async ({
   page,
   context,
@@ -59,15 +82,16 @@ test('native reader preserves page, edition, bookmarks and settings through relo
   await page.goto('/read/mal-manga-21/1');
   await importManifest(page);
   await expect(page.getByRole('img', { name: 'Chapter 1, page 1', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Next page', exact: true }).click();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
-  await page.getByRole('button', { name: 'Bookmark page', exact: true }).click();
-  await page.getByRole('button', { name: 'Reader settings', exact: true }).click();
+  await menuAction(page, 'Next page');
+  await expectPage(page, 2);
+  await menuAction(page, 'Bookmark page');
+  await menuAction(page, 'Reader settings');
   await page.getByLabel('Reading direction').selectOption('ltr');
   await page.getByLabel('Background').selectOption('sepia');
   await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.reload();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await expectPage(page, 2);
+  await openMenu(page);
   await expect(page.getByRole('button', { name: 'Remove bookmark', exact: true })).toBeVisible();
   await expect(page.locator('.comic-reader')).toHaveAttribute('data-background', 'sepia');
   await page.getByRole('button', { name: 'Chapters', exact: true }).click();
@@ -80,8 +104,8 @@ test('native reader preserves page, edition, bookmarks and settings through relo
     0,
   );
   await chapters.getByRole('button', { name: /Read chapter 2 · Otra edición/ }).click();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('1');
   await expect(page.getByRole('img', { name: 'Chapter 2, page 1', exact: true })).toBeVisible();
+  await expectPage(page, 1);
   await page.goto('/browse/manga');
   await expect(
     page
@@ -111,13 +135,16 @@ test('manhwa defaults to webtoon and image files stay on the device after reload
   await expect(page.getByRole('img', { name: 'Chapter 1, page 1', exact: true })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('img', { name: 'Chapter 1, page 1', exact: true })).toBeVisible();
-  await page.getByRole('button', { name: 'Next page', exact: true }).click();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await menuAction(page, 'Next page');
+  await expectPage(page, 2);
   await page.reload();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await expectPage(page, 2);
   await expect(page.getByRole('img', { name: 'Chapter 1, page 2', exact: true })).toBeInViewport();
   await page.setViewportSize({ width: 1280, height: 720 });
-  await expect(page.locator('.reader-canvas')).toHaveJSProperty('clientWidth', 995);
+  await expect(page.getByRole('complementary', { name: 'Reader menu' })).toBeVisible();
+  const canvasBox = await page.locator('.reader-canvas').boundingBox();
+  const menuBox = await page.locator('.reader-side-menu').boundingBox();
+  expect(canvasBox.x + canvasBox.width).toBeLessThanOrEqual(menuBox.x + 1);
   await page.setViewportSize({ width: 390, height: 844 });
   await expect
     .poll(async () =>
@@ -131,9 +158,9 @@ test('manhwa defaults to webtoon and image files stay on the device after reload
         ),
     )
     .toBeLessThan(5);
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await expectPage(page, 2);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.getByRole('button', { name: 'Reader settings', exact: true }).click();
+  await menuAction(page, 'Reader settings');
   await page.getByLabel('Image fit').selectOption('original');
   await page.getByRole('button', { name: 'Close dialog', exact: true }).click();
   await page.setViewportSize({ width: 1600, height: 1000 });
@@ -165,19 +192,21 @@ test('reader keyboard, spread layout, retry and modal focus preserve the correct
   await importManifest(page);
   await page.locator('.reader-canvas').focus();
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await expectPage(page, 2);
+  await page.locator('.reader-canvas').focus();
   await page.keyboard.press('ArrowRight');
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('1');
+  await expectPage(page, 1);
+  await page.locator('.reader-canvas').focus();
   await page.keyboard.press('s');
   const settings = page.getByRole('dialog', { name: 'Reader settings', exact: true });
   await settings.getByRole('button', { name: 'Double page', exact: true }).click();
   await page.keyboard.press('ArrowLeft');
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('1');
+  await expect(page.locator('.reader-canvas [data-page="1"]')).toBeAttached();
   await page.keyboard.press('Escape');
   await expect(settings).toHaveCount(0);
   await expect(page.locator('.reader-canvas img')).toHaveCount(2);
-  await page.getByRole('button', { name: 'Next page', exact: true }).click();
-  await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('3');
+  await menuAction(page, 'Next page');
+  await expectPage(page, 3);
   await expect(page.getByRole('button', { name: 'Retry page 3', exact: true })).toBeVisible();
   available = true;
   await page.getByRole('button', { name: 'Retry page 3', exact: true }).click();
@@ -187,8 +216,9 @@ test('reader keyboard, spread layout, retry and modal focus preserve the correct
   await expect(page.getByRole('button', { name: 'Show controls', exact: true })).toBeVisible();
   await page.keyboard.press('Escape');
   await expect(page.getByRole('button', { name: 'Show controls', exact: true })).toHaveCount(0);
-  await page.getByRole('button', { name: 'Next chapter', exact: true }).click();
+  await menuAction(page, 'Next chapter');
   await expect(page.getByRole('img', { name: 'Chapter 1.5, page 1', exact: true })).toBeVisible();
+  await openMenu(page);
   await expect(
     page.getByRole('link', { name: 'Title discussion', exact: true, includeHidden: true }),
   ).toHaveAttribute('href', '/title/mal-manga-21?unit=0');
@@ -202,6 +232,54 @@ test('reader keyboard, spread layout, retry and modal focus preserve the correct
   await page.goto(discussion);
   expect(new URL((await request).url()).searchParams.get('unit')).toBe('0');
   await expect(page.getByText('Discussion for the whole title.', { exact: true })).toBeVisible();
+});
+
+test('reader reveals chapter, page and menu controls on upward scroll and preserves right-to-left spreads', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.goto('/read/mal-manga-21/1');
+  await importManifest(page);
+  const canvas = page.locator('.reader-canvas');
+  await expect(canvas).toHaveAttribute('data-mode', 'single');
+  await expect(canvas).toHaveAttribute('data-fit', 'both');
+  await expect(page.locator('.reader-top-header')).toBeHidden();
+  await canvas.hover();
+  await page.mouse.wheel(0, -180);
+  await expect(page.getByRole('button', { name: 'Choose page', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Choose page', exact: true }).click();
+  await page.getByRole('button', { name: 'Go to page 2', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'Chapter 1, page 2', exact: true })).toBeVisible();
+  await canvas.hover();
+  await page.mouse.wheel(0, 180);
+  await expect(page.locator('.reader-top-header')).toBeHidden();
+  await openMenu(page);
+  await expect(page.getByLabel('Page direction', { exact: true })).toHaveValue('rtl');
+  await page.getByLabel('Page number', { exact: true }).selectOption('1');
+  await page.getByLabel('Page layout', { exact: true }).selectOption('double');
+  await closeMobileMenu(page);
+  await expect(canvas.locator('img')).toHaveCount(2);
+  const first = await canvas.locator('[data-page="1"]').boundingBox();
+  const second = await canvas.locator('[data-page="2"]').boundingBox();
+  expect(first.x).toBeGreaterThan(second.x);
+  const image = await canvas
+    .getByRole('img', { name: 'Chapter 1, page 1', exact: true })
+    .boundingBox();
+  const area = await canvas.boundingBox();
+  expect(image.height).toBeLessThanOrEqual(area.height);
+  await openMenu(page);
+  await page.getByLabel('Page direction', { exact: true }).selectOption('ltr');
+  await closeMobileMenu(page);
+  expect((await canvas.locator('[data-page="1"]').boundingBox()).x).toBeLessThan(
+    (await canvas.locator('[data-page="2"]').boundingBox()).x,
+  );
+  await page.reload();
+  await expect(canvas).toHaveAttribute('data-mode', 'double');
+  await openMenu(page);
+  await expect(page.getByLabel('Page direction', { exact: true })).toHaveValue('ltr');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
 test('dismissing an image import prevents a late redirect or chapter save', async ({

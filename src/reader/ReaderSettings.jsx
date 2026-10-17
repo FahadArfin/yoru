@@ -8,7 +8,9 @@ export default function ReaderSettings({ preferences, onChange, close }) {
     onChange({
       ...preferences,
       [key]: value,
-      ...(key === 'mode' && ['vertical', 'webtoon'].includes(value) && preferences.fit === 'height'
+      ...(key === 'mode' &&
+      ['vertical', 'webtoon'].includes(value) &&
+      ['height', 'both'].includes(preferences.fit)
         ? { fit: 'width' }
         : {}),
     });
@@ -54,6 +56,9 @@ export default function ReaderSettings({ preferences, onChange, close }) {
               value={preferences.fit}
               onChange={(e) => update('fit', e.target.value)}
             >
+              <option value="both" disabled={!paged}>
+                Fit both (paged)
+              </option>
               <option value="width">Fit width</option>
               <option value="height" disabled={!paged}>
                 Fit height (paged)

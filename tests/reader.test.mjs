@@ -72,6 +72,11 @@ test('chapter filters intersect language, volume, unread and bookmark state with
 test('reader defaults fit each format and corrupt preferences cannot create invalid layouts', () => {
   assert.equal(readerPreferences({}, 'MANHWA').mode, 'webtoon');
   assert.equal(readerPreferences({}, 'MANGA').direction, 'rtl');
+  assert.equal(readerPreferences({}, 'MANGA').mode, 'single');
+  assert.equal(readerPreferences({}, 'MANGA').fit, 'both');
+  assert.equal(readerPreferences({}, 'MANHWA').fit, 'width');
+  assert.equal(readerPreferences({ mode: 'webtoon', fit: 'both' }).fit, 'width');
+  assert.equal(readerPreferences({ mode: 'double', direction: 'ltr' }).direction, 'ltr');
   const bad = readerPreferences(
     { mode: 'video', direction: 'down', width: -30, background: 'url(evil)', fit: 'foo' },
     'MANGA',

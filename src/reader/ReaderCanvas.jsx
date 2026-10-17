@@ -57,13 +57,35 @@ export default function ReaderCanvas({
   jump,
   onVisiblePage,
   onTurn,
-  onToggleFocus,
+  onToggleControls,
+  onScrollDirection,
 }) {
   const container = useRef();
+  const scrollPosition = useRef(0);
   const position = useRef(page);
   position.current = page;
   const paged = ['single', 'double'].includes(preferences.mode);
   const [pages, setPages] = useState([]);
+  useEffect(() => {
+    const element = container.current;
+    scrollPosition.current = element.scrollTop;
+    const scroll = () => {
+      const current = element.scrollTop;
+      if (Math.abs(current - scrollPosition.current) > 5)
+        onScrollDirection(current < scrollPosition.current ? 'up' : 'down');
+      scrollPosition.current = current;
+    };
+    // Fit-both pages may have no overflow; an upward wheel gesture still reveals controls.
+    const wheel = (event) => {
+      if (Math.abs(event.deltaY) > 3) onScrollDirection(event.deltaY < 0 ? 'up' : 'down');
+    };
+    element.addEventListener('scroll', scroll, { passive: true });
+    element.addEventListener('wheel', wheel, { passive: true });
+    return () => {
+      element.removeEventListener('scroll', scroll);
+      element.removeEventListener('wheel', wheel);
+    };
+  }, [onScrollDirection]);
   // Allocate and release URLs in the same effect: StrictMode can replay its setup.
   useEffect(() => {
     const loaded = chapter.pages.map((item) => ({
@@ -79,6 +101,7 @@ export default function ReaderCanvas({
   useLayoutEffect(() => {
     if (paged) {
       container.current.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+      scrollPosition.current = container.current.scrollTop;
       return;
     }
     const target = container.current.querySelector(`[data-page="${page}"]`);
@@ -90,6 +113,8 @@ export default function ReaderCanvas({
           container.current.getBoundingClientRect().top,
         behavior: 'instant',
       });
+    // Restoring a page or resizing is not a reader scroll gesture.
+    scrollPosition.current = container.current.scrollTop;
   }, [chapter.id, jump, preferences.mode, pages]);
   useLayoutEffect(() => {
     if (paged) return;
@@ -110,6 +135,7 @@ export default function ReaderCanvas({
             element.getBoundingClientRect().top,
           behavior: 'instant',
         });
+      scrollPosition.current = element.scrollTop;
     });
     observer.observe(element);
     observer.observe(strip);
@@ -155,7 +181,7 @@ export default function ReaderCanvas({
     if (!paged) return;
     const bounds = event.currentTarget.getBoundingClientRect();
     const portion = (event.clientX - bounds.left) / bounds.width;
-    if (portion > 0.33 && portion < 0.67) onToggleFocus();
+    if (portion > 0.33 && portion < 0.67) onToggleControls();
     else onTurn((portion < 0.33 ? -1 : 1) * (preferences.direction === 'rtl' ? -1 : 1));
   };
   const visible = paged
@@ -190,7 +216,7 @@ export default function ReaderCanvas({
       {!paged && (
         <div className="reader-end">
           <strong>You’ve reached the end of this chapter.</strong>
-          <span>Choose another chapter from the controls below.</span>
+          <span>Open the reader menu or scroll up to choose another chapter.</span>
         </div>
       )}
     </div>
