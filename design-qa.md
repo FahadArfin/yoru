@@ -53,3 +53,43 @@ Reference: `C:/Users/fahad/AppData/Local/Temp/codex-clipboard-887fc0dc-185a-47b9
 - Content and behavior: preserved live search, category routing, filters, saved-result recovery and exact namespaced title links. New regression covers 48-result pagination, scroll reset, filter reset, manga navigation and hamburger dismissal on desktop and phone.
 
 Intentional differences: Yoru navigation, nine equal responsive columns, live catalog order and real score badges; reference subtitle/dub counters are not available from this metadata source. Other interior pages keep their existing navigation.
+
+---
+
+# Manga title layout QA
+
+Date: 2026-10-17
+
+## Reference and scope
+
+The supplied MangaDex Cosmos title screenshot is the visual reference. The live reference page could not be inspected in the browser, so the implementation uses the supplied screenshot rather than claiming a live-site comparison. The target is Yoru's existing manga and manhwa title pages, retaining their working catalog, library, discussion, reviews, and reader integration.
+
+The reference was inspected alongside the final Yoru captures at a 2468px desktop viewport, with the source's browser chrome excluded from layout measurements. A separate 390px phone check covers responsive behavior. The real Noro-Noro Puku-Puku title has three catalog editions; its content and chapter count are intentionally not replaced with the Cosmos example.
+
+## Visual comparison
+
+| Surface                       | Result | Evidence                                                                                                                                                                                             |
+| ----------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Composition and spacing       | Pass   | Cover and large title share a compact header; synopsis sits above tabs; metadata and chapter directory form the same left/right hierarchy. Removed the inherited directory top gap.                  |
+| Typography                    | Pass   | Strong title, bold compact section labels, readable chapter titles and muted secondary lines. Increased desktop type after the first comparison.                                                     |
+| Color and shape               | Pass   | Charcoal page, flat gray chapter rows, small rectangular metadata chips, restrained borders. Yoru branding and purple actions remain.                                                                |
+| Chapter imagery and detail    | Pass   | Real cover artwork and local language flags; scanlation group, release date, Yoru opens and rating controls remain on each edition. No invented provider statistics.                                 |
+| Density and responsive layout | Pass   | Desktop edition rows are 54px; repeated translations nest under one chapter. Phone places chapters before metadata, wraps actions and preserves dates without horizontal overflow in browser checks. |
+
+## Iterations and interaction checks
+
+1. Replaced the large banner and loose cards with a dedicated manga/manhwa title layout, grouped volume rows, collapsible translations and an index.
+2. Increased text sizes after side-by-side inspection, corrected hidden accessibility text and provider labels, and removed excess spacing.
+3. Fixed synopsis expansion based on measured clipping, including descriptions shorter than 450 characters. Restored phone dates and moved keyboard focus to the indexed volume.
+
+The chapter browser suite passes on desktop and phone: filters, pagination, rating dialogs, authenticated ratings, unavailable-feed retry, collapsible volumes and translations, index focus, sorting, synopsis expansion on resize, manga/manhwa routing and anime tab regression. Existing reader flows remain covered by the reader suite.
+
+## Evidence and limits
+
+- Source: user attachment `codex-clipboard-69b81619-a3ca-42f7-bfd3-f902116c8506.png`.
+- Desktop capture: `C:/Users/fahad/AppData/Local/Temp/yoru-dex-desktop-final.png`.
+- Phone capture: `C:/Users/fahad/AppData/Local/Temp/yoru-dex-phone-final.png`.
+- Browser console had no errors during the local visual check.
+- This reproduces the requested title-page structure, not all MangaDex platform features. Art uploads, reporting, external user profiles and MangaDex comments are not fabricated. The established external chapter-reading links and local imported reader are preserved.
+
+Design QA: **passed**. Release verification is recorded in the pull request and deployment checks.

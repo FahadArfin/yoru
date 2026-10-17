@@ -120,9 +120,9 @@ for (const [category, id] of [
       'true',
     );
     await page.getByRole('tab', { name: 'Reviews', exact: true }).click();
-    await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+    await page.getByRole('tab', { name: 'Chapters', exact: true }).click();
     await page.reload();
-    await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute(
+    await expect(page.getByRole('tab', { name: 'Chapters', exact: true })).toHaveAttribute(
       'aria-selected',
       'true',
     );
@@ -166,6 +166,97 @@ test('signed-in chapter ratings save and failed feeds have a retry without inven
   await expect(region.locator('.live-chapter-row')).toHaveCount(0);
   await expect(region.getByRole('button', { name: /Try again/i })).toBeVisible();
 });
+
+test('compact manga directory groups translations and volumes with working collapse, index and sorting', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.route('**/api/media/*/chapters?*', (route) => {
+    const items = [
+      { ...editions[0], volume: null, number: '14' },
+      { ...editions[1], volume: null, number: '14' },
+      { ...editions[2], volume: '2', number: '1.5' },
+      { ...editions[2], id: 'special', volume: '2', number: null, title: 'Bonus chapter' },
+      { ...editions[0], id: 'opening', volume: '1', number: '1', title: 'Opening' },
+    ];
+    return route.fulfill({
+      json: {
+        state: 'ready',
+        mangaId: 'test',
+        languages: ['en', 'es-la'],
+        items,
+        total: items.length,
+        nextOffset: null,
+      },
+    });
+  });
+  await page.goto('/title/mal-manga-21');
+  await expect(page.getByRole('tab', { name: 'Chapters', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  const volumes = page.locator('.chapter-volume');
+  await expect(volumes).toHaveCount(3);
+  await expect(volumes.locator(':scope > summary > strong')).toHaveText([
+    'No volume',
+    'Volume 2',
+    'Volume 1',
+  ]);
+  const translations = page.locator('.chapter-translation-group');
+  await expect(translations.locator('.live-chapter-row')).toHaveCount(2);
+  await translations.locator('summary').click();
+  await expect(translations.getByRole('link').first()).toBeHidden();
+  await translations.locator('summary').click();
+  await expect(translations.getByRole('link').first()).toBeVisible();
+  await volumes.nth(1).locator(':scope > summary').click();
+  await expect(volumes.nth(1).getByText('Bonus chapter', { exact: false })).toBeHidden();
+  await page.getByRole('button', { name: 'Index', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Volume index' })
+    .getByRole('button', { name: 'Volume 2', exact: true })
+    .click();
+  await expect(volumes.nth(1).getByText('Bonus chapter', { exact: false })).toBeVisible();
+  await expect(volumes.nth(1).locator(':scope > summary')).toBeFocused();
+  await page.getByRole('button', { name: 'Show oldest chapters first' }).click();
+  await expect(volumes.locator(':scope > summary > strong')).toHaveText([
+    'No volume',
+    'Volume 1',
+    'Volume 2',
+  ]);
+  await page.getByRole('button', { name: 'Add to library', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Sign in to Yoru', exact: true })).toBeVisible();
+  await page.keyboard.press('Escape');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+test('short synopses can expand whenever the phone layout clips them', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  const response = await context.request.get('/api/media/mal-manga-21');
+  const payload = await response.json();
+  const media = payload.media || payload;
+  const description =
+    'A curious traveler discovers a quiet village hidden beyond the mountains. Every night its residents gather to share stories of the stars, until a mysterious visitor arrives with a map that could change their lives forever. Together, they must uncover the truth before the last light disappears.';
+  expect(description.length).toBeLessThan(450);
+  await page.route('**/api/media/mal-manga-21', (route) =>
+    route.fulfill({ json: { media: { ...media, description } } }),
+  );
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/title/mal-manga-21');
+  const synopsis = page.getByRole('region', { name: 'Synopsis' });
+  await synopsis.getByRole('button', { name: 'Read more' }).click();
+  await expect(synopsis.locator('p')).not.toHaveClass('collapsed-story');
+  await synopsis.getByRole('button', { name: 'Show less' }).click();
+  await expect(synopsis.getByRole('button', { name: 'Read more' })).toBeVisible();
+  await expect(page.locator('.chapter-edition-date time').first()).toBeVisible();
+  await page.setViewportSize({ width: 1800, height: 1000 });
+  await expect(synopsis.getByRole('button', { name: 'Read more' })).toBeHidden();
+});
+
 test('anime episode tabs also preserve selection when coming from reviews', async ({
   page,
   context,

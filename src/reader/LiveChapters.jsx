@@ -3,7 +3,6 @@ import {
   ArrowDownUp,
   BookOpen,
   ChevronDown,
-  Clock3,
   ExternalLink,
   Eye,
   Languages,
@@ -15,13 +14,9 @@ import { api, send } from '../api';
 import { useApp } from '../state';
 import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { recordChapterView } from '../watch-views';
-import { languageName } from './model';
+import ChapterDirectory, { languageLabel } from './ChapterDirectory';
 
-const number = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
-const languageLabel = (code) =>
-  ({ 'es-la': 'Spanish (Latin America)', 'zh-hk': 'Chinese (Traditional)' })[code] ||
-  languageName(code);
 
 export default function LiveChapters({ media }) {
   const { user, setAuthOpen, notify } = useApp();
@@ -275,92 +270,7 @@ export default function LiveChapters({ media }) {
                   </p>
                 )}
                 {data.items.length ? (
-                  <div className="live-chapter-rows">
-                    {data.items.map((item) => (
-                      <article className="live-chapter-row" key={item.id}>
-                        <a
-                          className="live-chapter-link"
-                          href={item.readUrl}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          onClick={() => opened(item)}
-                          onAuxClick={(event) => {
-                            if (event.button === 1) opened(item);
-                          }}
-                        >
-                          <span className="chapter-number-tile">
-                            <BookOpen size={16} />
-                            <b>{item.number || 'SP'}</b>
-                          </span>
-                          <span className="chapter-edition-copy">
-                            <strong>
-                              {chapterLabel(item)}
-                              {item.title && <span> · {item.title}</span>}
-                            </strong>
-                            <span className="chapter-edition-meta">
-                              <span className="chapter-language">
-                                {languageLabel(item.language)}
-                              </span>
-                              <span>
-                                {item.groups.map((g) => g.name).join(', ') || 'No group credited'}
-                              </span>
-                              {item.volume && <span>Vol. {item.volume}</span>}
-                            </span>
-                            <span className="chapter-edition-date">
-                              {item.publishedAt && (
-                                <>
-                                  <Clock3 size={11} />
-                                  <time
-                                    dateTime={item.publishedAt}
-                                    title={new Date(item.publishedAt).toLocaleString()}
-                                  >
-                                    {new Date(item.publishedAt).toLocaleDateString(undefined, {
-                                      month: 'short',
-                                      day: 'numeric',
-                                      year: 'numeric',
-                                    })}
-                                  </time>
-                                  <span>·</span>
-                                </>
-                              )}
-                              {item.pages > 0 && <span>{item.pages} pages · </span>}Read on{' '}
-                              {item.readLabel} <ExternalLink size={11} />
-                            </span>
-                          </span>
-                        </a>
-                        <div className="chapter-activity">
-                          <span
-                            className="chapter-open-count"
-                            title="Chapter opens from Yoru, counted once per browser while its visitor cookie is kept."
-                          >
-                            <Eye size={15} />
-                            <span>
-                              {number.format(item.stats?.opens || 0)}
-                              <small>opens</small>
-                            </span>
-                          </span>
-                          <button
-                            onClick={() => rate(item)}
-                            className={`chapter-rating${item.stats?.myRating ? ' rated' : ''}`}
-                            aria-label={`Rate ${chapterLabel(item)} in ${languageLabel(item.language)}`}
-                            title={
-                              item.stats?.votes
-                                ? `${item.stats.votes} Yoru rating${item.stats.votes === 1 ? '' : 's'} · ${item.stats.rating.toFixed(1)} out of 5`
-                                : 'Be the first to rate this edition'
-                            }
-                          >
-                            <Star size={15} fill={item.stats?.myRating ? 'currentColor' : 'none'} />
-                            <span>
-                              {item.stats?.votes ? item.stats.rating.toFixed(1) : '—'}
-                              <small>
-                                {item.stats?.votes ? `${item.stats.votes} votes` : 'Rate'}
-                              </small>
-                            </span>
-                          </button>
-                        </div>
-                      </article>
-                    ))}
-                  </div>
+                  <ChapterDirectory items={data.items} sort={sort} opened={opened} rate={rate} />
                 ) : (
                   <div className="chapter-catalog-empty">
                     <BookOpen size={28} />

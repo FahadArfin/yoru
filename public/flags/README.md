@@ -1,0 +1,1 @@
+Small country flags from Flagcdn (https://flagcdn.com/), used as visual translation indicators. Language names remain available to assistive technology and in tooltips. The flags are served locally; visitors do not contact Flagcdn.

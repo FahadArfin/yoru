@@ -21,6 +21,7 @@ import Discussion, { Reviews } from '../Discussion';
 import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
+import MangaTitle from './MangaTitle';
 const selectedTab = (params) =>
   params.get('unit')
     ? 'discussion'
@@ -69,6 +70,7 @@ export default function Title() {
       </div>
     );
   const anime = isAnime(media);
+  if (!anime) return <MangaTitle key={id} media={media} />;
   const knownTotal = anime ? media.episodes : media.chapters;
   const startUnit = Math.max(1, entry?.progress || 1);
   const watchPath =
