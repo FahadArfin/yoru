@@ -7,6 +7,7 @@ import { readerLink } from './model';
 import { READER_EVENT, readingHistory, saveReadingState } from './storage';
 import ChapterList from './ChapterList';
 import ReaderImport from './ReaderImport';
+import LiveChapters from './LiveChapters';
 import './reader.css';
 
 export function ChapterCollection({ media }) {
@@ -18,37 +19,44 @@ export function ChapterCollection({ media }) {
   const select = (chapter, page) => navigate(readerLink(media.id, chapter, page));
   return (
     <section className="reading-collection">
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">YOUR NEXT CHAPTER</span>
-          <h2>Read at your own pace.</h2>
+      <LiveChapters key={media.id} media={media} />
+      <div className="saved-chapter-heading">
+        <div className="section-heading">
+          <div>
+            <span className="eyebrow">YOUR OWN EDITIONS</span>
+            <h3>Saved on this device</h3>
+          </div>
+          <Button variant="secondary" onClick={() => setImporting(true)}>
+            <Plus size={16} />
+            Add chapters
+          </Button>
         </div>
-        <Button variant="secondary" onClick={() => setImporting(true)}>
-          <Plus size={16} />
-          Add chapters
-        </Button>
+        {data.loading ? (
+          <Loading />
+        ) : data.items.length ? (
+          <ChapterList
+            chapters={data.items}
+            states={state.chapters}
+            onSelect={select}
+            onRead={(chapter, value) => {
+              try {
+                saveReadingState(media.id, {}, chapter.id, { read: value });
+              } catch (error) {
+                setError(error.message);
+              }
+            }}
+          />
+        ) : (
+          <p className="muted">Add your chapter files to read in Yoru and keep your place.</p>
+        )}
+        {(data.error || error) && (
+          <ErrorNotice message={data.error || error} retry={data.refresh} />
+        )}
+        <Link className="text-link" to={`/read/${media.id}/1`}>
+          Open reader & provider links
+          <ArrowRight size={15} />
+        </Link>
       </div>
-      {data.loading ? (
-        <Loading />
-      ) : (
-        <ChapterList
-          chapters={data.items}
-          states={state.chapters}
-          onSelect={select}
-          onRead={(chapter, value) => {
-            try {
-              saveReadingState(media.id, {}, chapter.id, { read: value });
-            } catch (error) {
-              setError(error.message);
-            }
-          }}
-        />
-      )}
-      {(data.error || error) && <ErrorNotice message={data.error || error} retry={data.refresh} />}
-      <Link className="text-link" to={`/read/${media.id}/1`}>
-        Open reader & provider links
-        <ArrowRight size={15} />
-      </Link>
       {importing && (
         <ReaderImport
           media={media}

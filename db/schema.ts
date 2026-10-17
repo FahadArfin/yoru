@@ -272,3 +272,30 @@ export const limits = sqliteTable(
   },
   (t) => [index('rate_limits_expiry').on(t.expires_at)],
 );
+
+export const chapterOpens = sqliteTable(
+  'chapter_opens',
+  {
+    media_id: text().notNull(),
+    chapter_id: text().notNull(),
+    visitor_hash: text().notNull(),
+    opened_at: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.media_id, t.chapter_id, t.visitor_hash] })],
+);
+export const chapterRatings = sqliteTable(
+  'chapter_ratings',
+  {
+    media_id: text().notNull(),
+    chapter_id: text().notNull(),
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    rating: integer().notNull(),
+    updated_at: integer().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.media_id, t.chapter_id, t.user_id] }),
+    check('chapter_rating_range', sql`${t.rating} BETWEEN 1 AND 5`),
+  ],
+);

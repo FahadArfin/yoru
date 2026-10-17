@@ -81,6 +81,16 @@ db.exec(`
     PRIMARY KEY(media_id, visitor_hash)
   );
   CREATE INDEX IF NOT EXISTS watch_views_expiry ON watch_views(last_seen);
+  CREATE TABLE IF NOT EXISTS chapter_opens (
+    media_id TEXT NOT NULL, chapter_id TEXT NOT NULL, visitor_hash TEXT NOT NULL,
+    opened_at INTEGER NOT NULL, PRIMARY KEY(media_id,chapter_id,visitor_hash)
+  );
+  CREATE TABLE IF NOT EXISTS chapter_ratings (
+    media_id TEXT NOT NULL, chapter_id TEXT NOT NULL,
+    user_id TEXT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    rating INTEGER NOT NULL CHECK(rating BETWEEN 1 AND 5), updated_at INTEGER NOT NULL,
+    PRIMARY KEY(media_id,chapter_id,user_id)
+  );
 `);
 if (
   !db

@@ -12,7 +12,9 @@ import { getSchedule } from './schedule-core.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
 import { all, run } from './db.js';
-import { cookie } from './auth.js';
+import { cookie, asyncRoute, requireAuth } from './auth.js';
+import { getChapterCatalog } from './chapter-catalog.js';
+import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
 import { getPopularAnime } from './home-discovery.js';
 import {
   getTrendingAnime,
@@ -28,6 +30,59 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+const chapterOptions = (req) => ({
+  ...scheduleOptions,
+  offline: isOffline(),
+  media: getMedia,
+  db: { all, run },
+  userId: req.user?.id,
+  sessionHash: req.sessionHash,
+});
+catalogRouter.get(
+  '/media/:id/chapters',
+  asyncRoute(async (req, res) => {
+    const options = chapterOptions(req);
+    const result = await getChapterCatalog(req.params.id, req.query, options);
+    const stats = await chapterStats(
+      options.db,
+      req.params.id,
+      result.items.map((item) => item.id),
+      options.userId,
+    );
+    res.json({
+      ...result,
+      items: result.items.map((item) => ({ ...item, stats: stats[item.id] })),
+    });
+  }),
+);
+catalogRouter.post(
+  '/media/:id/chapters/:chapter/open',
+  asyncRoute(async (req, res) => {
+    const result = await recordChapterOpen(
+      req.params.id,
+      req.params.chapter,
+      cookie(req, VIEW_COOKIE),
+      chapterOptions(req),
+    );
+    res.cookie(VIEW_COOKIE, result.visitor, {
+      httpOnly: true,
+      sameSite: 'lax',
+      path: '/',
+      maxAge: VIEW_COOKIE_SECONDS * 1000,
+      secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
+    });
+    res.json(result.stats);
+  }),
+);
+catalogRouter.post(
+  '/media/:id/chapters/:chapter/rating',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    res.json(
+      await rateChapter(req.params.id, req.params.chapter, req.body?.rating, chapterOptions(req)),
+    );
+  }),
+);
 catalogRouter.get(['/manga/discovery', '/manhwa/discovery'], async (req, res, next) => {
   try {
     const manhwa = req.path.toLowerCase().replace(/\/$/, '') === '/manhwa/discovery';

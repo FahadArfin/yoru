@@ -42,6 +42,9 @@ import {
   VIEW_COOKIE_SECONDS,
 } from '../server/watch-views.js';
 import { seed, isOffline } from './catalog-storage.js';
+import { getChapterCatalog } from '../server/chapter-catalog.js';
+import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
+import { requireAuth } from './security.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -122,6 +125,44 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+const chapterOptions = (c) => ({
+  ...scheduleOptions(c.env),
+  offline: isOffline(),
+  media: getMedia,
+  db: c.get('db'),
+  userId: c.get('user')?.id,
+  sessionHash: c.get('sessionHash'),
+});
+app.get('/api/media/:id/chapters', async (c) => {
+  const options = chapterOptions(c);
+  const result = await getChapterCatalog(c.req.param('id'), c.req.query(), options);
+  const stats = await chapterStats(
+    options.db,
+    c.req.param('id'),
+    result.items.map((item) => item.id),
+    options.userId,
+  );
+  return c.json({
+    ...result,
+    items: result.items.map((item) => ({ ...item, stats: stats[item.id] })),
+  });
+});
+app.post('/api/media/:id/chapters/:chapter/open', async (c) => {
+  const result = await recordChapterOpen(
+    c.req.param('id'),
+    c.req.param('chapter'),
+    getCookie(c, VIEW_COOKIE),
+    chapterOptions(c),
+  );
+  setCookie(c, VIEW_COOKIE, result.visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
+  return c.json(result.stats);
+});
+app.post('/api/media/:id/chapters/:chapter/rating', requireAuth, async (c) => {
+  const body = await c.req.json();
+  return c.json(
+    await rateChapter(c.req.param('id'), c.req.param('chapter'), body.rating, chapterOptions(c)),
+  );
+});
 app.on('GET', ['/api/manga/discovery', '/api/manhwa/discovery'], async (c) => {
   const manhwa = c.req.path === '/api/manhwa/discovery';
   return c.json(

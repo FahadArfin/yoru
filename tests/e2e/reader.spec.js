@@ -241,5 +241,10 @@ test('dismissing an image import prevents a late redirect or chapter save', asyn
   );
   expect(redirected).toBe(false);
   await page.getByRole('tab', { name: 'Chapters', exact: true }).click();
-  await expect(page.getByText('Your chapters belong here.', { exact: true })).toBeVisible();
+  await expect(
+    page
+      .locator('.saved-chapter-heading')
+      .getByText('Add your chapter files to read in Yoru and keep your place.', { exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('.saved-chapter-heading .chapter-row')).toHaveCount(0);
 });

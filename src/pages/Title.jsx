@@ -30,7 +30,13 @@ export default function Title() {
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(id);
   const [tab, setTab] = useState(
-    params.get('unit') ? 'discussion' : params.get('tab') === 'reviews' ? 'reviews' : 'overview',
+    params.get('unit')
+      ? 'discussion'
+      : params.get('tab') === 'chapters'
+        ? 'units'
+        : params.get('tab') === 'reviews'
+          ? 'reviews'
+          : 'overview',
   );
   const [unitPage, setUnitPage] = useState(0);
   const progressDirty = useRef(false);
@@ -48,7 +54,13 @@ export default function Title() {
   }, [id]);
   useEffect(() => {
     setTab(
-      params.get('unit') ? 'discussion' : params.get('tab') === 'reviews' ? 'reviews' : 'overview',
+      params.get('unit')
+        ? 'discussion'
+        : params.get('tab') === 'chapters'
+          ? 'units'
+          : params.get('tab') === 'reviews'
+            ? 'reviews'
+            : 'overview',
     );
     setUnitPage(0);
   }, [id, params.get('unit'), params.get('tab')]);
@@ -168,7 +180,18 @@ export default function Title() {
                   aria-selected={tab === key}
                   className={tab === key ? 'active' : ''}
                   key={key}
-                  onClick={() => setTab(key)}
+                  onClick={() => {
+                    setTab(key);
+                    if (!anime && key === 'units') setParams({ tab: 'chapters' });
+                    else if (params.get('tab') === 'chapters')
+                      setParams(
+                        key === 'reviews'
+                          ? { tab: 'reviews' }
+                          : key === 'discussion'
+                            ? { unit: '0' }
+                            : {},
+                      );
+                  }}
                 >
                   {label}
                 </button>
@@ -214,7 +237,9 @@ export default function Title() {
                 )}
               </section>
             )}
-            {tab === 'units' && !anime && <ChapterCollection key={id} media={media} />}
+            {['overview', 'units'].includes(tab) && !anime && (
+              <ChapterCollection key={id} media={media} />
+            )}
             {tab === 'units' && anime && (
               <section>
                 <div className="section-heading">
