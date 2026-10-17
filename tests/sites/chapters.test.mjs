@@ -98,8 +98,10 @@ after(async () => {
   await runtime?.dispose();
 });
 test('chapter feed, cache, opens and account ratings persist across Sites Workers', async () => {
-  const first = await request('a', '');
+  const [first, ...others] = await Promise.all(Array.from({ length: 6 }, () => request('a', '')));
   assert.equal(first.status, 200, JSON.stringify(first.data));
+  assert.ok(others.every((result) => result.status === 200));
+  assert.equal(calls, 2, 'concurrent readers share one mapping request and one chapter feed');
   assert.equal(first.data.items[0].title, 'A chapter');
   const beforeCalls = calls;
   await request('b', '');

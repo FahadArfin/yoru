@@ -21,6 +21,10 @@ import Discussion, { Reviews } from '../Discussion';
 import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
+const selectedTab = (params) =>
+  params.get('unit')
+    ? 'discussion'
+    : { chapters: 'units', episodes: 'units', reviews: 'reviews' }[params.get('tab')] || 'overview';
 export default function Title() {
   const { id } = useParams();
   const readingState = useReadingState(id);
@@ -29,15 +33,7 @@ export default function Title() {
   const media = resource.data?.media || resource.data;
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(id);
-  const [tab, setTab] = useState(
-    params.get('unit')
-      ? 'discussion'
-      : params.get('tab') === 'chapters'
-        ? 'units'
-        : params.get('tab') === 'reviews'
-          ? 'reviews'
-          : 'overview',
-  );
+  const [tab, setTab] = useState(() => selectedTab(params));
   const [unitPage, setUnitPage] = useState(0);
   const progressDirty = useRef(false);
   const [progress, setProgress] = useState(entry?.progress || 0);
@@ -53,15 +49,7 @@ export default function Title() {
     setProgress(entry?.progress || 0);
   }, [id]);
   useEffect(() => {
-    setTab(
-      params.get('unit')
-        ? 'discussion'
-        : params.get('tab') === 'chapters'
-          ? 'units'
-          : params.get('tab') === 'reviews'
-            ? 'reviews'
-            : 'overview',
-    );
+    setTab(selectedTab(params));
     setUnitPage(0);
   }, [id, params.get('unit'), params.get('tab')]);
   useEffect(() => {
@@ -182,15 +170,15 @@ export default function Title() {
                   key={key}
                   onClick={() => {
                     setTab(key);
-                    if (!anime && key === 'units') setParams({ tab: 'chapters' });
-                    else if (params.get('tab') === 'chapters')
-                      setParams(
-                        key === 'reviews'
+                    setParams(
+                      key === 'units'
+                        ? { tab: anime ? 'episodes' : 'chapters' }
+                        : key === 'reviews'
                           ? { tab: 'reviews' }
                           : key === 'discussion'
-                            ? { unit: '0' }
+                            ? { unit: params.get('unit') || '0' }
                             : {},
-                      );
+                    );
                   }}
                 >
                   {label}

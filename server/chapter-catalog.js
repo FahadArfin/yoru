@@ -7,12 +7,16 @@ const LANGUAGE = /^[a-z]{2,3}(?:-[a-z]{2})?$/;
 const TTL = 15 * 60000;
 let queue = Promise.resolve();
 let lastRequest = 0;
+const refreshes = new WeakMap();
 
 function client(options) {
   const now = options.now || Date.now;
   const fetchImpl = options.fetchImpl || fetch;
   const load = options.load || (async () => null);
   const save = options.save || (async () => {});
+  const scope = options.cacheScope || options;
+  if (!refreshes.has(scope)) refreshes.set(scope, new Map());
+  const pending = refreshes.get(scope);
   async function request(path) {
     if (options.offline) throw apiError(503, 'The live chapter catalog is unavailable.');
     const cooldown = await load('chapters:v1:cooldown');
@@ -67,8 +71,14 @@ function client(options) {
     queue = pending.catch(() => {});
     return pending;
   }
-  async function cached(key, ttl, fetcher) {
+  function cached(key, ttl, fetcher) {
     key = `chapters:v1:${createHash('sha256').update(key).digest('hex')}`;
+    if (pending.has(key)) return pending.get(key);
+    const result = refresh(key, ttl, fetcher).finally(() => pending.delete(key));
+    pending.set(key, result);
+    return result;
+  }
+  async function refresh(key, ttl, fetcher) {
     const saved = await load(key);
     if (saved && now() - saved.fetchedAt < ttl) return { ...saved, stale: false };
     try {

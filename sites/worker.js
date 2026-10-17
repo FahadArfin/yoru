@@ -127,6 +127,7 @@ app.get('/api/config', (c) => {
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
 const chapterOptions = (c) => ({
   ...scheduleOptions(c.env),
+  cacheScope: c.env.DB,
   offline: isOffline(),
   media: getMedia,
   db: c.get('db'),

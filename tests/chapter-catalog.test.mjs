@@ -90,6 +90,14 @@ test('title similarity never substitutes for an exact MAL match', async () => {
   );
   assert.equal((await getChapterCatalog(title.id, {}, options)).state, 'unmatched');
 });
+test('concurrent cold-cache readers share metadata requests without sharing personal activity', async () => {
+  const { options, calls } = setup();
+  const responses = await Promise.all(
+    Array.from({ length: 6 }, () => getChapterCatalog(title.id, {}, options)),
+  );
+  assert.equal(calls.length, 2);
+  assert.ok(responses.every((response) => response.items[0].id === chapter));
+});
 test('chapter lookup rejects a different manga, future or unavailable editions', async () => {
   for (const changed of [
     { relationships: [{ type: 'manga', id: 'other' }] },

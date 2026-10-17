@@ -32,6 +32,7 @@ export * from './catalog-core.js';
 export const catalogRouter = Router();
 const chapterOptions = (req) => ({
   ...scheduleOptions,
+  cacheScope: scheduleOptions,
   offline: isOffline(),
   media: getMedia,
   db: { all, run },

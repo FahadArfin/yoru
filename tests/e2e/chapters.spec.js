@@ -119,6 +119,13 @@ for (const [category, id] of [
       'aria-selected',
       'true',
     );
+    await page.getByRole('tab', { name: 'Reviews', exact: true }).click();
+    await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+    await page.reload();
+    await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
   });
 }
 test('signed-in chapter ratings save and failed feeds have a retry without invented chapters', async ({
@@ -158,4 +165,25 @@ test('signed-in chapter ratings save and failed feeds have a retry without inven
   await expect(region.getByText('MangaDex is unavailable.', { exact: false })).toBeVisible();
   await expect(region.locator('.live-chapter-row')).toHaveCount(0);
   await expect(region.getByRole('button', { name: /Try again/i })).toBeVisible();
+});
+test('anime episode tabs also preserve selection when coming from reviews', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.goto('/title/mal-anime-52991?tab=reviews');
+  await page.getByRole('tab', { name: 'Episodes', exact: true }).click();
+  await expect(page.locator('.unit-grid')).toBeVisible();
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'Episodes', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.getByRole('tab', { name: 'Overview', exact: true }).click();
+  await page.reload();
+  await expect(page.getByRole('tab', { name: 'Overview', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
 });
