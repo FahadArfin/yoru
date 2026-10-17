@@ -19,6 +19,7 @@ import Discussion, { Reviews } from '../Discussion';
 import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
+import MangaRecommendations from './MangaRecommendations';
 import './manga-title.css';
 
 function SourceLinks({ title, links }) {
@@ -251,16 +252,7 @@ export default function MangaTitle({ media }) {
             </section>
             <SourceLinks title="Read or buy" links={readingLinks} />
             <SourceLinks title="Track" links={trackingLinks} />
-            {!!alternativeTitles.length && (
-              <section className="manga-fact">
-                <h3>Alternative titles</h3>
-                <ul className="manga-alternative-titles">
-                  {alternativeTitles.map((name) => (
-                    <li key={name}>{name}</li>
-                  ))}
-                </ul>
-              </section>
-            )}
+            <MangaRecommendations media={media} />
             <details className="manga-progress">
               <summary>
                 <Bookmark size={15} />

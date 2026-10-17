@@ -93,3 +93,21 @@ The chapter browser suite passes on desktop and phone: filters, pagination, rati
 - This reproduces the requested title-page structure, not all MangaDex platform features. Art uploads, reporting, external user profiles and MangaDex comments are not fabricated. The established external chapter-reading links and local imported reader are preserved.
 
 Design QA: **passed**. Release verification is recorded in the pull request and deployment checks.
+
+## Recommendation covers — 2026-10-17
+
+**Final result: passed.** Replaced the metadata sidebar's alternative-title list with four related title covers and a working See more link on manga and manhwa pages. Header subtitles still use the title aliases.
+
+Reference: user attachment `codex-clipboard-8b3a347f-c2c7-4598-ab26-07ce8ca0d413.png` (466 × 719 cropped sidebar). Compared the source and the rendered desktop capture together in one visual review; the reference's approximately 400px grid is a sidebar crop, not a phone viewport. Yoru's sidebar is 272px wide at the checked 1280 × 720 desktop viewport; the responsive phone grid is 343px at 390 × 844. The existing page proportions are intentionally retained.
+
+| Fidelity surface   | Result                                                                                                                                                                                                                                                                     |
+| ------------------ | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Typography         | Bold Recommendations heading, readable white title overlays with at most three lines, and centered See more with an arrow. Existing DM Sans matches the rest of Yoru.                                                                                                      |
+| Layout and spacing | Two columns, four portrait covers at a 2:2.85 aspect ratio, 8px gaps, 3px corners. Phone recommendations span the metadata section instead of squeezing into one column.                                                                                                   |
+| Colors             | Existing charcoal page and white text retained; dark shading keeps labels readable on bright covers. Visible keyboard focus and reduced-motion support.                                                                                                                    |
+| Image quality      | All four real catalog covers loaded in the browser at 600px tall, larger than their rendered sizes. No generated covers or placeholder recommendations. Subjects intentionally differ from the Cosmos screenshot because recommendations belong to the current Yoru title. |
+| Copy and content   | Correct Recommendations spelling. Genre overlap ranks suggestions from the same manga/manhwa category; self, duplicate IDs, adult/imported items and records without covers are excluded. Empty/error states explain the absence without fabricated titles.                |
+
+No P0/P1/P2 findings remain. Live local clicking of Dandadan opened the matching title; See more, genre filtering, same-category routing, fallback and retry passed on desktop and phone. The chapter tests preserve English defaults and translation selection. No horizontal phone overflow.
+
+Evidence: `C:/Users/fahad/AppData/Local/Temp/yoru-recommendations-desktop.png` and `C:/Users/fahad/AppData/Local/Temp/yoru-recommendations-phone.png`. Catalog covers and results can vary with provider data. See more opens Yoru's filtered catalog rather than introducing a separate recommendation-management page.
