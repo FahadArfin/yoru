@@ -168,7 +168,7 @@ export default function HomeLead({ children }) {
           {children}
         </div>
         <div className="home-lower-highlights">
-          <HomeSidebar popular={popular} />
+          <HomeSidebar />
         </div>
       </div>
     </>
