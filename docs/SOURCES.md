@@ -82,6 +82,14 @@ The native reader handles live editions from the optional desktop bridge as well
 
 The native reader's list shows the selected live source or device-imported editions, preserving source and translation identities. Chapter 0 and decimal chapters keep their own reader identities; the current integer-only discussion API routes bonus chapters to the whole-title discussion. Anime playback and shared reading rooms retain their existing behavior.
 
+### Browsing and reading preparation
+
+Cover images retry a failed or stalled request using available alternatives, including the same MAL artwork's JPEG format when its WebP fails. A bounded retry ends with a local placeholder instead of an empty poster. Main covers have high loading priority; the four recommendation covers load eagerly. Manga and manhwa discovery, catalog, recommendation and chapter links prepare the likely destination on hover, keyboard focus or touch, and native chapter links preserve the running app rather than reloading it.
+
+The browser shares bounded in-memory request caches (160 entries): title/catalog responses for two minutes, source/chapter lists for 30 seconds, and page manifests for one minute. Chapter lists are partitioned by account; rating writes invalidate them. Requests are deduplicated, failures remain retryable, and unavailable/partial responses expire sooner. Metadata preparation is limited to two concurrent title jobs. Only the selected title is prepared, not the whole catalog.
+
+After the displayed page loads, the reader prepares the next five pages through the browser's normal image cache. At halfway, it prepares the next chapter's manifest and first three pages in the current source/language, favoring the current release group. Two low-priority image downloads run at once, with a bounded queue. Navigation cancels abandoned work; hidden tabs, Data Saver and 2G connections skip speculative downloads. These temporary buffers complement the desktop bridge cache, without adding an offline library or guaranteeing that an unavailable provider will load.
+
 ### Live chapter directory
 
 Manga and manhwa title pages show a live chapter directory under the overview and in the Chapters tab (`?tab=chapters`). `GET /api/media/:id/chapters` uses the public [MangaDex API](https://api.mangadex.org/docs/swagger.html), with no API key. Title search only locates candidates: a match requires the exact `attributes.links.mal` manga ID and a safe/suggestive content rating. Similar names and unmapped titles never produce guessed chapter links. Only released, available chapter editions belonging to that verified manga are returned. Chapter numbers, titles, volume, language, release groups and dates come from MangaDex; absent titles are not invented.

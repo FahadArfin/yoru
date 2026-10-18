@@ -1,9 +1,11 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { coverOf, kindOf, titleOf } from '../api';
+import { kindOf, titleOf } from '../api';
 import { useResource } from '../state';
 import { recommendationQuery, relatedTitles } from '../recommendations';
+import CoverImage from '../CoverImage';
+import PrefetchLink from '../PrefetchLink';
 
 export default function MangaRecommendations({ media }) {
   const related = useResource(recommendationQuery(media));
@@ -25,17 +27,18 @@ export default function MangaRecommendations({ media }) {
       ) : items.length ? (
         <div className="manga-recommendation-grid">
           {items.slice(0, 4).map((item) => (
-            <Link
+            <PrefetchLink
               key={item.id}
+              media={item}
               className="manga-recommendation-card"
               to={`/title/${encodeURIComponent(item.id)}`}
               title={titleOf(item)}
             >
-              <img src={coverOf(item)} alt="" loading="lazy" decoding="async" />
+              <CoverImage media={item} alt="" loading="eager" fetchPriority="low" />
               <span>
                 <strong>{titleOf(item)}</strong>
               </span>
-            </Link>
+            </PrefetchLink>
           ))}
         </div>
       ) : (

@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
 import { BookOpen, Check, ChevronLeft, ChevronRight, Plus, Star } from 'lucide-react';
-import { coverOf, titleOf } from '../api';
+import { titleOf } from '../api';
+import CoverImage from '../CoverImage';
+import PrefetchLink from '../PrefetchLink';
 import { useApp } from '../state';
 import { useBannerArtwork } from '../useBannerArtwork';
 
@@ -37,13 +38,11 @@ export default function MangaHero({ items, category, label }) {
       {!wide && hero && (
         <div className="manga-cover-stage" key={hero.id}>
           <span className="manga-cover-orbit" />
-          <img
-            src={coverOf(hero)}
+          <CoverImage
+            media={hero}
             alt={`${titleOf(hero)} cover`}
+            loading="eager"
             fetchPriority="high"
-            onError={(event) => {
-              event.currentTarget.style.visibility = 'hidden';
-            }}
           />
           <span className="manga-cover-label">
             {category === 'manhwa' ? 'COLOR. SCROLL. OBSESSION.' : 'INK. PANELS. OBSESSION.'}
@@ -84,9 +83,9 @@ export default function MangaHero({ items, category, label }) {
               {hero.description || 'Find your next favorite story, one panel at a time.'}
             </p>
             <div className="weekly-actions">
-              <Link className="weekly-watch" to={`/title/${hero.id}`}>
+              <PrefetchLink media={hero} className="weekly-watch" to={`/title/${hero.id}`}>
                 <BookOpen size={17} /> Explore {category}
-              </Link>
+              </PrefetchLink>
               <button
                 className="weekly-save"
                 aria-label={entryFor(hero) ? 'In your library' : 'Add to reading list'}

@@ -14,9 +14,11 @@ import {
   X,
   Sparkles,
 } from 'lucide-react';
-import { coverOf, kindOf, scoreOf, titleOf, send } from './api';
+import { kindOf, scoreOf, titleOf, send } from './api';
 import { useApp } from './state';
 import { dialogStack, lockDocumentScroll } from './overlays';
+import CoverImage from './CoverImage';
+import PrefetchLink from './PrefetchLink';
 export function Button({ children, variant = 'primary', className = '', busy, ...props }) {
   return (
     <button
@@ -93,25 +95,18 @@ export function Poster({ media, rank, compact = false }) {
   return (
     <article className="poster-card">
       <div className="poster-art">
-        <Link
+        <PrefetchLink
+          media={media}
           to={`/title/${media.id}`}
           className="poster-link"
           aria-label={`View ${titleOf(media)}`}
         >
-          <img
-            src={coverOf(media)}
-            alt={titleOf(media)}
-            loading="lazy"
-            decoding="async"
-            onError={(e) => {
-              e.currentTarget.src = '/icon.svg';
-            }}
-          />
+          <CoverImage media={media} alt={titleOf(media)} loading="lazy" decoding="async" />
           <span className="poster-shade" />
           <span className="poster-open">
             <ArrowUpRight size={24} />
           </span>
-        </Link>
+        </PrefetchLink>
         <span className={`media-kind kind-${kindOf(media).toLowerCase()}`}>
           {compact ? media.format || kindOf(media) : kindOf(media).toLowerCase()}
         </span>
@@ -132,9 +127,9 @@ export function Poster({ media, rank, compact = false }) {
         )}
         {rank && <span className="poster-rank">{String(rank).padStart(2, '0')}</span>}
       </div>
-      <Link className="poster-title" to={`/title/${media.id}`}>
+      <PrefetchLink media={media} className="poster-title" to={`/title/${media.id}`}>
         {titleOf(media)}
-      </Link>
+      </PrefetchLink>
       <div className="poster-meta">
         <span>{media.year || media.format || 'Series'}</span>
         <span className="dot" />

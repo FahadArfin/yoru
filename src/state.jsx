@@ -1,16 +1,18 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
-import { api, cachedApi, peek, send, itemsOf } from './api';
+import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
 import { connectEvents } from './realtime';
 const Context = createContext(null);
 export function useApp() {
   return useContext(Context);
 }
 export function useResource(path, cache = true) {
+  const [loadedPath, setLoadedPath] = useState(path);
   const [data, setData] = useState(() => (path && cache ? peek(path) : null));
   const [error, setError] = useState('');
-  const [loading, setLoading] = useState(Boolean(path));
+  const [loading, setLoading] = useState(Boolean(path && !(cache && peek(path))));
   const [revision, setRevision] = useState(0);
   useEffect(() => {
+    setLoadedPath(path);
     if (!path) {
       setData(null);
       setLoading(false);
@@ -36,15 +38,21 @@ export function useResource(path, cache = true) {
     };
   }, [path, cache, revision]);
   return {
-    data,
+    data: loadedPath === path ? data : path && cache ? peek(path) : null,
     setData,
-    error,
-    loading,
+    error: loadedPath === path ? error : '',
+    loading: loadedPath === path ? loading : Boolean(path && !(cache && peek(path))),
     refresh: useCallback(() => setRevision((v) => v + 1), []),
   };
 }
 export function AppProvider({ children }) {
-  const [user, setUser] = useState(null);
+  const [user, setUserState] = useState(null);
+  const [authKnown, setAuthKnown] = useState(false);
+  const setUser = useCallback((value) => {
+    invalidateScopedApi();
+    setUserState(value);
+    setAuthKnown(true);
+  }, []);
   const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
   const [config, setConfig] = useState({});
@@ -185,6 +193,7 @@ export function AppProvider({ children }) {
         user,
         setUser,
         authLoading,
+        authKnown,
         authOpen,
         setAuthOpen,
         config,

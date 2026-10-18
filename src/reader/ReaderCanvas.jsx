@@ -1,5 +1,6 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
+import { warmImage } from '../image-loading';
 
 function PageImage({ page, number, chapter, eager, onTap }) {
   const [status, setStatus] = useState('loading');
@@ -18,6 +19,7 @@ function PageImage({ page, number, chapter, eager, onTap }) {
           src={page.url}
           alt={`Chapter ${chapter.number}, page ${number}`}
           loading={eager ? 'eager' : 'lazy'}
+          fetchPriority={eager ? 'high' : 'auto'}
           decoding="async"
           referrerPolicy="no-referrer"
           onLoad={() => setStatus('ready')}
@@ -172,17 +174,20 @@ export default function ReaderCanvas({
     return () => observer.disconnect();
   }, [paged]);
   useEffect(() => {
-    if (!paged) return;
-    const ahead = pages
-      .slice(page, page + 2)
-      .filter((item) => !item.blob)
-      .map((item) => {
-        const image = new Image();
-        image.referrerPolicy = 'no-referrer';
-        image.src = item.url;
-        return image;
-      });
-    return () => ahead.forEach((image) => (image.src = ''));
+    const controller = new AbortController();
+    const current = container.current.querySelector(`[data-page="${page}"] img`);
+    // Give the page being read first use of the connection, then keep a small rolling buffer.
+    const prepare = () =>
+      pages
+        .slice(page, page + 5)
+        .filter((item) => !item.blob)
+        .forEach((item) => warmImage(item.url, controller.signal));
+    if (current?.complete && current.naturalWidth) prepare();
+    else current?.addEventListener('load', prepare, { once: true });
+    return () => {
+      controller.abort();
+      current?.removeEventListener('load', prepare);
+    };
   }, [pages, page, paged]);
   useEffect(() => {
     if (paged) return;

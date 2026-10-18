@@ -12,7 +12,7 @@ import {
   Star,
   Users,
 } from 'lucide-react';
-import { coverOf, kindOf, plainText, safeLink, scoreOf, titleOf } from '../api';
+import { kindOf, plainText, safeLink, scoreOf, titleOf } from '../api';
 import { useApp } from '../state';
 import { Button } from '../components';
 import Discussion, { Reviews } from '../Discussion';
@@ -20,6 +20,8 @@ import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
 import MangaRecommendations from './MangaRecommendations';
+import CoverImage from '../CoverImage';
+import PrefetchLink from '../PrefetchLink';
 import './manga-title.css';
 
 function SourceLinks({ title, links }) {
@@ -107,7 +109,13 @@ export default function MangaTitle({ media }) {
           Back to {category}
         </Link>
         <header className="manga-title-header">
-          <img className="manga-detail-cover" src={coverOf(media)} alt={`${title} cover`} />
+          <CoverImage
+            className="manga-detail-cover"
+            media={media}
+            alt={`${title} cover`}
+            loading="eager"
+            fetchPriority="high"
+          />
           <div className="manga-title-heading">
             <h1>{title}</h1>
             {subtitle && <p>{subtitle}</p>}
@@ -123,10 +131,10 @@ export default function MangaTitle({ media }) {
               {entry ? <Check size={18} /> : <Plus size={18} />}{' '}
               {entry ? 'In your library' : 'Add to library'}
             </Button>
-            <Link className="btn btn-secondary" to={watchPath}>
+            <PrefetchLink className="btn btn-secondary" to={watchPath}>
               <BookOpen size={19} />
               {reading.lastChapter ? 'Continue reading' : 'Open reader'}
-            </Link>
+            </PrefetchLink>
             <button
               className={`btn btn-secondary ${entry?.favorite ? 'favorited' : ''}`}
               aria-label={entry?.favorite ? 'Remove from favorites' : 'Add to favorites'}

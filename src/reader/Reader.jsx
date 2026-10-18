@@ -20,6 +20,7 @@ import { recordView } from '../watch-views';
 import { setWatchPage } from '../webmcp-state';
 import { useReadingState } from './hooks';
 import { useReaderChapters, rememberReadingSource } from './remote';
+import { warmReaderLink } from './requests';
 import { getReadingState, saveReadingState } from './storage';
 import { chapterUnit, languageName, pageStep, readerLink, readerPreferences } from './model';
 import ChapterList from './ChapterList';
@@ -117,15 +118,16 @@ function ReadingSources({ media, close }) {
 function ReaderSession({ media, unit }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
+  const { entryFor, updateEntry, user, authLoading, authKnown } = useApp();
   const chapters = useReaderChapters(
     media,
     unit,
     params.get('chapter'),
     params.get('source'),
     params.get('language'),
+    authLoading || !authKnown ? null : user?.id || 'guest',
   );
   const saved = useReadingState(media.id);
-  const { entryFor, updateEntry, user } = useApp();
   const entry = entryFor(media.id);
   const [preferences, setPreferences] = useState(() =>
     readerPreferences(getReadingState(media.id).preferences, media.category),
@@ -332,6 +334,20 @@ function ReaderSession({ media, unit }) {
         item.group === chapter.group,
     ) ||
       candidate);
+  const nextEdition = chooseEdition(next);
+  const halfway = total > 0 && loadedChapter === chapter?.id && page >= Math.ceil(total / 2);
+  useEffect(() => {
+    if (!halfway || !nextEdition) return;
+    const controller = new AbortController();
+    const timer = setTimeout(
+      () => warmReaderLink(readerLink(media.id, nextEdition), controller.signal, 3),
+      400,
+    );
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
+  }, [media.id, chapter?.id, nextEdition?.id, halfway]);
   useEffect(() => {
     const onKey = (event) => {
       if (

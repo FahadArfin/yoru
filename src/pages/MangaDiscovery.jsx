@@ -1,5 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   BookOpen,
@@ -11,7 +10,9 @@ import {
   TrendingUp,
 } from 'lucide-react';
 import { useResource } from '../state';
-import { coverOf, titleOf } from '../api';
+import { titleOf } from '../api';
+import CoverImage from '../CoverImage';
+import PrefetchLink from '../PrefetchLink';
 import '../discovery.css';
 
 const tabs = [
@@ -57,18 +58,9 @@ export function useMangaFeed(mode, period = 'all', category = 'manga') {
 
 function MangaCard({ media, index, mode }) {
   return (
-    <Link className="release-card" to={`/title/${media.id}`}>
+    <PrefetchLink media={media} className="release-card" to={`/title/${media.id}`}>
       <div className="release-poster">
-        <img
-          src={coverOf(media)}
-          alt=""
-          loading="lazy"
-          onError={(event) => {
-            if (event.currentTarget.dataset.failed) return;
-            event.currentTarget.dataset.failed = '1';
-            event.currentTarget.src = '/icon.svg';
-          }}
-        />
+        <CoverImage media={media} alt="" loading="lazy" />
         {mode !== 'new' && (
           <span className="discovery-rank">
             <small>#</small>
@@ -119,7 +111,7 @@ function MangaCard({ media, index, mode }) {
           )}
         </span>
       </div>
-    </Link>
+    </PrefetchLink>
   );
 }
 
