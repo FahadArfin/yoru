@@ -119,10 +119,13 @@ test('release filters keep correct card languages and Chinese original links on 
   await page.goto('/');
   const section = page.getByRole('region', { name: 'Just released' });
   const filters = section.getByRole('group', { name: 'Release filter' });
-  await expect(filters.getByRole('button', { name: 'All releases', exact: true })).toHaveAttribute(
+  await expect(filters.getByRole('button', { name: 'English sub', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
   );
+  await expect(section.locator('.release-card')).toHaveCount(1);
+  await expect(section.getByRole('link', { name: /Sub episode/ })).toBeVisible();
+  await filters.getByRole('button', { name: 'All releases', exact: true }).click();
   await expect(section.locator('.release-card')).toHaveCount(3);
   await expect(section.getByRole('link', { name: /Sub episode/ })).toHaveAttribute(
     'href',
