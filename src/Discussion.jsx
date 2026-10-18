@@ -1,8 +1,23 @@
-import React, { useEffect, useState } from 'react';
-import { ArrowDown, ArrowUp, MessageCircle, Reply, Send, ShieldAlert, Star } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import {
+  ArrowUp,
+  ThumbsDown,
+  ThumbsUp,
+  Smile,
+  Image,
+  Sparkles,
+  MessageCircle,
+  Reply,
+  Send,
+  ShieldAlert,
+  Star,
+} from 'lucide-react';
 import { ago, itemsOf, send } from './api';
 import { useApp, useResource } from './state';
 import { Avatar, Button, Empty, ErrorNotice, Loading } from './components';
+import { CommentBody, CommentMediaPicker } from './CommentMedia';
+import { gifToken, emoteToken, commentMediaError } from '../shared/comment-media';
+import './discussion.css';
 function Spoiler({ hidden, children }) {
   const [revealed, setRevealed] = useState(false);
   return hidden && !revealed ? (
@@ -11,7 +26,7 @@ function Spoiler({ hidden, children }) {
       Spoiler · click to reveal
     </button>
   ) : (
-    <p className="comment-body">{children}</p>
+    <div className="comment-body">{children}</div>
   );
 }
 export default function Discussion({ mediaId, unit = 1 }) {
@@ -23,6 +38,12 @@ export default function Discussion({ mediaId, unit = 1 }) {
   const [error, setError] = useState('');
   const [replyTo, setReplyTo] = useState(null);
   const [sort, setSort] = useState('top');
+  const [picker, setPicker] = useState(null);
+  const [gif, setGif] = useState('');
+  const [emotes, setEmotes] = useState({});
+  const [voting, setVoting] = useState({});
+  const textarea = useRef(null);
+  const scope = useRef(0);
   useEffect(() => {
     if (
       event?.type === 'snapshot' ||
@@ -31,40 +52,91 @@ export default function Discussion({ mediaId, unit = 1 }) {
         event.data.unit === Number(unit))
     )
       resource.refresh();
-  }, [event, mediaId]);
+  }, [event, mediaId, unit]);
   useEffect(() => {
+    resource.refresh();
+  }, [user?.id]);
+  useEffect(() => {
+    scope.current++;
     setReplyTo(null);
     setError('');
+    setBody('');
+    setGif('');
+    setEmotes({});
+    setSpoiler(false);
+    setPicker(null);
+    setBusy(false);
+    setVoting({});
+    return () => {
+      scope.current++;
+    };
   }, [unit, mediaId]);
+  const insert = (value, emote) => {
+    const field = textarea.current;
+    const start = field?.selectionStart ?? body.length;
+    const end = field?.selectionEnd ?? start;
+    const text = `${body.slice(0, start)}${value}${body.slice(end)}`;
+    if (text.length > 4000) {
+      setError('Keep your comment under 4,000 characters.');
+      return;
+    }
+    setBody(text);
+    if (emote) setEmotes((previous) => ({ ...previous, [emote.name]: emote }));
+    requestAnimationFrame(() => {
+      field?.focus();
+      field?.setSelectionRange(start + value.length, start + value.length);
+    });
+  };
   const submit = async (e) => {
     e.preventDefault();
     if (!requireUser()) return;
+    if (busy) return;
+    const encoded = body
+      .trim()
+      .replace(/:([A-Za-z0-9_]{1,60}):/g, (match, name) =>
+        Object.hasOwn(emotes, name) ? emoteToken(emotes[name]) : match,
+      );
+    const content = [encoded, gif && gifToken(gif)].filter(Boolean).join('\n');
+    const invalid = commentMediaError(content);
+    if (!content || content.length > 5000 || invalid) {
+      setError(invalid || 'Add a comment or GIF, up to 5,000 characters.');
+      return;
+    }
+    const submissionScope = scope.current;
     setError('');
     setBusy(true);
     try {
       await send(`/api/comments/${mediaId}`, {
-        body,
+        body: content,
         unit: Number(unit),
         parentId: replyTo?.id || null,
         spoiler,
       });
+      if (submissionScope !== scope.current) return;
       setBody('');
+      setGif('');
+      setEmotes({});
+      setPicker(null);
       setSpoiler(false);
       setReplyTo(null);
       resource.refresh();
     } catch (e) {
-      setError(e.message);
+      if (submissionScope === scope.current) setError(e.message);
     } finally {
-      setBusy(false);
+      if (submissionScope === scope.current) setBusy(false);
     }
   };
   const vote = async (id, value) => {
     if (!requireUser()) return;
+    if (voting[id]) return;
+    setVoting((previous) => ({ ...previous, [id]: true }));
     try {
       await send(`/api/comments/${id}/vote`, { value });
       resource.refresh();
     } catch (e) {
       notify(e.message, 'error');
+    } finally {
+      setVoting((previous) => ({ ...previous, [id]: false }));
     }
   };
   const all = itemsOf(resource.data);
@@ -89,25 +161,32 @@ export default function Discussion({ mediaId, unit = 1 }) {
           </strong>
           <span>{ago(comment.createdAt)}</span>
         </div>
-        <Spoiler hidden={comment.spoiler}>{comment.body}</Spoiler>
+        <Spoiler hidden={comment.spoiler}>
+          <CommentBody body={comment.body} />
+        </Spoiler>
         <div className="comment-actions">
           <span className="vote-controls">
             <button
-              aria-label={`Upvote comment by ${comment.author?.name || comment.user?.name || comment.userName || 'member'}`}
+              aria-label={`Like comment by ${comment.author?.name || comment.user?.name || comment.userName || 'member'}`}
+              title="Like"
+              disabled={voting[comment.id]}
               aria-pressed={comment.viewerVote === 1}
               className={comment.viewerVote === 1 ? 'voted' : ''}
               onClick={() => vote(comment.id, comment.viewerVote === 1 ? 0 : 1)}
             >
-              <ArrowUp size={15} />
+              <ThumbsUp size={15} />
+              <span>{comment.likes || 0}</span>
             </button>
-            <strong>{comment.score || 0}</strong>
             <button
-              aria-label="Downvote comment"
+              aria-label="Dislike comment"
+              title="Dislike"
+              disabled={voting[comment.id]}
               aria-pressed={comment.viewerVote === -1}
               className={comment.viewerVote === -1 ? 'voted' : ''}
               onClick={() => vote(comment.id, comment.viewerVote === -1 ? 0 : -1)}
             >
-              <ArrowDown size={15} />
+              <ThumbsDown size={15} />
+              <span>{comment.dislikes || 0}</span>
             </button>
           </span>
           {depth < 4 && (
@@ -151,16 +230,27 @@ export default function Discussion({ mediaId, unit = 1 }) {
         For this episode or chapter only. Keep future plot twists under wraps.
       </p>
       <form className="comment-compose" onSubmit={submit}>
+        <div className="comment-compose-identity">
+          <Avatar user={user || { name: 'Guest' }} />
+          {user ? (
+            <strong>{user.name}</strong>
+          ) : (
+            <button type="button" onClick={requireUser}>
+              Sign in to join the discussion
+            </button>
+          )}
+        </div>
         {replyTo && (
           <div className="replying-to">
             Replying to {replyTo.author?.name || replyTo.user?.name || replyTo.userName || 'member'}
-            <button type="button" onClick={() => setReplyTo(null)}>
+            <button type="button" disabled={busy} onClick={() => setReplyTo(null)}>
               Cancel reply
             </button>
           </div>
         )}
         <textarea
           id="discussion-body"
+          ref={textarea}
           aria-label="Discussion comment"
           value={body}
           onChange={(e) => setBody(e.target.value)}
@@ -169,21 +259,69 @@ export default function Discussion({ mediaId, unit = 1 }) {
               ? 'What a moment. What did you think?'
               : 'Sign in and add your take to the conversation…'
           }
-          required
+          disabled={!user || busy}
           maxLength={4000}
         />
+        {gif && (
+          <div className="comment-gif-preview">
+            <CommentBody body={gifToken(gif)} />
+            <button
+              type="button"
+              disabled={busy}
+              aria-label="Remove GIF"
+              onClick={() => setGif('')}
+            >
+              Remove GIF ×
+            </button>
+          </div>
+        )}
+        {picker && user && !busy && (
+          <CommentMediaPicker
+            tab={picker}
+            onInsert={insert}
+            onGif={setGif}
+            close={() => setPicker(null)}
+          />
+        )}
         <div className="compose-footer">
+          <div className="comment-media-tools" role="group" aria-label="Add comment media">
+            {[
+              ['emoji', Smile, 'Emoji'],
+              ['emotes', Sparkles, 'Emotes'],
+              ['gif', Image, 'GIF'],
+            ].map(([key, Icon, label]) => (
+              <button
+                key={key}
+                type="button"
+                aria-label={`Add ${label}`}
+                aria-expanded={picker === key}
+                disabled={busy}
+                onClick={() => {
+                  if (requireUser()) setPicker(picker === key ? null : key);
+                }}
+              >
+                <Icon size={16} />
+                <span>{label}</span>
+              </button>
+            ))}
+          </div>
           <label className="check-label">
             <input
               type="checkbox"
               checked={spoiler}
+              disabled={busy}
               onChange={(e) => setSpoiler(e.target.checked)}
             />
             Contains spoilers
           </label>
-          <Button busy={busy} type="submit" variant="primary">
+          <Button
+            busy={busy}
+            type={user ? 'submit' : 'button'}
+            onClick={user ? undefined : requireUser}
+            variant="primary"
+          >
             <Send size={15} />
-            {replyTo ? 'Post reply' : 'Post comment'}
+            {!user ? 'Sign in to comment' : replyTo ? 'Post reply' : 'Post comment'}
           </Button>
         </div>
         {error && <ErrorNotice message={error} />}

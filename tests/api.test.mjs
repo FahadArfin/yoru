@@ -322,6 +322,53 @@ test('library derives ownership from sessions and validates progress and status'
     400,
   );
 });
+test('comment media requires authentication, validates GIFs, and reports independent reaction counts', async () => {
+  const content =
+    'Great 😂 [[ffz:9:ZrehplaR]]\n![GIF](https://media.giphy.com/media/example/giphy.gif)';
+  const endpoint = `/api/comments/${media.id}`;
+  assert.equal(
+    (await request(endpoint, { method: 'POST', body: { unit: 77, body: content } })).status,
+    401,
+  );
+  assert.equal(
+    (
+      await request(endpoint, {
+        method: 'POST',
+        session: alice,
+        body: { unit: 77, body: '![GIF](https://evil.test/a.gif)' },
+      })
+    ).status,
+    400,
+  );
+  const created = await request(endpoint, {
+    method: 'POST',
+    session: alice,
+    body: { unit: 77, body: content, userId: bob.id },
+  });
+  assert.equal(created.status, 201);
+  const id = created.body.comment.id;
+  assert.equal(created.body.comment.body, content);
+  await request(`/api/comments/${id}/vote`, { method: 'POST', session: alice, body: { value: 1 } });
+  const disliked = await request(`/api/comments/${id}/vote`, {
+    method: 'POST',
+    session: bob,
+    body: { value: -1 },
+  });
+  assert.equal(disliked.body.comment.likes, 1);
+  assert.equal(disliked.body.comment.dislikes, 1);
+  assert.equal(disliked.body.comment.score, 0);
+  assert.equal(disliked.body.comment.viewerVote, -1);
+  const changed = await request(`/api/comments/${id}/vote`, {
+    method: 'POST',
+    session: bob,
+    body: { value: 1 },
+  });
+  assert.equal(changed.body.comment.likes, 2);
+  assert.equal(changed.body.comment.dislikes, 0);
+  assert.equal((await request(`${endpoint}?unit=78`)).body.items.length, 0);
+  await request(`/api/comments/${id}`, { method: 'DELETE', session: alice });
+});
+
 test('comments, nested replies, spoilers and idempotent votes stay scoped to their discussion', async () => {
   const first = await request(`/api/comments/${media.id}`, {
     method: 'POST',

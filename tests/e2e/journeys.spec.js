@@ -586,7 +586,7 @@ test('episode discussions preserve replies and votes without leaking into anothe
   await expect(thread.getByText(reply, { exact: true })).toBeVisible();
 
   const upvote = thread
-    .getByRole('button', { name: `Upvote comment by ${user.name}`, exact: true })
+    .getByRole('button', { name: `Like comment by ${user.name}`, exact: true })
     .first();
   const voteValue = async () => {
     const data = await (await page.request.get(`/api/comments/${FRIEREN}?unit=1`)).json();

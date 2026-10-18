@@ -5,6 +5,7 @@ import { ago, api, isAnime, itemsOf, titleOf } from '../api';
 import { Avatar } from '../components';
 import { useApp } from '../state';
 import '../live-comments.css';
+import { commentPreview } from '../../shared/comment-media';
 
 function useCommentFeed() {
   const [feed, setFeed] = useState({ data: null, loading: true, error: '' });
@@ -212,7 +213,11 @@ export default function LiveComments() {
                             ? ` · ${isAnime(item.media) || item.mediaId.startsWith('mal-anime-') ? 'Ep' : 'Ch'} ${item.unit}`
                             : ''}
                         </span>
-                        <p>{item.spoiler ? 'Spoiler discussion — open to reveal' : item.body}</p>
+                        <p>
+                          {item.spoiler
+                            ? 'Spoiler discussion — open to reveal'
+                            : commentPreview(item.body)}
+                        </p>
                       </div>
                       <ArrowRight className="live-comment-arrow" size={14} />
                     </Link>

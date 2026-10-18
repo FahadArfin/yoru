@@ -129,3 +129,9 @@ Exact MALSync manga mappings are required for Suwayomi source resolution. Return
 The authenticated bridge exposes fixed metadata, chapter and image operations only. Images are served through Yoru same-origin routes, while source credentials and the private tunnel address stay server-side. Local Docker volumes retain the cache across restarts; images have size, age and response limits. R2 is not configured. See [desktop host operations](READER-HOST.md) for cache bounds, limitations, startup and migration.
 
 Anime character cast uses the MyAnimeList credits exposed by Tenrai's /anime/{id}/characters endpoint. Character roles, portraits, and language-specific voice-actor credits are normalized and cached for 24 hours in Node storage or shared Sites D1. Stale credits remain usable during provider outages; missing cast members or portraits are never invented. Title and watch pages show 12 characters initially, with a full-cast expansion and language selection where available.
+
+## Comment media
+
+Episode and chapter discussions accept ordinary Unicode emoji, FrankerFaceZ global emotes, and one user-selected GIF per comment or reply. The picker reads FrankerFaceZ's public `/v1/set/global` endpoint when opened; emote images use its fixed CDN. GIF attachments accept direct HTTPS `.gif` or `.webp` image URLs from GIPHY or Tenor media hosts. There is no GIF search API, upload service, or browser-extension requirement.
+
+Media uses constrained text tokens in the existing comment body, preserving older comments and both storage backends. Node and Sites validate attachment hosts and media limits; the renderer never interprets arbitrary HTML. Spoiler comments do not mount their images until revealed, and homepage/community previews show readable text labels instead of attachment URLs. Posting, replies and reactions require an authenticated session. One account has at most one reaction per comment, switchable between like/dislike or removable.

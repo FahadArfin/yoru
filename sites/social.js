@@ -3,6 +3,7 @@ import { getMedia, rememberImportedMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
 import { requireAuth, publicUser } from './security.js';
 import { now, eventStatement, changes, liveSession, sessionValues } from './store.js';
+import { commentMediaError } from '../shared/comment-media.js';
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -38,6 +39,8 @@ const commentShape = (row) => ({
   spoiler: Boolean(row.spoiler),
   score: row.score || 0,
   votes: row.score || 0,
+  likes: row.likes || 0,
+  dislikes: row.dislikes || 0,
   viewerVote: row.viewer_vote || 0,
   createdAt: row.created_at,
 });
@@ -53,6 +56,8 @@ export const messageShape = (row) => ({
 const REVIEW_QUERY =
   'SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id';
 const COMMENT_QUERY = `SELECT comments.*,users.name,users.avatar,
+  (SELECT COUNT(*) FROM comment_votes WHERE comment_id=comments.id AND value=1) AS likes,
+  (SELECT COUNT(*) FROM comment_votes WHERE comment_id=comments.id AND value=-1) AS dislikes,
   COALESCE((SELECT SUM(value) FROM comment_votes WHERE comment_id=comments.id),0) AS score,
   COALESCE((SELECT value FROM comment_votes WHERE comment_id=comments.id AND user_id=?),0) AS viewer_vote
   FROM comments JOIN users ON users.id=comments.user_id`;
@@ -246,6 +251,8 @@ export function socialRoutes(app) {
     });
     const body = text(input.body ?? input.text, { name: 'Comment', min: 1, max: 5000 }),
       parentId = input.parentId || null;
+    const mediaError = commentMediaError(body);
+    if (mediaError) throw apiError(400, mediaError);
     if (parentId) {
       let ancestor = await db.get(
         'SELECT * FROM comments WHERE id=? AND media_id=? AND unit=?',

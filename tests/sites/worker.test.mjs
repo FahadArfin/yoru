@@ -168,6 +168,56 @@ test('concurrent library partial updates merge without overwriting one another',
   assert.equal(item.score, 9);
   assert.equal((await request('a', '/api/library', { session: bob })).body.items.length, 0);
 });
+test('GIF and emote comments persist across Workers with separate like and dislike totals', async () => {
+  const content =
+    'Great 😂 [[ffz:9:ZrehplaR]]\n![GIF](https://media.tenor.com/example/reaction.gif)';
+  const endpoint = `/api/comments/${media}`;
+  assert.equal(
+    (await request('a', endpoint, { method: 'POST', body: { unit: 77, body: content } })).status,
+    401,
+  );
+  assert.equal(
+    (
+      await request('a', endpoint, {
+        method: 'POST',
+        session: alice,
+        body: { unit: 77, body: '![GIF](https://evil.test/a.gif)' },
+      })
+    ).status,
+    400,
+  );
+  const created = await request('a', endpoint, {
+    method: 'POST',
+    session: alice,
+    body: { unit: 77, body: content },
+  });
+  assert.equal(created.status, 201);
+  const id = created.body.comment.id;
+  assert.equal((await request('b', `${endpoint}?unit=77`)).body.items[0].body, content);
+  await request('a', `/api/comments/${id}/vote`, {
+    method: 'POST',
+    session: alice,
+    body: { value: 1 },
+  });
+  const disliked = await request('b', `/api/comments/${id}/vote`, {
+    method: 'POST',
+    session: bob,
+    body: { value: -1 },
+  });
+  assert.equal(disliked.body.comment.likes, 1);
+  assert.equal(disliked.body.comment.dislikes, 1);
+  assert.equal(disliked.body.comment.score, 0);
+  const changed = await request('b', `/api/comments/${id}/vote`, {
+    method: 'POST',
+    session: bob,
+    body: { value: 1 },
+  });
+  assert.equal(changed.body.comment.likes, 2);
+  assert.equal(changed.body.comment.dislikes, 0);
+  assert.equal((await request('a', `${endpoint}?unit=78`)).body.items.length, 0);
+  await request('a', `/api/comments/${id}`, { method: 'DELETE', session: alice });
+});
+
 test('nested discussions, votes and concurrent reviews preserve their ownership and scope', async () => {
   const comment = await request('a', `/api/comments/${media}`, {
     method: 'POST',

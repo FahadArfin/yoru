@@ -7,6 +7,7 @@ import { Avatar, Badge, Empty, ErrorNotice } from '../components';
 import Chat from '../Chat';
 import CoverImage from '../CoverImage';
 import '../section-pages.css';
+import { commentPreview } from '../../shared/comment-media';
 export default function Community() {
   const resource = useResource('/api/community', false);
   const { visitors, event, config } = useApp();
@@ -110,7 +111,9 @@ export default function Community() {
               <p className={item.spoiler ? 'feed-spoiler' : ''}>
                 {item.spoiler
                   ? 'Spoilers inside. Open the discussion to read this take.'
-                  : item.body}
+                  : item.kind === 'comment'
+                    ? commentPreview(item.body)
+                    : item.body}
               </p>
               <Link
                 className="text-link"
