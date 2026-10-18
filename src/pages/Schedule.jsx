@@ -1,4 +1,6 @@
 import React, { useEffect, useState } from 'react';
+import { useSearchParams } from 'react-router-dom';
+import ReadingCalendar from './ReadingCalendar';
 import {
   CalendarDays,
   Clock,
@@ -14,6 +16,35 @@ import '../section-pages.css';
 import { localDateKey, shiftDate, weekStart, weekDays, airingLabel } from '../../shared/schedule';
 const types = { raw: 'Broadcast', sub: 'English sub', dub: 'English dub' };
 export default function Schedule() {
+  const [params, setParams] = useSearchParams();
+  const category = ['manga', 'manhwa'].includes(params.get('category'))
+    ? params.get('category')
+    : 'anime';
+  const picker = (
+    <div className="schedule-categories" role="group" aria-label="Schedule category">
+      {['anime', 'manga', 'manhwa'].map((value) => (
+        <button
+          key={value}
+          aria-pressed={category === value}
+          onClick={() => {
+            const next = new URLSearchParams(params);
+            if (value === 'anime') next.delete('category');
+            else next.set('category', value);
+            setParams(next);
+          }}
+        >
+          {value === 'manhwa' ? 'Manhwa' : value === 'manga' ? 'Manga' : 'Anime'}
+        </button>
+      ))}
+    </div>
+  );
+  return category === 'anime' ? (
+    <AnimeSchedule picker={picker} />
+  ) : (
+    <ReadingCalendar category={category} picker={picker} />
+  );
+}
+function AnimeSchedule({ picker }) {
   const [zone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -111,9 +142,7 @@ export default function Schedule() {
           <h1>Airing schedule</h1>
           <p>Your next episode, on your time. Explore the week in your local timezone.</p>
         </div>
-        <div className="section-heading-note">
-          <Clock size={14} /> Times adapt to you
-        </div>
+        {picker}
       </header>
       <section className="schedule-calendar" aria-label="Choose a day and release type">
         <div className="schedule-toolbar">

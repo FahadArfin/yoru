@@ -9,7 +9,7 @@ let queue = Promise.resolve();
 let lastRequest = 0;
 const refreshes = new WeakMap();
 
-function client(options) {
+export function mangaDexClient(options) {
   const now = options.now || Date.now;
   const fetchImpl = options.fetchImpl || fetch;
   const load = options.load || (async () => null);
@@ -93,6 +93,8 @@ function client(options) {
   }
   return { request, cached, now };
 }
+
+const client = mangaDexClient;
 
 async function mapping(id, options, api) {
   if (!/^mal-manga-[1-9]\d{0,8}$/.test(id || '')) throw apiError(400, 'Invalid manga ID.');

@@ -1,4 +1,67 @@
 /* Schedule and Community share the catalog's width, surfaces and typography. */
+.schedule-categories {
+  display: flex;
+  flex: none;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid #ffffff14;
+  border-radius: 32px;
+  background: #ffffff04;
+}
+.schedule-categories button {
+  min-height: 40px;
+  padding: 9px 19px;
+  border-radius: 24px;
+  background: transparent;
+  color: #aaa;
+  font-size: 12px;
+  font-weight: 700;
+}
+.schedule-categories button[aria-pressed='true'] {
+  background: #eeeeee;
+  color: #111;
+}
+.chapter-calendar-coverage {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  color: var(--section-muted);
+  font-size: 11px;
+  margin: 0 0 24px;
+}
+.chapter-calendar-coverage svg {
+  margin-top: 3px;
+}
+.chapter-calendar-details {
+  min-width: 0;
+}
+.chapter-calendar-details h3 a:hover {
+  text-decoration: underline;
+}
+.chapter-calendar-title {
+  display: block;
+  margin-bottom: 4px;
+}
+.chapter-calendar-source {
+  padding: 10px;
+}
+.chapter-calendar-more {
+  margin-top: 20px;
+}
+@media (max-width: 700px) {
+  .schedule-page .section-page-heading {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 18px;
+  }
+  .schedule-categories {
+    width: 100%;
+  }
+  .schedule-categories button {
+    flex: 1;
+    padding-inline: 10px;
+  }
+}
 .section-page {
   --section-surface: #1c1c1c;
   --section-raised: #262626;

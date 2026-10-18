@@ -28,6 +28,7 @@ import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
 import { getSchedule } from '../server/schedule-core.js';
+import { getChapterCalendar } from '../server/chapter-calendar.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from '../server/home-sidebar.js';
 import { getHome } from '../server/home-core.js';
@@ -262,6 +263,11 @@ app.get('/api/home', async (c) =>
 );
 app.get('/api/calendar', async (c) =>
   c.json(await getSchedule(c.req.query(), scheduleOptions(c.env))),
+);
+app.get('/api/chapter-calendar', async (c) =>
+  c.json(
+    await getChapterCalendar(c.req.query(), { ...scheduleOptions(c.env), offline: isOffline() }),
+  ),
 );
 authRoutes(app, { onLogout: reconcileRooms });
 socialRoutes(app);

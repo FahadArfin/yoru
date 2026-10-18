@@ -1,4 +1,30 @@
 export const DAY_MS = 86400000;
+// Find the actual start of each local date, including 23/25-hour DST days.
+export function localDayBounds(date, timeZone) {
+  const formatter = new Intl.DateTimeFormat('en-CA', {
+    timeZone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  });
+  const key = (value) => {
+    const parts = formatter.formatToParts(new Date(value));
+    const part = (type) => parts.find((p) => p.type === type).value;
+    return `${part('year')}-${part('month')}-${part('day')}`;
+  };
+  const boundary = (target) => {
+    const center = Date.parse(`${target}T00:00:00Z`);
+    let low = center - 2 * DAY_MS,
+      high = center + 2 * DAY_MS;
+    while (high - low > 1) {
+      const middle = Math.floor((low + high) / 2);
+      if (key(middle) < target) low = middle;
+      else high = middle;
+    }
+    return new Date(high).toISOString();
+  };
+  return { start: boundary(date), end: boundary(shiftDate(date, 1)) };
+}
 export function localDateKey(value, timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone) {
   const parts = new Intl.DateTimeFormat('en-CA', {
     timeZone,

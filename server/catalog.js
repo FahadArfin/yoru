@@ -9,6 +9,7 @@ import {
 import { getMangaDiscovery } from './manga-discovery.js';
 import { resolveAnimeSources } from './sources-core.js';
 import { getSchedule } from './schedule-core.js';
+import { getChapterCalendar } from './chapter-calendar.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
 import { all, run } from './db.js';
@@ -254,3 +255,9 @@ catalogRouter.get('/calendar', async (req, res, next) => {
     next(error);
   }
 });
+catalogRouter.get(
+  '/chapter-calendar',
+  asyncRoute(async (req, res) => {
+    res.json(await getChapterCalendar(req.query, { ...scheduleOptions, offline: isOffline() }));
+  }),
+);
