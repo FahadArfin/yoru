@@ -14,7 +14,7 @@ test('schedule groups local dates, sorts times, filters releases and identifies 
   page,
   context,
   baseURL,
-}) => {
+}, testInfo) => {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
@@ -54,6 +54,7 @@ test('schedule groups local dates, sorts times, filters releases and identifies 
   await expect(page.locator('.schedule-delay-target')).toContainText(
     'Delayed until Oct 19, 11:00 AM EDT',
   );
+  await page.screenshot({ path: testInfo.outputPath('schedule-populated.png'), fullPage: true });
   await page.getByRole('button', { name: 'English dub', exact: true }).click();
   await expect(page.locator('.schedule-list h3')).toHaveText(['Dub show']);
   await page.getByRole('button', { name: 'Broadcast', exact: true }).click();
