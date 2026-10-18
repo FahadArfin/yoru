@@ -71,7 +71,7 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
-          <ContinueReading category={category} />
+          {homepage && <ContinueReading category={category} />}
           {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
           {children}
         </div>

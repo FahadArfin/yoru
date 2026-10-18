@@ -512,6 +512,10 @@
 .home-secondary {
   padding-top: 25px;
 }
+.home-release-column > .home-continue,
+.home-release-column > .continue-reading {
+  margin-top: 32px;
+}
 .cinema-home .section-heading h2 {
   font-size: 24px;
 }

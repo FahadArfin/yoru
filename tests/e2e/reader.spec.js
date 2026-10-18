@@ -106,13 +106,13 @@ test('native reader preserves page, edition, bookmarks and settings through relo
   await chapters.getByRole('button', { name: /Read chapter 2 · Otra edición/ }).click();
   await expect(page.getByRole('img', { name: 'Chapter 2, page 1', exact: true })).toBeVisible();
   await expectPage(page, 1);
-  await page.goto('/browse/manga');
+  await page.goto('/?category=manga');
   await expect(
     page
       .getByRole('region', { name: 'Continue reading' })
       .getByRole('link', { name: /Death Note/ }),
   ).toBeVisible();
-  await page.goto('/browse/manhwa');
+  await page.goto('/?category=manhwa');
   await expect(page.getByRole('region', { name: 'Continue reading' })).toHaveCount(0);
 });
 

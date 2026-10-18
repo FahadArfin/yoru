@@ -141,3 +141,126 @@ test('explicit homepage category works with unavailable storage and invalid valu
   ).toHaveAttribute('aria-selected', 'true');
   await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
 });
+
+test('homepage resumes the selected category directly below discovery and browse stays focused on discovery', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await mockFeeds(page, context, baseURL);
+  await page.route('**/api/auth/me', (route) =>
+    route.fulfill({ json: { user: { id: 'test-reader', name: 'Test reader' } } }),
+  );
+  await page.route('**/api/library', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            mediaId: 'mal-anime-1',
+            status: 'watching',
+            progress: 4,
+            media: {
+              id: 'mal-anime-1',
+              category: 'ANIME',
+              title: 'Saved anime',
+              cover: '/icon.svg',
+            },
+          },
+          {
+            mediaId: 'mal-manga-2',
+            status: 'reading',
+            progress: 3,
+            media: {
+              id: 'mal-manga-2',
+              category: 'MANGA',
+              title: 'Saved manga',
+              cover: '/icon.svg',
+            },
+          },
+          {
+            mediaId: 'mal-manga-3',
+            status: 'reading',
+            progress: 8,
+            media: {
+              id: 'mal-manga-3',
+              category: 'MANHWA',
+              title: 'Saved manhwa',
+              cover: '/icon.svg',
+            },
+          },
+          {
+            mediaId: 'mal-manga-4',
+            status: 'reading',
+            progress: 5,
+            media: {
+              id: 'mal-manga-4',
+              category: 'MANGA',
+              title: 'Library only manga',
+              cover: '/icon.svg',
+            },
+          },
+        ],
+      },
+    }),
+  );
+  await context.addInitScript(() => {
+    for (const [id, category, title] of [
+      [2, 'MANGA', 'Saved manga'],
+      [3, 'MANHWA', 'Saved manhwa'],
+    ]) {
+      localStorage.setItem(
+        `yoru:reader:state:mal-manga-${id}`,
+        JSON.stringify({
+          category,
+          title,
+          cover: '/icon.svg',
+          number: 7,
+          lastChapter: `saved-chapter-${id}`,
+          chapters: { [`saved-chapter-${id}`]: { page: 9 } },
+          updatedAt: Date.now(),
+        }),
+      );
+    }
+  });
+  await page.goto('/?category=anime');
+  const toggle = page.getByRole('tablist', { name: 'Homepage category' });
+  for (const [category, label, id] of [
+    ['anime', 'Anime', 1],
+    ['manga', 'Manga', 2],
+    ['manhwa', 'Manhwa', 3],
+  ]) {
+    await toggle.getByRole('tab', { name: label, exact: true }).click();
+    const row = page.getByRole('region', {
+      name: category === 'anime' ? 'Continue watching' : 'Continue reading',
+      exact: true,
+    });
+    await expect(row).toHaveCount(1);
+    await expect(row).toBeVisible();
+    expect(
+      await row.evaluate((el) => el.previousElementSibling.classList.contains('discovery-section')),
+    ).toBe(true);
+    const card = row.getByRole('link', { name: new RegExp(`Saved ${category}`) });
+    await expect(card).toHaveCount(1);
+    await expect(card).toHaveAttribute(
+      'href',
+      category === 'anime'
+        ? '/watch/mal-anime-1/4'
+        : `/read/mal-manga-${id}/7?chapter=saved-chapter-${id}&page=9`,
+    );
+    if (category === 'manga')
+      await expect(row.getByRole('link', { name: /Library only manga/ })).toHaveAttribute(
+        'href',
+        '/read/mal-manga-4/5',
+      );
+    if (category === 'manhwa')
+      await expect(row.getByRole('link', { name: /Saved manga|Library only manga/ })).toHaveCount(
+        0,
+      );
+  }
+  for (const category of ['anime', 'manga', 'manhwa']) {
+    await page.goto(`/browse/${category}`);
+    await expect(
+      page.getByRole('region', { name: /Continue reading|Continue watching/ }),
+    ).toHaveCount(0);
+  }
+});
