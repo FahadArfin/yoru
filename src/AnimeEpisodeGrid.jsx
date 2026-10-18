@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useApp, useResource } from './state';
 import CoverImage from './CoverImage';
+import useEpisodeAvailability from './useEpisodeAvailability';
 import './anime-episodes.css';
 
 export default function AnimeEpisodeGrid({ media }) {
@@ -29,6 +30,7 @@ export default function AnimeEpisodeGrid({ media }) {
   const providerPage = Math.floor(group / 2) + 1;
   const result = useResource(`/api/media/${media.id}/episodes?page=${providerPage}`);
   const data = result.data;
+  const availability = useEpisodeAvailability(media, data);
   const knownTotal = Number(media.episodes) || data?.total;
   const total = Math.max(knownTotal || 0, ...(data?.items || []).map((x) => x.number));
   const rangeTotal = knownTotal || Math.max(total, (data?.pages || 1) * 100);
@@ -44,6 +46,14 @@ export default function AnimeEpisodeGrid({ media }) {
       { length: Math.max(0, Math.min(50, knownTotal - lower + 1)) },
       (_, index) => ({ number: lower + index, title: `Episode ${lower + index}`, fallback: true }),
     );
+  }
+  if (knownTotal && !result.loading && !availability.loading) {
+    const byNumber = new Map(items.map((item) => [item.number, item]));
+    for (let number = lower; number <= upper; number++) {
+      if (!byNumber.has(number) && availability.state(number) !== 'unknown')
+        byNumber.set(number, { number, title: `Episode ${number}`, fallback: true });
+    }
+    items = [...byNumber.values()].sort((a, b) => a.number - b.number);
   }
   useEffect(() => {
     if (highlight && !result.loading && !pickerOpen)
@@ -210,9 +220,8 @@ export default function AnimeEpisodeGrid({ media }) {
                 {Array.from({ length: Math.max(0, upper - lower + 1) }, (_, index) => {
                   const number = lower + index;
                   const item = items.find((episode) => episode.number === number);
-                  const future =
-                    upcoming || Boolean(item?.aired && Date.parse(item.aired) > Date.now());
-                  const disabled = result.loading || !item || future;
+                  const future = availability.state(number) === 'unreleased';
+                  const disabled = result.loading || availability.loading || !item || future;
                   const completed = number <= progress;
                   const label = `Episode ${number}${future ? ', not aired yet' : !item ? ', details unavailable' : completed ? ', completed' : ''}`;
                   const content = (
@@ -274,12 +283,12 @@ export default function AnimeEpisodeGrid({ media }) {
         </p>
       )}
       <div className="anime-episode-cards" aria-busy={result.loading}>
-        {result.loading
+        {result.loading || availability.loading
           ? Array.from({ length: 8 }, (_, index) => (
               <div className="episode-card-skeleton" key={index} />
             ))
           : items.map((item) => {
-              const future = upcoming || Boolean(item.aired && Date.parse(item.aired) > Date.now());
+              const future = availability.state(item.number) === 'unreleased';
               const body = (
                 <>
                   <div className={`episode-card-art${item.image ? '' : ' is-series-art'}`}>
@@ -291,7 +300,7 @@ export default function AnimeEpisodeGrid({ media }) {
                     {!item.image && <span className="episode-art-label">Series artwork</span>}
                     <span className="episode-card-play">
                       {future ? (
-                        'Upcoming'
+                        'Unreleased'
                       ) : item.number <= progress ? (
                         <Check size={23} />
                       ) : (

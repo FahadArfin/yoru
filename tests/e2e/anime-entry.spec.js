@@ -13,7 +13,7 @@ test('release and trending cards open episodes, with series details below the pl
     route.fulfill({
       json: {
         state: 'ready',
-        language: 'all',
+        language: new URL(route.request().url()).searchParams.get('language'),
         hot: [],
         releases: [
           {
@@ -44,6 +44,7 @@ test('release and trending cards open episodes, with series details below the pl
     route.fulfill({ json: { mediaId: id, latest: 26 } }),
   );
   await page.goto('/?category=anime');
+  await page.getByRole('button', { name: 'English dub', exact: true }).click();
   await page
     .getByRole('region', { name: 'Just released', exact: true })
     .getByRole('link', { name: /Released anime/ })

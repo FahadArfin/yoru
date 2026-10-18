@@ -11,6 +11,7 @@ export default function WatchEpisodePreview({
   completed,
   language,
   loading,
+  unreleased = false,
 }) {
   const [failedImage, setFailedImage] = useState(null);
   const image = episode?.image && failedImage !== episode.image ? episode.image : null;
@@ -43,22 +44,26 @@ export default function WatchEpisodePreview({
           className={loading && !episode ? 'episode-detail-loading' : ''}
           title={summary || undefined}
         >
-          {summary ||
-            (loading
-              ? 'Loading episode details…'
-              : episode?.aired
-                ? `Aired ${new Date(episode.aired).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`
-                : 'Episode details unavailable')}
+          {unreleased
+            ? 'Unreleased'
+            : summary ||
+              (loading
+                ? 'Loading episode details…'
+                : episode?.aired
+                  ? `Aired ${new Date(episode.aired).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}`
+                  : 'Episode details unavailable')}
         </small>
         <span className="watch-episode-meta">
-          <span
-            className="watch-episode-language"
-            title={`Selected playback language: ${language === 'dub' ? 'English dub' : 'subtitles'}`}
-          >
-            {language === 'dub' ? <Mic size={10} /> : <MessageSquare size={10} />}{' '}
-            {language.toUpperCase()}
-          </span>
-          {active ? (
+          {!unreleased && (
+            <span
+              className="watch-episode-language"
+              title={`Selected playback language: ${language === 'dub' ? 'English dub' : 'subtitles'}`}
+            >
+              {language === 'dub' ? <Mic size={10} /> : <MessageSquare size={10} />}{' '}
+              {language.toUpperCase()}
+            </span>
+          )}
+          {unreleased ? null : active ? (
             <span className="watch-episode-current">
               <Play size={9} fill="currentColor" /> Now playing
             </span>

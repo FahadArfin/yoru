@@ -322,6 +322,32 @@
   color: rgb(var(--chrome-surface));
   border-color: rgb(var(--chrome-bright));
 }
+.watch-cinema .watch-unit-list button.is-unreleased {
+  opacity: 0.4;
+  filter: grayscale(1);
+  cursor: not-allowed;
+  background: transparent;
+  color: rgb(var(--chrome-muted));
+  border-color: transparent;
+}
+.watch-cinema .episode-tiles button.is-unreleased {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.episode-soon {
+  font-size: 8px;
+  line-height: 1;
+  letter-spacing: 0.03em;
+}
+.watch-cinema .is-unreleased .watch-episode-play {
+  display: none;
+}
+.episode-unreleased-stage {
+  min-height: 280px;
+  aspect-ratio: 16 / 9;
+  background: rgb(var(--chrome-surface));
+}
 .watch-cinema .episode-tiles button {
   width: 100%;
   aspect-ratio: 1.1;
