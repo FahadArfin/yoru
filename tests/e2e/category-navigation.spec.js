@@ -37,7 +37,7 @@ test('category strip filters collections, dismisses menus, and follows the chose
   await expect(genres).toBeFocused();
   await expect(genres).toHaveAttribute('aria-expanded', 'false');
   await genres.click();
-  await page.getByRole('textbox', { name: 'Search anime, manga, and manhwa' }).click();
+  await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
   await expect(genres).toHaveAttribute('aria-expanded', 'false');
   await nav.getByRole('link', { name: 'A–Z', exact: true }).click();
   await expect

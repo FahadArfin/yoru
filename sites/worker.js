@@ -18,6 +18,7 @@ import { malRoutes } from './mal.js';
 import { malConfiguration } from '../server/mal-core.js';
 import {
   searchCatalog,
+  searchSuggestions,
   getMedia,
   getCalendar,
   parseMediaId,
@@ -132,6 +133,7 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.get('/api/search/suggestions', async (c) => c.json(await searchSuggestions(c.req.query())));
 const chapterOptions = (c) => ({
   ...scheduleOptions(c.env),
   bridgeKey: c.env.READER_BRIDGE_KEY,
