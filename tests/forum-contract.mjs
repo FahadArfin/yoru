@@ -71,6 +71,16 @@ export async function forumContract(request, register) {
   assert.equal(updated.body.topic.replies, 1);
   assert.equal(updated.body.items[0].spoiler, true);
   assert.equal(updated.body.items[0].author.id, other.user.id);
+  const afterBoards = (await request('/api/forum/boards')).body.items;
+  const beforeFigures = boards.body.items.find((b) => b.id === 'figures');
+  const afterFigures = afterBoards.find((b) => b.id === 'figures');
+  assert.equal(afterFigures.topics, beforeFigures.topics + 1);
+  assert.equal(afterFigures.messages, beforeFigures.messages + 2);
+  assert.equal(afterFigures.latest.id, created.body.id);
+  assert.equal(afterFigures.latest.name, other.user.name);
+  assert.equal(Object.hasOwn(afterFigures.latest, 'body'), false);
+  const otherBoards = (await request('/api/forum/boards?collection=ara-ara')).body.items;
+  assert.ok(otherBoards.every((b) => b.latest?.id !== created.body.id));
   const replyPath = `/api/forum/replies/${reply.body.id}`;
   assert.equal(
     (await request(replyPath, { method: 'PATCH', session: owner, body: { body: 'not mine' } }))

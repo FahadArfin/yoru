@@ -321,24 +321,6 @@
   .home-shell .forum-heading h2 {
     font-size: 24px;
   }
-  .home-shell .forum-boards {
-    gap: 8px;
-  }
-  .home-shell .forum-board {
-    padding: 12px;
-    min-height: 88px;
-    gap: 10px;
-  }
-  .home-shell .forum-board small {
-    display: none;
-  }
-  .home-shell .forum-board strong {
-    font-size: 13px;
-  }
-  .home-shell .forum-board em {
-    margin-top: 5px;
-    font-size: 11px;
-  }
   .home-shell .forum-form :is(input, textarea, select) {
     font-size: 16px;
   }

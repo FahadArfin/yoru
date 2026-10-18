@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useSearchParams } from './collection-router';
 import {
   Play,
@@ -27,6 +27,11 @@ import SeriesDiscussions from './SeriesDiscussions';
 import './forum.css';
 
 const icons = { Play, BookOpen, Layers, Gem, Compass, Newspaper, Palette, Coffee, MessageSquare };
+const boardGroups = [
+  { name: 'Anime, manga & manhwa', ids: ['anime', 'manga', 'manhwa'] },
+  { name: 'Around the fandom', ids: ['figures', 'recommendations', 'news', 'creations'] },
+  { name: 'The community', ids: ['lounge', 'feedback'] },
+];
 export function ForumBody({ body, spoiler }) {
   const [revealed, setRevealed] = useState(false);
   return spoiler && !revealed ? (
@@ -178,6 +183,15 @@ export default function Forum() {
     setParams(next, { preventScrollReset: true });
   };
   const selected = forumBoards.find((b) => b.id === board);
+  const forumHeading = useRef(null);
+  const previousBoard = useRef(board);
+  useEffect(() => {
+    if (previousBoard.current !== board) {
+      previousBoard.current = board;
+      forumHeading.current?.focus({ preventScroll: true });
+      forumHeading.current?.scrollIntoView({ block: 'start' });
+    }
+  }, [board]);
   const create = async (input) => {
     if (!requireUser() || busy) return;
     setBusy(true);
@@ -196,9 +210,9 @@ export default function Forum() {
     <section className="forum-hub" aria-label="Community forums">
       <div className="forum-heading">
         <div>
-          <span className="section-kicker">FIND YOUR PEOPLE</span>
-          <h2>Forums</h2>
-          <p>One good story starts another conversation.</p>
+          <h2 ref={forumHeading} tabIndex={-1}>
+            Discussion forums
+          </h2>
         </div>
         <button
           className="btn btn-primary"
@@ -209,29 +223,78 @@ export default function Forum() {
           <Plus size={16} /> New topic
         </button>
       </div>
-      <nav className="forum-boards" aria-label="Forum channels">
-        {forumBoards.map((b) => {
-          const Icon = icons[b.icon];
-          return (
-            <button
-              key={b.id}
-              className={`forum-board tone-${b.tone} ${board === b.id ? 'active' : ''}`}
-              aria-pressed={board === b.id}
-              onClick={() => change({ board: b.id })}
+      {!selected && (
+        <nav className="forum-index" aria-label="Forum channels">
+          {boardGroups.map((group, index) => (
+            <section
+              className="forum-group"
+              key={group.name}
+              aria-labelledby={`forum-group-${index}`}
             >
-              <span className="forum-board-icon">
-                <Icon size={21} />
-              </span>
-              <span>
-                <strong>{b.name}</strong>
-                <small>{b.description}</small>
-                <em>{boards.data?.items.find((x) => x.id === b.id)?.topics ?? '—'} topics</em>
-              </span>
-              <ArrowRight size={15} />
-            </button>
-          );
-        })}
-      </nav>
+              <header className="forum-group-heading">
+                <h3 id={`forum-group-${index}`}>{group.name}</h3>
+                <span>Threads / Posts</span>
+                <span>Latest post</span>
+              </header>
+              {group.ids.map((id) => {
+                const b = forumBoards.find((item) => item.id === id);
+                const stats = boards.data?.items.find((item) => item.id === id);
+                const Icon = icons[b.icon];
+                return (
+                  <div className={`forum-index-row ${board === id ? 'active' : ''}`} key={id}>
+                    <button
+                      className="forum-channel"
+                      aria-pressed={board === id}
+                      onClick={() => change({ board: id })}
+                    >
+                      <span className="forum-channel-icon">
+                        <Icon size={22} />
+                      </span>
+                      <span>
+                        <strong>{b.name}</strong>
+                        <small>{b.description}</small>
+                      </span>
+                    </button>
+                    <div className="forum-channel-counts">
+                      <span>
+                        <strong>{stats?.topics?.toLocaleString() ?? '—'}</strong> threads
+                      </span>
+                      <span>
+                        <strong>{stats?.messages?.toLocaleString() ?? '—'}</strong> posts
+                      </span>
+                    </div>
+                    <div className="forum-channel-latest">
+                      {stats?.latest ? (
+                        <>
+                          <span className="forum-latest-avatar" aria-hidden="true">
+                            {stats.latest.name.slice(0, 1)}
+                          </span>
+                          <div>
+                            <Link to={`/community/forum/${stats.latest.id}`}>
+                              {stats.latest.title}
+                            </Link>
+                            <small>
+                              {ago(stats.latest.createdAt)} · {stats.latest.name}
+                            </small>
+                          </div>
+                        </>
+                      ) : (
+                        <small>
+                          {stats
+                            ? 'No posts yet'
+                            : boards.error
+                              ? 'Activity unavailable'
+                              : 'Loading activity…'}
+                        </small>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </section>
+          ))}
+        </nav>
+      )}
       {boards.error && <ErrorNotice message={boards.error} retry={boards.refresh} />}
       <div className="forum-list-heading">
         <div>
@@ -240,7 +303,8 @@ export default function Forum() {
               <ArrowLeft size={14} /> All channels
             </button>
           )}
-          <h3>{selected?.name || 'All channels'}</h3>
+          <h3>{selected?.name || 'Recent threads'}</h3>
+          {selected && <p className="forum-channel-description">{selected.description}</p>}
         </div>
         <div className="segmented" role="group" aria-label="Forum view">
           <button
