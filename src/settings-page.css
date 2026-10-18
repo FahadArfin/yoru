@@ -28,8 +28,8 @@
   flex-shrink: 0;
   border-radius: 11px;
   color: var(--section-accent);
-  background: #b6a0e910;
-  border: 1px solid #b6a0e914;
+  background: #c5c5c510;
+  border: 1px solid #c5c5c514;
 }
 .settings-label {
   display: block;
@@ -41,7 +41,7 @@
 }
 .settings-page .settings-card h2 {
   font-size: 17px;
-  color: #f4f4f6;
+  color: #f5f5f5;
   letter-spacing: -0.3px;
   margin: 0;
 }
@@ -65,7 +65,7 @@
 }
 .settings-page .setting-row strong {
   font-size: 12px;
-  color: #e6e6ed;
+  color: #eaeaea;
 }
 .settings-page .setting-row > div > span {
   font-size: 11px;
@@ -84,7 +84,7 @@
   padding: 5px 7px;
   background: #ffffff06;
   border-color: #ffffff0d;
-  color: #b8bcc8;
+  color: #c0c0c0;
   flex-shrink: 0;
 }
 .settings-page .badge.green {
@@ -100,22 +100,22 @@
   gap: 9px;
 }
 .settings-page .btn-primary {
-  color: #20202a;
-  background: #e6ddfa;
-  border: 1px solid #e6ddfa;
+  color: #252525;
+  background: #ececec;
+  border: 1px solid #ececec;
 }
 .settings-page .btn-primary:hover {
-  background: #f3edff;
+  background: #f6f6f6;
 }
 .settings-page .btn-secondary,
 .settings-page .btn-subtle {
-  color: #ded3f6;
-  background: #b6a0e915;
-  border: 1px solid #b6a0e923;
+  color: #e5e5e5;
+  background: #c5c5c515;
+  border: 1px solid #c5c5c523;
 }
 .settings-page .btn-secondary:hover,
 .settings-page .btn-subtle:hover {
-  background: #b6a0e928;
+  background: #c5c5c528;
 }
 .settings-page .text-link {
   color: var(--section-accent);
@@ -125,36 +125,36 @@
   padding: 16px;
   margin: 0 0 20px;
   border-radius: 9px;
-  background: #171b2370;
+  background: #1d1d1d70;
 }
 .settings-page .settings-user strong {
-  color: #f0f0f4;
+  color: #f2f2f2;
 }
 .settings-page .settings-user > div > span {
   color: var(--section-muted);
   font-size: 11px;
 }
 .settings-page .settings-user .icon-button {
-  color: #b5b8c6;
+  color: #bebebe;
   background: #ffffff07;
 }
 .settings-page .switch {
   width: 40px;
   height: 24px;
-  background: #414653;
+  background: #4a4a4a;
   border-color: #ffffff15;
 }
 .settings-page .switch:after {
   width: 16px;
   height: 16px;
-  background: #c4c7d0;
+  background: #cacaca;
 }
 .settings-page .switch:checked {
-  background: #a58ad9;
+  background: var(--accent);
 }
 .settings-page .switch:checked:after {
   transform: translateX(16px);
-  background: #fff;
+  background: #161616;
 }
 .settings-page input:focus-visible,
 .settings-page summary:focus-visible {
@@ -166,7 +166,7 @@
 }
 .settings-page .install-hint > div {
   padding: 13px 15px;
-  background: #171b2370;
+  background: #1d1d1d70;
   border: 1px solid var(--section-line);
   border-radius: 8px;
 }
@@ -174,7 +174,7 @@
   display: block;
   margin: 0 0 5px;
   font-size: 12px;
-  color: #e6e6ed;
+  color: #eaeaea;
 }
 .settings-page .install-hint span {
   font-size: 11px;
@@ -183,7 +183,7 @@
 .settings-connect-note {
   padding: 15px;
   border-radius: 9px;
-  background: #171b2370;
+  background: #1d1d1d70;
   margin-bottom: 16px;
 }
 .settings-connect-note p {
@@ -198,7 +198,7 @@
   padding: 16px 0;
   border-top: 1px solid var(--section-line);
   border-bottom: 1px solid var(--section-line);
-  color: #ded3f6;
+  color: #e5e5e5;
   font-size: 12px;
   font-weight: 600;
 }
@@ -224,7 +224,7 @@
   display: none;
 }
 .settings-details summary:hover {
-  color: #f4f4f6;
+  color: #f5f5f5;
 }
 .settings-details[open] summary svg {
   transform: rotate(180deg);
@@ -237,7 +237,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 36px;
-  background: #232729;
+  background: #1c1c1c;
 }
 .settings-page .about-card .auth-brand {
   font-size: 24px;
@@ -248,7 +248,7 @@
   height: 28px;
 }
 .settings-page .about-card .auth-brand span {
-  color: #8c919c;
+  color: #949494;
 }
 .settings-page .about-card h2 {
   font-size: 20px;
@@ -268,7 +268,7 @@
 }
 .settings-page .about-card [role='status'] {
   font-size: 10px;
-  color: #9298a4;
+  color: #9b9b9b;
 }
 @media (max-width: 900px) {
   .settings-page .settings-grid {

@@ -1,7 +1,7 @@
 /* Shared top navigation keeps every section accessible without a side menu. */
 .home-shell {
-  background: #181d28;
-  color: #f4f4f6;
+  background: #0a0a0a;
+  color: #f5f5f5;
 }
 .home-shell .app-main {
   margin-left: 0;
@@ -16,7 +16,7 @@
   padding: 0 22px;
   border: 1px solid #ffffff12;
   border-radius: 40px;
-  background: #16171cc4;
+  background: #191919c4;
   backdrop-filter: blur(22px);
   gap: 20px;
 }
@@ -48,7 +48,7 @@
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.65px;
-  color: #bebfc8;
+  color: #c3c3c3;
   transition: color 0.15s;
 }
 .home-topnav a:hover {
@@ -72,7 +72,7 @@
 }
 .home-shell .topbar > .btn {
   color: #111;
-  background: #f4f3fa;
+  background: #f7f7f7;
   border-color: transparent;
   border-radius: 30px;
   font-size: 11px;
@@ -92,7 +92,7 @@
   position: relative;
   overflow: hidden;
   isolation: isolate;
-  background: #14151b;
+  background: #181818;
 }
 .weekly-backdrop {
   position: absolute;
@@ -111,8 +111,8 @@
   inset: 0;
   z-index: -1;
   background:
-    linear-gradient(0deg, #080c1299, transparent 42%),
-    linear-gradient(90deg, #080c1230, transparent 45%);
+    linear-gradient(0deg, #0d0d0d99, transparent 42%),
+    linear-gradient(90deg, #0d0d0d30, transparent 45%);
 }
 .weekly-content {
   position: relative;
@@ -134,14 +134,14 @@
   font-size: 10px;
   font-weight: 800;
   letter-spacing: 2px;
-  color: #d6c4ff;
+  color: #e2e2e2;
   margin-bottom: 10px;
 }
 .weekly-line {
   display: inline-block;
   width: 45px;
   height: 1px;
-  background: #d6c4ff70;
+  background: #e2e2e270;
   margin-left: 6px;
 }
 .cinema-home .weekly-content h1 {
@@ -161,7 +161,7 @@
   padding: 8px 0;
   font-size: 11px;
   font-weight: 600;
-  color: #dadbe2;
+  color: #dedede;
   flex-wrap: wrap;
 }
 .weekly-meta > span {
@@ -181,7 +181,7 @@
   max-width: 480px;
   font-size: 12px;
   line-height: 1.8;
-  color: #b3b4c0;
+  color: #bababa;
   margin: 10px 0 25px;
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -208,12 +208,12 @@
   cursor: pointer;
 }
 .weekly-watch {
-  background: #171b1def;
+  background: #1a1a1aef;
   color: #fff;
   transition: background 0.18s;
 }
 .weekly-watch:hover {
-  background: #34343f;
+  background: #3a3a3a;
 }
 .weekly-save {
   background: #ffffff08;
@@ -235,12 +235,12 @@
   gap: 20px;
 }
 .weekly-caption {
-  color: #c0c2cd;
+  color: #c7c7c7;
   font-size: 9px;
   letter-spacing: 0.2px;
 }
 .weekly-caption > span {
-  color: #555963;
+  color: #5c5c5c;
   padding: 0 8px;
 }
 .weekly-controls {
@@ -251,7 +251,7 @@
 .weekly-controls button {
   display: grid;
   place-items: center;
-  color: #d6d6dd;
+  color: #dadada;
   width: 32px;
   height: 32px;
   background: #ffffff08;
@@ -276,14 +276,14 @@
 }
 .weekly-dot.active::after {
   width: 22px;
-  background: #d6c4ff;
+  background: #e2e2e2;
 }
 .weekly-controls > span {
   font-size: 11px;
   margin: 0 9px;
 }
 .weekly-controls small {
-  color: #747786;
+  color: #7d7d7d;
 }
 .weekly-loading {
   width: 450px;
@@ -320,14 +320,14 @@
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 1.7px;
-  color: #7f8190;
+  color: #888888;
   margin-bottom: 6px;
 }
 .release-eyebrow > span {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: #bbaaee;
+  background: #cccccc;
 }
 .release-heading h2 {
   margin: 0;
@@ -337,7 +337,7 @@
   font-weight: 750;
 }
 .heading-period {
-  color: #b9a1f1;
+  color: #c9c9c9;
 }
 .release-tools {
   display: flex;
@@ -356,7 +356,7 @@
   border-radius: 5px;
   padding: 8px 10px;
   background: transparent;
-  color: #8b8e9a;
+  color: #939393;
   font-size: 11px;
   font-weight: 700;
   cursor: pointer;
@@ -369,7 +369,7 @@
   display: flex;
   gap: 8px;
   align-items: center;
-  color: #a4a5b1;
+  color: #ababab;
   font-size: 11px;
 }
 .release-schedule:hover {
@@ -388,7 +388,7 @@
   aspect-ratio: 2/2.8;
   position: relative;
   border-radius: 8px;
-  background: #171921;
+  background: #1c1c1c;
   overflow: hidden;
 }
 .release-poster::after {
@@ -438,11 +438,11 @@
   font-weight: 800;
   padding: 4px 6px;
   border-radius: 4px;
-  background: #15161dde;
+  background: #191919de;
   backdrop-filter: blur(6px);
 }
 .release-badges > span {
-  color: #d7c3ff;
+  color: #e1e1e1;
 }
 .release-badges strong {
   color: #fff;
@@ -463,11 +463,11 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  color: #797d8a;
+  color: #828282;
   font-size: 10px;
 }
 .release-info i {
-  color: #444856;
+  color: #4d4d4d;
   font-style: normal;
   margin: 0 2px;
 }
@@ -477,24 +477,24 @@
   padding: 17px 0 0;
   display: flex;
   justify-content: space-between;
-  color: #666b79;
+  color: #707070;
   font-size: 10px;
 }
 .release-footer a {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: #bbb4cf;
+  color: #c2c2c2;
 }
 .release-skeleton {
   aspect-ratio: 2/3.3;
-  background: #14161c;
+  background: #181818;
   border-radius: 8px;
 }
 .release-empty {
   padding: 65px 20px;
   text-align: center;
-  color: #777c8d;
+  color: #828282;
   border: 1px solid #ffffff0a;
   border-radius: 8px;
 }
@@ -502,7 +502,7 @@
   margin-inline: auto;
 }
 .release-empty h3 {
-  color: #d7d9e1;
+  color: #dcdcdc;
   margin: 12px 0;
 }
 .release-empty p {
@@ -634,8 +634,8 @@
   }
   .weekly-shade {
     background:
-      linear-gradient(0deg, #0a0c10 0%, #0a0c10e6 23%, #0a0c1030 80%),
-      linear-gradient(90deg, #0a0c1040, transparent);
+      linear-gradient(0deg, #0d0d0d 0%, #0d0d0de6 23%, #0d0d0d30 80%),
+      linear-gradient(90deg, #0d0d0d40, transparent);
   }
   .weekly-content {
     width: calc(100% - 40px);
@@ -805,7 +805,7 @@
 .home-rail-panel {
   padding: 20px 16px 14px;
   border-radius: 14px;
-  background: #232729;
+  background: #1c1c1c;
   min-width: 0;
 }
 .rail-heading {
@@ -823,11 +823,11 @@
   text-transform: uppercase;
   letter-spacing: 0.2px;
   margin: 0;
-  color: #e5e6e8;
+  color: #e7e7e7;
 }
 .rail-heading > a,
 .rail-heading > small {
-  color: #a2a8ad;
+  color: #a8a8a8;
   font-size: 9px;
   white-space: nowrap;
 }
@@ -837,7 +837,7 @@
 .rail-note {
   font-size: 10px;
   line-height: 1.5;
-  color: #b0b4ba;
+  color: #b5b5b5;
   margin: -5px 0 12px;
 }
 .rail-footnote {
@@ -854,12 +854,12 @@
   min-height: 103px;
   padding: 10px;
   border-radius: 11px;
-  background: #14181b;
+  background: #181818;
   margin-bottom: 8px;
   transition: background 0.15s;
 }
 .rail-media-row:hover {
-  background: #363640;
+  background: #3b3b3b;
 }
 .rail-media-row:last-child {
   margin-bottom: 0;
@@ -889,7 +889,7 @@
 }
 .rail-row-copy > strong {
   display: block;
-  color: #ededf0;
+  color: #efefef;
   font-size: 12px;
   line-height: 1.4;
   overflow-wrap: anywhere;
@@ -912,7 +912,7 @@
   gap: 5px;
   margin-top: 7px;
   font-size: 9px;
-  color: #c2c5cb;
+  color: #c7c7c7;
 }
 .rail-score {
   display: inline-flex;
@@ -922,7 +922,7 @@
 }
 .rail-row-copy > small {
   display: block;
-  color: #a4abad;
+  color: #a9a9a9;
   margin-top: 5px;
   font-size: 9px;
 }
@@ -933,7 +933,7 @@
   gap: 6px;
   width: 100%;
   padding: 12px 0 3px;
-  color: #b4b7be;
+  color: #b9b9b9;
   text-transform: uppercase;
   font-size: 9px;
   font-weight: 700;
@@ -943,7 +943,7 @@
 }
 .rail-more:hover,
 .rail-heading > a:hover {
-  color: #e3d4ff;
+  color: #eaeaea;
 }
 .rail-days {
   display: grid;
@@ -952,7 +952,7 @@
   gap: 2px;
 }
 .rail-days button {
-  color: #a5abb0;
+  color: #ababab;
   background: transparent;
   border: 0;
   padding: 5px 0;
@@ -987,7 +987,7 @@
 .rail-filters button {
   font-size: 8px;
   text-transform: uppercase;
-  color: #a0a7ad;
+  color: #a7a7a7;
   border: 0;
   background: transparent;
   padding: 5px 0;
@@ -995,11 +995,11 @@
 }
 .rail-filters button[aria-pressed='true'] {
   color: white;
-  box-shadow: 0 1px #c8b6ea;
+  box-shadow: 0 1px #d0d0d0;
 }
 .rail-filters > small {
   font-size: 8px;
-  color: #a0a7ad;
+  color: #a7a7a7;
 }
 .schedule-row {
   background: transparent;
@@ -1021,12 +1021,12 @@
 }
 .rail-empty {
   padding: 15px 5px;
-  color: #b0b4bf;
+  color: #b8b8b8;
   font-size: 12px;
   line-height: 1.7;
 }
 .rail-empty a {
-  color: #dbc9ff;
+  color: #e4e4e4;
 }
 .rail-post {
   display: flex;
@@ -1050,15 +1050,15 @@
 }
 .rail-post b {
   font-size: 10px;
-  color: #dcccff;
+  color: #e6e6e6;
 }
 .rail-post time,
 .rail-post small {
   font-size: 9px;
-  color: #a4aab2;
+  color: #ababab;
 }
 .rail-post p {
-  color: #dedfe5;
+  color: #e2e2e2;
   font-size: 11px;
   line-height: 1.5;
   margin: 4px 0;
@@ -1140,7 +1140,7 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  color: #d6d4e1;
+  color: #dbdbdb;
   background: #ffffff08;
 }
 .home-shell .header-settings:hover,

@@ -1,12 +1,12 @@
 .comic-reader.reader-dex {
-  --reader-bg: #191c1d;
+  --reader-bg: #111111;
   --reader-menu-width: 272px;
   position: relative;
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr);
   overflow: hidden;
-  color: #e4e6e5;
+  color: #e5e5e5;
 }
 .reader-dex[data-background='black'] {
   --reader-bg: #000;
@@ -15,7 +15,7 @@
   --reader-bg: #e6dcc8;
 }
 .reader-dex[data-background='light'] {
-  --reader-bg: #e9e9eb;
+  --reader-bg: #eaeaea;
 }
 .reader-dex.reader-menu-open {
   grid-template-columns: minmax(0, 1fr) var(--reader-menu-width);
@@ -31,15 +31,15 @@
   min-height: 0;
   overflow-y: auto;
   padding: 14px;
-  background: #252929;
-  border-left: 1px solid #5a605a;
+  background: #202020;
+  border-left: 1px solid #5d5d5d;
   scrollbar-width: thin;
-  scrollbar-color: #5f6560 transparent;
+  scrollbar-color: #626262 transparent;
   z-index: 4;
 }
 .reader-menu-content {
   font-size: 13px;
-  color: #d8dcda;
+  color: #dadada;
 }
 .reader-menu-content button,
 .reader-menu-content select,
@@ -59,7 +59,7 @@
 .reader-menu-content select:focus-visible,
 .reader-top-header button:focus-visible,
 .reader-reveal-controls:focus-visible {
-  outline: 2px solid #b89aff;
+  outline: 2px solid #cdcdcd;
   outline-offset: 2px;
 }
 .reader-menu-toolbar {
@@ -90,7 +90,7 @@
   flex-shrink: 0;
 }
 .reader-menu-title span {
-  color: #ba9cff;
+  color: #cecece;
   font-weight: 650;
 }
 .reader-menu-title span,
@@ -110,7 +110,7 @@
 .reader-select-row > button {
   display: grid;
   place-items: center;
-  background: #191d1d;
+  background: #1b1b1b;
   border-radius: 3px;
 }
 .reader-select-row label {
@@ -119,10 +119,10 @@
   padding: 6px 7px;
   min-width: 0;
   border-radius: 3px;
-  background: #333939;
+  background: #303030;
 }
 .reader-select-row label > span {
-  color: #aeb6b2;
+  color: #b2b2b2;
   font-size: 10px;
 }
 .reader-select-row select {
@@ -131,7 +131,7 @@
   padding: 0;
   border: 0;
   border-radius: 0;
-  background: #333939;
+  background: #303030;
   font: inherit;
   cursor: pointer;
 }
@@ -144,7 +144,7 @@
   min-height: 34px;
   padding: 7px 10px;
   text-align: left;
-  background: #191d1d;
+  background: #1b1b1b;
   border-radius: 3px;
   font-size: 12px;
   font-weight: 600;
@@ -156,14 +156,14 @@
 .reader-menu-action:hover,
 .reader-select-row > button:hover:not(:disabled),
 .reader-menu-toolbar button:hover {
-  background: #3c4440;
+  background: #404040;
 }
 .reader-menu-action[aria-pressed='true'] {
-  color: #ccb6ff;
-  background: #383343;
+  color: #dbdbdb;
+  background: #3b3b3b;
 }
 .reader-menu-section {
-  border-top: 1px solid #62675c;
+  border-top: 1px solid #626262;
   margin-top: 20px;
   padding-top: 19px;
 }
@@ -174,7 +174,7 @@
 }
 .reader-edition-info > span {
   font-size: 11px;
-  color: #aeb6b2;
+  color: #b2b2b2;
 }
 .reader-edition-info strong {
   display: flex;
@@ -195,13 +195,13 @@
   padding: 0 10px;
   min-height: 34px;
   border-radius: 3px;
-  background: #191d1d;
+  background: #1b1b1b;
 }
 .reader-quick-settings > label svg {
   flex-shrink: 0;
 }
 .reader-quick-settings select {
-  background: #191d1d;
+  background: #1b1b1b;
   border: 0;
   width: 100%;
   min-width: 0;
@@ -215,8 +215,8 @@
   right: 0;
   top: 0;
   padding: 15px 18px 12px;
-  background: #191c1df7;
-  border-bottom: 1px solid #62675c;
+  background: #111111f7;
+  border-bottom: 1px solid #626262;
   z-index: 5;
   transition:
     transform 160ms ease,
@@ -242,7 +242,7 @@
   width: 28px;
   min-height: 32px;
   flex-shrink: 0;
-  color: #b7bfb9;
+  color: #bbbbbb;
 }
 .reader-top-title > div {
   display: grid;
@@ -258,7 +258,7 @@
 }
 .reader-top-title > div a {
   font-size: 12px;
-  color: #ba9cff;
+  color: #cecece;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -276,14 +276,14 @@
   min-width: 0;
   min-height: 32px;
   padding: 4px 8px;
-  background: #333939;
+  background: #303030;
   border-radius: 3px;
-  color: #dce1de;
+  color: #dfdfdf;
   font-size: 13px;
   font-weight: 650;
 }
 .reader-quick-bar button:hover {
-  background: #46504a;
+  background: #4b4b4b;
 }
 .reader-quick-bar button:disabled {
   opacity: 0.45;
@@ -291,7 +291,7 @@
 .reader-top-edition {
   margin-top: 9px;
   font-size: 12px;
-  color: #b9c1bd;
+  color: #bdbdbd;
 }
 .reader-reveal-controls {
   position: absolute;
@@ -304,15 +304,15 @@
   gap: 12px;
   min-height: 40px;
   padding: 9px 14px;
-  background: #252929ef;
-  color: #e4e6e5;
-  border: 1px solid #636b63;
+  background: #202020ef;
+  color: #e5e5e5;
+  border: 1px solid #676767;
   border-radius: 4px;
   font-size: 12px;
   white-space: nowrap;
 }
 .reader-dex .reader-leave-focus {
-  background: #252929ef;
+  background: #202020ef;
   border-radius: 3px;
 }
 .reader-dex .reader-warning {
@@ -320,7 +320,7 @@
 }
 .reader-dex .reader-canvas {
   padding: 16px;
-  scrollbar-color: #626a65 transparent;
+  scrollbar-color: #666666 transparent;
 }
 .reader-dex .reader-pages {
   min-height: 100%;
@@ -409,8 +409,8 @@
   padding: 150px 24px 50px;
 }
 .reader-dex .reader-welcome-art span {
-  background: #333939;
-  border-color: #191c1d;
+  background: #303030;
+  border-color: #111111;
   border-radius: 5px;
   transform: none;
 }
@@ -439,16 +439,16 @@
 }
 .reader-page-grid button {
   min-height: 42px;
-  background: #303636;
-  color: #e4e6e5;
+  background: #333333;
+  color: #e5e5e5;
   border-radius: 3px;
 }
 .reader-page-grid button[aria-current='page'] {
-  background: #a688f5;
-  color: #171222;
+  background: #bfbfbf;
+  color: #1a1a1a;
 }
 .reader-page-grid button:hover {
-  background: #54466a;
+  background: #585858;
 }
 .reader-dex .modal-backdrop:has(.reader-menu-content) {
   padding: 0;
@@ -463,8 +463,8 @@
   margin: 0;
   padding: 16px;
   border-radius: 0;
-  background: #252929;
-  border-left: 1px solid #62675c;
+  background: #202020;
+  border-left: 1px solid #626262;
 }
 @media (max-width: 900px) {
   .reader-dex .reader-top-header {
@@ -495,15 +495,15 @@
   gap: 6px;
   margin: 10px 0;
   text-align: left;
-  color: var(--text-muted, #a6a3b5);
+  color: var(--text-muted, #acacac);
   font-size: 12px;
 }
 .reader-source-picker select {
   min-height: 38px;
   width: 100%;
   padding: 8px 10px;
-  background: #252431;
-  color: #f4f1ff;
-  border: 1px solid #454054;
+  background: #2b2b2b;
+  color: #f8f8f8;
+  border: 1px solid #4a4a4a;
   border-radius: 6px;
 }

@@ -35,14 +35,14 @@
   gap: 6px;
   flex-shrink: 0;
   background: transparent;
-  color: #a8aab4;
+  color: #aeaeae;
   font-size: 10px;
   padding: 6px;
 }
 .browse-page .filter-bar {
   gap: 4px;
   padding: 3px 8px;
-  background: #202329;
+  background: #252525;
   border: 1px solid #ffffff08;
   border-radius: 12px;
 }
@@ -50,7 +50,7 @@
 .browse-page .filter-select {
   background: transparent;
   border: 0;
-  color: #a8aab4;
+  color: #aeaeae;
 }
 .browse-page .inline-search {
   min-width: 120px;
@@ -60,24 +60,24 @@
 .browse-page .filter-select select {
   width: auto;
   max-width: 170px;
-  color: #c6c7ce;
+  color: #cacaca;
   font-size: 11px;
   padding: 10px 8px;
 }
 .browse-page .filter-select select option {
-  background: #202329;
+  background: #252525;
 }
 .browse-page .search-submit {
   background: #ffffff09;
-  color: #d5d4df;
+  color: #dadada;
 }
 .browse-page .results-bar {
   margin: 10px 0 14px;
-  color: #a0a4b0;
+  color: #a8a8a8;
   flex-wrap: wrap;
 }
 .browse-page .results-bar > span:last-child {
-  color: #969ba8;
+  color: #9f9f9f;
 }
 .browse-page .poster-grid {
   grid-template-columns: repeat(9, minmax(0, 1fr));
@@ -107,7 +107,7 @@
   left: 6px;
   padding: 3px 5px;
   font-size: 8px;
-  background: #14171de6;
+  background: #191919e6;
 }
 .browse-page .poster-score {
   right: 6px;
@@ -118,11 +118,11 @@
   width: 10px;
 }
 .browse-page .pagination {
-  color: #c3c5cf;
+  color: #c9c9c9;
 }
 .browse-page .pagination button {
-  background: #242833;
-  color: #dedee7;
+  background: #2c2c2c;
+  color: #e3e3e3;
 }
 @media (max-width: 1600px) {
   .browse-page .poster-grid {
