@@ -8,7 +8,7 @@ import '../manga.css';
 function AnimeLanding() {
   const popular = useMangaFeed('popular', 'all', 'anime');
   return (
-    <div className="home-page cinema-home manga-home">
+    <div className="home-page cinema-home manga-home compact-category-page">
       <HomeLead heroOnly />
       <div className="home-content-layout home-width home-discovery-layout">
         <MangaDiscovery popular={popular} category="anime" label="Anime" />

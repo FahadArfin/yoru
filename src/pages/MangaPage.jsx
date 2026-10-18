@@ -58,7 +58,7 @@ export function MangaLanding({ category, label, homepage = false, children }) {
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (
     <div
-      className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''}`}
+      className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''} ${homepage ? '' : 'compact-category-page'}`}
     >
       <MangaHero items={picks} category={category} label={label} />
       {homepage && (

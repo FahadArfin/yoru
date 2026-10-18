@@ -60,11 +60,6 @@ function Shell() {
   const isHome = location.pathname === '/';
   const isReader = location.pathname.startsWith('/read/');
   const browseCategory = location.pathname.match(/^\/browse\/(manga|manhwa)\/?$/)?.[1];
-  const readingLanding =
-    ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
-    !['q', 'genre', 'sort', 'page', 'view'].some((key) =>
-      new URLSearchParams(location.search).get(key),
-    );
   const hasTopNavigation = !isReader;
   const input = useRef();
   useEffect(() => {
@@ -96,7 +91,7 @@ function Shell() {
         isReader
           ? 'reader-shell'
           : hasTopNavigation
-            ? `home-shell${!isHome && !readingLanding ? ' browse-shell' : ''}`
+            ? `home-shell${!isHome ? ' browse-shell' : ''}`
             : undefined
       }
     >
