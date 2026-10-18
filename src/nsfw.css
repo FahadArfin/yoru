@@ -1,7 +1,3 @@
-.nsfw-menu {
-  position: relative;
-  flex-shrink: 0;
-}
 .nsfw-menu-trigger {
   display: inline-flex;
   align-items: center;
@@ -16,50 +12,13 @@
   letter-spacing: 0.5px;
 }
 .nsfw-menu-trigger:hover,
-.nsfw-menu-trigger.active,
-.nsfw-menu-trigger[aria-expanded='true'] {
+.nsfw-menu-trigger:focus-visible {
   background: rgb(var(--chrome-soft) / 0.141);
   border-color: rgb(var(--chrome-soft) / 0.439);
 }
 .nsfw-menu-trigger > span {
   font-size: 8px;
   color: rgb(var(--chrome-muted));
-}
-.nsfw-dropdown {
-  position: absolute;
-  top: calc(100% + 15px);
-  right: 0;
-  width: 225px;
-  padding: 9px;
-  border: 1px solid rgb(var(--chrome-bright) / 0.094);
-  border-radius: 14px;
-  background: rgb(var(--chrome-raised));
-  box-shadow: 0 18px 50px #0008;
-}
-.nsfw-dropdown > small {
-  display: block;
-  padding: 8px 10px 10px;
-  color: rgb(var(--chrome-muted));
-  font-size: 9px;
-  letter-spacing: 1.2px;
-}
-.home-topnav .nsfw-dropdown > a {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  padding: 12px 10px;
-  border-radius: 8px;
-  text-transform: none;
-  font-size: 12px;
-  letter-spacing: 0;
-  color: rgb(var(--chrome-text));
-}
-.nsfw-dropdown > a:hover,
-.nsfw-dropdown > a:focus-visible {
-  background: rgb(var(--chrome-soft) / 0.11);
-}
-.nsfw-dropdown svg {
-  color: rgb(var(--chrome-text));
 }
 .nsfw-page {
   width: min(1100px, calc(100% - 64px));
@@ -260,4 +219,46 @@
     max-width: 300px;
     margin-inline: auto;
   }
+}
+
+.ara-shell .topbar > .brand > span {
+  font-size: 29px;
+  white-space: nowrap;
+}
+.ara-shell .topbar > .brand small {
+  font-size: 10px;
+  margin-left: 7px;
+}
+.ara-footer {
+  width: min(1100px, calc(100% - 64px));
+  margin: 0 auto;
+  padding: 32px 0;
+  border-top: 1px solid rgb(var(--chrome-soft) / 0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+.ara-footer p {
+  color: rgb(var(--chrome-muted));
+  font-size: 12px;
+}
+.ara-footer nav {
+  display: flex;
+  gap: 24px;
+}
+.ara-footer > a,
+.ara-footer nav a {
+  color: rgb(var(--chrome-soft));
+  font-size: 12px;
+}
+@media (max-width: 600px) {
+  .ara-footer {
+    width: calc(100% - 32px);
+  }
+}
+.ara-shell .topbar > .btn,
+.ara-shell .topbar > .header-avatar {
+  margin-left: auto;
 }

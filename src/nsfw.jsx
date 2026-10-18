@@ -1,73 +1,72 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { BookOpen, ChevronDown, Layers, MonitorPlay } from 'lucide-react';
+import { Link, NavLink, Navigate, useParams } from 'react-router-dom';
+import { BookOpen, Layers, MonitorPlay } from 'lucide-react';
 
 export const nsfwCategories = [
-  { id: 'anime', label: 'Hentai anime', format: 'Animation', Icon: MonitorPlay },
-  { id: 'manga', label: 'Hentai manga', format: 'Manga', Icon: BookOpen },
+  { id: 'anime', label: 'Adult anime', format: 'Anime', Icon: MonitorPlay },
+  { id: 'manga', label: 'Adult manga', format: 'Manga', Icon: BookOpen },
   { id: 'manhwa', label: 'Adult manhwa', format: 'Manhwa', Icon: Layers },
 ];
-
-export function NsfwMenu() {
-  const [open, setOpen] = useState(false);
-  const root = useRef(null);
-  const trigger = useRef(null);
-  const location = useLocation();
-  useEffect(() => setOpen(false), [location.pathname]);
-  useEffect(() => {
-    if (!open) return;
-    const closeOutside = (event) => {
-      if (!root.current?.contains(event.target)) setOpen(false);
-    };
-    document.addEventListener('pointerdown', closeOutside);
-    return () => document.removeEventListener('pointerdown', closeOutside);
-  }, [open]);
-  const focusFirst = () => {
-    setOpen(true);
-    requestAnimationFrame(() => root.current?.querySelector('a')?.focus());
-  };
+export const confirmationKey = 'yoru:nsfw:confirmed';
+export function clearAdultConfirmation() {
+  try {
+    sessionStorage.removeItem(confirmationKey);
+  } catch {}
+}
+export function NsfwButton() {
   return (
-    <div
-      className="nsfw-menu"
-      ref={root}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-      onKeyDown={(event) => {
-        if (event.key === 'Escape') {
-          event.preventDefault();
-          setOpen(false);
-          trigger.current?.focus();
-        }
-      }}
-    >
-      <button
-        ref={trigger}
-        className={`nsfw-menu-trigger${location.pathname.startsWith('/nsfw') ? ' active' : ''}`}
-        aria-label="NSFW menu"
-        aria-expanded={open}
-        aria-controls="nsfw-menu-links"
-        onClick={() => setOpen((value) => !value)}
-        onKeyDown={(event) => {
-          if (event.key === 'ArrowDown') {
-            event.preventDefault();
-            focusFirst();
-          }
-        }}
-      >
-        NSFW <span>18+</span> <ChevronDown size={12} aria-hidden="true" />
-      </button>
-      {open && (
-        <nav className="nsfw-dropdown" id="nsfw-menu-links" aria-label="NSFW categories">
-          <small>ADULT COLLECTIONS</small>
-          {nsfwCategories.map(({ id, label, Icon }) => (
-            <Link key={id} to={`/nsfw/${id}`} onClick={() => setOpen(false)}>
-              <Icon size={17} aria-hidden="true" />
-              {label}
-            </Link>
-          ))}
-        </nav>
-      )}
-    </div>
+    <Link className="nsfw-menu-trigger" to="/ara-ara" aria-label="NSFW · Ara Ara, 18+">
+      NSFW <span>18+</span>
+    </Link>
   );
+}
+export function AraAraBrand() {
+  return (
+    <Link to="/ara-ara" className="brand ara-brand" aria-label="Ara Ara home">
+      <span>
+        ara ara<span className="brand-dot">.</span>
+      </span>
+      <small>18+</small>
+    </Link>
+  );
+}
+export function AraAraNavigation() {
+  return (
+    <nav className="home-topnav" aria-label="Explore Ara Ara">
+      <NavLink to="/ara-ara" end>
+        Discover
+      </NavLink>
+      {nsfwCategories.map(({ id, format }) => (
+        <NavLink key={id} to={`/ara-ara/${id}`}>
+          {format}
+        </NavLink>
+      ))}
+      <Link to="/" className="nsfw-menu-trigger" onClick={clearAdultConfirmation}>
+        Back to Yoru
+      </Link>
+    </nav>
+  );
+}
+export function AraAraFooter() {
+  return (
+    <footer className="ara-footer" aria-label="Ara Ara footer">
+      <div>
+        <AraAraBrand />
+        <p>Yoru’s separate space for adults. 18+ only.</p>
+      </div>
+      <nav aria-label="Ara Ara collections">
+        {nsfwCategories.map(({ id, format }) => (
+          <Link key={id} to={`/ara-ara/${id}`}>
+            {format}
+          </Link>
+        ))}
+      </nav>
+      <Link to="/" onClick={clearAdultConfirmation}>
+        Return to Yoru
+      </Link>
+    </footer>
+  );
+}
+export function LegacyNsfwRedirect() {
+  const { category } = useParams();
+  return <Navigate replace to={`/ara-ara${category ? `/${category}` : ''}`} />;
 }

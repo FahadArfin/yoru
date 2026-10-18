@@ -1,9 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, ArrowUpRight, Library, LockKeyhole, ShieldCheck } from 'lucide-react';
-import { nsfwCategories } from '../nsfw';
-
-const confirmationKey = 'yoru:nsfw:confirmed';
+import { nsfwCategories, confirmationKey } from '../nsfw';
 
 export default function NsfwPage() {
   const { category } = useParams();
@@ -38,7 +36,7 @@ export default function NsfwPage() {
     return (
       <section className="nsfw-page nsfw-gate">
         <h1>Collection not found</h1>
-        <Link className="btn btn-primary" to="/nsfw">
+        <Link className="btn btn-primary" to="/ara-ara">
           Back to collections
         </Link>
       </section>
@@ -50,9 +48,9 @@ export default function NsfwPage() {
         <span className="nsfw-gate-symbol" aria-hidden="true">
           <LockKeyhole size={29} />
         </span>
-        <span className="nsfw-eyebrow">NSFW · 18+</span>
+        <span className="nsfw-eyebrow">ARA ARA · 18+</span>
         <h1 id="nsfw-gate-title">Adults only</h1>
-        <p>This section is intended for visitors aged 18 or older.</p>
+        <p>Welcome to Ara Ara, the separate Yoru space for visitors aged 18 or older.</p>
         <p className="nsfw-gate-detail">Please confirm your age before continuing.</p>
         <div className="nsfw-gate-actions">
           <button className="btn btn-primary" onClick={confirm}>
@@ -71,9 +69,9 @@ export default function NsfwPage() {
         <div>
           <span className="nsfw-eyebrow">A separate space · 18+</span>
           <h1 id="nsfw-title" ref={heading} tabIndex={-1}>
-            NSFW collections
+            Ara Ara
           </h1>
-          <p>Choose a collection.</p>
+          <p>Anime, manga and manhwa. A separate space for adults.</p>
         </div>
         <button className="nsfw-leave" onClick={leave}>
           <ArrowLeft size={15} /> Leave this section
@@ -83,7 +81,7 @@ export default function NsfwPage() {
         {nsfwCategories.map(({ id, label, format, Icon }) => (
           <Link
             key={id}
-            to={`/nsfw/${id}`}
+            to={`/ara-ara/${id}`}
             className={`nsfw-collection${category === id ? ' selected' : ''}`}
             aria-current={category === id ? 'page' : undefined}
             aria-label={label}
