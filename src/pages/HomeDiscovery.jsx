@@ -161,7 +161,10 @@ function RankedCard({ media, index, trending }) {
     </>
   );
   return media.id ? (
-    <Link className="release-card" to={`/title/${media.id}`}>
+    <Link
+      className="release-card"
+      to={trending ? `/watch/${media.id}/latest` : `/title/${media.id}`}
+    >
       {content}
     </Link>
   ) : (
@@ -205,7 +208,9 @@ function PreviewCard({ item, mode, index, reading }) {
       ? `/watch/${item.media.id}/${item.episode}?language=${item.airType}`
       : null
     : item.id
-      ? `/title/${item.id}`
+      ? !reading && mode === 'trending'
+        ? `/watch/${item.id}/latest`
+        : `/title/${item.id}`
       : null;
   const className = `discovery-preview-card ${index === 0 ? 'is-featured' : ''}`;
   return route ? (

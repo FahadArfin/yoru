@@ -29,6 +29,7 @@ const Community = lazy(() => import('./pages/Community'));
 const Rooms = lazy(() => import('./pages/Rooms'));
 const Room = lazy(() => import('./pages/Room'));
 const Watch = lazy(() => import('./pages/Watch'));
+const WatchLatest = lazy(() => import('./pages/WatchLatest'));
 const Reader = lazy(() => import('./reader/Reader'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Schedule = lazy(() => import('./pages/Schedule'));
@@ -155,6 +156,7 @@ function Shell() {
               <Route path="/nsfw/:category" element={<NsfwPage />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />
+              <Route path="/watch/:id/latest" element={<WatchLatest />} />
               <Route path="/read/:id/:unit" element={<Reader />} />
               <Route path="/library" element={<Library />} />
               <Route path="/community" element={<Community />} />

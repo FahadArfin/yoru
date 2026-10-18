@@ -6,8 +6,10 @@ import {
   getCalendar,
   parseMediaId,
   rememberDiscoveredMedia,
+  fetchAnimeEpisodePage,
 } from './catalog-core.js';
 import { getMangaDiscovery } from './manga-discovery.js';
+import { getAnimeEpisodes } from './anime-episodes.js';
 import { resolveAnimeSources } from './sources-core.js';
 import { getSchedule } from './schedule-core.js';
 import { getChapterCalendar } from './chapter-calendar.js';
@@ -38,6 +40,19 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get(
+  '/media/:id/episodes',
+  asyncRoute(async (req, res) => {
+    res.json(
+      await getAnimeEpisodes(req.params.id, req.query, {
+        ...scheduleOptions,
+        media: getMedia,
+        request: fetchAnimeEpisodePage,
+        offline: isOffline(),
+      }),
+    );
+  }),
+);
 const chapterOptions = (req) => ({
   ...scheduleOptions,
   bridgeKey: process.env.READER_BRIDGE_KEY,

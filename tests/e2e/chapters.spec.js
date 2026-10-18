@@ -295,7 +295,7 @@ test('anime episode tabs also preserve selection when coming from reviews', asyn
   await setup(page, context, baseURL);
   await page.goto('/title/mal-anime-52991?tab=reviews');
   await page.getByRole('tab', { name: 'Episodes', exact: true }).click();
-  await expect(page.locator('.unit-grid')).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Episode guide' })).toBeVisible();
   await page.reload();
   await expect(page.getByRole('tab', { name: 'Episodes', exact: true })).toHaveAttribute(
     'aria-selected',

@@ -418,6 +418,11 @@ function uniqueRequest(key, request) {
   return promise;
 }
 
+export const fetchAnimeEpisodePage = (malId, page) =>
+  uniqueRequest(`anime-episodes:${malId}:${page}`, () =>
+    tenrai(`/anime/${malId}/episodes?page=${page}`),
+  );
+
 async function refreshDetail(id) {
   const parsed = parseMediaId(id);
   if (!parsed) return null;
