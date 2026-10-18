@@ -11,6 +11,27 @@ export function HomeAiringSchedule({ language }) {
   const today = localDateKey(now);
   const [selected, setSelected] = useState(null);
   const day = selected || today;
+  const daysRef = useRef(null);
+  const dayPositions = useRef(new Map());
+  useLayoutEffect(() => {
+    const positions = dayPositions.current;
+    dayPositions.current = new Map();
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    const animations = [];
+    for (const button of daysRef.current?.querySelectorAll('button') || []) {
+      const before = positions.get(button.dataset.date);
+      if (before === undefined) continue;
+      const offset = before - button.getBoundingClientRect().left;
+      if (Math.abs(offset) < 1) continue;
+      animations.push(
+        button.animate([{ transform: `translateX(${offset}px)` }, { transform: 'translateX(0)' }], {
+          duration: 460,
+          easing: 'cubic-bezier(.22,1,.36,1)',
+        }),
+      );
+    }
+    return () => animations.forEach((animation) => animation.cancel());
+  }, [day]);
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState(false);
   const [shown, setShown] = useState({ day, filter, language });
@@ -58,6 +79,9 @@ export function HomeAiringSchedule({ language }) {
     return () => reveal.cancel();
   }, [shown]);
   const start = weekStart(today);
+  const days = weekDays(start);
+  const selectedIndex = Math.max(0, days.indexOf(day));
+  const orderedDays = [...days.slice(selectedIndex), ...days.slice(0, selectedIndex)];
   const calendar = useResource(`/api/calendar?week=${start}`);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -101,10 +125,11 @@ export function HomeAiringSchedule({ language }) {
         </h2>
         <small title={Intl.DateTimeFormat().resolvedOptions().timeZone}>{timezone}</small>
       </div>
-      <div className="rail-days" aria-label="Schedule day">
-        {weekDays(start).map((date) => (
+      <div ref={daysRef} className="rail-days" aria-label="Schedule day">
+        {orderedDays.map((date) => (
           <button
             key={date}
+            data-date={date}
             aria-pressed={date === day}
             aria-label={new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
               weekday: 'short',
@@ -113,6 +138,14 @@ export function HomeAiringSchedule({ language }) {
             })}
             aria-current={date === today ? 'date' : undefined}
             onClick={() => {
+              if (date === day) return;
+              // Capture the visible positions, including any in-flight slide, before reordering.
+              dayPositions.current = new Map(
+                [...daysRef.current.querySelectorAll('button')].map((button) => [
+                  button.dataset.date,
+                  button.getBoundingClientRect().left,
+                ]),
+              );
               setSelected(date);
               setExpanded(false);
             }}
