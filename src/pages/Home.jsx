@@ -1,10 +1,8 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import HomeLead from './HomeLead';
 import { Link, useSearchParams } from 'react-router-dom';
-import { ArrowRight, BookOpen, Play, Sparkles } from 'lucide-react';
-import { useResource } from '../state';
-import { itemsOf } from '../api';
-import { ErrorNotice, Loading, Poster, Section } from '../components';
+import { ArrowRight, BookOpen, Play, Sparkles, Swords, Heart, MoonStar } from 'lucide-react';
+import { Loading } from '../components';
 import '../home-category.css';
 
 const ReadingHome = lazy(() =>
@@ -26,44 +24,73 @@ function savedCategory() {
 }
 
 function HomeCollection({ category }) {
-  const current = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
+  const genres = [
+    {
+      name: 'Fantasy',
+      icon: Sparkles,
+      tone: 'sage',
+      description: 'Magic, myth, and worlds beyond.',
+    },
+    { name: 'Action', icon: Swords, tone: 'gold', description: 'Big stakes. No quiet moments.' },
+    {
+      name: 'Romance',
+      icon: Heart,
+      tone: 'rose',
+      description: 'A little spark. A lasting connection.',
+    },
+    {
+      name: 'Mystery',
+      icon: MoonStar,
+      tone: 'violet',
+      description: 'One more clue. One more twist.',
+    },
+  ];
   return (
-    <div className="home-secondary">
-      <div className="home-columns">
-        <div className="home-primary">
-          <Section
-            eyebrow="MORE STORIES, MORE WORLDS"
-            title={`Explore the ${category} collection`}
-            href={`/browse/${category}`}
-          >
-            {current.loading ? (
-              <Loading cards />
-            ) : current.error ? (
-              <ErrorNotice message={current.error} retry={current.refresh} />
-            ) : (
-              <div className="poster-grid home-poster-grid">
-                {itemsOf(current.data)
-                  .slice(0, 6)
-                  .map((media) => (
-                    <Poster key={media.id} media={media} />
-                  ))}
-              </div>
-            )}
-          </Section>
+    <section className="home-explorer" aria-label={`Explore ${category}`}>
+      <header className="home-explorer-heading">
+        <div>
+          <span className="eyebrow">A WORLD FOR EVERY MOOD · {category}</span>
+          <h2>Find your next world</h2>
+          <p>Follow a feeling. Discover your next favorite {category}.</p>
         </div>
-      </div>
-      <div className="home-ending">
-        <span>✦</span>
-        <p>
-          You bring the curiosity.
-          <br />
-          <strong>We’ll bring the stories.</strong>
-        </p>
-        <Link to={`/browse/${category}`} className="btn btn-subtle">
-          Explore {category} <ArrowRight size={17} />
+        <Link to={`/browse/${category}?view=all`} className="btn btn-secondary">
+          Full collection <ArrowRight size={16} />
         </Link>
+      </header>
+      <div className="home-explorer-genres">
+        {genres.map(({ name, icon: Icon, tone, description }) => (
+          <Link
+            key={name}
+            className={`home-genre-card tone-${tone}`}
+            to={`/browse/${category}?genre=${name}`}
+          >
+            <span className="home-genre-symbol">
+              <Icon size={25} strokeWidth={1.5} aria-hidden="true" />
+            </span>
+            <Icon
+              className="home-genre-watermark"
+              size={110}
+              strokeWidth={0.7}
+              aria-hidden="true"
+            />
+            <div>
+              <h3>{name}</h3>
+              <p>{description}</p>
+            </div>
+            <ArrowRight className="home-genre-arrow" size={17} aria-hidden="true" />
+          </Link>
+        ))}
       </div>
-    </div>
+      <nav className="home-explorer-more" aria-label={`More ${category} genres`}>
+        <span>Or try</span>
+        {['Adventure', 'Comedy', 'Sci-Fi', 'Slice of Life'].map((genre) => (
+          <Link key={genre} to={`/browse/${category}?genre=${encodeURIComponent(genre)}`}>
+            {genre}
+            <ArrowRight size={12} aria-hidden="true" />
+          </Link>
+        ))}
+      </nav>
+    </section>
   );
 }
 
