@@ -1,4 +1,65 @@
 import { test, expect } from '@playwright/test';
+import { releasedEpisodes } from '../../server/home-core.js';
+
+test('one series card switches to the selected language and its own episode', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  const now = Date.now();
+  const entries = [
+    {
+      id: 'show-dub',
+      route: 'show',
+      title: 'Shared series',
+      airType: 'dub',
+      episode: 2,
+      airingAt: new Date(now - 1000).toISOString(),
+    },
+    {
+      id: 'show-sub',
+      route: 'show',
+      title: 'Shared series',
+      airType: 'sub',
+      episode: 4,
+      airingAt: new Date(now - 2000).toISOString(),
+    },
+  ].map((entry) => ({ ...entry, media: { id: 'mal-anime-21' }, cover: '/icon.svg' }));
+  await page.route('**/api/home?**', (route) => {
+    const language = new URL(route.request().url()).searchParams.get('language');
+    return route.fulfill({
+      json: {
+        hot: [],
+        state: 'ready',
+        language,
+        releases: releasedEpisodes(entries, language, now),
+      },
+    });
+  });
+  await page.goto('/');
+  const section = page.getByRole('region', { name: 'Just released' });
+  for (const [filter, language, episode] of [
+    ['All releases', 'dub', 2],
+    ['English sub', 'sub', 4],
+    ['English dub', 'dub', 2],
+    ['All releases', 'dub', 2],
+  ]) {
+    await section.getByRole('button', { name: filter, exact: true }).click();
+    await expect(section.locator('.release-card')).toHaveCount(1);
+    await expect(section.locator('.release-card')).toHaveAttribute(
+      'href',
+      `/watch/mal-anime-21/${episode}?language=${language}`,
+    );
+  }
+  await page
+    .getByRole('region', { name: 'Most popular', exact: true })
+    .getByRole('button', { name: 'Most popular', exact: true })
+    .click();
+  await expect(section.locator('.discovery-preview-card')).toHaveCount(1);
+});
 
 test('an incomplete Chinese feed does not claim there were no releases', async ({
   page,
