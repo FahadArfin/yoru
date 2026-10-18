@@ -55,14 +55,39 @@ function topicInput(input) {
 }
 export async function forumBoardList(db, input) {
   const counts = await db.all(
-    `SELECT board,COUNT(*) AS topics FROM forum_topics WHERE collection=? GROUP BY board`,
+    `SELECT t.board, COUNT(*) AS topics,
+      COUNT(*) + SUM((SELECT COUNT(*) FROM forum_replies r WHERE r.topic_id=t.id)) AS messages
+      FROM forum_topics t WHERE t.collection=? GROUP BY t.board`,
+    scope(input),
+  );
+  const latest = await db.all(
+    `WITH posts AS (
+      SELECT t.board,t.id AS topic_id,t.title,t.user_id,t.created_at,t.id AS post_id
+        FROM forum_topics t WHERE t.collection=?
+      UNION ALL
+      SELECT t.board,t.id,t.title,r.user_id,r.created_at,r.id
+        FROM forum_replies r JOIN forum_topics t ON t.id=r.topic_id WHERE t.collection=?
+    ), ranked AS (
+      SELECT *,ROW_NUMBER() OVER (PARTITION BY board ORDER BY created_at DESC,post_id DESC) AS position FROM posts
+    )
+    SELECT p.board,p.topic_id,p.title,p.created_at,u.name
+      FROM ranked p JOIN users u ON u.id=p.user_id WHERE p.position=1`,
+    scope(input),
     scope(input),
   );
   return {
-    items: forumBoards.map((board) => ({
-      ...board,
-      topics: Number(counts.find((row) => row.board === board.id)?.topics || 0),
-    })),
+    items: forumBoards.map((board) => {
+      const count = counts.find((row) => row.board === board.id);
+      const post = latest.find((row) => row.board === board.id);
+      return {
+        ...board,
+        topics: Number(count?.topics || 0),
+        messages: Number(count?.messages || 0),
+        latest: post
+          ? { id: post.topic_id, title: post.title, name: post.name, createdAt: post.created_at }
+          : null,
+      };
+    }),
   };
 }
 export async function forumTopicList(db, input) {

@@ -35,18 +35,20 @@ export default function Community() {
           {connected ? `${online.count || 0} online` : 'Connecting to the community'}
         </div>
       </header>
-      <div className="community-banner">
-        <span className="community-banner-icon">
-          <Users size={24} />
-        </span>
-        <div>
-          <h2>A shared story is a better story.</h2>
-          <p>Meet in a room, watch together, or turn the next chapter with a friend.</p>
+      {view === 'activity' && (
+        <div className="community-banner">
+          <span className="community-banner-icon">
+            <Users size={24} />
+          </span>
+          <div>
+            <h2>A shared story is a better story.</h2>
+            <p>Meet in a room, watch together, or turn the next chapter with a friend.</p>
+          </div>
+          <Link className="section-action" to="/rooms">
+            Find a room <ArrowRight size={15} />
+          </Link>
         </div>
-        <Link className="section-action" to="/rooms">
-          Find a room <ArrowRight size={15} />
-        </Link>
-      </div>
+      )}
       <div className="segmented community-view-tabs" role="group" aria-label="Community view">
         <button
           className={view === 'forums' ? 'active' : ''}
@@ -178,6 +180,11 @@ export default function Community() {
           </section>
         )}
         <aside className="community-right">
+          {view === 'forums' && (
+            <Link className="forum-room-link" to="/rooms">
+              <Users size={18} /> Watch together <ArrowRight size={15} />
+            </Link>
+          )}
           <Chat />
           <div className="panel online-panel">
             <div className="panel-heading">
