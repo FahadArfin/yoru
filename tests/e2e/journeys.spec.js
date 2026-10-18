@@ -340,42 +340,32 @@ test('stacked import and sign-in dialogs close one at a time and restore scrolli
   expect(await page.evaluate(() => document.body.style.overflow)).toBe(originalOverflow);
 });
 
-test('mobile navigation contains keyboard focus and restores the trigger on dismissal', async ({
+test('top navigation keeps settings next to the account control without a side menu', async ({
   page,
-  isMobile,
 }) => {
-  test.skip(!isMobile, 'The desktop sidebar is persistent, so it has no modal focus trap.');
-  await page.goto('/library');
-  const originalOverflow = await page.evaluate(() => document.body.style.overflow);
-  const trigger = page.getByRole('button', {
-    name: 'Open navigation',
-    exact: true,
-    includeHidden: true,
-  });
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  await trigger.click();
-  const navigation = page.getByRole('dialog', { name: 'Navigation', exact: true });
-  await expect(navigation).toBeVisible();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'true');
-  const home = navigation.getByRole('link', { name: 'Yoru home', exact: true });
-  await expect(home).toBeFocused();
-  await page.keyboard.press('Shift+Tab');
-  await expect(navigation.getByRole('button', { name: /Make yourself at home/ })).toBeFocused();
+  await page.goto('/schedule');
+  await expect(page.getByRole('button', { name: 'Open navigation', exact: true })).toHaveCount(0);
+  await expect(page.locator('.sidebar')).toHaveCount(0);
+  const header = page.locator('.topbar');
+  const settings = header.getByRole('link', { name: 'Settings', exact: true });
+  const signIn = header.getByRole('button', { name: 'Sign in', exact: true });
+  await expect(settings).toBeVisible();
+  const signBox = await signIn.boundingBox();
+  const settingsBox = await settings.boundingBox();
+  expect(settingsBox.x).toBeGreaterThan(signBox.x + signBox.width);
+  expect(Math.abs(settingsBox.y - signBox.y)).toBeLessThan(10);
+  await signIn.focus();
   await page.keyboard.press('Tab');
-  await expect(home).toBeFocused();
-  for (let step = 0; step < 18; step++) {
-    await page.keyboard.press('Tab');
-    expect(await navigation.evaluate((dialog) => dialog.contains(document.activeElement))).toBe(
-      true,
-    );
-  }
-  await page.keyboard.press('Escape');
-  await expect(navigation).toBeHidden();
-  await expect(trigger).toHaveAttribute('aria-expanded', 'false');
-  await expect(trigger).toBeFocused();
-  expect(await page.evaluate(() => document.body.style.overflow)).toBe(originalOverflow);
-  await page.keyboard.press('Tab');
-  await expect(page.getByLabel('Search anime, manga, and manhwa', { exact: true })).toBeFocused();
+  await expect(settings).toBeFocused();
+  await page.keyboard.press('Enter');
+  await expect(page).toHaveURL(/\/settings$/);
+  await expect(page.getByRole('heading', { name: 'Your corner of Yoru.' })).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Explore Yoru' })
+    .getByRole('link', { name: 'My library', exact: true })
+    .click();
+  await expect(page).toHaveURL(/\/library$/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });
 
 test('WebMCP tools register, search, and honor the active account session', async ({

@@ -6,6 +6,7 @@ import {
   Download,
   Globe,
   Link2,
+  LogOut,
   MessageCircle,
   MonitorSmartphone,
   Moon,
@@ -19,7 +20,7 @@ import { Avatar, Badge, Button, ErrorNotice } from '../components';
 import { useWebMCPStatus } from '../webmcp-state';
 export default function Settings() {
   const webmcp = useWebMCPStatus();
-  const { user, setAuthOpen, config, refreshLibrary, notify } = useApp();
+  const { user, setAuthOpen, config, refreshLibrary, notify, logout } = useApp();
   const mal = useResource(user ? '/api/mal/status' : null, false);
   const [syncing, setSyncing] = useState(false);
   const [malError, setMalError] = useState('');
@@ -99,7 +100,14 @@ export default function Settings() {
                 <strong>{user.name}</strong>
                 <span>{user.email || 'Connected through Discord'}</span>
               </div>
-              <Badge tone="green">CONNECTED</Badge>
+              <button
+                className="icon-button"
+                onClick={logout}
+                aria-label="Sign out"
+                title="Sign out"
+              >
+                <LogOut size={18} />
+              </button>
             </div>
           ) : (
             <>

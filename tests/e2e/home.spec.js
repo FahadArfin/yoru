@@ -97,9 +97,10 @@ test('weekly banner and release feed navigate with exact identity and selected l
     '/watch/mal-anime-21/5?language=dub',
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page.getByRole('button', { name: 'Open navigation', exact: true }).click();
-  await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
-  await page.getByRole('dialog').getByRole('link', { name: 'Schedule', exact: true }).click();
+  await page
+    .getByRole('navigation', { name: 'Explore Yoru' })
+    .getByRole('link', { name: 'Schedule', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/schedule$/);
 });
 

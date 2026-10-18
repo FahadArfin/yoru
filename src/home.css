@@ -1,32 +1,10 @@
-/* Home and catalog share top navigation; other interior pages retain workspace navigation. */
+/* Shared top navigation keeps every section accessible without a side menu. */
 .home-shell {
   background: #181d28;
   color: #f4f4f6;
 }
 .home-shell .app-main {
   margin-left: 0;
-}
-.home-shell > .sidebar {
-  display: none;
-}
-.home-shell > .sidebar.is-open {
-  display: flex;
-  transform: translateX(0);
-  z-index: 110;
-  width: 260px;
-}
-.home-shell > .nav-overlay {
-  display: block;
-  position: fixed;
-  inset: 0;
-  z-index: 105;
-  border: 0;
-  background: #0009;
-  backdrop-filter: blur(4px);
-}
-.home-shell .sidebar .mobile-only,
-.home-shell .topbar > .mobile-only {
-  display: inline-flex;
 }
 .home-shell .topbar {
   position: absolute;
@@ -1154,4 +1132,57 @@
 }
 .cinema-home .weekly-content h1.has-title-logo {
   margin-bottom: 12px;
+}
+
+/* Keep navigation available on smaller screens without a drawer. */
+.home-shell .header-settings {
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  color: #d6d4e1;
+  background: #ffffff08;
+}
+.home-shell .header-settings:hover,
+.home-shell .header-settings:focus-visible {
+  color: #fff;
+  background: #ffffff18;
+}
+.home-topnav > a {
+  white-space: nowrap;
+}
+@media (max-width: 1400px) {
+  .home-shell .topbar {
+    height: auto;
+    min-height: 50px;
+    flex-wrap: wrap;
+    padding-block: 10px;
+    row-gap: 10px;
+    border-radius: 24px;
+  }
+  .home-shell .home-topnav {
+    display: flex;
+    order: 2;
+    flex-basis: 100%;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 16px;
+  }
+  .home-shell .home-topnav > a {
+    display: inline-flex;
+    padding-block: 5px;
+  }
+  .home-shell .global-search {
+    flex: 1;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-shell .topbar {
+    padding-block: 6px;
+    row-gap: 4px;
+  }
+  .home-shell .home-topnav {
+    gap: 4px 12px;
+  }
 }
