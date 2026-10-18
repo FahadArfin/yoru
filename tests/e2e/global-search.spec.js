@@ -41,6 +41,7 @@ test('saved matches stay visible while live suggestions update and empty searche
 
 test('search shows ranked covers, category filters and navigable suggestions without submitting', async ({
   page,
+  isMobile,
 }) => {
   await page.goto('/');
   const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
@@ -49,8 +50,16 @@ test('search shows ranked covers, category filters and navigable suggestions wit
   await expect(list.getByRole('option').first()).toContainText('Attack on Titan');
   await expect(list.getByRole('option').first().locator('img')).toBeVisible();
   const panel = await page.locator('.search-panel').boundingBox();
-  const header = await page.locator('.topbar').boundingBox();
-  expect(panel.y).toBeGreaterThanOrEqual(header.y + header.height);
+  const field = await page.getByRole('search').boundingBox();
+  expect(Math.abs(panel.y - field.y - field.height - 8)).toBeLessThan(2);
+  if (!isMobile) {
+    expect(Math.abs(panel.x - field.x)).toBeLessThan(2);
+    expect(Math.abs(panel.width - field.width)).toBeLessThan(2);
+  }
+  expect(panel.x).toBeGreaterThanOrEqual(0);
+  expect(panel.x + panel.width).toBeLessThanOrEqual(page.viewportSize().width);
+  await expect(page.getByText('Find your next story', { exact: true })).toHaveCount(0);
+  await expect(page.getByText(/\d+ matching titles/)).toHaveCount(0);
   await page.locator('.search-filters').getByRole('button', { name: 'Manga', exact: true }).click();
   await expect(list.getByRole('option').first()).toContainText('manga');
   await expect(list.getByRole('option').first()).toHaveAttribute('href', /\/title\/mal-manga-/);
@@ -66,7 +75,7 @@ test('search shows ranked covers, category filters and navigable suggestions wit
   await expect(list).toHaveCount(0);
 });
 
-test('search ignores stale responses, clears, closes outside, and supports all-results and retry', async ({
+test('search ignores stale responses, clears, and supports all-results and retry', async ({
   page,
 }) => {
   let fail = false;
@@ -114,8 +123,8 @@ test('search ignores stale responses, clears, closes outside, and supports all-r
     scroll: document.documentElement.scrollWidth,
   }));
   expect(size.scroll).toBeLessThanOrEqual(size.width);
-  await page.getByRole('link', { name: 'Yoru home', exact: true }).first().click();
-  await expect(page.locator('.search-panel')).toHaveCount(0);
+  await page.getByRole('link', { name: 'Yoru home', exact: true }).first().focus();
+  await expect(page.locator('.search-panel')).toBeVisible();
   await search.fill('new');
   await page.getByRole('button', { name: 'Clear search', exact: true }).click();
   await expect(search).toHaveValue('');
@@ -128,4 +137,42 @@ test('search ignores stale responses, clears, closes outside, and supports all-r
   await expect(page.getByRole('option')).toContainText('retry match');
   await page.getByRole('link', { name: 'View all results', exact: true }).click();
   await expect(page).toHaveURL(/\/browse\/all\?q=retry/);
+});
+
+test('suggestions persist while idle and scrolling results, but page scroll dismisses without clearing the query', async ({
+  page,
+}) => {
+  await page.route('**/api/search/suggestions?**', (route) =>
+    route.fulfill({
+      json: {
+        items: Array.from({ length: 12 }, (_, i) => ({
+          id: `mal-anime-${16498 + i}`,
+          title: `Attack result ${i + 1}`,
+          category: 'ANIME',
+          cover: '/icon.svg',
+        })),
+        pending: false,
+      },
+    }),
+  );
+  await page.goto('/');
+  const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
+  await search.fill('attack');
+  const list = page.getByRole('listbox', { name: 'Suggested titles' });
+  await expect(list.getByRole('option')).toHaveCount(12);
+  await search.press('Tab');
+  await page.waitForTimeout(1200);
+  await expect(list).toBeVisible();
+  await list.evaluate((el) => {
+    el.scrollTop = 250;
+  });
+  await expect.poll(() => list.evaluate((el) => el.scrollTop)).toBeGreaterThan(0);
+  await expect(list).toBeVisible();
+  await page.evaluate(() => window.scrollTo({ top: 350, behavior: 'instant' }));
+  await expect(list).toHaveCount(0);
+  await expect(search).toHaveValue('attack');
+  await search.click();
+  await expect(list).toBeVisible();
+  await list.getByRole('option').first().click();
+  await expect(page).toHaveURL(/\/title\/mal-anime-16498$/);
 });

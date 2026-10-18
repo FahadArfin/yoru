@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Search, X, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { api, titleOf } from './api';
@@ -15,6 +15,7 @@ export default function GlobalSearch({ inputRef }) {
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef();
+  const openedAt = useRef({ x: 0, y: 0 });
   const cached = useRef(new Map());
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState('all');
@@ -22,22 +23,55 @@ export default function GlobalSearch({ inputRef }) {
   const [active, setActive] = useState(-1);
   const [retry, setRetry] = useState(0);
   const [result, setResult] = useState({ key: '', items: [], loading: false });
+  const [panelStyle, setPanelStyle] = useState({});
   const term = query.trim();
   const key = `${category}:${term.toLowerCase()}`;
   const shown = result.key === key ? result : { items: [], loading: true };
   const expanded = open && term.length >= 2;
   const allUrl = `/browse/${category}?q=${encodeURIComponent(term)}`;
+  const showSuggestions = () => {
+    // Ignore a queued scroll event from bringing the search field into view.
+    openedAt.current = { x: window.scrollX, y: window.scrollY };
+    setOpen(true);
+  };
   useEffect(() => {
     setOpen(false);
     setActive(-1);
   }, [location.pathname, location.search]);
   useEffect(() => {
-    const outside = (event) => {
-      if (!root.current?.contains(event.target)) setOpen(false);
+    const scroll = (event) => {
+      // Scrolling the results is browsing suggestions, not dismissing them.
+      if (root.current?.contains(event.target)) return;
+      if (
+        event.target === document &&
+        window.scrollX === openedAt.current.x &&
+        window.scrollY === openedAt.current.y
+      )
+        return;
+      setOpen(false);
+      setActive(-1);
     };
-    document.addEventListener('pointerdown', outside);
-    return () => document.removeEventListener('pointerdown', outside);
+    document.addEventListener('scroll', scroll, { capture: true, passive: true });
+    return () => document.removeEventListener('scroll', scroll, true);
   }, []);
+  useLayoutEffect(() => {
+    if (!expanded || !root.current) return;
+    const align = () => {
+      const bounds = root.current.getBoundingClientRect();
+      const viewport = document.documentElement.clientWidth;
+      const width = Math.min(Math.max(bounds.width, 320), viewport - 24);
+      const left = Math.max(12, Math.min(bounds.left, viewport - width - 12)) - bounds.left;
+      setPanelStyle({ width, left });
+    };
+    align();
+    const observer = new ResizeObserver(align);
+    observer.observe(root.current);
+    window.addEventListener('resize', align);
+    return () => {
+      observer.disconnect();
+      window.removeEventListener('resize', align);
+    };
+  }, [expanded]);
   useEffect(() => {
     if (!expanded) return;
     const controller = new AbortController();
@@ -75,8 +109,14 @@ export default function GlobalSearch({ inputRef }) {
     };
   }, [key, expanded, retry]);
   useEffect(() => {
-    if (active >= 0)
-      root.current?.querySelector(`#search-option-${active}`)?.scrollIntoView({ block: 'nearest' });
+    const option = root.current?.querySelector(`#search-option-${active}`);
+    const list = root.current?.querySelector('.search-results');
+    if (!option || !list) return;
+    const itemBounds = option.getBoundingClientRect();
+    const listBounds = list.getBoundingClientRect();
+    if (itemBounds.top < listBounds.top) list.scrollTop += itemBounds.top - listBounds.top;
+    else if (itemBounds.bottom > listBounds.bottom)
+      list.scrollTop += itemBounds.bottom - listBounds.bottom;
   }, [active]);
   const submit = (event) => {
     event.preventDefault();
@@ -88,15 +128,7 @@ export default function GlobalSearch({ inputRef }) {
     inputRef.current?.blur();
   };
   return (
-    <form
-      ref={root}
-      className="global-search"
-      role="search"
-      onSubmit={submit}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) setOpen(false);
-      }}
-    >
+    <form ref={root} className="global-search" role="search" onSubmit={submit}>
       <Search size={18} aria-hidden="true" />
       <input
         ref={inputRef}
@@ -113,17 +145,17 @@ export default function GlobalSearch({ inputRef }) {
         }
         aria-label="Search anime, manga, and manhwa"
         placeholder="Search your next obsession…"
-        onFocus={() => setOpen(true)}
-        onClick={() => setOpen(true)}
+        onFocus={showSuggestions}
+        onClick={showSuggestions}
         onChange={(event) => {
           setQuery(event.target.value);
-          setOpen(true);
+          showSuggestions();
           setRetry(0);
           setActive(-1);
         }}
         onKeyDown={(event) => {
           if (event.nativeEvent.isComposing) return;
-          if ((event.ctrlKey || event.metaKey) && event.key === 'k') setOpen(true);
+          if ((event.ctrlKey || event.metaKey) && event.key === 'k') showSuggestions();
           if (event.key === 'Escape') {
             event.preventDefault();
             setOpen(false);
@@ -131,7 +163,7 @@ export default function GlobalSearch({ inputRef }) {
           }
           if (['ArrowDown', 'ArrowUp'].includes(event.key)) {
             event.preventDefault();
-            setOpen(true);
+            showSuggestions();
             if (shown.items.length)
               setActive((old) =>
                 event.key === 'ArrowDown'
@@ -159,11 +191,7 @@ export default function GlobalSearch({ inputRef }) {
         <kbd>Ctrl K</kbd>
       )}
       {expanded && (
-        <div className="search-panel">
-          <div className="search-panel-heading">
-            <span>Find your next story</span>
-            <Search size={13} />
-          </div>
+        <div className="search-panel" style={panelStyle}>
           <div className="search-filters" aria-label="Search categories">
             {filters.map(([value, label]) => (
               <button
@@ -180,21 +208,21 @@ export default function GlobalSearch({ inputRef }) {
               </button>
             ))}
           </div>
-          <div className="search-status" role="status">
-            {shown.loading ? (
-              <>
-                <LoaderCircle size={13} className="search-spinner" /> Finding matches…
-              </>
-            ) : shown.waiting ? (
-              'Updating matches…'
-            ) : shown.items.length ? (
-              `${shown.items.length} matching titles`
-            ) : shown.error || shown.providerUnavailable || shown.pending ? (
-              'Search is temporarily limited. Try again.'
-            ) : (
-              `No titles found for “${term}”.`
-            )}
-          </div>
+          {(!shown.items.length || shown.loading || shown.waiting) && (
+            <div className="search-status" role="status">
+              {shown.loading ? (
+                <>
+                  <LoaderCircle size={13} className="search-spinner" /> Finding matches…
+                </>
+              ) : shown.waiting ? (
+                'Updating matches…'
+              ) : shown.error || shown.providerUnavailable || shown.pending ? (
+                'Search is temporarily limited. Try again.'
+              ) : (
+                `No titles found for “${term}”.`
+              )}
+            </div>
+          )}
           <div
             className="search-results"
             id="search-suggestions"
