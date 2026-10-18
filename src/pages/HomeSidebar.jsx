@@ -4,7 +4,7 @@ import { CalendarDays, ChevronDown, Clock3, MessageSquare } from 'lucide-react';
 import { useApp, useResource } from '../state';
 import { ago, itemsOf } from '../api';
 import { Avatar } from '../components';
-import { airingLabel, localDateKey, weekDays, weekStart } from '../../shared/schedule';
+import { airingLabel, localDateKey, shiftDate, weekDays, weekStart } from '../../shared/schedule';
 
 export function HomeAiringSchedule({ language }) {
   const [now, setNow] = useState(Date.now());
@@ -18,14 +18,31 @@ export function HomeAiringSchedule({ language }) {
     dayPositions.current = new Map();
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const animations = [];
+    const bounds = daysRef.current.getBoundingClientRect();
     for (const button of daysRef.current?.querySelectorAll('button') || []) {
       const before = positions.get(button.dataset.date);
       if (before === undefined) continue;
       const offset = before - button.getBoundingClientRect().left;
       if (Math.abs(offset) < 1) continue;
+      const left = button.getBoundingClientRect().left;
+      // Wrapped days leave behind the clipped left edge, then re-enter from
+      // the right instead of visibly travelling backwards across the strip.
+      const frames =
+        offset < 0
+          ? [
+              { transform: `translateX(${offset}px)`, opacity: 1, offset: 0 },
+              {
+                transform: `translateX(${bounds.left - left - button.offsetWidth}px)`,
+                opacity: 0,
+                offset: 0.45,
+              },
+              { transform: `translateX(${bounds.right - left}px)`, opacity: 0, offset: 0.46 },
+              { transform: 'translateX(0)', opacity: 1, offset: 1 },
+            ]
+          : [{ transform: `translateX(${offset}px)` }, { transform: 'translateX(0)' }];
       animations.push(
-        button.animate([{ transform: `translateX(${offset}px)` }, { transform: 'translateX(0)' }], {
-          duration: 460,
+        button.animate(frames, {
+          duration: 520,
           easing: 'cubic-bezier(.22,1,.36,1)',
         }),
       );
@@ -79,9 +96,10 @@ export function HomeAiringSchedule({ language }) {
     return () => reveal.cancel();
   }, [shown]);
   const start = weekStart(today);
-  const days = weekDays(start);
+  const yesterday = shiftDate(today, -1);
+  const days = weekDays(today);
   const selectedIndex = Math.max(0, days.indexOf(day));
-  const orderedDays = [...days.slice(selectedIndex), ...days.slice(0, selectedIndex)];
+  const orderedDays = [yesterday, ...days.slice(selectedIndex), ...days.slice(0, selectedIndex)];
   const calendar = useResource(`/api/calendar?week=${start}`);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -94,11 +112,11 @@ export function HomeAiringSchedule({ language }) {
       if (!document.hidden) calendar.refresh();
     }, 120000);
     return () => clearInterval(timer);
-  }, [start]);
+  }, [calendar.refresh]);
   useEffect(() => {
     setSelected(null);
     setExpanded(false);
-  }, [start]);
+  }, [today]);
   const items = (calendar.data?.items || [])
     .filter(
       (x) => x.airType === shown.language && x.airingAt && localDateKey(x.airingAt) === shown.day,
@@ -130,6 +148,8 @@ export function HomeAiringSchedule({ language }) {
           <button
             key={date}
             data-date={date}
+            className={date === yesterday ? 'is-yesterday' : undefined}
+            title={date === yesterday ? 'Yesterday — view aired anime' : undefined}
             aria-pressed={date === day}
             aria-label={new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
               weekday: 'short',
@@ -153,7 +173,8 @@ export function HomeAiringSchedule({ language }) {
             <span>
               {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
             </span>
-            <small aria-hidden={date !== day}>
+            <small aria-hidden={date !== day && date !== yesterday}>
+              {date === yesterday && 'Yesterday · '}
               {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',

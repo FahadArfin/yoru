@@ -1042,6 +1042,9 @@
   font-size: 11px;
 }
 .home-airing-schedule .rail-days {
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  overflow: hidden;
+  padding: 5px;
   gap: 0;
   margin: 24px 0 20px;
 }
@@ -1103,7 +1106,8 @@
     opacity 220ms ease,
     transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
 }
-.home-airing-schedule .rail-days button[aria-pressed='true'] small {
+.home-airing-schedule .rail-days button[aria-pressed='true'] small,
+.home-airing-schedule .rail-days button.is-yesterday small {
   opacity: 1;
   transform: translateY(0);
 }
@@ -1171,7 +1175,14 @@
     padding: 16px 12px;
   }
   .home-airing-schedule .rail-days {
-    gap: 3px;
+    gap: 0;
+  }
+  .home-airing-schedule .rail-days small {
+    font-size: 8px;
+  }
+  .home-airing-schedule .rail-days button.is-yesterday small {
+    max-width: 48px;
+    margin-inline: auto;
   }
   .home-airing-schedule .rail-schedule-list {
     grid-template-columns: minmax(0, 1fr);
