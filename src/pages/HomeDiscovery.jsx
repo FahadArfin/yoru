@@ -50,9 +50,9 @@ const releaseFilters = [
   },
 ];
 const periods = [
-  { value: 'all', label: 'All time' },
-  { value: 'year', label: 'Last year' },
   { value: 'month', label: 'Last month' },
+  { value: 'year', label: 'Last year' },
+  { value: 'all', label: 'All time' },
 ];
 const fallbackImage = (event) => {
   if (event.currentTarget.dataset.failed) return;
@@ -321,16 +321,23 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
             </span>
           ) : mode === 'popular' ? (
             <div className="release-language" role="group" aria-label="Popularity release period">
-              {periods.map(({ value, label }) => (
-                <button
-                  key={value}
-                  aria-pressed={period === value}
-                  className={period === value ? 'active' : ''}
-                  onClick={() => setPeriod(value)}
-                >
-                  {label}
-                </button>
-              ))}
+              <button
+                className="active popularity-cycle"
+                title="Cycle popularity period: Last month, Last year, All time"
+                onClick={() =>
+                  setPeriod(
+                    (current) =>
+                      periods[
+                        (periods.findIndex((item) => item.value === current) + 1) % periods.length
+                      ].value,
+                  )
+                }
+              >
+                <span aria-live="polite">
+                  {periods.find((item) => item.value === period)?.label}
+                </span>
+                <RotateCw size={12} aria-hidden="true" />
+              </button>
             </div>
           ) : null}
         </div>

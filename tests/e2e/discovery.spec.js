@@ -120,18 +120,20 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   await expect(released.locator('.discovery-preview-card')).toHaveCount(1);
   await expect(page.locator('.discovery-panel.is-expanded')).toHaveCount(1);
   await expect(panel.getByRole('link', { name: /popular month pick/ })).toBeVisible();
-  await expect(panel.getByRole('button', { name: 'Last month' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(panel.getByRole('button', { name: 'Last month', exact: true })).toBeVisible();
+  await expect(
+    panel.getByRole('group', { name: 'Popularity release period' }).getByRole('button'),
+  ).toHaveCount(1);
   await expect(page.locator('.discovery-category-hint')).toHaveCount(0);
   await expect(trending.locator('.discovery-filter-row')).toHaveCount(0);
   await expect(popular.locator('.discovery-panel-footer')).toHaveCount(0);
   await checkSelectedLayout(popular);
   expect(popularRequests).toBe(2);
-  await panel.getByRole('button', { name: 'Last year' }).click();
+  await panel.getByRole('button', { name: 'Last month', exact: true }).click();
   await expect.poll(() => Boolean(finishYear)).toBe(true);
-  await panel.getByRole('button', { name: 'Last month' }).click();
+  await panel.getByRole('button', { name: 'Last year', exact: true }).press('Enter');
+  await expect(panel.getByRole('link', { name: /popular all pick/ })).toBeVisible();
+  await panel.getByRole('button', { name: 'All time', exact: true }).press('Space');
   await expect(panel.getByRole('link', { name: /popular month pick/ })).toBeVisible();
   finishYear();
   await expect(panel.getByRole('link', { name: /popular year pick/ })).toHaveCount(0);
@@ -166,10 +168,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
     document.getElementById('discovery-toggle-popular').click();
   });
   await checkSelectedLayout(popular);
-  await expect(popular.getByRole('button', { name: 'Last month' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(popular.getByRole('button', { name: 'Last month', exact: true })).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await released.getByRole('button', { name: 'Just released', exact: true }).click();
   panel = released;
