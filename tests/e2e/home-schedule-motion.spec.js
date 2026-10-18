@@ -31,12 +31,15 @@ test('schedule emphasizes only the selected date and rapid day changes settle on
   const schedule = page.getByRole('region', { name: 'Airing schedule', exact: true });
   const tuesday = schedule.getByRole('button', { name: /^Tue/ });
   await expect(tuesday).toHaveAttribute('aria-pressed', 'true');
+  await expect(schedule.locator('.rail-days button')).toHaveCount(7);
   await expect(schedule.locator('.rail-days button').nth(1)).toHaveAttribute(
     'aria-pressed',
     'true',
   );
   await expect(tuesday.locator('small')).toHaveCSS('opacity', '1');
   await expect(schedule.locator('.is-yesterday')).toContainText('Yesterday');
+  await expect(schedule.locator('.is-yesterday')).toHaveAttribute('aria-pressed', 'false');
+  await expect(schedule.locator('.is-yesterday small')).toHaveCSS('opacity', '0');
   await schedule.getByRole('button', { name: 'Mon, Oct 26', exact: true }).click();
   await expect(schedule.getByRole('link', { name: /Show 26/ })).toBeVisible();
   await expect(schedule.getByRole('link', { name: /Show 26/ })).toContainText('Aired');
@@ -49,14 +52,13 @@ test('schedule emphasizes only the selected date and rapid day changes settle on
   await schedule.getByRole('button', { name: /^Thu/ }).click();
   await expect(schedule.getByRole('link', { name: /Show 29/ })).toBeVisible();
   await expect(schedule.locator('.rail-days button span')).toHaveText([
-    'Mon',
+    'Wed',
     'Thu',
     'Fri',
     'Sat',
     'Sun',
     'Mon',
     'Tue',
-    'Wed',
   ]);
   const firstDay = await schedule.locator('.rail-days button').first().boundingBox();
   const lastDay = await schedule.locator('.rail-days button').last().boundingBox();
@@ -67,6 +69,11 @@ test('schedule emphasizes only the selected date and rapid day changes settle on
   await expect(schedule).toContainText('No episodes in this selection.');
   await tuesday.click();
   await expect(schedule.getByRole('link', { name: /Show 27/ })).toBeVisible();
+  await expect(schedule.locator('.rail-days button').first()).toHaveAttribute(
+    'data-date',
+    '2026-10-26',
+  );
+  await expect(schedule.locator('.rail-days button[aria-pressed="true"]')).toHaveCount(1);
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth),
   ).toBeTruthy();
@@ -102,7 +109,7 @@ test('yesterday remains available across a week boundary and uses the actual pas
   );
   await schedule.getByRole('button', { name: 'Sun, Nov 1', exact: true }).click();
   await expect(schedule.getByRole('link', { name: /Sunday episode/ })).toContainText('Aired');
-  await expect(schedule.getByRole('button', { name: 'Sun, Nov 8', exact: true })).toHaveAttribute(
+  await expect(schedule.getByRole('button', { name: 'Sat, Nov 7', exact: true })).toHaveAttribute(
     'aria-pressed',
     'false',
   );
