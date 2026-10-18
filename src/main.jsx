@@ -34,6 +34,7 @@ import { useTheme } from './theme';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
+const CommunityThread = lazy(() => import('./pages/CommunityThread'));
 const Rooms = lazy(() => import('./pages/Rooms'));
 const Room = lazy(() => import('./pages/Room'));
 const Watch = lazy(() => import('./pages/Watch'));
@@ -186,6 +187,7 @@ function Shell() {
               <Route element={<SpaceLayout />}>
                 <Route path="/library" element={<Library />} />
                 <Route path="/community" element={<Community />} />
+                <Route path="/community/:id/:unit" element={<CommunityThread />} />
                 <Route path="/rooms" element={<Rooms />} />
               </Route>
               <Route path="/rooms/:id" element={<Room />} />

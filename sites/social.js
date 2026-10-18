@@ -5,6 +5,9 @@ import { apiError, text, numeric, mediaId, bool } from '../server/validation.js'
 import { requireAuth, publicUser } from './security.js';
 import { now, eventStatement, changes, liveSession, sessionValues } from './store.js';
 import { commentMediaError } from '../shared/comment-media.js';
+import { getCommunityThreads } from '../server/community-threads.js';
+import { scheduleOptions } from './schedule-storage.js';
+import { isOffline } from './catalog-storage.js';
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -338,6 +341,16 @@ export function socialRoutes(app) {
     );
     return c.json({ ok: true });
   });
+  app.get('/api/community/threads', async (c) =>
+    c.json(
+      await getCommunityThreads(c.req.query(), {
+        ...scheduleOptions(c.env),
+        offline: isOffline(),
+        db: c.get('db'),
+        media: getMedia,
+      }),
+    ),
+  );
   app.get('/api/community', async (c) => {
     const db = c.get('db');
     const scopedIds =

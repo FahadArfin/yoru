@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import {
   ArrowUp,
   ThumbsDown,
@@ -29,7 +30,7 @@ function Spoiler({ hidden, children }) {
     <div className="comment-body">{children}</div>
   );
 }
-export default function Discussion({ mediaId, unit = 1 }) {
+export default function Discussion({ mediaId, unit = 1, communityLink = true }) {
   const { user, requireUser, event, notify } = useApp();
   const resource = useResource(`/api/comments/${mediaId}?unit=${unit}`, false);
   const [body, setBody] = useState('');
@@ -229,6 +230,11 @@ export default function Discussion({ mediaId, unit = 1 }) {
       <p className="muted discussion-subtitle">
         For this episode or chapter only. Keep future plot twists under wraps.
       </p>
+      {communityLink && Number(unit) > 0 && (
+        <Link className="text-link discussion-community-link" to={`/community/${mediaId}/${unit}`}>
+          Open this thread in Community →
+        </Link>
+      )}
       <form className="comment-compose" onSubmit={submit}>
         <div className="comment-compose-identity">
           <Avatar user={user || { name: 'Guest' }} />

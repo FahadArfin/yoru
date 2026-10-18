@@ -5,6 +5,7 @@ import { ago, isAnime, itemsOf, safeLink, titleOf } from '../api';
 import { useApp, useResource } from '../state';
 import { Avatar, Badge, Empty, ErrorNotice } from '../components';
 import Chat from '../Chat';
+import CommunityThreads from '../CommunityThreads';
 import CoverImage from '../CoverImage';
 import '../section-pages.css';
 import { commentPreview } from '../../shared/comment-media';
@@ -45,6 +46,7 @@ export default function Community() {
           Find a room <ArrowRight size={15} />
         </Link>
       </div>
+      <CommunityThreads />
       <div className="community-layout">
         <section className="community-feed">
           <div className="section-heading">
@@ -94,7 +96,11 @@ export default function Community() {
               </div>
               <Link
                 className="feed-title-link"
-                to={`/title/${item.mediaId}${item.unit ? `?unit=${item.unit}` : item.kind === 'review' ? '?tab=reviews' : ''}`}
+                to={
+                  item.unit
+                    ? `/community/${item.mediaId}/${item.unit}`
+                    : `/title/${item.mediaId}${item.kind === 'review' ? '?tab=reviews' : ''}`
+                }
               >
                 {item.media && <CoverImage media={item.media} alt="" />}
                 <div>
@@ -117,7 +123,11 @@ export default function Community() {
               </p>
               <Link
                 className="text-link"
-                to={`/title/${item.mediaId}${item.unit ? `?unit=${item.unit}` : item.kind === 'review' ? '?tab=reviews' : ''}`}
+                to={
+                  item.unit
+                    ? `/community/${item.mediaId}/${item.unit}`
+                    : `/title/${item.mediaId}${item.kind === 'review' ? '?tab=reviews' : ''}`
+                }
               >
                 {item.kind === 'review' ? <Star size={15} /> : <MessageCircle size={15} />}{' '}
                 {item.kind === 'review' ? `${item.rating}/10 · Read review` : 'Add your take'}
