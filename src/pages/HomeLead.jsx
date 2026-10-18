@@ -20,7 +20,7 @@ import { useBannerArtwork } from '../useBannerArtwork';
 import { useHeroCarousel } from '../useHeroCarousel';
 import HeroArtwork from '../HeroArtwork';
 
-export default function HomeLead({ children }) {
+export default function HomeLead({ children, heroOnly = false }) {
   const [language, setLanguage] = useState('all');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
@@ -182,20 +182,24 @@ export default function HomeLead({ children }) {
           </div>
         )}
       </section>
-      <div className="home-resume home-width">
-        <PickUpWhereLeftOff />
-      </div>
-      <div className="home-content-layout home-width home-discovery-layout">
-        <div className="home-release-column">
-          <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
-          <LiveComments />
-          <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
-          {children}
-        </div>
-        <div className="home-lower-highlights">
-          <HomeSidebar />
-        </div>
-      </div>
+      {!heroOnly && (
+        <>
+          <div className="home-resume home-width">
+            <PickUpWhereLeftOff />
+          </div>
+          <div className="home-content-layout home-width home-discovery-layout">
+            <div className="home-release-column">
+              <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
+              <LiveComments />
+              <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
+              {children}
+            </div>
+            <div className="home-lower-highlights">
+              <HomeSidebar />
+            </div>
+          </div>
+        </>
+      )}
     </>
   );
 }

@@ -37,6 +37,7 @@ const Reader = lazy(() => import('./reader/Reader'));
 const SettingsPage = lazy(() => import('./pages/Settings'));
 const Schedule = lazy(() => import('./pages/Schedule'));
 const MangaPage = lazy(() => import('./pages/MangaPage'));
+const AnimePage = lazy(() => import('./pages/AnimePage'));
 const NsfwPage = lazy(() => import('./pages/NsfwPage'));
 function Brand() {
   return (
@@ -163,6 +164,7 @@ function Shell() {
           <Suspense fallback={<Loading />}>
             <Routes>
               <Route path="/" element={<Home />} />
+              <Route path="/browse/anime" element={<AnimePage />} />
               <Route path="/browse/manga" element={<MangaPage key="manga" />} />
               <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />

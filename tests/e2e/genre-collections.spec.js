@@ -112,6 +112,7 @@ test('genre shelf failure can retry without hiding other collections', async ({ 
   });
   await page.goto('/browse/anime');
   const shelf = page.getByRole('region', { name: 'Action collection', exact: true });
+  await shelf.scrollIntoViewIfNeeded();
   await expect(shelf.getByText('This collection is temporarily unavailable.')).toBeVisible();
   await shelf.getByRole('button', { name: 'Try again', exact: true }).click();
   await expect(shelf.getByRole('link', { name: 'View Recovered action' })).toBeVisible();
