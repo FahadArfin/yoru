@@ -119,7 +119,7 @@ function ReadingSources({ media, close }) {
 function ReaderSession({ media, unit }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const { entryFor, updateEntry, user, authLoading, authKnown } = useApp();
+  const { entryFor, updateEntry, user, authLoading, authKnown, resumeItems, saveResume } = useApp();
   const chapters = useReaderChapters(
     media,
     unit,
@@ -214,11 +214,19 @@ function ReaderSession({ media, unit }) {
       return;
     }
     const stored = getReadingState(media.id).chapters[chapter.id];
+    const accountResume = resumeItems.find(
+      (item) =>
+        item.mediaId === media.id &&
+        item.chapterId === chapter.id &&
+        item.number === Number(chapter.number),
+    );
     const next = Math.max(
       1,
       Math.min(
         chapter.pages.length,
-        Math.trunc(Number(params.get('page')) || Number(stored?.page) || 1),
+        Math.trunc(
+          Number(params.get('page')) || Number(accountResume?.page) || Number(stored?.page) || 1,
+        ),
       ),
     );
     if (loadedChapter === chapter.id && page === next) return;
@@ -239,7 +247,13 @@ function ReaderSession({ media, unit }) {
       chapter.id,
       { page },
     );
-  }, [chapter?.id, loadedChapter, page, media, write]);
+    saveResume(media, {
+      number: Number(chapter.number),
+      chapterId: chapter.id,
+      page,
+      language: chapter.language || '',
+    });
+  }, [chapter?.id, loadedChapter, page, media, write, saveResume]);
   useEffect(() => {
     let recorded = false;
     const record = () => {
@@ -708,10 +722,11 @@ function ReaderSession({ media, unit }) {
 }
 
 export default function Reader() {
+  const { user, resumeReady } = useApp();
   const { id, unit } = useParams();
   const resource = useResource(`/api/media/${id}`);
   const media = resource.data?.media || resource.data;
-  if (resource.loading) return <Loading />;
+  if (resource.loading || !resumeReady) return <Loading />;
   if (resource.error || !media)
     return (
       <div className="page">
@@ -730,5 +745,5 @@ export default function Reader() {
         </Link>
       </div>
     );
-  return <ReaderSession key={id} media={media} unit={unit} />;
+  return <ReaderSession key={`${id}:${user?.id || 'guest'}`} media={media} unit={unit} />;
 }

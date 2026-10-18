@@ -2,6 +2,7 @@ import { DatabaseSync } from 'node:sqlite';
 import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { presenceSchema } from './visitor-presence.js';
+import { resumeSchema } from './resume.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -116,6 +117,7 @@ if (
   db.exec('ALTER TABLE library ADD COLUMN score REAL');
 
 db.exec(presenceSchema);
+db.exec(resumeSchema);
 export const get = (sql, ...values) => db.prepare(sql).get(...values);
 export const all = (sql, ...values) => db.prepare(sql).all(...values);
 export const run = (sql, ...values) => db.prepare(sql).run(...values);

@@ -89,12 +89,18 @@ export default function SourcePlayer({
         onProgressRef.current(video.duration, video.duration);
       onEndedRef.current?.();
     };
+    const savePosition = () => {
+      if (video.duration && Number.isFinite(video.currentTime))
+        onProgressRef.current?.(video.currentTime, video.duration);
+    };
 
     video.addEventListener('loadedmetadata', applyInitialTime);
     video.addEventListener('canplay', handleCanPlay);
     video.addEventListener('error', handleError);
     video.addEventListener('timeupdate', handleTimeUpdate);
     video.addEventListener('ended', handleEnded);
+    video.addEventListener('pause', savePosition);
+    video.addEventListener('seeked', savePosition);
 
     const loadSource = async () => {
       if (isHlsSource(source)) {
@@ -138,6 +144,8 @@ export default function SourcePlayer({
       video.removeEventListener('error', handleError);
       video.removeEventListener('timeupdate', handleTimeUpdate);
       video.removeEventListener('ended', handleEnded);
+      video.removeEventListener('pause', savePosition);
+      video.removeEventListener('seeked', savePosition);
       hls?.destroy();
       video.removeAttribute('src');
       video.load();
