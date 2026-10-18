@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
@@ -45,7 +45,15 @@ function MangaRow({ media }) {
 export function MangaLanding({ category, label, homepage = false, children }) {
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
-  const picks = popular.data?.items?.length ? popular.data.items : itemsOf(curated.data);
+  const previousPopular = useRef({ category, items: [] });
+  if (previousPopular.current.category !== category)
+    previousPopular.current = { category, items: [] };
+  if (Array.isArray(popular.data?.items))
+    previousPopular.current = { category, items: popular.data.items };
+  // Keep the featured lineup stable while the periodic background refresh is in flight.
+  const picks = previousPopular.current.items.length
+    ? previousPopular.current.items
+    : itemsOf(curated.data);
   const { user, setAuthOpen } = useApp();
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (

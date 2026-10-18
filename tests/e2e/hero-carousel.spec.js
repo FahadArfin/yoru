@@ -90,13 +90,7 @@ for (const category of ['anime', 'manga', 'manhwa']) {
     await hero.getByRole('button', { name: 'Resume banner rotation', exact: true }).click();
     await page.getByRole('textbox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(30000);
-    // Let a deferred React focus effect settle before checking the resumed timer.
-    await expect
-      .poll(async () => {
-        await page.clock.runFor(100);
-        return heading(1).isVisible();
-      })
-      .toBe(true);
+    await expect(heading(1)).toBeVisible();
     await page.emulateMedia({ reducedMotion: 'reduce' });
     await expect(
       hero.getByRole('button', { name: 'Pause banner rotation', exact: true }),
