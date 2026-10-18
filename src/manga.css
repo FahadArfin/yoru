@@ -260,3 +260,54 @@
     animation: none;
   }
 }
+
+/* Category landing banners use half the height of the full discovery hero. */
+.compact-category-page .weekly-hero {
+  height: 45svh;
+  min-height: 300px;
+}
+.compact-category-page .weekly-hero .weekly-content {
+  height: calc(100% - 50px);
+  padding-top: 18px;
+  padding-bottom: 8px;
+}
+.compact-category-page .weekly-content h1:not(.sr-only),
+.compact-category-page .weekly-content h2 {
+  font-size: clamp(24px, 2.5vw, 36px);
+  max-width: 600px;
+  margin: 6px 0 8px;
+  letter-spacing: -0.8px;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+.compact-category-page .weekly-title-logo {
+  width: 160px;
+  max-height: 80px;
+}
+.compact-category-page .weekly-description {
+  -webkit-line-clamp: 1;
+  margin: 6px 0 12px;
+  font-size: 12px;
+}
+.compact-category-page .weekly-kicker {
+  margin-bottom: 6px;
+}
+.compact-category-page .weekly-bottom {
+  bottom: 12px;
+}
+@media (max-width: 600px) {
+  .compact-category-page .weekly-hero {
+    height: 42.5svh;
+    min-height: 280px;
+  }
+  .compact-category-page .weekly-content h1:not(.sr-only),
+  .compact-category-page .weekly-content h2 {
+    font-size: 24px;
+    max-width: 100%;
+  }
+  .compact-category-page .weekly-description {
+    display: none;
+  }
+}
