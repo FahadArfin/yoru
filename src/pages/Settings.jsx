@@ -2,22 +2,22 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
-  Check,
+  ChevronDown,
   Download,
-  Globe,
   Link2,
   LogOut,
-  MessageCircle,
   MonitorSmartphone,
   Moon,
   RefreshCw,
   ShieldCheck,
-  Sparkles,
+  Settings2,
 } from 'lucide-react';
 import { useApp, useResource } from '../state';
 import { send } from '../api';
 import { Avatar, Badge, Button, ErrorNotice } from '../components';
 import { useWebMCPStatus } from '../webmcp-state';
+import '../section-pages.css';
+import '../settings-page.css';
 export default function Settings() {
   const webmcp = useWebMCPStatus();
   const { user, setAuthOpen, config, refreshLibrary, notify, logout } = useApp();
@@ -81,209 +81,266 @@ export default function Settings() {
     return () => window.removeEventListener('beforeinstallprompt', handler);
   }, []);
   return (
-    <div className="page settings-page">
-      <div className="page-heading">
-        <span className="eyebrow">MAKE YOURSELF AT HOME</span>
-        <h1>Your corner of Yoru.</h1>
-        <p>A few little things to make your time here feel like you.</p>
-      </div>
+    <div className="page section-page settings-page">
+      <header className="section-page-heading">
+        <div>
+          <span className="section-kicker">
+            <Settings2 size={13} /> MAKE YOURSELF AT HOME
+          </span>
+          <h1>Settings</h1>
+          <p>Your corner of Yoru. Manage your account, collection, and everyday comforts.</p>
+        </div>
+        <div className="section-heading-note">
+          <Moon size={14} /> A little more you
+        </div>
+      </header>
       <div className="settings-grid">
-        <section className="panel settings-card">
-          <div className="panel-heading">
-            <ShieldCheck size={21} />
-            <h2>Your account</h2>
-          </div>
-          {user ? (
-            <div className="settings-user">
-              <Avatar user={user} />
-              <div>
-                <strong>{user.name}</strong>
-                <span>{user.email || 'Connected through Discord'}</span>
-              </div>
-              <button
-                className="icon-button"
-                onClick={logout}
-                aria-label="Sign out"
-                title="Sign out"
-              >
-                <LogOut size={18} />
-              </button>
-            </div>
-          ) : (
-            <>
-              <p>Your library, reviews, and progress sync to your account.</p>
-              <Button onClick={() => setAuthOpen(true)}>
-                Sign in to Yoru
-                <ArrowRight size={16} />
-              </Button>
-            </>
-          )}
-          <div className="setting-row">
-            <div>
-              <strong>Discord sign-in</strong>
-              <span>
-                {config.auth?.discord
-                  ? 'Connect through your Discord account.'
-                  : 'Available when the site owner connects a Discord application.'}
+        <div className="settings-column">
+          <section className="panel settings-card" aria-labelledby="settings-account">
+            <div className="panel-heading">
+              <span className="settings-card-icon">
+                <ShieldCheck size={20} />
               </span>
+              <div>
+                <span className="settings-label">YOUR SPACE</span>
+                <h2 id="settings-account">Your account</h2>
+              </div>
             </div>
-            <Badge tone={config.auth?.discord ? 'green' : ''}>
-              {config.auth?.discord ? 'AVAILABLE' : 'NOT CONNECTED'}
-            </Badge>
-          </div>
-          {config.auth?.discord && (
-            <a className="text-link" href="/api/auth/discord">
-              Continue with Discord
-              <ArrowRight size={15} />
-            </a>
-          )}
-        </section>
-        <section className="panel settings-card">
-          <div className="panel-heading">
-            <MonitorSmartphone size={21} />
-            <h2>Take Yoru with you</h2>
-          </div>
-          <p>Install Yoru on your home screen for a focused, app-like experience.</p>
-          {install ? (
-            <Button
-              onClick={async () => {
-                await install.prompt();
-                setInstall(null);
-              }}
-            >
-              <Download size={17} />
-              Install Yoru
-            </Button>
-          ) : (
-            <div className="install-hint">
-              <strong>On Android</strong>
-              <span>Open Yoru in Chrome → Menu → Add to Home screen → Install.</span>
-              <strong>On iPhone or iPad</strong>
-              <span>Open in Safari → Share → Add to Home Screen.</span>
-            </div>
-          )}
-          <p className="small muted">
-            An HTTPS deployment enables installation. A standalone Android APK will be a separate
-            release.
-          </p>
-        </section>
-        <section className="panel settings-card">
-          <div className="panel-heading">
-            <Moon size={21} />
-            <h2>A little calmer</h2>
-          </div>
-          <label className="setting-row">
-            <div>
-              <strong>Reduce motion</strong>
-              <span>Keep transitions subtle and stop decorative animations.</span>
-            </div>
-            <input
-              className="switch"
-              aria-label="Reduce motion"
-              type="checkbox"
-              checked={reduced}
-              onChange={(e) => setReduced(e.target.checked)}
-            />
-          </label>
-          <p className="small muted">
-            This preference is saved on this device. Your system’s reduced motion setting is also
-            respected.
-          </p>
-        </section>
-        <section className="panel settings-card">
-          <div className="panel-heading">
-            <Link2 size={21} />
-            <h2>Your collection travels</h2>
-          </div>
-          <p>
-            Bring your anime and manga lists from MyAnimeList. Your stories should travel with you.
-          </p>
-          {mal.data?.connected ? (
-            <div className="mal-connection">
-              <div className="setting-row">
+            {user ? (
+              <div className="settings-user">
+                <Avatar user={user} />
                 <div>
-                  <strong>Connected as {mal.data.username}</strong>
-                  <span>
-                    {mal.data.lastSyncedAt
-                      ? `Last synced ${new Date(mal.data.lastSyncedAt).toLocaleString()}`
-                      : 'Ready for your first sync'}
-                  </span>
+                  <strong>{user.name}</strong>
+                  <span>{user.email || 'Connected through Discord'}</span>
                 </div>
-                <Badge tone="green">CONNECTED</Badge>
+                <button
+                  className="icon-button"
+                  onClick={logout}
+                  aria-label="Sign out"
+                  title="Sign out"
+                >
+                  <LogOut size={18} />
+                </button>
               </div>
-              <p className="small muted">
-                Sync copies MAL status, progress, and ratings into Yoru. Matching Yoru entries are
-                updated; your existing favorites and other titles stay. Nothing is written back to
-                MAL.
-              </p>
-              <div className="heading-buttons">
-                <Button busy={syncing} onClick={syncMal}>
-                  <RefreshCw size={16} />
-                  Sync from MAL
+            ) : (
+              <>
+                <p>Your library, reviews, and progress sync to your account.</p>
+                <Button onClick={() => setAuthOpen(true)}>
+                  Sign in to Yoru
+                  <ArrowRight size={16} />
                 </Button>
-                <Button variant="subtle" onClick={disconnectMal} disabled={syncing}>
-                  Disconnect
-                </Button>
+              </>
+            )}
+            <div className="setting-row">
+              <div>
+                <strong>Discord sign-in</strong>
+                <span>
+                  {config.auth?.discord
+                    ? 'Connect through your Discord account.'
+                    : 'Discord sign-in is not available yet.'}
+                </span>
+              </div>
+              <Badge tone={config.auth?.discord ? 'green' : ''}>
+                {config.auth?.discord ? 'AVAILABLE' : 'UNAVAILABLE'}
+              </Badge>
+            </div>
+            {config.auth?.discord && (
+              <a className="text-link" href="/api/auth/discord">
+                Continue with Discord
+                <ArrowRight size={15} />
+              </a>
+            )}
+          </section>
+          <section className="panel settings-card" aria-labelledby="settings-collection">
+            <div className="panel-heading">
+              <span className="settings-card-icon">
+                <Link2 size={20} />
+              </span>
+              <div>
+                <span className="settings-label">YOUR STORIES, TOGETHER</span>
+                <h2 id="settings-collection">Connected library</h2>
               </div>
             </div>
-          ) : mal.data?.configured && user ? (
-            <a className="btn btn-secondary" href="/api/mal/connect">
-              Connect MyAnimeList
-              <Link2 size={16} />
-            </a>
-          ) : (
-            <p className="small muted">
-              Account connection becomes available when the site owner configures a MyAnimeList
-              application. XML importing works now.
+            <p>
+              Bring your anime and manga lists from MyAnimeList. Your stories should travel with
+              you.
             </p>
-          )}
-          {malError && <ErrorNotice message={malError} />}
-          <Link className="btn btn-subtle" to="/library">
-            Import or export your library
-            <ArrowRight size={16} />
-          </Link>
-          <p className="small muted">
-            MAL’s regular API and XML exports omit favorites. Use “Import MAL favorites” in your
-            library to bring over a public profile’s favorites, or mark them in Yoru. They’re
-            preserved during list sync.
-          </p>
-        </section>
-        <section className="panel settings-card about-card">
-          <div className="auth-brand">
-            <img src="/icon.svg" alt="" />
-            yoru<span>夜</span>
+            {user && mal.loading && !mal.data ? (
+              <p className="settings-connection-status" role="status">
+                Checking your MyAnimeList connection…
+              </p>
+            ) : mal.error ? (
+              <ErrorNotice message={mal.error} retry={mal.refresh} />
+            ) : mal.data?.connected ? (
+              <div className="mal-connection">
+                <div className="setting-row">
+                  <div>
+                    <strong>Connected as {mal.data.username}</strong>
+                    <span>
+                      {mal.data.lastSyncedAt
+                        ? `Last synced ${new Date(mal.data.lastSyncedAt).toLocaleString()}`
+                        : 'Ready for your first sync'}
+                    </span>
+                  </div>
+                  <Badge tone="green">CONNECTED</Badge>
+                </div>
+                <p className="small muted">
+                  Sync copies MAL status, progress, and ratings into Yoru. Matching Yoru entries are
+                  updated; your existing favorites and other titles stay. Nothing is written back to
+                  MAL.
+                </p>
+                <div className="heading-buttons">
+                  <Button busy={syncing} onClick={syncMal}>
+                    <RefreshCw size={16} />
+                    Sync from MAL
+                  </Button>
+                  <Button variant="subtle" onClick={disconnectMal} disabled={syncing}>
+                    Disconnect
+                  </Button>
+                </div>
+              </div>
+            ) : mal.data?.configured && user ? (
+              <a className="btn btn-secondary" href="/api/mal/connect">
+                Connect MyAnimeList
+                <Link2 size={16} />
+              </a>
+            ) : !user ? (
+              <div className="settings-connect-note">
+                <p>Sign in to manage your MyAnimeList connection and saved library.</p>
+                <Button variant="secondary" onClick={() => setAuthOpen(true)}>
+                  Sign in to connect <ArrowRight size={16} />
+                </Button>
+              </div>
+            ) : (
+              <p className="small muted">
+                MyAnimeList account connection is not available yet. You can still import an XML
+                list from your library.
+              </p>
+            )}
+            {malError && <ErrorNotice message={malError} />}
+            <Link className="settings-library-link" to="/library">
+              Import or export your library
+              <ArrowRight size={16} />
+            </Link>
+            <details className="settings-details">
+              <summary>
+                How favorites are imported <ChevronDown size={14} />
+              </summary>
+              <p>
+                MAL’s regular API and XML exports omit favorites. Use “Import MAL favorites” in your
+                library to bring over a public profile’s favorites, or mark them in Yoru. They’re
+                preserved during list sync.
+              </p>
+            </details>
+          </section>
+        </div>
+        <div className="settings-column">
+          <section className="panel settings-card" aria-labelledby="settings-comfort">
+            <div className="panel-heading">
+              <span className="settings-card-icon">
+                <Moon size={20} />
+              </span>
+              <div>
+                <span className="settings-label">MAKE IT YOURS</span>
+                <h2 id="settings-comfort">Viewing comfort</h2>
+              </div>
+            </div>
+            <label className="setting-row">
+              <div>
+                <strong>Reduce motion</strong>
+                <span id="motion-description">
+                  Keep transitions subtle and stop decorative animations.
+                </span>
+              </div>
+              <input
+                className="switch"
+                aria-label="Reduce motion"
+                aria-describedby="motion-description"
+                type="checkbox"
+                checked={reduced}
+                onChange={(e) => setReduced(e.target.checked)}
+              />
+            </label>
+            <p className="small muted">
+              This preference is saved on this device. Your system’s reduced motion setting is also
+              respected.
+            </p>
+          </section>
+          <section className="panel settings-card" aria-labelledby="settings-install">
+            <div className="panel-heading">
+              <span className="settings-card-icon">
+                <MonitorSmartphone size={20} />
+              </span>
+              <div>
+                <span className="settings-label">ALWAYS CLOSE</span>
+                <h2 id="settings-install">Take Yoru with you</h2>
+              </div>
+            </div>
+            <p>Install Yoru on your home screen for a focused, app-like experience.</p>
+            {install ? (
+              <Button
+                onClick={async () => {
+                  await install.prompt();
+                  setInstall(null);
+                }}
+              >
+                <Download size={17} />
+                Install Yoru
+              </Button>
+            ) : (
+              <div className="install-hint">
+                <div>
+                  <strong>Android</strong>
+                  <span>Chrome → Menu → Add to Home screen → Install.</span>
+                </div>
+                <div>
+                  <strong>iPhone & iPad</strong>
+                  <span>Safari → Share → Add to Home Screen.</span>
+                </div>
+              </div>
+            )}
+          </section>
+        </div>
+        <section className="panel settings-card about-card" aria-labelledby="settings-about">
+          <div className="settings-about-intro">
+            <div className="auth-brand">
+              <img src="/icon.svg" alt="" />
+              yoru<span>夜</span>
+            </div>
+            <h2 id="settings-about">Made for the “one more” people.</h2>
+            <p>
+              One more episode. One more chapter. One more theory at 2 a.m. Yoru is a home for
+              everything you can’t stop watching, reading, and talking about.
+            </p>
           </div>
-          <h2>Made for the “one more” people.</h2>
-          <p>
-            One more episode. One more chapter. One more theory at 2 a.m. Yoru is a home for
-            everything you can’t stop watching, reading, and talking about.
-          </p>
-          <div className="about-badges">
-            <Badge>ANIME</Badge>
-            <Badge>MANGA</Badge>
-            <Badge>MANHWA</Badge>
-            <Badge>
-              {webmcp.pending
-                ? 'CONNECTING WEBMCP'
-                : webmcp.registered
-                  ? `${webmcp.registered} WEBMCP TOOLS`
-                  : 'WEBMCP AVAILABLE'}
-            </Badge>
+          <div className="settings-about-meta">
+            <div className="about-badges">
+              <Badge>ANIME</Badge>
+              <Badge>MANGA</Badge>
+              <Badge>MANHWA</Badge>
+              <Badge>
+                {webmcp.pending
+                  ? 'CONNECTING WEBMCP'
+                  : webmcp.registered
+                    ? `${webmcp.registered} WEBMCP TOOLS`
+                    : 'WEBMCP AVAILABLE'}
+              </Badge>
+            </div>
+            <p className="small muted">
+              Metadata comes from MyAnimeList via Tenrai and Kitsu; ratings display their source.
+              Yoru links to video providers and offers manga reading from credited sources. Native
+              WebMCP tools are enabled when supported by your browser.
+            </p>
+            <p className="small muted" role="status">
+              {!webmcp.supported
+                ? 'Agent tools need a browser with WebMCP support. All regular controls work in this browser.'
+                : webmcp.failed
+                  ? 'Some agent tools could not register. Reload this page to retry.'
+                  : webmcp.pending
+                    ? 'Registering agent tools…'
+                    : `${webmcp.registered} tools connected: search, library, sources, and episode navigation.`}
+            </p>
           </div>
-          <p className="small muted">
-            Metadata comes from MyAnimeList via Tenrai and Kitsu; ratings display their source. Yoru
-            links to video providers and offers manga reading from credited sources. Native WebMCP
-            tools are enabled when supported by your browser.
-          </p>
-          <p className="small muted" role="status">
-            {!webmcp.supported
-              ? 'Agent tools need a browser with WebMCP support. All regular controls work in this browser.'
-              : webmcp.failed
-                ? 'Some agent tools could not register. Reload this page to retry.'
-                : webmcp.pending
-                  ? 'Registering agent tools…'
-                  : `${webmcp.registered} tools connected: search, library, sources, and episode navigation.`}
-          </p>
         </section>
       </div>
     </div>
