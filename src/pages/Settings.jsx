@@ -260,7 +260,7 @@ export default function Settings() {
               >
                 {[
                   ['dark', Moon, 'Dark', 'Soft blue charcoal'],
-                  ['light', Sun, 'Light', 'Bright and easygoing'],
+                  ['light', Sun, 'Light', 'Parchment, sage and lavender'],
                 ].map(([value, Icon, label, description]) => (
                   <button
                     key={value}

@@ -12,7 +12,7 @@ test('appearance persists across pages and reloads, and synchronizes open tabs',
 }) => {
   await page.goto('/settings');
   const dark = page.getByRole('button', { name: 'Dark Soft blue charcoal' });
-  const light = page.getByRole('button', { name: 'Light Bright and easygoing' });
+  const light = page.getByRole('button', { name: 'Light Parchment, sage and lavender' });
   await expect(dark).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.home-shell')).toHaveCSS('background-color', 'rgb(24, 28, 38)');
   const other = await context.newPage();
@@ -20,10 +20,9 @@ test('appearance persists across pages and reloads, and synchronizes open tabs',
   await expect(other.getByRole('heading', { name: 'Viewing comfort' })).toBeVisible();
   await light.click();
   await expect(light).toHaveAttribute('aria-pressed', 'true');
-  await expect(other.getByRole('button', { name: 'Light Bright and easygoing' })).toHaveAttribute(
-    'aria-pressed',
-    'true',
-  );
+  await expect(
+    other.getByRole('button', { name: 'Light Parchment, sage and lavender' }),
+  ).toHaveAttribute('aria-pressed', 'true');
   for (const route of [
     '/',
     '/browse/manga',
@@ -33,7 +32,7 @@ test('appearance persists across pages and reloads, and synchronizes open tabs',
     '/watch/mal-anime-52991/1',
   ]) {
     await page.goto(route);
-    await expect(page.locator('.home-shell')).toHaveCSS('background-color', 'rgb(245, 247, 250)');
+    await expect(page.locator('.home-shell')).toHaveCSS('background-color', 'rgb(246, 243, 234)');
     await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
     expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1)).toBe(
       true,
@@ -60,7 +59,7 @@ test('saved appearance is applied before React loads', async ({ page }) => {
   await page.route('**/assets/*.js', (route) => route.abort());
   await page.goto('/settings');
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
-  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f5f7fa');
+  await expect(page.locator('meta[name="theme-color"]')).toHaveAttribute('content', '#f6f3ea');
   await expect(page.locator('#root')).toBeEmpty();
 });
 
@@ -74,7 +73,7 @@ test('appearance still works when browser storage is unavailable', async ({ page
     };
   });
   await page.goto('/settings');
-  await page.getByRole('button', { name: 'Light Bright and easygoing' }).click();
+  await page.getByRole('button', { name: 'Light Parchment, sage and lavender' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'light');
   await page.getByRole('button', { name: 'Dark Soft blue charcoal' }).click();
   await expect(page.locator('html')).toHaveAttribute('data-theme', 'dark');
