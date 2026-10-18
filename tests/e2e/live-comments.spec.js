@@ -58,11 +58,12 @@ test('live comments sit above the schedule, update through the shared feed, and 
     'href',
     '/title/mal-manga-2?unit=1',
   );
-  const position = await section.boundingBox();
-  const schedule = await page
-    .getByRole('region', { name: 'Airing schedule', exact: true })
-    .boundingBox();
-  expect(position.y + position.height).toBeLessThanOrEqual(schedule.y);
+  // Read both rectangles in one frame: loading artwork can move the page between separate calls.
+  const gap = await section.evaluate((node) => {
+    const schedule = document.querySelector('[aria-label="Airing schedule"]');
+    return schedule.getBoundingClientRect().top - node.getBoundingClientRect().bottom;
+  });
+  expect(gap).toBeGreaterThanOrEqual(0);
   if (!testInfo.project.name.includes('mobile'))
     await expect
       .poll(() =>

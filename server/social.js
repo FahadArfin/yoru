@@ -15,6 +15,7 @@ import {
 } from './auth.js';
 import { getMedia } from './catalog.js';
 import { touchVisitor, PRESENCE_COOKIE } from './visitor-presence.js';
+import { commentMediaError } from '../shared/comment-media.js';
 
 export const socialRouter = Router();
 socialRouter.post(
@@ -404,11 +405,15 @@ function commentShape(comment) {
     spoiler: Boolean(comment.spoiler),
     score: comment.score || 0,
     votes: comment.score || 0,
+    likes: comment.likes || 0,
+    dislikes: comment.dislikes || 0,
     viewerVote: comment.viewer_vote || 0,
     createdAt: comment.created_at,
   };
 }
 const COMMENT_QUERY = `SELECT comments.*,users.name,users.avatar,
+  (SELECT COUNT(*) FROM comment_votes WHERE comment_id=comments.id AND value=1) AS likes,
+  (SELECT COUNT(*) FROM comment_votes WHERE comment_id=comments.id AND value=-1) AS dislikes,
   COALESCE((SELECT SUM(value) FROM comment_votes WHERE comment_id=comments.id),0) AS score,
   COALESCE((SELECT value FROM comment_votes WHERE comment_id=comments.id AND user_id=?),0) AS viewer_vote
   FROM comments JOIN users ON users.id=comments.user_id`;
@@ -429,6 +434,8 @@ socialRouter.post('/comments/:mediaId', requireAuth, (req, res) => {
     integer: true,
   });
   const body = text(req.body.body ?? req.body.text, { name: 'Comment', min: 1, max: 5000 });
+  const mediaError = commentMediaError(body);
+  if (mediaError) throw apiError(400, mediaError);
   const parentId = req.body.parentId || null;
   if (parentId) {
     const parent = get(
