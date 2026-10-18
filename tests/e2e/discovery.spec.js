@@ -64,11 +64,44 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   const released = page.getByRole('region', { name: 'Just released', exact: true });
   const popular = page.getByRole('region', { name: 'Most popular', exact: true });
   const trending = page.getByRole('region', { name: 'Trending', exact: true });
+  const checkSelectedLayout = async (selected) => {
+    await expect
+      .poll(() =>
+        page
+          .locator('.discovery-panels')
+          .evaluate(
+            (element) =>
+              element
+                .getAnimations({ subtree: true })
+                .filter((animation) => animation.playState === 'running').length,
+          ),
+      )
+      .toBe(0);
+    await expect(page.locator('.discovery-panel.is-compact .discovery-expand-icon')).toHaveCount(0);
+    await expect(selected.locator('.discovery-expand-icon')).toHaveCount(1);
+    await expect(page.getByRole('button', { name: 'Expand collection', exact: true })).toHaveCount(
+      0,
+    );
+    const active = await selected.boundingBox();
+    for (const compact of await page.locator('.discovery-panel.is-compact').all()) {
+      const bounds = await compact.boundingBox();
+      if (page.viewportSize().width > 950) {
+        expect(bounds.x + bounds.width).toBeLessThan(active.x);
+        expect(bounds.width).toBeLessThan(active.width * 0.23);
+      } else {
+        expect(bounds.y).toBeGreaterThanOrEqual(active.y + active.height);
+      }
+    }
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
+      false,
+    );
+  };
   await expect(
     released.getByRole('button', { name: 'Just released', exact: true }),
   ).toHaveAttribute('aria-expanded', 'true');
   await expect(popular.locator('.discovery-preview-card')).toHaveCount(1);
   await expect(trending.locator('.discovery-preview-card')).toHaveCount(1);
+  await checkSelectedLayout(released);
   for (const category of [popular, trending]) {
     const bounds = await category.boundingBox();
     const card = await category.locator('.discovery-preview-card').boundingBox();
@@ -87,6 +120,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   await expect(released.locator('.discovery-preview-card')).toHaveCount(1);
   await expect(page.locator('.discovery-panel.is-expanded')).toHaveCount(1);
   await expect(panel.getByRole('link', { name: /popular all pick/ })).toBeVisible();
+  await checkSelectedLayout(popular);
   expect(popularRequests).toBe(2);
   await panel.getByRole('button', { name: 'Last year' }).click();
   await expect.poll(() => Boolean(finishYear)).toBe(true);
@@ -106,9 +140,28 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   );
   panel = trending;
   await expect(panel.getByText('12 viewers this week')).toBeVisible();
+  await checkSelectedLayout(trending);
   await expect(panel.getByRole('link', { name: /trending week pick/ })).toHaveAttribute(
     'href',
     '/title/mal-anime-21',
+  );
+  // Interrupt a moving layout several times; the final choice must win without
+  // losing the Popular period or leaving transform/width effects behind.
+  await page.evaluate(() => {
+    document.getElementById('discovery-toggle-popular').click();
+  });
+  await expect(popular).toHaveClass(/is-expanded/);
+  await page.evaluate(() => {
+    document.getElementById('discovery-toggle-released').click();
+  });
+  await expect(released).toHaveClass(/is-expanded/);
+  await page.evaluate(() => {
+    document.getElementById('discovery-toggle-popular').click();
+  });
+  await checkSelectedLayout(popular);
+  await expect(popular.getByRole('button', { name: 'Last month' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
   );
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await released.getByRole('button', { name: 'Just released', exact: true }).click();
@@ -126,6 +179,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
       .locator('.discovery-item')
       .evaluate((element) => getComputedStyle(element).animationName),
   ).toBe('none');
+  await checkSelectedLayout(released);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
 });
 
