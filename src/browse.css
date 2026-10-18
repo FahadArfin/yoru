@@ -46,6 +46,9 @@
   border: 1px solid rgb(var(--chrome-bright) / 0.031);
   border-radius: 12px;
 }
+.genre-collection > .filter-bar {
+  margin-bottom: 20px;
+}
 .browse-page .inline-search,
 .browse-page .filter-select {
   background: transparent;

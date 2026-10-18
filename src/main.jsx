@@ -59,7 +59,7 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isReader = location.pathname.startsWith('/read/');
-  const browseCategory = location.pathname.match(/^\/browse\/(anime|manga|manhwa)\/?$/)?.[1];
+  const browseCategory = location.pathname.match(/^\/browse\/(manga|manhwa)\/?$/)?.[1];
   const readingLanding =
     ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
     !['q', 'genre', 'sort', 'page', 'view'].some((key) =>

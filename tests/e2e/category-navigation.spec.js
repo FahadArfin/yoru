@@ -15,34 +15,22 @@ test('category strip filters collections, dismisses menus, and follows the chose
     return route.fulfill({ json: { items: [], total: 0, pages: 1, page: 1 } });
   });
   await page.goto('/browse/anime?view=all');
-  let nav = page.getByRole('navigation', { name: 'anime collections' });
-  await expect(nav).toBeVisible();
-  await nav.getByRole('button', { name: 'Types', exact: true }).click();
-  await nav.getByRole('link', { name: 'Movies', exact: true }).click();
+  await expect(page.getByRole('navigation', { name: 'anime collections' })).toHaveCount(0);
+  const filters = page.getByRole('region', { name: 'Catalog filters' });
+  await expect(filters).toHaveCount(1);
+  await filters.getByLabel('Anime format').selectOption('movie');
   await expect(page).toHaveURL(/format=movie/);
   await expect.poll(() => queries.at(-1)).toMatchObject({ category: 'ANIME', format: 'movie' });
-  await expect(nav.getByRole('button', { name: 'Types', exact: true })).toHaveAttribute(
-    'aria-expanded',
-    'false',
-  );
-  const genres = nav.getByRole('button', { name: 'Genres', exact: true });
-  await genres.click();
-  await nav.getByRole('link', { name: 'Romance', exact: true }).click();
+  await filters.getByLabel('Genre', { exact: true }).selectOption('Romance');
+  await filters.getByLabel('Sort titles').selectOption('title');
   await expect
     .poll(() => queries.at(-1))
-    .toMatchObject({ category: 'ANIME', format: 'movie', genre: 'Romance' });
-  await genres.click();
-  await nav.getByRole('link', { name: 'Comedy', exact: true }).focus();
-  await page.keyboard.press('Escape');
-  await expect(genres).toBeFocused();
-  await expect(genres).toHaveAttribute('aria-expanded', 'false');
-  await genres.click();
-  await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
-  await expect(genres).toHaveAttribute('aria-expanded', 'false');
-  await nav.getByRole('link', { name: 'A–Z', exact: true }).click();
-  await expect
-    .poll(() => queries.at(-1))
-    .toMatchObject({ format: 'movie', genre: 'Romance', sort: 'title' });
+    .toMatchObject({
+      format: 'movie',
+      genre: 'Romance',
+      sort: 'title',
+    });
+  let nav;
   for (const category of ['manga', 'manhwa']) {
     await page
       .getByRole('navigation', { name: 'Explore Yoru' })
