@@ -32,7 +32,7 @@ test('compact catalog keeps 48-title pagination, filters and navigation usable',
       },
     });
   });
-  await page.goto('/browse/anime');
+  await page.goto('/browse/anime?view=all');
   await expect(page.locator('.browse-grid .poster-card')).toHaveCount(48);
   expect(queries.at(-1).limit).toBe('48');
   await expect(page.locator('.sidebar')).toBeHidden();
@@ -66,8 +66,14 @@ test('compact catalog keeps 48-title pagination, filters and navigation usable',
   await expect(page.getByLabel('Sort titles')).toHaveValue('trending');
   await page.getByLabel('Catalog type').selectOption('manga');
   await expect(page).toHaveURL(/\/browse\/manga$/);
+  await expect(page.getByRole('region', { name: 'Featured manga', exact: true })).toBeVisible();
+  await page
+    .getByRole('region', { name: 'Action collection', exact: true })
+    .scrollIntoViewIfNeeded();
   await expect(
-    page.getByRole('link', { name: 'View Catalog title 1', exact: true }),
+    page
+      .getByRole('region', { name: 'Action collection', exact: true })
+      .getByRole('link', { name: 'View Catalog title 1', exact: true }),
   ).toHaveAttribute('href', '/title/mal-manga-1');
   await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveCount(0);
   await expect(page.locator('.sidebar')).toBeHidden();

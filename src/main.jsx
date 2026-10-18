@@ -45,7 +45,9 @@ function Shell() {
   const isReader = location.pathname.startsWith('/read/');
   const readingLanding =
     ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
-    !['q', 'genre', 'sort', 'page'].some((key) => new URLSearchParams(location.search).get(key));
+    !['q', 'genre', 'sort', 'page', 'view'].some((key) =>
+      new URLSearchParams(location.search).get(key),
+    );
   const hasTopNavigation = !isReader;
   const input = useRef();
   useEffect(() => {

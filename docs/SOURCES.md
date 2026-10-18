@@ -26,6 +26,10 @@ Automatic anime source methodology reviewed September 12, 2026:
 
 Metadata artwork remains remotely served by its attributed provider and belongs to its respective owners. Publisher links in the starting catalog point to VIZ, WEBTOON, and Tappytoon. Yoru stores metadata, discussions and account state on Sites. Its optional desktop reader bridge retrieves and temporarily caches chapter images; anime video remains external. The native reader can store explicitly selected image files in the visitor's browser, or display page URLs from an imported manifest.
 
+### Genre collections
+
+Anime, manga, and manhwa browse pages show genre shelves using the existing category-scoped `/api/catalog` filters and popularity order. Each shelf requests at most twelve titles as it approaches the viewport and displays at most two rows. Horizontal controls move through that selection on smaller screens and request the next selection at its end. Show more opens the complete filtered catalog; the Full collection shelf follows all genres and opens `?view=all`. Search, sorting, and filtered results retain the complete 48-title paginated view. Shelves share the existing metadata cache, preserve saved-result attribution, and offer retry controls when providers are unavailable.
+
 The native solo player derives from the user’s original FahadList project. Other application code is a new implementation. Runtime library licenses are included in their npm packages: React (MIT), React Router (MIT), Lucide (ISC), Express (MIT), Vite (MIT), and HLS.js (Apache-2.0). The Yoru application is private and is not licensed for public reuse.
 
 The `qs` transitive dependency is overridden to 6.16.0 to include its current denial-of-service fixes while retaining Express 4 compatibility. See the [upstream security advisory](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx).

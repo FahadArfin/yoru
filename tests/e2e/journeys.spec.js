@@ -49,7 +49,7 @@ test('catalog retries saved results immediately and enables live pagination', as
       },
     });
   });
-  await page.goto('/browse/anime');
+  await page.goto('/browse/anime?view=all');
   await expect(page.getByText('12 saved stories available')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
   await page.getByRole('button', { name: 'Retry live catalog' }).click();
@@ -124,7 +124,7 @@ test('browse anime, manga, and manhwa on desktop and mobile', async ({ page }) =
     ['manga', 'Berserk'],
     ['manhwa', 'Solo Leveling'],
   ]) {
-    await page.goto(`/browse/${category}`);
+    await page.goto(`/browse/${category}?view=all`);
     await expect(page.getByRole('main')).toContainText(title);
     await expect(
       page
