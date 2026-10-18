@@ -49,6 +49,99 @@ export default function Browse({ embedded = false, categoryOverride }) {
     if (!('page' in changes)) next.delete('page');
     setParams(next);
   };
+  const collectionControlsBelow = chosen === 'anime' && discovery;
+  const filters = (
+    <div className="filter-bar" role="region" aria-label="Catalog filters">
+      <form
+        className="inline-search"
+        role="search"
+        onSubmit={(e) => {
+          e.preventDefault();
+          update({ q: search });
+        }}
+      >
+        <Search size={18} />
+        <input
+          aria-label="Search catalog"
+          placeholder={`Search ${chosen === 'all' ? 'all stories' : chosen}…`}
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        {search && (
+          <button
+            type="button"
+            className="icon-button"
+            aria-label="Clear search"
+            onClick={() => {
+              setSearch('');
+              update({ q: '' });
+            }}
+          >
+            <X size={15} />
+          </button>
+        )}
+        <button type="submit" className="search-submit">
+          Search
+        </button>
+      </form>
+      <label className="filter-select">
+        <select
+          aria-label="Catalog type"
+          value={chosen}
+          onChange={(e) =>
+            navigate(`/browse/${e.target.value}${q ? `?q=${encodeURIComponent(q)}` : ''}`)
+          }
+        >
+          {Object.entries(labels).map(([key, value]) => (
+            <option key={key} value={key}>
+              {value[0]}
+            </option>
+          ))}
+        </select>
+      </label>
+      {chosen === 'anime' && (
+        <label className="filter-select">
+          <select
+            aria-label="Anime format"
+            value={format}
+            onChange={(e) => update({ format: e.target.value })}
+          >
+            <option value="">All types</option>
+            {animeFormats.map(([value, label]) => (
+              <option key={value} value={value}>
+                {label}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+      <label className="filter-select">
+        <SlidersHorizontal size={15} />
+        <select
+          aria-label="Genre"
+          value={genre}
+          onChange={(e) => update({ genre: e.target.value })}
+        >
+          <option value="">All genres</option>
+          {browseGenres.map((x) => (
+            <option key={x}>{x}</option>
+          ))}
+        </select>
+      </label>
+      <label className="filter-select">
+        <select
+          aria-label="Sort titles"
+          value={sort}
+          onChange={(e) => update({ sort: e.target.value })}
+        >
+          <option value="trending">Most popular</option>
+          <option value="score">Highest rated</option>
+          <option value="newest">Newest first</option>
+          <option value="title">A to Z</option>
+        </select>
+      </label>
+    </div>
+  );
   return (
     <div className="page browse-page" id={embedded ? `${chosen}-catalog` : undefined}>
       <div className="browse-heading">
@@ -57,108 +150,24 @@ export default function Browse({ embedded = false, categoryOverride }) {
         ) : (
           <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
         )}
-        <button
-          className="browse-reset"
-          onClick={() => {
-            setParams({});
-            setSearch('');
-          }}
-        >
-          Reset filters <X size={13} />
-        </button>
-      </div>
-      <div className="filter-bar">
-        <form
-          className="inline-search"
-          role="search"
-          onSubmit={(e) => {
-            e.preventDefault();
-            update({ q: search });
-          }}
-        >
-          <Search size={18} />
-          <input
-            aria-label="Search catalog"
-            placeholder={`Search ${chosen === 'all' ? 'all stories' : chosen}…`}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          {search && (
-            <button
-              type="button"
-              className="icon-button"
-              aria-label="Clear search"
-              onClick={() => {
-                setSearch('');
-                update({ q: '' });
-              }}
-            >
-              <X size={15} />
-            </button>
-          )}
-          <button type="submit" className="search-submit">
-            Search
+        {!discovery && (
+          <button
+            className="browse-reset"
+            onClick={() => {
+              setParams({});
+              setSearch('');
+            }}
+          >
+            Reset filters <X size={13} />
           </button>
-        </form>
-        <label className="filter-select">
-          <select
-            aria-label="Catalog type"
-            value={chosen}
-            onChange={(e) =>
-              navigate(`/browse/${e.target.value}${q ? `?q=${encodeURIComponent(q)}` : ''}`)
-            }
-          >
-            {Object.entries(labels).map(([key, value]) => (
-              <option key={key} value={key}>
-                {value[0]}
-              </option>
-            ))}
-          </select>
-        </label>
-        {chosen === 'anime' && format && (
-          <label className="filter-select">
-            <select
-              aria-label="Anime format"
-              value={format}
-              onChange={(e) => update({ format: e.target.value })}
-            >
-              <option value="">All types</option>
-              {animeFormats.map(([value, label]) => (
-                <option key={value} value={value}>
-                  {label}
-                </option>
-              ))}
-            </select>
-          </label>
         )}
-        <label className="filter-select">
-          <SlidersHorizontal size={15} />
-          <select
-            aria-label="Genre"
-            value={genre}
-            onChange={(e) => update({ genre: e.target.value })}
-          >
-            <option value="">All genres</option>
-            {browseGenres.map((x) => (
-              <option key={x}>{x}</option>
-            ))}
-          </select>
-        </label>
-        <label className="filter-select">
-          <select
-            aria-label="Sort titles"
-            value={sort}
-            onChange={(e) => update({ sort: e.target.value })}
-          >
-            <option value="trending">Most popular</option>
-            <option value="score">Highest rated</option>
-            <option value="newest">Newest first</option>
-            <option value="title">A to Z</option>
-          </select>
-        </label>
       </div>
+      {!collectionControlsBelow && filters}
       {discovery ? (
-        <GenreCollections category={chosen} />
+        <GenreCollections
+          category={chosen}
+          collectionControls={collectionControlsBelow ? filters : null}
+        />
       ) : (
         <>
           <div className="results-bar">

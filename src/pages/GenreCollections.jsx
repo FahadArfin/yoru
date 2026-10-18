@@ -24,7 +24,7 @@ export const browseGenres = [
 const genreId = (category, genre) =>
   `${category}-shelf-${genre.toLowerCase().replaceAll(' ', '-')}`;
 
-function CollectionShelf({ category, genre = '' }) {
+function CollectionShelf({ category, genre = '', children }) {
   const section = useRef();
   const track = useRef();
   const [active, setActive] = useState(false);
@@ -124,6 +124,7 @@ function CollectionShelf({ category, genre = '' }) {
           </button>
         </div>
       </header>
+      {children}
       {!active || loading ? (
         <div
           className="genre-shelf-track genre-shelf-loading"
@@ -164,7 +165,7 @@ function CollectionShelf({ category, genre = '' }) {
   );
 }
 
-export default function GenreCollections({ category }) {
+export default function GenreCollections({ category, collectionControls }) {
   return (
     <div className="genre-collections" key={category}>
       <nav className="genre-jump-list" aria-label="Explore genres">
@@ -180,7 +181,9 @@ export default function GenreCollections({ category }) {
       {browseGenres.map((genre) => (
         <CollectionShelf key={`${category}-${genre}`} category={category} genre={genre} />
       ))}
-      <CollectionShelf key={`${category}-all`} category={category} />
+      <CollectionShelf key={`${category}-all`} category={category}>
+        {collectionControls}
+      </CollectionShelf>
     </div>
   );
 }

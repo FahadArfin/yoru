@@ -45,6 +45,14 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
     '/title/mal-anime-1',
   );
   const genres = page.getByRole('heading', { name: 'Explore by genre', exact: true });
+  await expect(page.getByRole('navigation', { name: 'anime collections' })).toHaveCount(0);
+  const filters = page.getByRole('region', { name: 'Catalog filters' });
+  await expect(filters).toHaveCount(1);
+  const fullCollection = page.getByRole('region', { name: 'Full collection', exact: true });
+  await expect(fullCollection.getByRole('region', { name: 'Catalog filters' })).toHaveCount(1);
+  expect((await filters.boundingBox()).y).toBeGreaterThan((await genres.boundingBox()).y);
+  await expect(filters.getByLabel('Anime format')).toHaveValue('');
+
   expect((await discovery.boundingBox()).y).toBeLessThan((await genres.boundingBox()).y);
   await discovery.getByRole('tab', { name: 'Most popular', exact: true }).click();
   await discovery.getByRole('button', { name: 'Last month', exact: true }).click();
@@ -65,4 +73,16 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
   await page.goto('/browse/anime?format=movie');
   await expect(discovery).toHaveCount(0);
   await expect(page.getByLabel('Anime format')).toHaveValue('movie');
+  await page.goto('/browse/anime');
+  await page
+    .getByRole('navigation', { name: 'Explore genres', exact: true })
+    .getByRole('link', { name: 'Full collection', exact: true })
+    .click();
+  await expect(fullCollection.getByLabel('Search catalog')).toBeInViewport();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await fullCollection.getByLabel('Search catalog').fill('New anime');
+  await fullCollection.getByRole('button', { name: 'Search', exact: true }).click();
+  await expect(page).toHaveURL(/q=New\+anime/);
+  await expect(page.getByRole('heading', { name: 'Results for “New anime”' })).toBeVisible();
+  await expect(filters).toHaveCount(1);
 });
