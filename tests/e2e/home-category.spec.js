@@ -1,0 +1,129 @@
+import { test, expect } from '@playwright/test';
+
+async function mockFeeds(page, context, baseURL) {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.route('**/api/home?**', (route) =>
+    route.fulfill({ json: { state: 'ready', language: 'all', hot: [], releases: [] } }),
+  );
+  await page.route('**/api/{home,manga,manhwa}/discovery?**', (route) => {
+    const url = new URL(route.request().url());
+    const category = url.pathname.split('/')[2];
+    const mode = url.searchParams.get('mode'),
+      period = url.searchParams.get('period');
+    return route.fulfill({
+      json: {
+        state: 'ready',
+        mode,
+        period,
+        caption: `${category} ${period} publication dates`,
+        items: Array.from({ length: 8 }, (_, i) => ({
+          id: `mal-${category === 'home' ? 'anime' : 'manga'}-${i + 1}`,
+          title: `${category} ${mode} ${period} ${i + 1}`,
+          category: category === 'home' ? 'ANIME' : category.toUpperCase(),
+          cover: '/icon.svg',
+          year: 2026,
+          startDate: '2026-09-01',
+          status: 'Finished',
+          viewers: 7,
+        })),
+      },
+    });
+  });
+}
+
+test('homepage switches complete categories, retains links, filters and saved preference', async ({
+  page,
+  context,
+  baseURL,
+}, testInfo) => {
+  await mockFeeds(page, context, baseURL);
+  await page.goto('/');
+  const toggle = page.getByRole('tablist', { name: 'Homepage category' });
+  await expect(toggle.getByRole('tab', { name: 'Anime', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await toggle.getByRole('tab', { name: 'Manga', exact: true }).click();
+  await expect(page).toHaveURL(/\?category=manga$/);
+  const hero = page.getByRole('region', { name: 'Featured manga', exact: true });
+  await expect(hero.getByRole('heading', { name: 'manga popular all 1' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Hot this week', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('complementary', { name: 'Anime highlights' })).toHaveCount(0);
+  await expect(page.getByRole('group', { name: 'Release filter' })).toHaveCount(0);
+  const fresh = page.getByRole('region', { name: 'New series', exact: true });
+  await expect(fresh.getByRole('link', { name: /manga new all 1/ })).toHaveAttribute(
+    'href',
+    '/title/mal-manga-1',
+  );
+  const popular = page.getByRole('region', { name: 'Most popular', exact: true });
+  await popular.getByRole('button', { name: 'Most popular', exact: true }).click();
+  await popular.getByRole('button', { name: 'Last month' }).click();
+  await expect(popular.getByRole('link', { name: /manga popular month 1/ })).toBeVisible();
+  const trending = page.getByRole('region', { name: 'Trending', exact: true });
+  await trending.getByRole('button', { name: 'Trending', exact: true }).click();
+  await expect(trending.getByText('7 readers this week').first()).toBeVisible();
+  await toggle.getByRole('tab', { name: 'Manga', exact: true }).focus();
+  await page.keyboard.press('ArrowRight');
+  await expect(toggle.getByRole('tab', { name: 'Manhwa', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(
+    page
+      .getByRole('region', { name: 'Featured manhwa', exact: true })
+      .getByRole('heading', { name: 'manhwa popular all 1' }),
+  ).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Explore the manhwa collection' })).toBeVisible();
+  const highlights = await page
+    .getByRole('complementary', { name: 'Manhwa highlights' })
+    .boundingBox();
+  const discovery = await page.locator('.discovery-panels').boundingBox();
+  expect(highlights.y).toBeGreaterThan(discovery.y + discovery.height);
+  await toggle.scrollIntoViewIfNeeded();
+  await page.screenshot({ path: testInfo.outputPath('category-manhwa.png') });
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.goBack();
+  await expect(toggle.getByRole('tab', { name: 'Manga', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.goto('/');
+  await expect(toggle.getByRole('tab', { name: 'Manga', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await toggle.getByRole('tab', { name: 'Anime', exact: true }).click();
+  await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Featured manga', exact: true })).toHaveCount(0);
+});
+
+test('explicit homepage category works with unavailable storage and invalid values are safe', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await mockFeeds(page, context, baseURL);
+  await context.addInitScript(() => {
+    Storage.prototype.getItem = () => {
+      throw new Error('Storage blocked');
+    };
+    Storage.prototype.setItem = () => {
+      throw new Error('Storage blocked');
+    };
+  });
+  await page.goto('/?category=manhwa');
+  await expect(
+    page
+      .getByRole('region', { name: 'Featured manhwa', exact: true })
+      .getByRole('heading', { name: 'manhwa popular all 1' }),
+  ).toBeVisible();
+  await page.goto('/?category=unknown');
+  await expect(
+    page
+      .getByRole('tablist', { name: 'Homepage category' })
+      .getByRole('tab', { name: 'Anime', exact: true }),
+  ).toHaveAttribute('aria-selected', 'true');
+  await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
+});

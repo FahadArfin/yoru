@@ -56,7 +56,7 @@ export function useMangaFeed(mode, period = 'all', category = 'manga') {
   return { ...resource, timedOut };
 }
 
-function MangaCard({ media, index, mode }) {
+export function MangaCard({ media, index, mode }) {
   return (
     <PrefetchLink media={media} className="release-card" to={`/title/${media.id}`}>
       <div className="release-poster">
