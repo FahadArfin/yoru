@@ -107,11 +107,11 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
     const card = await category.locator('.discovery-preview-card').boundingBox();
     expect(card.x + card.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
   }
-  const highlights = await page
-    .getByRole('complementary', { name: 'Anime highlights' })
+  const explorer = await page
+    .getByRole('region', { name: 'Explore anime', exact: true })
     .boundingBox();
   const discovery = await page.locator('.discovery-panels').boundingBox();
-  expect(highlights.y).toBeGreaterThanOrEqual(discovery.y + discovery.height);
+  expect(explorer.y).toBeGreaterThanOrEqual(discovery.y + discovery.height);
   await page
     .locator('.discovery-section')
     .screenshot({ path: testInfo.outputPath('discovery-default.png') });

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import HomeSidebar, { HomeAiringSchedule } from './HomeSidebar';
+import { HomeAiringSchedule } from './HomeSidebar';
 import HomeDiscovery from './HomeDiscovery';
 import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import LiveComments from './LiveComments';
@@ -193,9 +193,6 @@ export default function HomeLead({ children, heroOnly = false }) {
               <LiveComments />
               <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
               {children}
-            </div>
-            <div className="home-lower-highlights">
-              <HomeSidebar />
             </div>
           </div>
         </>

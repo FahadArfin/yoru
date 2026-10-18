@@ -1,9 +1,7 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { CalendarDays, ChevronDown, Clock3, MessageSquare } from 'lucide-react';
-import { useApp, useResource } from '../state';
-import { ago, itemsOf } from '../api';
-import { Avatar } from '../components';
+import { CalendarDays, ChevronDown, Clock3 } from 'lucide-react';
+import { useResource } from '../state';
 import { airingLabel, localDateKey, shiftDate, weekDays, weekStart } from '../../shared/schedule';
 
 export function HomeAiringSchedule({ language }) {
@@ -258,63 +256,5 @@ export function HomeAiringSchedule({ language }) {
         </div>
       </div>
     </section>
-  );
-}
-export default function HomeSidebar() {
-  const community = useResource('/api/community', false);
-  const { event } = useApp();
-  useEffect(() => {
-    if (['comments', 'reviews', 'snapshot'].includes(event?.type)) community.refresh();
-  }, [event]);
-  return (
-    <aside className="home-right-rail" aria-label="Anime highlights">
-      <section className="home-rail-panel" aria-label="Community">
-        <div className="rail-heading">
-          <h2>
-            <MessageSquare size={14} /> Community
-          </h2>
-          <Link to="/community">View all →</Link>
-        </div>
-        {itemsOf(community.data)
-          .slice(0, 8)
-          .map((item) => (
-            <Link
-              key={item.id}
-              className="rail-post"
-              to={`/title/${item.mediaId}${item.kind === 'review' ? '?tab=reviews' : item.unit ? `?unit=${item.unit}` : ''}`}
-            >
-              <Avatar
-                user={item.author || item.user || { name: item.userName || item.name }}
-                size="small"
-              />
-              <div>
-                <span>
-                  <b>
-                    {item.author?.name || item.user?.name || item.userName || item.name || 'Member'}
-                  </b>
-                  <time>{ago(item.createdAt)}</time>
-                </span>
-                <p>
-                  {item.spoiler
-                    ? 'Spoiler discussion — open to reveal'
-                    : item.title || item.body?.slice(0, 100)}
-                </p>
-                <small>{item.kind === 'review' ? 'Review' : 'Discussion'}</small>
-              </div>
-            </Link>
-          ))}
-        {!itemsOf(community.data).length && (
-          <div className="rail-empty">
-            <MessageSquare size={25} />
-            <p>
-              {community.error
-                ? 'Conversations are temporarily unavailable.'
-                : 'Your next favorite starts with a conversation.'}
-            </p>
-            <Link to="/community">Join the community →</Link>
-          </div>
-        )}
-      </section>
-    </aside>
   );
 }

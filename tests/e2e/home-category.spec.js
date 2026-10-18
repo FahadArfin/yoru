@@ -88,7 +88,13 @@ test('homepage switches complete categories, retains links, filters and saved pr
       .getByRole('region', { name: 'Featured manhwa', exact: true })
       .getByRole('heading', { name: 'manhwa popular all 1' }),
   ).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Explore the manhwa collection' })).toBeVisible();
+  const explorer = page.getByRole('region', { name: 'Explore manhwa', exact: true });
+  await expect(explorer.getByRole('heading', { name: 'Find your next world' })).toBeVisible();
+  await expect(explorer.getByRole('link', { name: /Fantasy/ })).toHaveAttribute(
+    'href',
+    '/browse/manhwa?genre=Fantasy',
+  );
+  await expect(page.getByRole('region', { name: 'Manhwa community', exact: true })).toHaveCount(0);
   await checkBannerSwitch();
   const highlights = await page
     .getByRole('complementary', { name: 'Manhwa highlights' })

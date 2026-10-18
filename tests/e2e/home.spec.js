@@ -80,12 +80,12 @@ test('weekly banner and release feed navigate with exact identity and selected l
   const rail = page.getByRole('complementary', { name: 'Anime highlights' });
   for (const name of ['Most viewed', 'Upcoming anime'])
     await expect(rail.getByRole('region', { name, exact: true })).toHaveCount(0);
-  await expect(rail.getByRole('region', { name: 'Community', exact: true })).toBeVisible();
+  await expect(rail).toHaveCount(0);
   const schedule = page.getByRole('region', { name: 'Airing schedule' });
   await expect(rail.getByRole('region', { name: 'Airing schedule' })).toHaveCount(0);
   const scheduleBox = await schedule.boundingBox();
   const collectionBox = await page
-    .getByRole('heading', { name: 'Explore the anime collection' })
+    .getByRole('heading', { name: 'Find your next world' })
     .boundingBox();
   const columnBox = await page.locator('.home-release-column').boundingBox();
   expect(scheduleBox.y + scheduleBox.height).toBeLessThan(collectionBox.y);

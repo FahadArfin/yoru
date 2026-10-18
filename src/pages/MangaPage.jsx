@@ -137,16 +137,18 @@ export function MangaLanding({ category, label, homepage = false, children }) {
               </button>
             )}
           </section>
-          <section className="home-rail-panel manga-rail-cta" aria-label={`${label} community`}>
-            <MessageSquare size={22} />
-            <h2>Better with your people.</h2>
-            <p>
-              Share a favorite. Find your next recommendation. There’s always more to talk about.
-            </p>
-            <Link to="/community">
-              Join the conversation <ArrowRight size={14} />
-            </Link>
-          </section>
+          {!homepage && (
+            <section className="home-rail-panel manga-rail-cta" aria-label={`${label} community`}>
+              <MessageSquare size={22} />
+              <h2>Better with your people.</h2>
+              <p>
+                Share a favorite. Find your next recommendation. There’s always more to talk about.
+              </p>
+              <Link to="/community">
+                Join the conversation <ArrowRight size={14} />
+              </Link>
+            </section>
+          )}
         </aside>
       </div>
       {!homepage && (
