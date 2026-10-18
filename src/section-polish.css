@@ -1,0 +1,307 @@
+/* Shared, quiet surfaces inspired by the homepage airing card. */
+.schedule-page.section-page {
+  animation: section-arrive 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.schedule-page .schedule-categories {
+  border-radius: 14px;
+}
+.schedule-page.section-page .schedule-calendar,
+.space-hub .space-header {
+  border: 1px solid rgb(var(--chrome-bright) / 0.065);
+  border-radius: 22px;
+  background:
+    linear-gradient(125deg, rgb(var(--chrome-raised) / 0.72), transparent 70%),
+    rgb(var(--chrome-surface));
+  box-shadow: 0 12px 35px rgb(0 0 0 / 0.055);
+  padding: 25px;
+}
+.schedule-page.section-page .schedule-calendar {
+  margin-bottom: 28px;
+}
+.schedule-page.section-page .schedule-week {
+  margin-bottom: 16px;
+}
+.schedule-page.section-page .schedule-days {
+  gap: 0;
+}
+.schedule-page.section-page .schedule-days button {
+  position: relative;
+  min-height: 96px;
+  background: transparent;
+  border: 0;
+  border-radius: 12px;
+  gap: 7px;
+  transition:
+    color 220ms,
+    background 220ms;
+}
+.schedule-page.section-page .schedule-days button + button::before {
+  content: '/';
+  position: absolute;
+  left: 0;
+  top: 24px;
+  color: rgb(var(--chrome-bright) / 0.16);
+  font-size: 22px;
+  font-weight: 400;
+}
+.schedule-page.section-page .schedule-days button > span {
+  font-size: clamp(17px, 1.8vw, 22px);
+  font-weight: 650;
+  color: rgb(var(--chrome-muted));
+  transition:
+    transform 320ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms;
+}
+.schedule-page.section-page .schedule-days button:hover > span,
+.schedule-page.section-page .schedule-days button.active > span {
+  color: rgb(var(--chrome-bright));
+  transform: scale(1.12);
+}
+.schedule-page.section-page .schedule-days button.active > span {
+  font-weight: 850;
+}
+.schedule-page.section-page .schedule-days button.active {
+  background: transparent;
+  border-color: transparent;
+}
+.schedule-page.section-page .schedule-days strong {
+  font-size: 11px;
+  font-weight: 650;
+  opacity: 0;
+  transform: translateY(-3px);
+  transition:
+    opacity 220ms,
+    transform 280ms;
+}
+.schedule-page.section-page .schedule-days .active strong,
+.schedule-page.section-page .schedule-days button:hover strong,
+.schedule-page.section-page .schedule-days button:focus-visible strong {
+  opacity: 1;
+  transform: translateY(0);
+}
+.schedule-page.section-page .schedule-days small {
+  font-size: 9px;
+}
+.schedule-page.section-page .schedule-types,
+.space-hub .space-tabs,
+.space-hub .segmented {
+  gap: 4px;
+  padding: 4px;
+  background: rgb(var(--chrome-bright) / 0.025);
+  border: 1px solid rgb(var(--chrome-bright) / 0.06);
+  border-radius: 14px;
+}
+.schedule-page.section-page .schedule-types button,
+.space-hub .space-tabs a,
+.space-hub .segmented button,
+.schedule-page .schedule-categories button {
+  border-radius: 10px;
+  transition:
+    color 220ms,
+    background 220ms,
+    box-shadow 220ms;
+}
+.schedule-page .schedule-categories button[aria-pressed='true'],
+.schedule-page.section-page .schedule-types button[aria-pressed='true'],
+.space-hub .space-tabs a.active,
+.space-hub .segmented button.active {
+  color: rgb(var(--chrome-bright));
+  background: rgb(var(--chrome-bright) / 0.09);
+  box-shadow: inset 0 0 0 1px rgb(var(--chrome-bright) / 0.07);
+}
+.schedule-page.section-page .schedule-item {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  border-radius: 16px;
+  border-color: rgb(var(--chrome-bright) / 0.065);
+  padding: 18px;
+  gap: 15px;
+  transition:
+    transform 240ms,
+    border-color 240ms,
+    box-shadow 240ms;
+}
+.schedule-page.section-page .schedule-item > :not(.schedule-artwork) {
+  position: relative;
+  z-index: 1;
+}
+.schedule-page.section-page .schedule-item .schedule-artwork {
+  position: absolute;
+  inset: 0 0 0 auto;
+  width: 76%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 30%;
+  opacity: 0.19;
+  mask-image: linear-gradient(90deg, transparent, #000 75%);
+  pointer-events: none;
+  transition:
+    opacity 300ms,
+    transform 500ms;
+}
+.schedule-page.section-page .schedule-item:hover {
+  transform: translateY(-2px);
+  border-color: rgb(var(--chrome-bright) / 0.18);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.08);
+}
+.schedule-page.section-page .schedule-item:hover .schedule-artwork {
+  opacity: 0.26;
+  transform: scale(1.025);
+}
+.schedule-page.section-page .schedule-item .schedule-cover {
+  border-radius: 9px;
+}
+.schedule-page.section-page .schedule-time {
+  font-size: 15px;
+}
+.schedule-page.section-page .schedule-day-heading {
+  padding: 0 3px 12px;
+  border-bottom: 1px solid rgb(var(--chrome-bright) / 0.06);
+}
+.schedule-page.section-page .schedule-list {
+  gap: 14px;
+  animation: section-arrive 360ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.space-hub .space-header {
+  margin-top: 26px;
+}
+.space-hub .space-header h1 {
+  font-size: 30px;
+  letter-spacing: -0.8px;
+}
+.space-hub .space-header p {
+  margin: 9px 0 0;
+  color: rgb(var(--chrome-muted));
+  font-size: 12px;
+  line-height: 1.6;
+}
+.space-hub .space-tabs a {
+  min-height: 44px;
+  font-weight: 650;
+}
+.space-hub .section-page .community-banner,
+.space-hub .section-page .feed-card,
+.space-hub .online-panel,
+.space-hub .chat-panel,
+.space-hub .room-card,
+.space-hub .library-row,
+.space-hub .library-stats > div {
+  border: 1px solid rgb(var(--chrome-bright) / 0.065);
+  border-radius: 18px;
+  background: rgb(var(--chrome-surface));
+  transition:
+    border-color 240ms,
+    box-shadow 240ms;
+}
+.space-hub .section-page .community-banner {
+  background:
+    linear-gradient(115deg, rgb(var(--chrome-soft) / 0.065), transparent 75%),
+    rgb(var(--chrome-surface));
+  padding: 25px;
+}
+.space-hub .section-page .community-banner-icon {
+  border-radius: 14px;
+  background: rgb(var(--chrome-bright) / 0.055);
+}
+.space-hub .section-page .feed-card {
+  padding: 22px;
+  animation: section-arrive 320ms ease both;
+}
+.space-hub .section-page .feed-card:hover,
+.space-hub .room-card:hover,
+.space-hub .library-row:hover {
+  border-color: rgb(var(--chrome-bright) / 0.16);
+  box-shadow: 0 8px 22px rgb(0 0 0 / 0.05);
+}
+.space-hub .section-page .feed-title-link {
+  border-radius: 12px;
+  background: rgb(var(--chrome-bright) / 0.025);
+}
+.space-hub .section-page-heading,
+.space-hub .page-heading {
+  margin-bottom: 22px;
+}
+.schedule-page button:focus-visible,
+.space-hub .space-tabs a:focus-visible {
+  outline: 2px solid rgb(var(--chrome-soft));
+  outline-offset: 3px;
+}
+@keyframes section-arrive {
+  from {
+    opacity: 0.3;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 800px) {
+  .space-hub .space-header {
+    width: auto;
+    margin: 18px 20px 0;
+    padding: 20px;
+  }
+  .space-hub .space-tabs a {
+    padding: 10px;
+    font-size: 12px;
+  }
+}
+@media (max-width: 600px) {
+  .schedule-page.section-page .schedule-calendar {
+    padding: 16px 10px;
+    border-radius: 18px;
+  }
+  .schedule-page.section-page .schedule-days button {
+    min-height: 90px;
+  }
+  .schedule-page.section-page .schedule-days button > span {
+    font-size: 15px;
+  }
+  .schedule-page.section-page .schedule-days strong {
+    font-size: 9px;
+  }
+  .schedule-page.section-page .schedule-days small {
+    font-size: 8px;
+  }
+  .schedule-page.section-page .schedule-item {
+    padding: 13px;
+    gap: 10px;
+  }
+  .schedule-page.section-page .schedule-time {
+    font-size: 13px;
+  }
+  .space-hub .space-header {
+    margin-inline: 16px;
+    padding: 18px;
+  }
+  .space-hub .section-page .community-banner,
+  .space-hub .section-page .feed-card {
+    padding: 18px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .schedule-page.section-page,
+  .schedule-page.section-page .schedule-list,
+  .space-hub .section-page .feed-card {
+    animation: none;
+  }
+  .schedule-page.section-page .schedule-item,
+  .schedule-page.section-page .schedule-item .schedule-artwork,
+  .schedule-page.section-page .schedule-days button,
+  .schedule-page.section-page .schedule-days button > span,
+  .schedule-page.section-page .schedule-days strong,
+  .schedule-page.section-page .schedule-types button,
+  .schedule-page .schedule-categories button,
+  .space-hub .space-tabs a,
+  .space-hub .segmented button,
+  .space-hub .section-page .feed-card,
+  .space-hub .room-card,
+  .space-hub .library-row {
+    transition: none;
+  }
+  .schedule-page.section-page .schedule-item:hover {
+    transform: none;
+  }
+}

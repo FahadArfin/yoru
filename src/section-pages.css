@@ -1,3 +1,4 @@
+@import './section-polish.css';
 /* Schedule and Community share the catalog's width, surfaces and typography. */
 .schedule-categories {
   display: flex;

@@ -101,6 +101,7 @@ function DayReleases({ category, day, language, zone, now }) {
           const scheduled = Date.parse(item.publishedAt) > now;
           return (
             <article className="schedule-item" key={item.id}>
+              <CoverImage media={item} alt="" className="schedule-artwork" aria-hidden="true" />
               <span className="schedule-time">
                 <time dateTime={item.publishedAt}>{timeLabel(item.publishedAt)}</time>
                 <small>{scheduled ? 'Scheduled' : 'Released'}</small>
@@ -264,7 +265,7 @@ export default function ReadingCalendar({ category, picker }) {
               onClick={() => setDay(date)}
             >
               <span>{dateLabel(date, { weekday: 'short' })}</span>
-              <strong>{dateLabel(date, { day: 'numeric' })}</strong>
+              <strong>{dateLabel(date, { month: 'short', day: 'numeric' })}</strong>
               <small>{date === today ? 'Today' : date > today ? 'Upcoming' : 'Releases'}</small>
             </button>
           ))}
