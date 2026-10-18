@@ -1,6 +1,14 @@
 import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Link, Route, Routes, useLocation, useNavigate } from 'react-router-dom';
+import {
+  BrowserRouter,
+  Link,
+  NavLink,
+  Route,
+  Routes,
+  useLocation,
+  useNavigate,
+} from 'react-router-dom';
 import { ArrowRight, Check, Search, Settings } from 'lucide-react';
 import { AppProvider, useApp } from './state';
 import { AuthModal, Avatar, Loading } from './components';
@@ -8,6 +16,7 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { NsfwMenu } from './nsfw';
+import CategoryNavigation from './CategoryNavigation';
 import './styles.css';
 import './home.css';
 import './browse.css';
@@ -43,6 +52,7 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isReader = location.pathname.startsWith('/read/');
+  const browseCategory = location.pathname.match(/^\/browse\/(anime|manga|manhwa)\/?$/)?.[1];
   const readingLanding =
     ['/browse/manga', '/browse/manhwa'].includes(location.pathname) &&
     !['q', 'genre', 'sort', 'page', 'view'].some((key) =>
@@ -87,14 +97,14 @@ function Shell() {
         Skip to content
       </a>
       <div className="app-main">
-        <header className="topbar">
+        <header className={`topbar${browseCategory ? ' has-category-navigation' : ''}`}>
           {hasTopNavigation && (
             <>
               <Brand />
               <nav className="home-topnav" aria-label="Explore Yoru">
-                <Link to="/browse/anime">Anime</Link>
-                <Link to="/browse/manga">Manga</Link>
-                <Link to="/browse/manhwa">Manhwa</Link>
+                <NavLink to="/browse/anime">Anime</NavLink>
+                <NavLink to="/browse/manga">Manga</NavLink>
+                <NavLink to="/browse/manhwa">Manhwa</NavLink>
                 <Link to="/schedule">Schedule</Link>
                 <Link to="/community">Community</Link>
                 <Link to="/library">My library</Link>
@@ -148,6 +158,7 @@ function Shell() {
           >
             <Settings size={19} />
           </Link>
+          {browseCategory && <CategoryNavigation key={browseCategory} category={browseCategory} />}
         </header>
         <main id="main-content" tabIndex={-1}>
           <Suspense fallback={<Loading />}>

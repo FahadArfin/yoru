@@ -43,7 +43,8 @@ test('compact catalog keeps 48-title pagination, filters and navigation usable',
     overflow: document.documentElement.scrollWidth > innerWidth,
   }));
   expect(geometry.columns).toBe(isMobile ? 3 : 9);
-  expect(geometry.top).toBeLessThan(isMobile ? 300 : 230);
+  // The category strip adds one compact row above the existing filters.
+  expect(geometry.top).toBeLessThan(isMobile ? 350 : 280);
   expect(geometry.overflow).toBe(false);
   await page.getByRole('button', { name: 'Next', exact: true }).click();
   await expect(

@@ -5,6 +5,7 @@ import { itemsOf } from '../api';
 import { useResource } from '../state';
 import { Empty, ErrorNotice, Loading, Poster } from '../components';
 import GenreCollections, { browseGenres } from './GenreCollections';
+import { animeFormats } from '../CategoryNavigation';
 const labels = {
   anime: ['Anime', 'Find a world worth getting lost in.'],
   manga: ['Manga', 'Great stories, one panel at a time.'],
@@ -19,19 +20,22 @@ export default function Browse({ embedded = false, categoryOverride }) {
   const q = params.get('q') || '';
   const [search, setSearch] = useState(q);
   const genre = params.get('genre') || '';
+  const format = category === 'anime' ? params.get('format') || '' : '';
   const sort = params.get('sort') || 'trending';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
   const discovery =
-    chosen !== 'all' && !['q', 'genre', 'sort', 'page', 'view'].some((key) => params.get(key));
+    chosen !== 'all' &&
+    !['q', 'genre', 'format', 'sort', 'page', 'view'].some((key) => params.get(key));
   useEffect(() => setSearch(q), [q]);
   useEffect(() => {
     if (!embedded) window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [page, chosen, embedded, discovery, genre, q]);
+  }, [page, chosen, embedded, discovery, genre, format, q]);
   const query = new URLSearchParams({
     category: chosen.toUpperCase(),
     search: q,
     genre,
+    ...(format ? { format } : {}),
     sort,
     page,
     limit: '48',
@@ -111,6 +115,22 @@ export default function Browse({ embedded = false, categoryOverride }) {
             ))}
           </select>
         </label>
+        {chosen === 'anime' && format && (
+          <label className="filter-select">
+            <select
+              aria-label="Anime format"
+              value={format}
+              onChange={(e) => update({ format: e.target.value })}
+            >
+              <option value="">All types</option>
+              {animeFormats.map(([value, label]) => (
+                <option key={value} value={value}>
+                  {label}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <label className="filter-select">
           <SlidersHorizontal size={15} />
           <select
