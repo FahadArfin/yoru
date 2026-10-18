@@ -266,7 +266,8 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
     : ranked.data?.mode === feedMode && ranked.data?.period === feedPeriod
       ? ranked.data
       : null;
-  const items = (animeReleases ? data?.releases : data?.items) || [];
+  const feedItems = (animeReleases ? data?.releases : data?.items) || [];
+  const items = mode === 'trending' ? feedItems.slice(0, 10) : feedItems;
   const loading = (!data || (data.state === 'pending' && !pendingTimedOut)) && !resource.error;
   const unavailable =
     resource.error ||
