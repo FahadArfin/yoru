@@ -24,6 +24,28 @@ export default function MangaHero({ items, category, label, categoryControls }) 
   const artwork = useBannerArtwork(picks, hero?.id, isReadingBanner);
   const wide = hero && artwork.featured.some((item) => item.id === hero.id);
   const carousel = useHeroCarousel(picks, hero?.id, setSelected, artwork.ref);
+  const renderArtwork = (item) => {
+    if (!item) return null;
+    return artwork.featured.some((candidate) => candidate.id === item.id) ? (
+      <img
+        key={item.banner}
+        className="weekly-backdrop"
+        src={item.banner}
+        alt=""
+        fetchPriority={item.id === hero?.id ? 'high' : 'auto'}
+        onError={() => artwork.reject(item.banner)}
+      />
+    ) : (
+      <div className="manga-cover-stage" key={item.id} aria-hidden="true">
+        <CoverImage
+          media={item}
+          alt=""
+          loading="eager"
+          fetchPriority={item.id === hero?.id ? 'high' : 'auto'}
+        />
+      </div>
+    );
+  };
   const nextCovers = JSON.stringify(
     [1, -1]
       .map((step) => coverCandidates(picks[(index + step + picks.length) % picks.length])[0])
@@ -37,29 +59,19 @@ export default function MangaHero({ items, category, label, categoryControls }) 
   return (
     <section
       ref={artwork.ref}
-      className={`weekly-hero manga-hero ${wide ? 'has-wide-art' : 'manga-cover-layout'}${carousel.dragging ? ' is-dragging' : ''}`}
+      className={`weekly-hero manga-hero ${wide ? 'has-wide-art' : 'manga-cover-layout'}${carousel.dragging ? ' is-dragging' : ''}${carousel.settling ? ' is-settling' : ''}`}
       aria-label={`Featured ${category}`}
       {...carousel.bindings}
     >
       <HeroArtwork
         identity={hero ? `${hero.id}:${wide ? hero.banner : 'cover'}` : null}
-        offset={carousel.offset}
+        dragCommit={carousel.dragCommit}
+        previous={
+          picks.length > 1 && renderArtwork(picks[(index - 1 + picks.length) % picks.length])
+        }
+        next={picks.length > 1 && renderArtwork(picks[(index + 1) % picks.length])}
       >
-        {wide && (
-          <img
-            key={hero.banner}
-            className="weekly-backdrop"
-            src={hero.banner}
-            alt=""
-            fetchPriority="high"
-            onError={() => artwork.reject(hero.banner)}
-          />
-        )}
-        {!wide && hero && (
-          <div className="manga-cover-stage" key={hero.id} aria-hidden="true">
-            <CoverImage media={hero} alt="" loading="eager" fetchPriority="high" />
-          </div>
-        )}
+        {renderArtwork(hero)}
       </HeroArtwork>
       <div className="weekly-shade" />
       <div className="weekly-content" key={hero?.id}>
