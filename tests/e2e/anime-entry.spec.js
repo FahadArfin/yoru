@@ -67,7 +67,7 @@ test('release and trending cards open episodes, with series details below the pl
   await expect(page.locator('iframe')).toHaveAttribute('src', /\/26\/sub$/);
 });
 
-test('title overview has an episode grid with real metadata, ranges and number jumps for long series', async ({
+test('title overview has an episode grid with real metadata, calendar navigation for long series', async ({
   page,
 }) => {
   await page.route(`**/api/media/${id}`, async (route) => {
@@ -107,7 +107,9 @@ test('title overview has an episode grid with real metadata, ranges and number j
   await expect(picker).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
   await expect(picker.getByRole('link', { name: /^Episode \d+$/ })).toHaveCount(50);
-  await picker.getByRole('spinbutton', { name: 'Jump to episode' }).press('Escape');
+  await expect(guide.getByRole('spinbutton')).toHaveCount(0);
+  await expect(picker.getByRole('combobox', { name: 'Episode range' })).toBeFocused();
+  await picker.getByRole('combobox', { name: 'Episode range' }).press('Escape');
   await expect(picker).not.toBeVisible();
   await expect(trigger).toBeFocused();
   await trigger.click();
@@ -123,17 +125,11 @@ test('title overview has an episode grid with real metadata, ranges and number j
       exact: true,
     }),
   ).toBeVisible();
-  await guide.getByRole('spinbutton', { name: 'Find episode number' }).fill('1187');
-  await guide.getByRole('button', { name: 'Find', exact: true }).click();
-  const target = guide.getByRole('link', {
-    name: 'Watch episode 1187: Chapter of the journey 1187',
-    exact: true,
-  });
-  await expect(target).toHaveClass(/is-highlighted/);
-  await guide.getByRole('button', { name: 'Episodes 1151–1200', exact: true }).click();
-  await picker.getByRole('spinbutton', { name: 'Jump to episode' }).fill('1187');
-  await picker.getByRole('button', { name: 'Go', exact: true }).click();
-  await expect(picker.getByRole('link', { name: 'Episode 1187', exact: true })).toBeFocused();
+  await guide.getByRole('button', { name: 'Episodes 1051–1100', exact: true }).click();
+  await picker.getByRole('button', { name: 'Next picker range' }).click();
+  await expect(picker.getByRole('combobox', { name: 'Episode range' })).toHaveValue('22');
+  await picker.getByRole('button', { name: 'Next picker range' }).click();
+  await expect(picker.getByRole('link', { name: 'Episode 1187', exact: true })).toBeVisible();
   await picker.getByRole('link', { name: 'Episode 1187', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/watch/${id}/1187$`));
   expect(requests).toEqual([1, 11, 12]);
