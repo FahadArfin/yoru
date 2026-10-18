@@ -11,6 +11,14 @@ import {
   Play,
   Plus,
   Users,
+  Bookmark,
+  ChevronLeft,
+  ChevronRight,
+  Grid2X2,
+  List,
+  Monitor,
+  SkipForward,
+  CirclePlay,
 } from 'lucide-react';
 import { bannerOf, isAnime, safeLink, titleOf } from '../api';
 import { recordView } from '../watch-views';
@@ -21,6 +29,7 @@ import Discussion from '../Discussion';
 import { ExternalPlayer, SourceForm } from '../Playback';
 import { defaultAnimeSources } from '../../shared/anime-sources';
 import { setWatchPage } from '../webmcp-state';
+import '../watch.css';
 const readSource = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -34,7 +43,7 @@ export default function Watch() {
   const unit = Math.max(1, Number(unitParam) || 1);
   const resource = useResource(`/api/media/${id}`);
   const media = resource.data?.media || resource.data;
-  const { entryFor, updateEntry, notify } = useApp();
+  const { entryFor, updateEntry, notify, user } = useApp();
   const entry = entryFor(id);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -60,6 +69,21 @@ export default function Watch() {
   const [unitDraft, setUnitDraft] = useState(unit);
   const [resume, setResume] = useState(0);
   const [playerSaved, setPlayerSaved] = useState(false);
+  const [episodeView, setEpisodeView] = useState(() =>
+    readSource('yoru:episode-view') === 'list' ? 'list' : 'tiles',
+  );
+  const [theater, setTheater] = useState(false);
+  const [autoplay, setAutoplay] = useState(() => readSource('yoru:watch-autoplay') === true);
+  const [autoNext, setAutoNext] = useState(() => readSource('yoru:watch-auto-next') === true);
+  const [episodeGroup, setEpisodeGroup] = useState(Math.floor((unit - 1) / 50));
+  const [bookmarkBusy, setBookmarkBusy] = useState(false);
+  const endedRef = useRef(false);
+  const savePreference = (key, value, setter) => {
+    setter(value);
+    try {
+      localStorage.setItem(key, JSON.stringify(value));
+    } catch {}
+  };
   useEffect(() => {
     setCustom(readSource(`yoru:source:${id}`));
   }, [id]);
@@ -67,6 +91,8 @@ export default function Watch() {
     setUnitDraft(unit);
     setResume(Number(readSource(`yoru:position:${id}:${unit}`)) || 0);
     setPlayerSaved(false);
+    setEpisodeGroup(Math.floor((unit - 1) / 50));
+    endedRef.current = false;
   }, [id, unit]);
   const anime = isAnime(media);
   useEffect(() => {
@@ -130,6 +156,14 @@ export default function Watch() {
     return result;
   }, [media, custom, unit, language, automatic.data, id]);
   const source = sources.find((item) => item.id === selected) || sources[0];
+  const nativePlayback = ['video', 'hls'].includes(source?.kind);
+  // A custom URL belongs to this title, not a verified sequence of episode URLs.
+  const canAutoNext = nativePlayback && source?.id !== 'custom';
+  const playbackHint = !nativePlayback
+    ? 'This provider manages playback. Use the controls inside its player.'
+    : !canAutoNext
+      ? 'Auto next needs a separate video source for each episode.'
+      : '';
   useEffect(() => {
     setWatchPage({
       path: window.location.pathname,
@@ -163,6 +197,27 @@ export default function Watch() {
       /* playback continues when device storage is unavailable */
     }
   };
+  const onEnded = () => {
+    if (endedRef.current) return;
+    endedRef.current = true;
+    if (user)
+      void updateEntry(media, {
+        progress: Math.max(entry?.progress || 0, unit),
+        status: total && unit >= total ? 'completed' : 'watching',
+      });
+    if (autoNext && canAutoNext && total && unit < total) nextUnit(unit + 1);
+  };
+  const bookmark = async () => {
+    setBookmarkBusy(true);
+    try {
+      await updateEntry(media, {
+        favorite: !entry?.favorite,
+        ...(!entry ? { status: 'planned' } : {}),
+      });
+    } finally {
+      setBookmarkBusy(false);
+    }
+  };
   if (resource.loading) return <Loading />;
   if (resource.error || !media)
     return (
@@ -171,16 +226,13 @@ export default function Watch() {
       </div>
     );
   return (
-    <div className="page watch-page">
+    <div className={`page watch-page watch-cinema${theater ? ' is-theater' : ''}`}>
       <Link className="back-link" to={`/title/${id}`}>
         <ArrowLeft size={16} />
         {titleOf(media)}
       </Link>
       <div className="watch-heading">
         <div>
-          <span className="eyebrow">
-            {anime ? 'SETTLE IN. THE WORLD CAN WAIT.' : 'ONE MORE CHAPTER NEVER HURT.'}
-          </span>
           <h1>{titleOf(media)}</h1>
           <p>
             {anime ? 'Episode' : 'Chapter'} {unit}
@@ -201,10 +253,10 @@ export default function Watch() {
                 source={source}
                 poster={bannerOf(media)}
                 title={titleOf(media)}
-                autoplay={false}
+                autoplay={autoplay}
                 initialTime={resume}
                 onProgress={onProgress}
-                onEnded={mark}
+                onEnded={onEnded}
               />
             ) : (
               <ExternalPlayer source={source} poster={bannerOf(media)} title={titleOf(media)} />
@@ -229,6 +281,74 @@ export default function Watch() {
               </Button>
             </div>
           )}
+          <div className="watch-controls" aria-label="Watching controls" role="group">
+            <div className="watch-control-group">
+              <button aria-pressed={theater} onClick={() => setTheater(!theater)}>
+                <Monitor size={16} />
+                Theater
+              </button>
+              <button
+                aria-pressed={canAutoNext && autoNext}
+                disabled={!canAutoNext || !total}
+                title={
+                  playbackHint ||
+                  (!total
+                    ? 'The episode count is not yet available.'
+                    : 'Continue to the next episode when this one ends')
+                }
+                onClick={() => savePreference('yoru:watch-auto-next', !autoNext, setAutoNext)}
+              >
+                <SkipForward size={16} />
+                Auto next
+                <span className="watch-switch" />
+              </button>
+              <button
+                aria-pressed={nativePlayback && autoplay}
+                disabled={!nativePlayback}
+                title={
+                  !nativePlayback
+                    ? playbackHint
+                    : 'Start direct video automatically when the browser allows it'
+                }
+                onClick={() => savePreference('yoru:watch-autoplay', !autoplay, setAutoplay)}
+              >
+                <CirclePlay size={16} />
+                Autoplay
+                <span className="watch-switch" />
+              </button>
+              <button disabled={unit <= 1} onClick={() => nextUnit(unit - 1)}>
+                <ChevronLeft size={16} />
+                Previous
+              </button>
+              <button disabled={Boolean(total && unit >= total)} onClick={() => nextUnit(unit + 1)}>
+                Next
+                <ChevronRight size={16} />
+              </button>
+            </div>
+            <div className="watch-control-group">
+              <button onClick={mark}>
+                <Check size={16} />
+                {playerSaved || entry?.progress >= unit ? 'Marked complete' : 'Mark complete'}
+              </button>
+              <button
+                aria-pressed={Boolean(entry?.favorite)}
+                disabled={bookmarkBusy}
+                onClick={bookmark}
+              >
+                <Bookmark size={16} />
+                {entry?.favorite ? 'Bookmarked' : 'Bookmark'}
+              </button>
+            </div>
+          </div>
+          <div className="watch-source-heading">
+            <div>
+              <strong>
+                You are watching {anime ? 'Episode' : 'Chapter'} {unit}
+              </strong>
+              <span>Choose another source if playback is unstable.</span>
+            </div>
+            {playbackHint && <p>{playbackHint}</p>}
+          </div>
           <div className="player-toolbar">
             <div className="source-buttons">
               {sources.map((item) => (
@@ -250,6 +370,7 @@ export default function Watch() {
             {anime && (
               <div className="segmented">
                 <button
+                  aria-pressed={language === 'sub'}
                   className={language === 'sub' ? 'active' : ''}
                   onClick={() => setLanguage('sub')}
                 >
@@ -257,6 +378,7 @@ export default function Watch() {
                 </button>
                 <button
                   className={language === 'dub' ? 'active' : ''}
+                  aria-pressed={language === 'dub'}
                   onClick={() => setLanguage('dub')}
                 >
                   Dub
@@ -278,28 +400,6 @@ export default function Watch() {
               )}
             </div>
           )}
-          <div className="watch-progress-row">
-            <button
-              className="btn btn-subtle"
-              disabled={unit <= 1}
-              onClick={() => nextUnit(unit - 1)}
-            >
-              <ArrowLeft size={15} />
-              Previous
-            </button>
-            <Button variant="secondary" onClick={mark}>
-              <Check size={16} />
-              {playerSaved || entry?.progress >= unit ? 'Marked complete' : 'Mark complete'}
-            </Button>
-            <button
-              className="btn btn-subtle"
-              disabled={Boolean(total && unit >= total)}
-              onClick={() => nextUnit(unit + 1)}
-            >
-              Next
-              <ArrowRight size={15} />
-            </button>
-          </div>
           <p className="player-note">
             {source?.kind === 'external'
               ? 'The provider opens separately. Your discussion stays here.'
@@ -308,10 +408,26 @@ export default function Watch() {
                 : 'Your video source stays with its provider. Playback position is saved on this device.'}
           </p>
         </div>
-        <aside className="watch-units">
+        <aside className="watch-units" aria-label="Episode browser">
           <div className="panel-heading">
             <h3>{anime ? 'Episodes' : 'Chapters'}</h3>
             <span>{total || 'Ongoing'}</span>
+            <div className="episode-view-toggle" role="group" aria-label="Episode display">
+              <button
+                aria-label="Episode tiles"
+                aria-pressed={episodeView === 'tiles'}
+                onClick={() => savePreference('yoru:episode-view', 'tiles', setEpisodeView)}
+              >
+                <Grid2X2 size={16} />
+              </button>
+              <button
+                aria-label="Episode list"
+                aria-pressed={episodeView === 'list'}
+                onClick={() => savePreference('yoru:episode-view', 'list', setEpisodeView)}
+              >
+                <List size={17} />
+              </button>
+            </div>
           </div>
           <form
             className="unit-jump"
@@ -334,28 +450,57 @@ export default function Watch() {
               <ArrowRight size={14} />
             </button>
           </form>
-          <div className="watch-unit-list">
-            {Array.from(
-              { length: Math.min(50, total || 50) },
-              (_, i) => Math.max(0, Math.floor((unit - 1) / 50) * 50) + i + 1,
-            )
+          <div className="episode-range">
+            <button
+              aria-label="Previous episode group"
+              disabled={episodeGroup === 0}
+              onClick={() => setEpisodeGroup((value) => Math.max(0, value - 1))}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <span>
+              {episodeGroup * 50 + 1} –{' '}
+              {Math.min((episodeGroup + 1) * 50, total || (episodeGroup + 1) * 50)}
+            </span>
+            <button
+              aria-label="Next episode group"
+              disabled={Boolean(total && (episodeGroup + 1) * 50 >= total)}
+              onClick={() => setEpisodeGroup((value) => value + 1)}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+          <div className={`watch-unit-list episode-${episodeView}`}>
+            {Array.from({ length: Math.min(50, total || 50) }, (_, i) => episodeGroup * 50 + i + 1)
               .filter((number) => !total || number <= total)
               .map((number) => (
                 <button
                   className={number === unit ? 'active' : ''}
+                  aria-label={`${anime ? 'Episode' : 'Chapter'} ${number}${number === unit ? ', now playing' : number <= entry?.progress ? ', completed' : ''}`}
+                  aria-current={number === unit ? 'true' : undefined}
                   key={number}
                   onClick={() => nextUnit(number)}
                 >
-                  <span>
-                    {number === unit ? (
-                      <Play size={12} />
-                    ) : number <= entry?.progress ? (
-                      <Check size={13} />
-                    ) : (
-                      String(number).padStart(2, '0')
-                    )}
-                  </span>
-                  {anime ? 'Episode' : 'Chapter'} {number}
+                  <span className="episode-number">{String(number).padStart(2, '0')}</span>
+                  {episodeView === 'list' && (
+                    <span className="episode-copy">
+                      <strong>
+                        {anime ? 'Episode' : 'Chapter'} {number}
+                      </strong>
+                      <small>
+                        {number === unit
+                          ? 'Now playing'
+                          : number <= entry?.progress
+                            ? 'Completed'
+                            : 'Select episode'}
+                      </small>
+                    </span>
+                  )}
+                  {number === unit ? (
+                    <Play className="episode-state" size={12} fill="currentColor" />
+                  ) : number <= entry?.progress ? (
+                    <Check className="episode-state" size={13} />
+                  ) : null}
                 </button>
               ))}
           </div>

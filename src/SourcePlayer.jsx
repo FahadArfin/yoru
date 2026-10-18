@@ -19,6 +19,7 @@ export default function SourcePlayer({
   const lastProgressRef = useRef(0);
   const onProgressRef = useRef(onProgress);
   const onEndedRef = useRef(onEnded);
+  const autoplayRef = useRef(autoplay);
   const [status, setStatus] = useState('loading');
   const [error, setError] = useState('');
   const [retryKey, setRetryKey] = useState(0);
@@ -27,6 +28,11 @@ export default function SourcePlayer({
   const externalSource = source?.kind === 'external';
   onProgressRef.current = onProgress;
   onEndedRef.current = onEnded;
+  autoplayRef.current = autoplay;
+
+  useEffect(() => {
+    if (autoplay) videoRef.current?.play().catch(() => {});
+  }, [autoplay]);
 
   useEffect(() => {
     const video = videoRef.current;
@@ -113,7 +119,7 @@ export default function SourcePlayer({
         video.src = source.url;
       }
 
-      if (autoplay) {
+      if (autoplayRef.current) {
         video.play().catch(() => {});
       }
     };
@@ -136,16 +142,7 @@ export default function SourcePlayer({
       video.removeAttribute('src');
       video.load();
     };
-  }, [
-    source?.id,
-    source?.url,
-    source?.kind,
-    autoplay,
-    initialTime,
-    iframeSource,
-    externalSource,
-    retryKey,
-  ]);
+  }, [source?.id, source?.url, source?.kind, initialTime, iframeSource, externalSource, retryKey]);
 
   if (!source?.url) return null;
 
