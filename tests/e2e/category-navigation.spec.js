@@ -1,10 +1,9 @@
 import { test, expect } from '@playwright/test';
 
-test('category strip filters collections, dismisses menus, and follows the chosen category', async ({
+test('catalog controls filter each category without a duplicate navigation strip', async ({
   page,
   context,
   baseURL,
-  isMobile,
 }) => {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
@@ -30,34 +29,21 @@ test('category strip filters collections, dismisses menus, and follows the chose
       genre: 'Romance',
       sort: 'title',
     });
-  let nav;
   for (const category of ['manga', 'manhwa']) {
     await page
       .getByRole('navigation', { name: 'Explore Yoru' })
       .getByRole('link', { name: new RegExp(`^${category}$`, 'i') })
       .click();
-    nav = page.getByRole('navigation', { name: `${category} collections` });
-    await expect(nav).toBeVisible();
-    await expect(nav.getByRole('button', { name: 'Types', exact: true })).toHaveCount(0);
-    await nav.getByRole('button', { name: 'Genres', exact: true }).click();
-    await nav.getByRole('link', { name: 'Fantasy', exact: true }).click();
+    await expect(page.getByRole('navigation', { name: `${category} collections` })).toHaveCount(0);
+    await expect(filters).toHaveCount(1);
+    await expect(filters.getByLabel('Anime format')).toHaveCount(0);
+    await filters.getByLabel('Genre', { exact: true }).selectOption('Fantasy');
     await expect
       .poll(() => queries.at(-1))
       .toMatchObject({ category: category.toUpperCase(), genre: 'Fantasy' });
     expect(queries.at(-1).format).toBeUndefined();
   }
-  await nav.getByRole('button', { name: 'Genres', exact: true }).click();
-  const bounds = await page.locator('#category-genres').boundingBox();
-  expect(bounds.x).toBeGreaterThanOrEqual(0);
-  expect(bounds.x + bounds.width).toBeLessThanOrEqual(page.viewportSize().width);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  expect(
-    await page
-      .locator('.category-navigation-row')
-      .evaluate((el) => el.getBoundingClientRect().height),
-  ).toBeLessThan(44);
-  if (!isMobile)
-    await expect(nav.getByRole('link', { name: 'Full collection', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Yoru' })
     .getByRole('link', { name: 'My Space', exact: true })
