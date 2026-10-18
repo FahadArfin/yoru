@@ -4,6 +4,9 @@ test.beforeEach(async ({ context, baseURL }) => {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
+  await context.route('**/api/community/threads?*', (route) =>
+    route.fulfill({ json: { items: [], releaseState: 'ready' } }),
+  );
 });
 
 const media = {
@@ -62,7 +65,7 @@ test('community filters preserve discussions, review destinations and spoiler pr
   await filters.getByRole('button', { name: 'Discussions', exact: true }).click();
   await expect(page.getByRole('link', { name: /Add your take/ })).toHaveAttribute(
     'href',
-    '/title/mal-anime-52991?unit=4',
+    '/community/mal-anime-52991/4',
   );
 });
 

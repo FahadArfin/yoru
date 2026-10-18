@@ -13,6 +13,29 @@ let runtime,
   charlie,
   media = 'mal-anime-52991';
 const streams = [];
+test('community threads reuse episode comments and replies across D1 workers', async () => {
+  const threadAuthor = await register('ThreadAuthor');
+  const endpoint = `/api/comments/${media}`;
+  const first = await request('a', endpoint, {
+    method: 'POST',
+    session: threadAuthor,
+    body: { unit: 812, body: 'Shared episode thread' },
+  });
+  assert.equal(first.status, 201);
+  const reply = await request('b', endpoint, {
+    method: 'POST',
+    session: threadAuthor,
+    body: { unit: 812, parentId: first.body.comment.id, body: 'Shared reply' },
+  });
+  assert.equal(reply.status, 201);
+  const result = await request('b', '/api/community/threads?category=anime');
+  assert.equal(result.status, 200);
+  const thread = result.body.items.find((item) => item.id === `${media}:812`);
+  assert.equal(thread.comments, 2);
+  assert.equal(thread.mediaId, media);
+  assert.equal(thread.unit, 812);
+  assert.equal(Object.hasOwn(thread, 'body'), false);
+});
 test('anime source endpoint works on D1 and rejects manga IDs and invalid episodes', async () => {
   const result = await request('a', '/api/media/mal-anime-52991/sources?episode=2&language=dub');
   assert.equal(result.status, 200);

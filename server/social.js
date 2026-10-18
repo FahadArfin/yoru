@@ -18,8 +18,24 @@ import {
 import { getMedia } from './catalog.js';
 import { touchVisitor, PRESENCE_COOKIE } from './visitor-presence.js';
 import { commentMediaError } from '../shared/comment-media.js';
+import { getCommunityThreads } from './community-threads.js';
+import { scheduleOptions } from './schedule-storage.js';
+import { isOffline } from './catalog-storage.js';
 
 export const socialRouter = Router();
+socialRouter.get(
+  '/community/threads',
+  asyncRoute(async (req, res) => {
+    res.json(
+      await getCommunityThreads(req.query, {
+        ...scheduleOptions,
+        offline: isOffline(),
+        db: { all },
+        media: getMedia,
+      }),
+    );
+  }),
+);
 socialRouter.post(
   '/presence',
   asyncRoute(async (req, res) => {
