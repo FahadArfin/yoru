@@ -18,7 +18,7 @@ async function mockFeeds(page, context, baseURL) {
         mode,
         period,
         caption: `${category} ${period} publication dates`,
-        items: Array.from({ length: 8 }, (_, i) => ({
+        items: Array.from({ length: mode === 'trending' ? 12 : 8 }, (_, i) => ({
           id: `mal-${category === 'home' ? 'anime' : 'manga'}-${i + 1}`,
           title: `${category} ${mode} ${period} ${i + 1}`,
           category: category === 'home' ? 'ANIME' : category.toUpperCase(),
@@ -32,6 +32,27 @@ async function mockFeeds(page, context, baseURL) {
     });
   });
 }
+
+test('homepage trending shows the top ten ranked titles for each category', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await mockFeeds(page, context, baseURL);
+  for (const category of ['anime', 'manga', 'manhwa']) {
+    await page.goto(`/?category=${category}`);
+    const trending = page.getByRole('region', { name: 'Trending', exact: true });
+    await trending.getByRole('button', { name: 'Trending', exact: true }).click();
+    await expect(trending.locator('.release-grid .discovery-item')).toHaveCount(10);
+    const prefix = category === 'anime' ? 'home' : category;
+    await expect(
+      trending.getByRole('link', { name: new RegExp(`${prefix} trending week 10\\b`) }),
+    ).toBeVisible();
+    await expect(
+      trending.getByRole('link', { name: new RegExp(`${prefix} trending week 11\\b`) }),
+    ).toHaveCount(0);
+  }
+});
 
 test('homepage switches complete categories, retains links, filters and saved preference', async ({
   page,
@@ -80,6 +101,9 @@ test('homepage switches complete categories, retains links, filters and saved pr
   const trending = page.getByRole('region', { name: 'Trending', exact: true });
   await trending.getByRole('button', { name: 'Trending', exact: true }).click();
   await expect(trending.getByText('7 readers this week').first()).toBeVisible();
+  await expect(trending.locator('.release-grid .discovery-item')).toHaveCount(10);
+  await expect(trending.getByRole('link', { name: /manga trending week 10\b/ })).toBeVisible();
+  await expect(trending.getByRole('link', { name: /manga trending week 11\b/ })).toHaveCount(0);
   await toggle.getByRole('tab', { name: 'Manga', exact: true }).focus();
   await page.keyboard.press('ArrowRight');
   await expect(toggle.getByRole('tab', { name: 'Manhwa', exact: true })).toHaveAttribute(
