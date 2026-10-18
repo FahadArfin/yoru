@@ -228,7 +228,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
   const reading = category !== 'anime';
   const animeReleases = !reading && mode === 'released';
   const feedMode = reading && mode === 'released' ? 'new' : mode;
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState(mode === 'popular' ? 'month' : 'all');
   const feedPeriod = mode === 'trending' ? 'week' : period;
   const [pendingTimedOut, setPendingTimedOut] = useState(false);
   const ranked = useResource(
@@ -298,49 +298,44 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
             {expanded && <Maximize2 className="discovery-expand-icon" size={14} />}
           </button>
         </h2>
-        <span className="discovery-category-hint">
-          {expanded ? 'Expanded collection' : 'Click heading to expand'}
-        </span>
       </header>
-      <div className="discovery-filter-row">
-        {animeReleases ? (
-          <div className="release-language" role="group" aria-label="Release filter">
-            {releaseFilters.map(({ value, label, name }) => (
-              <button
-                key={value}
-                aria-label={name}
-                title={name}
-                aria-pressed={language === value}
-                className={language === value ? 'active' : ''}
-                onClick={() => onLanguage(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        ) : reading && mode === 'released' ? (
-          <span className="discovery-week">
-            <Sparkles size={12} /> New {category} series
-          </span>
-        ) : mode === 'popular' ? (
-          <div className="release-language" role="group" aria-label="Popularity release period">
-            {periods.map(({ value, label }) => (
-              <button
-                key={value}
-                aria-pressed={period === value}
-                className={period === value ? 'active' : ''}
-                onClick={() => setPeriod(value)}
-              >
-                {label}
-              </button>
-            ))}
-          </div>
-        ) : (
-          <span className="discovery-week">
-            <Clock3 size={12} /> Last week <span>· On Yoru</span>
-          </span>
-        )}
-      </div>
+      {mode !== 'trending' && (
+        <div className="discovery-filter-row">
+          {animeReleases ? (
+            <div className="release-language" role="group" aria-label="Release filter">
+              {releaseFilters.map(({ value, label, name }) => (
+                <button
+                  key={value}
+                  aria-label={name}
+                  title={name}
+                  aria-pressed={language === value}
+                  className={language === value ? 'active' : ''}
+                  onClick={() => onLanguage(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : reading && mode === 'released' ? (
+            <span className="discovery-week">
+              <Sparkles size={12} /> New {category} series
+            </span>
+          ) : mode === 'popular' ? (
+            <div className="release-language" role="group" aria-label="Popularity release period">
+              {periods.map(({ value, label }) => (
+                <button
+                  key={value}
+                  aria-pressed={period === value}
+                  className={period === value ? 'active' : ''}
+                  onClick={() => setPeriod(value)}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      )}
       {expanded && mode === 'popular' && data?.caption && (
         <p className="discovery-caption">{data.caption}</p>
       )}
@@ -424,38 +419,13 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
           </div>
         )}
       </div>
-      <footer className="discovery-panel-footer">
-        <span>
-          {reading && mode === 'released' ? (
-            'Series publication dates · Kitsu'
-          ) : mode === 'released' ? (
-            'Latest episodes · Past 7 days'
-          ) : mode === 'trending' ? (
-            'Unique visitors · Past 7 days'
-          ) : (
-            <>
-              {data?.state === 'stale' ? 'Saved ranking' : 'Popularity'} ·{' '}
-              <a
-                href={reading ? 'https://kitsu.app/' : 'https://animeschedule.net/'}
-                target="_blank"
-                rel="noreferrer"
-              >
-                {reading ? 'Kitsu readers' : 'AnimeSchedule'}
-              </a>
-            </>
-          )}
-        </span>
-        {expanded &&
-          (animeReleases ? (
-            <Link to="/schedule">
-              <CalendarDays size={13} /> Full schedule
-            </Link>
-          ) : (
-            <Link to={`/browse/${category}`}>
-              Discover more <ArrowRight size={13} />
-            </Link>
-          ))}
-      </footer>
+      {expanded && animeReleases && (
+        <footer className="discovery-panel-footer">
+          <Link to="/schedule">
+            <CalendarDays size={13} /> Full schedule
+          </Link>
+        </footer>
+      )}
     </section>
   );
 }

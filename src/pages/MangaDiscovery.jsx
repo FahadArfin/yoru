@@ -2,7 +2,6 @@ import React, { useEffect, useRef, useState } from 'react';
 import {
   ArrowRight,
   BookOpen,
-  Clock3,
   Crown,
   RotateCw,
   Sparkles,
@@ -151,7 +150,7 @@ export function MangaCard({ media, index, mode }) {
 export default function MangaDiscovery({ popular, category, label }) {
   const anime = category === 'anime';
   const [mode, setMode] = useState('new');
-  const [period, setPeriod] = useState('all');
+  const [period, setPeriod] = useState('month');
   const refs = useRef([]);
   const activePeriod = mode === 'trending' ? 'week' : mode === 'popular' ? period : 'all';
   const usePopular = mode === 'popular' && period === 'all';
@@ -218,42 +217,36 @@ export default function MangaDiscovery({ popular, category, label }) {
         >
           {mode === tab.value && (
             <>
-              <div className="discovery-filter-row">
-                {mode === 'popular' ? (
-                  <div
-                    className="release-language"
-                    role="group"
-                    aria-label={`${label} publication period`}
-                  >
-                    {periods.map(({ value, label }) => (
-                      <button
-                        key={value}
-                        className={period === value ? 'active' : ''}
-                        aria-pressed={period === value}
-                        onClick={() => setPeriod(value)}
-                      >
-                        {label}
-                      </button>
-                    ))}
-                  </div>
-                ) : mode === 'trending' ? (
-                  <span className="discovery-week">
-                    <Clock3 size={12} /> Past 7 days
-                  </span>
-                ) : (
-                  <span className="discovery-week">
-                    <Sparkles size={12} /> Fresh stories
-                  </span>
-                )}
-                <span className="discovery-caption">
-                  {mode === 'trending'
-                    ? anime
-                      ? 'Most watched on Yoru'
-                      : 'Most read on Yoru'
-                    : data?.caption ||
+              {mode !== 'trending' && (
+                <div className="discovery-filter-row">
+                  {mode === 'popular' ? (
+                    <div
+                      className="release-language"
+                      role="group"
+                      aria-label={`${label} publication period`}
+                    >
+                      {periods.map(({ value, label }) => (
+                        <button
+                          key={value}
+                          className={period === value ? 'active' : ''}
+                          aria-pressed={period === value}
+                          onClick={() => setPeriod(value)}
+                        >
+                          {label}
+                        </button>
+                      ))}
+                    </div>
+                  ) : (
+                    <span className="discovery-week">
+                      <Sparkles size={12} /> Fresh stories
+                    </span>
+                  )}
+                  <span className="discovery-caption">
+                    {data?.caption ||
                       (mode === 'new' ? `Recently published ${category} series` : '')}
-                </span>
-              </div>
+                  </span>
+                </div>
+              )}
               <div className="discovery-body" aria-busy={loading}>
                 {loading ? (
                   <div className="release-grid discovery-enter" aria-label={`Loading ${category}`}>
@@ -301,23 +294,6 @@ export default function MangaDiscovery({ popular, category, label }) {
                     )}
                   </div>
                 )}
-              </div>
-              <div className="release-footer">
-                <span>
-                  {data?.state === 'stale' ? 'Latest saved picks · ' : ''}
-                  {mode === 'trending'
-                    ? `Unique ${anime ? 'watch' : 'reading'}-page visitors · Past 7 days`
-                    : mode === 'new'
-                      ? anime
-                        ? 'Series premiere dates · Catalog'
-                        : 'Series publication dates · Kitsu'
-                      : anime
-                        ? 'Popularity · AnimeSchedule'
-                        : 'Ranked by Kitsu readers'}
-                </span>
-                <a href={`#${category}-catalog`}>
-                  Browse all {category} <ArrowRight size={13} />
-                </a>
               </div>
             </>
           )}

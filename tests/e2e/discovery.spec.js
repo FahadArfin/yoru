@@ -35,7 +35,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
     const params = new URL(route.request().url()).searchParams;
     const mode = params.get('mode'),
       period = params.get('period');
-    if (mode === 'popular' && period === 'all' && ++popularRequests === 1)
+    if (mode === 'popular' && period === 'month' && ++popularRequests === 1)
       return route.fulfill({ json: { mode, period, state: 'pending', items: [] } });
     if (period === 'year')
       await new Promise((resolve) => {
@@ -119,7 +119,14 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   let panel = popular;
   await expect(released.locator('.discovery-preview-card')).toHaveCount(1);
   await expect(page.locator('.discovery-panel.is-expanded')).toHaveCount(1);
-  await expect(panel.getByRole('link', { name: /popular all pick/ })).toBeVisible();
+  await expect(panel.getByRole('link', { name: /popular month pick/ })).toBeVisible();
+  await expect(panel.getByRole('button', { name: 'Last month' })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.discovery-category-hint')).toHaveCount(0);
+  await expect(trending.locator('.discovery-filter-row')).toHaveCount(0);
+  await expect(popular.locator('.discovery-panel-footer')).toHaveCount(0);
   await checkSelectedLayout(popular);
   expect(popularRequests).toBe(2);
   await panel.getByRole('button', { name: 'Last year' }).click();

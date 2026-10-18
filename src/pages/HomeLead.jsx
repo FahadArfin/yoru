@@ -21,7 +21,7 @@ import { useHeroCarousel } from '../useHeroCarousel';
 import HeroArtwork from '../HeroArtwork';
 
 export default function HomeLead({ children, heroOnly = false }) {
-  const [language, setLanguage] = useState('all');
+  const [language, setLanguage] = useState('sub');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
   const [selectedId, setSelectedId] = useState(null);
