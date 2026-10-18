@@ -4,6 +4,7 @@ import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-reac
 import { itemsOf } from '../api';
 import { useResource } from '../state';
 import { Empty, ErrorNotice, Loading, Poster } from '../components';
+import GenreCollections, { browseGenres } from './GenreCollections';
 const labels = {
   anime: ['Anime', 'Find a world worth getting lost in.'],
   manga: ['Manga', 'Great stories, one panel at a time.'],
@@ -21,10 +22,12 @@ export default function Browse({ embedded = false, categoryOverride }) {
   const sort = params.get('sort') || 'trending';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
+  const discovery =
+    chosen !== 'all' && !['q', 'genre', 'sort', 'page', 'view'].some((key) => params.get(key));
   useEffect(() => setSearch(q), [q]);
   useEffect(() => {
     if (!embedded) window.scrollTo({ top: 0, behavior: 'instant' });
-  }, [page, chosen, embedded]);
+  }, [page, chosen, embedded, discovery, genre, q]);
   const query = new URLSearchParams({
     category: chosen.toUpperCase(),
     search: q,
@@ -33,7 +36,7 @@ export default function Browse({ embedded = false, categoryOverride }) {
     page,
     limit: '48',
   });
-  const { data, error, loading, refresh } = useResource(`/api/catalog?${query}`);
+  const { data, error, loading, refresh } = useResource(discovery ? null : `/api/catalog?${query}`);
   const update = (changes) => {
     const next = new URLSearchParams(params);
     Object.entries(changes).forEach(([key, value]) =>
@@ -46,7 +49,7 @@ export default function Browse({ embedded = false, categoryOverride }) {
     <div className="page browse-page" id={embedded ? `${chosen}-catalog` : undefined}>
       <div className="browse-heading">
         {embedded ? (
-          <h2>The {chosen} collection</h2>
+          <h2>{discovery ? 'Explore by genre' : `The ${chosen} collection`}</h2>
         ) : (
           <h1>{q ? `Results for “${q}”` : labels[chosen][0]}</h1>
         )}
@@ -116,21 +119,7 @@ export default function Browse({ embedded = false, categoryOverride }) {
             onChange={(e) => update({ genre: e.target.value })}
           >
             <option value="">All genres</option>
-            {[
-              'Action',
-              'Adventure',
-              'Comedy',
-              'Drama',
-              'Fantasy',
-              'Horror',
-              'Mystery',
-              'Romance',
-              'Sci-Fi',
-              'Slice of Life',
-              'Sports',
-              'Supernatural',
-              'Suspense',
-            ].map((x) => (
+            {browseGenres.map((x) => (
               <option key={x}>{x}</option>
             ))}
           </select>
@@ -148,57 +137,63 @@ export default function Browse({ embedded = false, categoryOverride }) {
           </select>
         </label>
       </div>
-      <div className="results-bar">
-        <span>
-          {data?.total
-            ? `${data.total.toLocaleString()} ${data.totalIsEstimate ? 'saved stories available' : 'stories to discover'}`
-            : loading
-              ? 'Finding stories…'
-              : `${itemsOf(data).length} stories`}
-        </span>
-        <span>
-          {data?.providerUnavailable || data?.source === 'offline-cache'
-            ? 'Showing saved results · live catalog is temporarily unavailable'
-            : `${itemsOf(data).length} titles on this page`}
-        </span>
-        {(data?.providerUnavailable || data?.totalIsEstimate) && (
-          <button onClick={refresh} disabled={loading}>
-            Retry live catalog
-          </button>
-        )}
-      </div>
-      {error ? (
-        <ErrorNotice message={error} retry={refresh} />
-      ) : loading ? (
-        <Loading cards />
-      ) : itemsOf(data).length ? (
-        <div className="poster-grid browse-grid">
-          {itemsOf(data).map((media) => (
-            <Poster key={media.id} media={media} compact />
-          ))}
-        </div>
+      {discovery ? (
+        <GenreCollections category={chosen} />
       ) : (
-        <Empty icon={Search} title="No plot twists here. Just no results.">
-          Try another title or clear a filter to widen your search.
-        </Empty>
+        <>
+          <div className="results-bar">
+            <span>
+              {data?.total
+                ? `${data.total.toLocaleString()} ${data.totalIsEstimate ? 'saved stories available' : 'stories to discover'}`
+                : loading
+                  ? 'Finding stories…'
+                  : `${itemsOf(data).length} stories`}
+            </span>
+            <span>
+              {data?.providerUnavailable || data?.source === 'offline-cache'
+                ? 'Showing saved results · live catalog is temporarily unavailable'
+                : `${itemsOf(data).length} titles on this page`}
+            </span>
+            {(data?.providerUnavailable || data?.totalIsEstimate) && (
+              <button onClick={refresh} disabled={loading}>
+                Retry live catalog
+              </button>
+            )}
+          </div>
+          {error ? (
+            <ErrorNotice message={error} retry={refresh} />
+          ) : loading ? (
+            <Loading cards />
+          ) : itemsOf(data).length ? (
+            <div className="poster-grid browse-grid">
+              {itemsOf(data).map((media) => (
+                <Poster key={media.id} media={media} compact />
+              ))}
+            </div>
+          ) : (
+            <Empty icon={Search} title="No plot twists here. Just no results.">
+              Try another title or clear a filter to widen your search.
+            </Empty>
+          )}
+          <div className="pagination">
+            <button disabled={page === 1} onClick={() => update({ page: page - 1 })}>
+              <ArrowLeft size={16} />
+              Previous
+            </button>
+            <span>
+              Page {page}
+              {data?.pages ? ` of ${data.pages}` : ''}
+            </span>
+            <button
+              disabled={!data || page >= (data.pages || 1)}
+              onClick={() => update({ page: page + 1 })}
+            >
+              Next
+              <ArrowRight size={16} />
+            </button>
+          </div>
+        </>
       )}
-      <div className="pagination">
-        <button disabled={page === 1} onClick={() => update({ page: page - 1 })}>
-          <ArrowLeft size={16} />
-          Previous
-        </button>
-        <span>
-          Page {page}
-          {data?.pages ? ` of ${data.pages}` : ''}
-        </span>
-        <button
-          disabled={!data || page >= (data.pages || 1)}
-          onClick={() => update({ page: page + 1 })}
-        >
-          Next
-          <ArrowRight size={16} />
-        </button>
-      </div>
     </div>
   );
 }
