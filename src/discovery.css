@@ -346,6 +346,7 @@
 }
 .discovery-preview-list {
   display: grid;
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
 }
 .discovery-preview-card {

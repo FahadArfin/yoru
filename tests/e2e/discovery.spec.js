@@ -69,6 +69,11 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   ).toHaveAttribute('aria-expanded', 'true');
   await expect(popular.locator('.discovery-preview-card')).toHaveCount(1);
   await expect(trending.locator('.discovery-preview-card')).toHaveCount(1);
+  for (const category of [popular, trending]) {
+    const bounds = await category.boundingBox();
+    const card = await category.locator('.discovery-preview-card').boundingBox();
+    expect(card.x + card.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
+  }
   const highlights = await page
     .getByRole('complementary', { name: 'Anime highlights' })
     .boundingBox();
