@@ -11,7 +11,11 @@ export default function WatchDetails({ media }) {
       </Link>
       <div className="watch-details-copy">
         <span className="eyebrow">ABOUT THE SERIES</span>
-        <h2>{titleOf(media)}</h2>
+        <h2>
+          <Link className="watch-details-title" to={`/title/${media.id}`}>
+            {titleOf(media)}
+          </Link>
+        </h2>
         <p className="watch-details-native">
           {media.titleNative || media.titleJapanese || media.titleRomaji}
         </p>

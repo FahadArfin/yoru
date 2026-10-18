@@ -542,6 +542,22 @@
   font-size: 26px;
   margin: 8px 0;
 }
+.watch-details-title {
+  color: inherit;
+  border-radius: 3px;
+  transition: text-shadow 180ms ease;
+}
+.watch-details-title:hover,
+.watch-details-title:focus-visible {
+  color: rgb(var(--chrome-text));
+  text-shadow:
+    0 0 10px rgb(167 139 250 / 0.7),
+    0 0 24px rgb(167 139 250 / 0.4);
+}
+.watch-details-title:focus-visible {
+  outline: 2px solid rgb(var(--chrome-text));
+  outline-offset: 5px;
+}
 .watch-details-native {
   font-size: 12px;
   color: rgb(var(--chrome-quiet));
