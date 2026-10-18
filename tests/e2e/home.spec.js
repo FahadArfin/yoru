@@ -76,7 +76,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
   await expect(page.getByRole('heading', { name: 'Weekly Two', exact: true })).toBeVisible();
   const hero = await page.locator('.weekly-hero').boundingBox(),
     feed = await page.locator('.release-section').boundingBox();
-  expect(hero.height).toBeGreaterThan(page.viewportSize().height * 0.8);
+  expect(hero.height).toBeLessThan(page.viewportSize().height * 0.75);
   const rail = page.getByRole('complementary', { name: 'Anime highlights' });
   for (const name of ['Most viewed', 'Upcoming anime'])
     await expect(rail.getByRole('region', { name, exact: true })).toHaveCount(0);

@@ -34,7 +34,7 @@ for (const category of ['manga', 'manhwa']) {
     );
     await page.goto(`/browse/${category}`);
     const hero = page.getByRole('region', { name: `Featured ${category}`, exact: true });
-    const backdrop = hero.locator('.weekly-backdrop');
+    const backdrop = hero.locator('.hero-art-layer:not(.outgoing) .weekly-backdrop');
     await expect(backdrop).toHaveAttribute('src', '/test-reading-art/landscape.svg');
     const checkFullWidth = async (image) => {
       const frame = await hero.boundingBox();
@@ -61,7 +61,7 @@ for (const category of ['manga', 'manhwa']) {
         hero.getByRole('link', { name: `Explore ${category}`, exact: true }),
       ).toHaveAttribute('href', `/title/mal-manga-${number}`);
       await expect(backdrop).toHaveCount(0);
-      const cover = hero.locator('.manga-cover-stage img');
+      const cover = hero.locator('.hero-art-layer:not(.outgoing) .manga-cover-stage img');
       await expect(cover).toHaveAttribute('src', `/test-reading-art/cover-${number}.svg`);
       await expect(cover).toHaveAttribute('data-cover-state', 'ready');
       await checkFullWidth(cover);

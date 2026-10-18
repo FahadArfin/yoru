@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
   ArrowRight,
@@ -45,7 +45,15 @@ function MangaRow({ media }) {
 export function MangaLanding({ category, label, homepage = false, children }) {
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
-  const picks = popular.data?.items?.length ? popular.data.items : itemsOf(curated.data);
+  const previousPopular = useRef({ category, items: [] });
+  if (previousPopular.current.category !== category)
+    previousPopular.current = { category, items: [] };
+  if (Array.isArray(popular.data?.items))
+    previousPopular.current = { category, items: popular.data.items };
+  // Keep the featured lineup stable while the periodic background refresh is in flight.
+  const picks = previousPopular.current.items.length
+    ? previousPopular.current.items
+    : itemsOf(curated.data);
   const { user, setAuthOpen } = useApp();
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (
@@ -53,6 +61,11 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''}`}
     >
       <MangaHero items={picks} category={category} label={label} />
+      {homepage && (
+        <div className="home-resume home-width">
+          <ContinueReading category={category} />
+        </div>
+      )}
       <div className="manga-intro home-width">
         <div>
           <BookOpen size={19} />
@@ -72,7 +85,6 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
-          {homepage && <ContinueReading category={category} />}
           {homepage && <LiveComments />}
           {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
           {children}

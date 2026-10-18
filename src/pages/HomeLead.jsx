@@ -4,10 +4,21 @@ import HomeDiscovery from './HomeDiscovery';
 import ContinueWatching from './ContinueWatching';
 import LiveComments from './LiveComments';
 import { Link } from 'react-router-dom';
-import { ArrowRight, Check, ChevronLeft, ChevronRight, Flame, Play, Plus } from 'lucide-react';
+import {
+  ArrowRight,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Flame,
+  Play,
+  Plus,
+  Pause,
+} from 'lucide-react';
 import { useApp, useResource } from '../state';
 import { titleOf } from '../api';
 import { useBannerArtwork } from '../useBannerArtwork';
+import { useHeroCarousel } from '../useHeroCarousel';
+import HeroArtwork from '../HeroArtwork';
 
 export default function HomeLead({ children }) {
   const [language, setLanguage] = useState('all');
@@ -27,6 +38,7 @@ export default function HomeLead({ children }) {
     featured.findIndex((x) => x.id === selectedId),
   );
   const hero = featured[index];
+  const carousel = useHeroCarousel(featured, hero?.id, setSelectedId, artwork.ref);
   useEffect(() => {
     if (hero) setSelectedId(hero.id);
   }, [hero?.id]);
@@ -46,19 +58,26 @@ export default function HomeLead({ children }) {
     (home.data?.stale && !releases.length);
   return (
     <>
-      <section ref={artwork.ref} className="weekly-hero has-wide-art" aria-label="Hot this week">
-        {hero && (
-          <img
-            key={hero.id}
-            className="weekly-backdrop"
-            src={hero.banner}
-            alt=""
-            fetchPriority="high"
-            onError={() => artwork.reject(hero.banner)}
-          />
-        )}
+      <section
+        ref={artwork.ref}
+        className={`weekly-hero has-wide-art${carousel.dragging ? ' is-dragging' : ''}`}
+        aria-label="Hot this week"
+        {...carousel.bindings}
+      >
+        <HeroArtwork identity={hero?.id} offset={carousel.offset}>
+          {hero && (
+            <img
+              key={hero.id}
+              className="weekly-backdrop"
+              src={hero.banner}
+              alt=""
+              fetchPriority="high"
+              onError={() => artwork.reject(hero.banner)}
+            />
+          )}
+        </HeroArtwork>
         <div className="weekly-shade" />
-        <div className="weekly-content">
+        <div className="weekly-content" key={hero?.id}>
           <span className="weekly-kicker">
             <Flame size={15} /> HOT THIS WEEK <span className="weekly-line" />
           </span>
@@ -132,12 +151,15 @@ export default function HomeLead({ children }) {
               Popular anime airing this week <span> / </span> AnimeSchedule
             </span>
             <div className="weekly-controls" aria-label="Featured anime">
-              <button
-                aria-label="Previous featured title"
-                onClick={() =>
-                  setSelectedId(featured[(index - 1 + featured.length) % featured.length].id)
-                }
-              >
+              {featured.length > 1 && !carousel.reduced && (
+                <button
+                  aria-label={carousel.paused ? 'Resume banner rotation' : 'Pause banner rotation'}
+                  onClick={carousel.togglePause}
+                >
+                  {carousel.paused ? <Play size={15} /> : <Pause size={15} />}
+                </button>
+              )}
+              <button aria-label="Previous featured title" onClick={() => carousel.move(-1)}>
                 <ChevronLeft size={18} />
               </button>
               {featured.map((media) => (
@@ -146,27 +168,26 @@ export default function HomeLead({ children }) {
                   className={`weekly-dot ${hero.id === media.id ? 'active' : ''}`}
                   aria-label={`Feature ${titleOf(media)}`}
                   aria-current={hero.id === media.id ? 'true' : undefined}
-                  onClick={() => setSelectedId(media.id)}
+                  onClick={() => carousel.select(media.id)}
                 />
               ))}
               <span>
                 {String((index % featured.length) + 1).padStart(2, '0')}
                 <small> / {String(featured.length).padStart(2, '0')}</small>
               </span>
-              <button
-                aria-label="Next featured title"
-                onClick={() => setSelectedId(featured[(index + 1) % featured.length].id)}
-              >
+              <button aria-label="Next featured title" onClick={() => carousel.move(1)}>
                 <ChevronRight size={18} />
               </button>
             </div>
           </div>
         )}
       </section>
+      <div className="home-resume home-width">
+        <ContinueWatching />
+      </div>
       <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">
           <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
-          <ContinueWatching />
           <LiveComments />
           <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
           {children}
