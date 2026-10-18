@@ -2,6 +2,7 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from '../collection-router';
 import { CalendarDays, ChevronDown, Clock3 } from 'lucide-react';
 import { useResource } from '../state';
+import usePhoneDayStrip from '../usePhoneDayStrip';
 import { airingLabel, localDateKey, shiftDate, weekDays, weekStart } from '../../shared/schedule';
 
 export function HomeAiringSchedule({ language }) {
@@ -9,7 +10,7 @@ export function HomeAiringSchedule({ language }) {
   const today = localDateKey(now);
   const [selected, setSelected] = useState(null);
   const day = selected || today;
-  const daysRef = useRef(null);
+  const daysRef = usePhoneDayStrip(day);
   const dayPositions = useRef(new Map());
   useLayoutEffect(() => {
     const positions = dayPositions.current;

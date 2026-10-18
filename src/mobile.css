@@ -1,0 +1,426 @@
+/* Phone-only improvements. Desktop composition and reader canvas stay intact. */
+.mobile-navigation {
+  display: none;
+}
+
+@media (max-width: 760px) {
+  .home-shell {
+    padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  }
+  .home-shell .topbar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    height: auto;
+    min-height: 110px;
+    padding: 8px 12px 12px;
+    border-radius: 20px;
+    left: 12px;
+    right: 12px;
+    top: 12px;
+  }
+  .browse-shell .topbar {
+    inset: auto;
+    width: calc(100% - 24px);
+    margin: 12px auto 0;
+  }
+  .home-shell .topbar .home-topnav {
+    display: none;
+  }
+  .home-shell .topbar > .brand {
+    margin-right: auto;
+    min-height: 44px;
+  }
+  .home-shell .topbar > .brand > span {
+    font-size: 28px;
+  }
+  .home-shell .topbar > .btn,
+  .home-shell .topbar .header-settings,
+  .home-shell .topbar .header-avatar {
+    min-height: 44px;
+    min-width: 44px;
+    font-size: 12px;
+  }
+  .home-shell .topbar .header-settings {
+    display: flex;
+    flex-basis: 44px;
+  }
+  .home-shell .topbar .global-search {
+    order: 3;
+    flex: 0 0 100%;
+    width: 100%;
+    height: 44px;
+    margin: 0;
+    padding: 0 12px;
+  }
+  .home-shell .topbar .global-search input {
+    font-size: 16px;
+  }
+  .home-shell .topbar .global-search > svg {
+    width: 18px;
+    height: 18px;
+  }
+  .home-shell .global-search .search-clear {
+    min-width: 32px;
+    min-height: 40px;
+  }
+  .home-shell .search-panel {
+    background: rgb(var(--chrome-surface));
+  }
+  .home-shell .search-filters button {
+    min-height: 40px;
+    font-size: 12px;
+  }
+  .home-shell .search-results {
+    max-height: min(48svh, 420px);
+  }
+  .home-shell .search-view-all {
+    min-height: 44px;
+    font-size: 13px;
+  }
+  .mobile-navigation {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    position: fixed;
+    z-index: 45;
+    inset: auto 0 0;
+    padding: 7px max(8px, env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom));
+    background: rgb(var(--chrome-surface));
+    border-top: 1px solid var(--line);
+    box-shadow: 0 -4px 20px rgb(0 0 0 / 0.06);
+    gap: 4px;
+  }
+  .mobile-navigation :is(a, button) {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    gap: 4px;
+    min-height: 54px;
+    border: 0;
+    border-radius: 12px;
+    background: transparent;
+    color: rgb(var(--chrome-muted));
+    font-size: 11px;
+    font-weight: 650;
+    cursor: pointer;
+  }
+  .mobile-navigation .active {
+    background: rgb(var(--chrome-hover));
+    color: rgb(var(--chrome-text));
+  }
+  .mobile-navigation :focus-visible {
+    outline: 2px solid rgb(var(--chrome-text));
+    outline-offset: -2px;
+  }
+  .modal-backdrop:has(.mobile-browse-menu) {
+    align-items: flex-end;
+    padding: 0;
+  }
+  .modal:has(.mobile-browse-menu) {
+    width: 100%;
+    max-width: 100%;
+    max-height: 90dvh;
+    margin: 0;
+    border-radius: 24px 24px 0 0;
+    padding: 26px 20px calc(24px + env(safe-area-inset-bottom));
+  }
+  .mobile-browse-menu h2 {
+    margin: 8px 44px 22px 0;
+    font-size: 25px;
+  }
+  .mobile-browse-menu nav {
+    display: grid;
+    gap: 10px;
+  }
+  .mobile-browse-menu nav a {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px;
+    border: 1px solid var(--line);
+    background: rgb(var(--chrome-raised));
+    border-radius: 14px;
+  }
+  .mobile-browse-menu nav a > span {
+    flex: 1;
+  }
+  .mobile-browse-menu strong,
+  .mobile-browse-menu small {
+    display: block;
+  }
+  .mobile-browse-menu small {
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .mobile-collection-switch {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: 48px;
+    margin-top: 16px;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .home-shell .toast {
+    bottom: calc(86px + env(safe-area-inset-bottom));
+  }
+  .home-shell
+    :is(input:not([type='checkbox']):not([type='radio']):not([type='range']), select, textarea) {
+    font-size: 16px;
+  }
+  .home-shell
+    :is(.btn, .icon-button, .segmented button, .filter-select select, .genre-chip, .genre-chips a) {
+    min-height: 44px;
+  }
+  .home-shell .icon-button {
+    min-width: 44px;
+  }
+  .home-shell .page {
+    padding-inline: 16px;
+  }
+  .home-shell .home-width {
+    width: calc(100% - 32px);
+  }
+  .home-shell :is(.release-info h3, .poster-title) {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+  .home-shell .release-info > span {
+    font-size: 11px;
+  }
+  .home-shell .discovery-section .release-language button {
+    min-height: 40px;
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  .home-shell :is(.discovery-mobile-switcher button, .manga-discovery-tabs button) {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .home-shell .watch-controls {
+    gap: 6px;
+  }
+  .home-shell .watch-controls button {
+    min-height: 44px;
+    font-size: 12px;
+    padding: 10px;
+  }
+  .home-shell
+    :is(
+      .source-buttons button,
+      .source-buttons a,
+      .watch-unit-list a,
+      .watch-unit-list button,
+      .episode-range button
+    ) {
+    min-height: 44px;
+  }
+  .home-shell .watch-details-synopsis {
+    font-size: 14px;
+    line-height: 1.75;
+  }
+  .home-shell .schedule-page .schedule-days {
+    display: flex;
+    overflow-x: auto;
+    scroll-snap-type: x proximity;
+    gap: 6px;
+    padding: 4px 0 10px;
+    scrollbar-width: thin;
+  }
+  .home-shell .schedule-page .schedule-days button {
+    flex: 0 0 66px;
+    min-height: 84px;
+    scroll-snap-align: center;
+  }
+  .home-shell .schedule-page .schedule-days button > span {
+    font-size: 18px;
+  }
+  .home-shell .schedule-page .schedule-days strong {
+    font-size: 12px;
+  }
+  .home-shell .schedule-page .schedule-days small {
+    font-size: 11px;
+  }
+  .home-shell
+    .schedule-page
+    :is(
+      .schedule-types button,
+      .schedule-animation-filters button,
+      .schedule-categories button,
+      .schedule-week button
+    ) {
+    min-height: 44px;
+    font-size: 12px;
+  }
+  .home-shell .schedule-page .schedule-item {
+    min-height: 100px;
+  }
+  .home-shell .space-hub .space-header {
+    gap: 12px;
+    padding: 16px;
+    margin-top: 16px;
+  }
+  .home-shell .space-header .eyebrow,
+  .home-shell .space-header p {
+    display: none;
+  }
+  .home-shell .space-header h1 {
+    font-size: 23px;
+    margin: 0;
+  }
+  .home-shell .space-tabs {
+    width: 100%;
+  }
+  .home-shell .space-tabs a {
+    flex: 1 1 0;
+    min-width: 0;
+    justify-content: center;
+    min-height: 44px;
+    padding: 8px;
+    font-size: 12px;
+  }
+  .home-shell .space-hub > .page {
+    padding-top: 22px;
+  }
+  .home-shell .community-banner {
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+  .home-shell .community-page .community-banner {
+    display: flex;
+    padding: 12px;
+    align-items: center;
+  }
+  .home-shell .community-page .community-banner > div {
+    display: none;
+  }
+  .home-shell .community-page .community-banner .section-action {
+    margin-left: auto;
+    min-height: 44px;
+  }
+  .home-shell :is(.community-page, .schedule-page) .section-page-heading p,
+  .home-shell .forum-heading p {
+    display: none;
+  }
+  .home-shell .space-hub .heading-buttons {
+    flex-wrap: wrap;
+    width: 100%;
+  }
+  .home-shell .space-hub :is(.heading-buttons .btn, .empty-state .btn) {
+    max-width: 100%;
+    white-space: normal;
+  }
+  .home-shell .community-banner > div > p {
+    display: none;
+  }
+  .home-shell .forum-heading {
+    margin-bottom: 16px;
+  }
+  .home-shell .forum-heading h2 {
+    font-size: 24px;
+  }
+  .home-shell .forum-boards {
+    gap: 8px;
+  }
+  .home-shell .forum-board {
+    padding: 12px;
+    min-height: 88px;
+    gap: 10px;
+  }
+  .home-shell .forum-board small {
+    display: none;
+  }
+  .home-shell .forum-board strong {
+    font-size: 13px;
+  }
+  .home-shell .forum-board em {
+    margin-top: 5px;
+    font-size: 11px;
+  }
+  .home-shell .forum-form :is(input, textarea, select) {
+    font-size: 16px;
+  }
+  .home-shell .forum-tools {
+    gap: 10px;
+  }
+  .reader-shell
+    .reader-dex
+    :is(.reader-menu-action, .reader-quick-bar button, .reader-page-grid button) {
+    min-height: 44px;
+  }
+  .reader-shell .reader-dex :is(input, select, textarea) {
+    font-size: 16px;
+  }
+}
+
+@media (max-width: 360px) {
+  .home-shell .space-tabs a {
+    padding-inline: 4px;
+  }
+  .home-shell .space-tabs svg {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .home-shell
+    :is(
+      .home-content-layout .release-grid,
+      .manga-discovery .release-grid,
+      .anime-discovery .release-grid,
+      .browse-grid,
+      .poster-grid,
+      .home-poster-grid
+    ) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 12px;
+  }
+  .home-shell .cinema-home .weekly-hero {
+    min-height: 500px;
+    height: min(72svh, 580px);
+  }
+  .home-shell .cinema-home .weekly-content {
+    padding-top: 150px;
+  }
+  .home-shell .category-home .home-category-bar,
+  .home-shell .category-home .weekly-controls {
+    opacity: 1;
+    pointer-events: auto;
+  }
+  .home-shell .category-home .weekly-bottom {
+    top: auto;
+    bottom: 76px;
+    justify-content: flex-end;
+  }
+  .home-shell .weekly-controls .weekly-dot {
+    display: none;
+  }
+  .home-shell .weekly-controls button {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+  .home-shell .category-home .weekly-content {
+    padding-bottom: 140px;
+  }
+  .home-shell .category-home .home-category-bar {
+    bottom: 16px;
+  }
+  .home-shell .home-airing-schedule .rail-days {
+    overflow-x: auto;
+    display: flex;
+    padding-bottom: 8px;
+  }
+  .home-shell .home-airing-schedule .rail-days button {
+    flex: 0 0 64px;
+    min-height: 72px;
+  }
+  .home-shell .home-airing-schedule .rail-days small {
+    font-size: 10px;
+  }
+  .home-shell .home-airing-schedule .rail-days button.is-yesterday small {
+    max-width: none;
+  }
+}

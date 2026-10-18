@@ -34,7 +34,9 @@ for (const category of ['manga', 'manhwa']) {
     );
     await page.goto(`/browse/${category}`);
     const hero = page.getByRole('region', { name: `Featured ${category}`, exact: true });
-    const backdrop = hero.locator('.hero-art-layer:not(.outgoing) .weekly-backdrop');
+    const backdrop = hero.locator(
+      '.hero-art-layer:not(.outgoing):not(.hero-art-neighbor) .weekly-backdrop',
+    );
     await expect(backdrop).toHaveAttribute('src', '/test-reading-art/landscape.svg');
     const checkFullWidth = async (image) => {
       const frame = await hero.boundingBox();
@@ -42,7 +44,9 @@ for (const category of ['manga', 'manhwa']) {
       const viewport = page.viewportSize();
       expect(frame.x).toBe(0);
       expect(frame.width).toBeGreaterThan(viewport.width * 0.98);
-      expect(frame.height).toBeGreaterThan(viewport.height * 0.75);
+      // Category pages intentionally use a compact hero; phones reserve space for search.
+      expect(frame.height).toBeGreaterThanOrEqual(viewport.width <= 600 ? 500 : 300);
+      expect(frame.height).toBeLessThan(viewport.height);
       expect(art.width).toBeCloseTo(frame.width, 0);
       expect(art.height).toBeCloseTo(frame.height, 0);
       expect(await image.evaluate((el) => getComputedStyle(el).objectFit)).toBe('cover');
@@ -61,7 +65,9 @@ for (const category of ['manga', 'manhwa']) {
         hero.getByRole('link', { name: `Explore ${category}`, exact: true }),
       ).toHaveAttribute('href', `/title/mal-manga-${number}`);
       await expect(backdrop).toHaveCount(0);
-      const cover = hero.locator('.hero-art-layer:not(.outgoing) .manga-cover-stage img');
+      const cover = hero.locator(
+        '.hero-art-layer:not(.outgoing):not(.hero-art-neighbor) .manga-cover-stage img',
+      );
       await expect(cover).toHaveAttribute('src', `/test-reading-art/cover-${number}.svg`);
       await expect(cover).toHaveAttribute('data-cover-state', 'ready');
       await checkFullWidth(cover);

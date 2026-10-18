@@ -12,6 +12,7 @@ import {
 import { useResource } from '../state';
 import { Empty, ErrorNotice } from '../components';
 import CoverImage from '../CoverImage';
+import usePhoneDayStrip from '../usePhoneDayStrip';
 import { languageName } from '../reader/model';
 import { localDateKey, shiftDate, weekStart, weekDays } from '../../shared/schedule';
 
@@ -194,6 +195,7 @@ export default function ReadingCalendar({ category, picker }) {
   const [week, setWeek] = useState(currentWeek),
     [day, setDay] = useState(today),
     [language, setLanguage] = useState('en');
+  const phoneDays = usePhoneDayStrip(day);
   const days = weekDays(week);
   function changeWeek(next) {
     setWeek(next);
@@ -256,7 +258,7 @@ export default function ReadingCalendar({ category, picker }) {
             Today
           </button>
         </div>
-        <div className="schedule-days">
+        <div className="schedule-days" ref={phoneDays}>
           {days.map((date) => (
             <button
               key={date}

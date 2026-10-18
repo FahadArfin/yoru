@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReadingCalendar from './ReadingCalendar';
+import usePhoneDayStrip from '../usePhoneDayStrip';
 import {
   CalendarDays,
   Clock,
@@ -62,6 +63,7 @@ function AnimeSchedule({ picker }) {
   const [week, setWeek] = useState(currentWeek),
     [day, setDay] = useState(today),
     [type, setType] = useState('raw');
+  const phoneDays = usePhoneDayStrip(day);
   const { data, loading, error, refresh } = useResource(`/api/calendar?week=${week}`, false);
   const days = weekDays(week),
     all = (data?.items || []).filter(
@@ -210,7 +212,7 @@ function AnimeSchedule({ picker }) {
             Today
           </button>
         </div>
-        <div className="schedule-days">
+        <div className="schedule-days" ref={phoneDays}>
           {days.map((date) => (
             <button
               key={date}
