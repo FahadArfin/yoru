@@ -15,7 +15,13 @@ import { AuthModal, Avatar, Loading } from './components';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
-import { NsfwMenu } from './nsfw';
+import {
+  NsfwButton,
+  AraAraBrand,
+  AraAraNavigation,
+  AraAraFooter,
+  LegacyNsfwRedirect,
+} from './nsfw';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import SpaceLayout from './SpaceLayout';
@@ -57,6 +63,10 @@ function Shell() {
   navigateRef.current = navigate;
   const location = useLocation();
   const isHome = location.pathname === '/';
+  const isAraAra = /^\/(ara-ara|nsfw)(\/|$)/.test(location.pathname);
+  useEffect(() => {
+    document.title = isAraAra ? 'Ara Ara · 18+' : 'Yoru · A little more obsessed';
+  }, [isAraAra]);
   const isReader = location.pathname.startsWith('/read/');
   const hasTopNavigation = !isReader;
   const input = useRef();
@@ -89,7 +99,7 @@ function Shell() {
         isReader
           ? 'reader-shell'
           : hasTopNavigation
-            ? `home-shell${!isHome ? ' browse-shell' : ''}`
+            ? `home-shell${!isHome ? ' browse-shell' : ''}${isAraAra ? ' ara-shell' : ''}`
             : undefined
       }
     >
@@ -100,34 +110,38 @@ function Shell() {
         <header className="topbar">
           {hasTopNavigation && (
             <>
-              <Brand />
-              <nav className="home-topnav" aria-label="Explore Yoru">
-                <NavLink to="/browse/anime">Anime</NavLink>
-                <NavLink to="/browse/manga">Manga</NavLink>
-                <NavLink to="/browse/manhwa">Manhwa</NavLink>
-                <Link to="/schedule">Schedule</Link>
-                <Link
-                  to="/community"
-                  className={
-                    ['/community', '/library', '/rooms'].some(
-                      (path) =>
-                        location.pathname === path || location.pathname.startsWith(path + '/'),
-                    )
-                      ? 'active'
-                      : ''
-                  }
-                >
-                  My Space
-                </Link>
-                <NsfwMenu />
-              </nav>
+              {isAraAra ? <AraAraBrand /> : <Brand />}
+              {isAraAra ? (
+                <AraAraNavigation />
+              ) : (
+                <nav className="home-topnav" aria-label="Explore Yoru">
+                  <NavLink to="/browse/anime">Anime</NavLink>
+                  <NavLink to="/browse/manga">Manga</NavLink>
+                  <NavLink to="/browse/manhwa">Manhwa</NavLink>
+                  <Link to="/schedule">Schedule</Link>
+                  <Link
+                    to="/community"
+                    className={
+                      ['/community', '/library', '/rooms'].some(
+                        (path) =>
+                          location.pathname === path || location.pathname.startsWith(path + '/'),
+                      )
+                        ? 'active'
+                        : ''
+                    }
+                  >
+                    My Space
+                  </Link>
+                  <NsfwButton />
+                </nav>
+              )}
             </>
           )}
           <div className="topbar-context">
             <span className="live-dot" />
             YOUR NEXT OBSESSION STARTS HERE
           </div>
-          <GlobalSearch inputRef={input} />
+          {!isAraAra && <GlobalSearch inputRef={input} />}
           <Link className="online-pill" to="/community">
             <span className={`live-dot ${!visitors.connected ? 'muted-dot' : ''}`} />
             <strong>{visitors.connected ? visitors.data?.count || 0 : '—'}</strong>
@@ -160,8 +174,10 @@ function Shell() {
               <Route path="/browse/manga" element={<MangaPage key="manga" />} />
               <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />
-              <Route path="/nsfw" element={<NsfwPage />} />
-              <Route path="/nsfw/:category" element={<NsfwPage />} />
+              <Route path="/ara-ara" element={<NsfwPage />} />
+              <Route path="/ara-ara/:category" element={<NsfwPage />} />
+              <Route path="/nsfw" element={<LegacyNsfwRedirect />} />
+              <Route path="/nsfw/:category" element={<LegacyNsfwRedirect />} />
               <Route path="/title/:id" element={<Title />} />
               <Route path="/watch/:id/:unit" element={<Watch />} />
               <Route path="/watch/:id/latest" element={<WatchLatest />} />
@@ -189,7 +205,7 @@ function Shell() {
             </Routes>
           </Suspense>
         </main>
-        <SiteFooter />
+        {isAraAra ? <AraAraFooter /> : <SiteFooter />}
       </div>
       <AuthModal />
       {toast && (
