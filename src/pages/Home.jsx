@@ -11,9 +11,9 @@ const ReadingHome = lazy(() =>
   import('./MangaPage').then((module) => ({ default: module.MangaLanding })),
 );
 const categories = [
-  { value: 'anime', label: 'Anime', icon: Play, detail: 'Your next episode' },
-  { value: 'manga', label: 'Manga', icon: BookOpen, detail: 'Your next chapter' },
-  { value: 'manhwa', label: 'Manhwa', icon: Sparkles, detail: 'Your next obsession' },
+  { value: 'anime', label: 'Anime', icon: Play },
+  { value: 'manga', label: 'Manga', icon: BookOpen },
+  { value: 'manhwa', label: 'Manhwa', icon: Sparkles },
 ];
 const validCategory = (value) => categories.some((item) => item.value === value);
 function savedCategory() {
@@ -139,11 +139,7 @@ export default function Home() {
   };
   return (
     <div className="home-page cinema-home category-home" data-category={category}>
-      <div className="home-category-bar home-width">
-        <div className="home-category-intro">
-          <span>MAKE YOURSELF AT HOME</span>
-          <strong>{selected.detail} starts here.</strong>
-        </div>
+      <div className="home-category-bar">
         <div className="home-category-switch" role="tablist" aria-label="Homepage category">
           {categories.map(({ value, label, icon: Icon }, index) => (
             <button
