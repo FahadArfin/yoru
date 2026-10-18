@@ -30,6 +30,41 @@ export const users = sqliteTable('users', {
   avatar: text().notNull().default(''),
   created_at: text().notNull(),
 });
+export const forumTopics = sqliteTable(
+  'forum_topics',
+  {
+    id: text().primaryKey(),
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    collection: text().notNull().default('yoru'),
+    board: text().notNull(),
+    kind: text().notNull(),
+    title: text().notNull(),
+    body: text().notNull(),
+    spoiler: integer().notNull().default(0),
+    created_at: text().notNull(),
+    updated_at: text().notNull(),
+  },
+  (t) => [index('forum_topics_board').on(t.collection, t.board, t.created_at)],
+);
+export const forumReplies = sqliteTable(
+  'forum_replies',
+  {
+    id: text().primaryKey(),
+    topic_id: text()
+      .notNull()
+      .references(() => forumTopics.id, { onDelete: 'cascade' }),
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    body: text().notNull(),
+    spoiler: integer().notNull().default(0),
+    created_at: text().notNull(),
+    updated_at: text().notNull(),
+  },
+  (t) => [index('forum_replies_topic').on(t.topic_id, t.created_at)],
+);
 export const sessions = sqliteTable(
   'sessions',
   {

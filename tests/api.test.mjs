@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { resumeContract } from './resume-contract.mjs';
+import { forumContract } from './forum-contract.mjs';
 import { after, before, test } from 'node:test';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -20,6 +21,8 @@ let privateRoom;
 const streams = [];
 test('resume progress is account-private, validates positions and rejects stale writes', async () =>
   resumeContract(request, register));
+test('forums persist topics and replies, enforce ownership and separate collections', async () =>
+  forumContract(request, register));
 
 async function start() {
   output = '';

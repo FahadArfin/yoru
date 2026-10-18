@@ -8,7 +8,10 @@ export function collectionRequest(path, active) {
   )
     return null;
   if (url.pathname === '/api/catalog' || /^\/api\/media\/[^/]+$/.test(url.pathname)) return null;
-  if (['/api/calendar', '/api/chapter-calendar', '/api/community'].includes(url.pathname)) {
+  if (
+    url.pathname.startsWith('/api/forum/') ||
+    ['/api/calendar', '/api/chapter-calendar', '/api/community'].includes(url.pathname)
+  ) {
     url.searchParams.set('collection', 'ara-ara');
     return url.pathname + url.search;
   }

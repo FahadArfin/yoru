@@ -82,6 +82,7 @@ test('My Space shares episode discussions while filtering titles and library', a
   await page.goto('/ara-ara/community');
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
   await expect(page.getByRole('heading', { name: 'My Space', exact: true })).toBeVisible();
+  await page.getByRole('button', { name: 'Latest activity', exact: true }).click();
   await expect(page.getByText('Inside ' + suffix, { exact: true })).toBeVisible();
   await expect(page.getByText('Outside ' + suffix, { exact: true })).toHaveCount(0);
   await page

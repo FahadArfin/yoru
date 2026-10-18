@@ -7,8 +7,8 @@ import { ErrorNotice } from './components';
 import CoverImage from './CoverImage';
 import './community-threads.css';
 
-export default function CommunityThreads() {
-  const [category, setCategory] = useState('anime');
+export default function CommunityThreads({ initialCategory = 'anime' }) {
+  const [category, setCategory] = useState(initialCategory);
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState(9);
   const { event } = useApp();

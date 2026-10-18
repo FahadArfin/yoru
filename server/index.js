@@ -12,6 +12,7 @@ import { catalogRouter } from './catalog.js';
 import { createImportRouter } from './import.js';
 import { createMalRouter, malEnabled } from './mal.js';
 import { createFavoritesRouter } from './favorites.js';
+import { forumRouter } from './forum-routes.js';
 
 export const app = express();
 if (process.env.TRUST_PROXY !== undefined) {
@@ -107,6 +108,10 @@ app.use(
   createMalRouter({ onLibraryChange: (userId) => broadcast('library', { userId }) }),
 );
 app.use('/api', socialRouter);
+app.use(
+  '/api/forum',
+  forumRouter((data) => broadcast('forum', data)),
+);
 app.use('/api', (_req, res) => res.status(404).json({ error: 'This API route does not exist.' }));
 const dist = join(dirname(fileURLToPath(import.meta.url)), '..', 'dist');
 if (existsSync(dist)) {
