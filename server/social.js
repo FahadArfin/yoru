@@ -1,3 +1,4 @@
+import { roomReaderPath, readerAtUnit } from '../shared/room-reader.js';
 import { Router } from 'express';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { all, get, run, transaction, now } from './db.js';
@@ -581,14 +582,29 @@ socialRouter.post(
         ? 1
         : numeric(req.body.unit, {
             name: 'Episode or chapter',
-            min: 1,
+            min: type === 'read' ? 0 : 1,
             max: 100000,
-            integer: true,
+            integer: type !== 'read',
           });
+    const initialSource =
+      req.body.sourceKind === 'reader'
+        ? roomReaderPath(req.body.sourceUrl, titleId, unit)
+        : req.body.sourceUrl === undefined
+          ? ''
+          : safeSourceUrl(req.body.sourceUrl);
+    if (initialSource === null)
+      throw apiError(400, 'Choose a reader link for this title and chapter.');
+    const initialKind = req.body.sourceKind ?? 'external';
+    if (!['external', 'embed', 'hls', 'video', 'reader'].includes(initialKind))
+      throw apiError(400, 'Choose a valid source type.');
+    const initialPosition =
+      req.body.position === undefined
+        ? 0
+        : numeric(req.body.position, { name: 'Playback position', max: 604800 });
     const timestamp = now();
     transaction(() => {
       run(
-        'INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,state_updated_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?)',
+        'INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         id,
         req.user.id,
         name,
@@ -598,6 +614,9 @@ socialRouter.post(
         invite ? hashToken(invite) : null,
         capacity,
         unit,
+        initialSource,
+        initialKind,
+        initialPosition,
         timestamp,
         timestamp,
       );
@@ -676,7 +695,12 @@ socialRouter.patch('/rooms/:id', requireAuth, (req, res) => {
   const unit =
     req.body.unit === undefined
       ? room.unit
-      : numeric(req.body.unit, { name: 'Episode or chapter', min: 1, max: 100000, integer: true });
+      : numeric(req.body.unit, {
+          name: 'Episode or chapter',
+          min: room.type === 'read' ? 0 : 1,
+          max: 100000,
+          integer: room.type !== 'read',
+        });
   const paused =
     req.body.paused === undefined ? Boolean(room.paused) : bool(req.body.paused, 'Paused');
   const elapsed = room.paused
@@ -688,9 +712,18 @@ socialRouter.patch('/rooms/:id', requireAuth, (req, res) => {
         ? Math.min(604800, room.position + elapsed)
         : 0
       : numeric(req.body.position, { name: 'Playback position', max: 604800 });
-  const sourceUrl =
-    req.body.sourceUrl === undefined ? room.source_url : safeSourceUrl(req.body.sourceUrl);
   const sourceKind = req.body.sourceKind ?? room.source_kind;
+  const requestedSource =
+    req.body.sourceUrl === undefined
+      ? sourceKind === 'reader' && unit !== room.unit
+        ? readerAtUnit(room.source_url, room.media_id, unit)
+        : room.source_url
+      : req.body.sourceUrl;
+  const sourceUrl =
+    sourceKind === 'reader'
+      ? roomReaderPath(requestedSource, room.media_id, unit)
+      : safeSourceUrl(requestedSource);
+  if (sourceUrl === null) throw apiError(400, 'Choose a reader link for this title and chapter.');
   if (!['external', 'embed', 'hls', 'video', 'reader'].includes(sourceKind))
     throw apiError(400, 'Choose a valid source type.');
   run(

@@ -10,7 +10,9 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
-  const end = useRef();
+  const messages = useRef();
+  const follow = useRef(true);
+  const [unread, setUnread] = useState(false);
   const currentEvent = roomId ? roomEvent : event;
   const isLive = roomId ? Boolean(live) : connected;
   const identity = `${path}:${user?.id || 'guest'}:${enabled}`;
@@ -21,6 +23,8 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
     setBody('');
     setBusy(false);
     setError('');
+    follow.current = true;
+    setUnread(false);
     if (enabled) resource.refresh();
   }, [user?.id, enabled, path]);
   useEffect(() => {
@@ -55,7 +59,10 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
     }
   }, [currentEvent, roomId, enabled]);
   useEffect(() => {
-    end.current?.scrollIntoView({ behavior: 'instant', block: 'nearest' });
+    const list = messages.current;
+    if (!list) return;
+    if (follow.current) list.scrollTop = list.scrollHeight;
+    else if (itemsOf(resource.data).length) setUnread(true);
   }, [resource.data]);
   const submit = async (e) => {
     e.preventDefault();
@@ -67,6 +74,8 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
       const result = await send(path, { body });
       if (identityRef.current !== requestedIdentity) return;
       setBody('');
+      follow.current = true;
+      setUnread(false);
       resource.setData((old) => ({
         items: [
           ...itemsOf(old).filter((item) => item.id !== result.message.id),
@@ -91,6 +100,12 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
       </div>
       <div
         className="chat-messages"
+        ref={messages}
+        onScroll={(event) => {
+          const list = event.currentTarget;
+          follow.current = list.scrollHeight - list.scrollTop - list.clientHeight < 60;
+          if (follow.current) setUnread(false);
+        }}
         aria-label={roomId ? 'Room messages' : 'Community messages'}
         aria-live="polite"
       >
@@ -119,8 +134,19 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
               : 'A cozy corner for whatever you’re watching or reading.'}
           </Empty>
         )}
-        <div ref={end} />
       </div>
+      {unread && (
+        <button
+          className="chat-new-messages"
+          onClick={() => {
+            follow.current = true;
+            setUnread(false);
+            messages.current?.scrollTo({ top: messages.current.scrollHeight, behavior: 'smooth' });
+          }}
+        >
+          New messages
+        </button>
+      )}
       {(error || resource.error) && <ErrorNotice message={error || resource.error} />}
       <form className="chat-compose" onSubmit={submit}>
         <input
