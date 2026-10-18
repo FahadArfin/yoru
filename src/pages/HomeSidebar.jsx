@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { CalendarDays, ChevronDown, Clock3, MessageSquare } from 'lucide-react';
 import { useApp, useResource } from '../state';
@@ -13,6 +13,50 @@ export function HomeAiringSchedule({ language }) {
   const day = selected || today;
   const [filter, setFilter] = useState('all');
   const [expanded, setExpanded] = useState(false);
+  const [shown, setShown] = useState({ day, filter, language });
+  const results = useRef(null);
+  const previousHeight = useRef(0);
+  useLayoutEffect(() => {
+    const target = { day, filter, language };
+    const node = results.current;
+    if (!node || window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      setShown(target);
+      return;
+    }
+    if (shown.day === day && shown.filter === filter && shown.language === language) return;
+    previousHeight.current = node.getBoundingClientRect().height;
+    const fade = node.animate([{ opacity: 1 }, { opacity: 0 }], {
+      duration: 110,
+      fill: 'forwards',
+      easing: 'ease-out',
+    });
+    fade.onfinish = () => {
+      setShown(target);
+      fade.cancel();
+    };
+    return () => {
+      fade.onfinish = null;
+      fade.cancel();
+    };
+  }, [day, filter, language]);
+  useLayoutEffect(() => {
+    const node = results.current;
+    if (
+      !node ||
+      !previousHeight.current ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    )
+      return;
+    const height = node.getBoundingClientRect().height;
+    const reveal = node.animate(
+      [
+        { opacity: 0, transform: 'translateY(6px)', height: `${previousHeight.current}px` },
+        { opacity: 1, transform: 'translateY(0)', height: `${height}px` },
+      ],
+      { duration: 280, easing: 'cubic-bezier(.22,1,.36,1)' },
+    );
+    return () => reveal.cancel();
+  }, [shown]);
   const start = weekStart(today);
   const calendar = useResource(`/api/calendar?week=${start}`);
   useEffect(() => {
@@ -32,11 +76,13 @@ export function HomeAiringSchedule({ language }) {
     setExpanded(false);
   }, [start]);
   const items = (calendar.data?.items || [])
-    .filter((x) => x.airType === language && x.airingAt && localDateKey(x.airingAt) === day)
+    .filter(
+      (x) => x.airType === shown.language && x.airingAt && localDateKey(x.airingAt) === shown.day,
+    )
     .filter(
       (x) =>
-        filter === 'all' ||
-        (filter === 'aired'
+        shown.filter === 'all' ||
+        (shown.filter === 'aired'
           ? !x.delayed && Date.parse(x.airingAt) <= now
           : x.delayed || Date.parse(x.airingAt) > now),
     )
@@ -60,13 +106,21 @@ export function HomeAiringSchedule({ language }) {
           <button
             key={date}
             aria-pressed={date === day}
+            aria-label={new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
+              weekday: 'short',
+              month: 'short',
+              day: 'numeric',
+            })}
+            aria-current={date === today ? 'date' : undefined}
             onClick={() => {
               setSelected(date);
               setExpanded(false);
             }}
           >
-            {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
-            <small>
+            <span>
+              {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
+            </span>
+            <small aria-hidden={date !== day}>
               {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
                 month: 'short',
                 day: 'numeric',
@@ -91,57 +145,63 @@ export function HomeAiringSchedule({ language }) {
           ))}
         </div>
         <small>
-          {items.length} airing · {language}
+          {items.length} airing · {shown.language}
         </small>
       </div>
       {calendar.data?.stale && <p className="rail-note">Showing the latest saved schedule.</p>}
-      <div className="rail-schedule-list">
-        {items.slice(0, expanded ? items.length : 6).map((item) => (
-          <a
-            className="rail-media-row schedule-row"
-            key={item.id}
-            href={item.providerUrl}
-            target="_blank"
-            rel="noreferrer"
-          >
-            <img className="rail-backdrop" src={item.cover} alt="" loading="lazy" />
-            <img className="rail-poster" src={item.cover} alt="" loading="lazy" />
-            <div className="rail-row-copy">
-              <strong>{item.title}</strong>
-              <span className="rail-meta">
-                <Clock3 size={10} />
-                <time dateTime={item.airingAt}>
-                  {new Date(item.airingAt).toLocaleTimeString(undefined, {
-                    hour: '2-digit',
-                    minute: '2-digit',
-                  })}
-                </time>
-                <b>EP {item.episode || 'TBA'}</b>
-                <span>{airingLabel(item, now)}</span>
-              </span>
-            </div>
-          </a>
-        ))}
-      </div>
-      {!items.length && (
-        <p className="rail-empty">
-          {calendar.loading
-            ? 'Loading today’s schedule…'
-            : calendar.error || ['unavailable', 'not-configured'].includes(calendar.data?.state)
-              ? 'Schedule temporarily unavailable.'
-              : 'No episodes in this selection.'}
-        </p>
-      )}
-      <div className="home-airing-footer">
-        {items.length > 6 && (
-          <button className="rail-more" onClick={() => setExpanded(!expanded)}>
-            {expanded ? 'Show less' : `Show more (${items.length - 6} more)`}
-            <ChevronDown size={12} />
-          </button>
+      <div
+        ref={results}
+        className="home-schedule-results"
+        aria-busy={shown.day !== day || shown.filter !== filter || shown.language !== language}
+      >
+        <div className="rail-schedule-list">
+          {items.slice(0, expanded ? items.length : 6).map((item) => (
+            <a
+              className="rail-media-row schedule-row"
+              key={item.id}
+              href={item.providerUrl}
+              target="_blank"
+              rel="noreferrer"
+            >
+              <img className="rail-backdrop" src={item.cover} alt="" loading="lazy" />
+              <img className="rail-poster" src={item.cover} alt="" loading="lazy" />
+              <div className="rail-row-copy">
+                <strong>{item.title}</strong>
+                <span className="rail-meta">
+                  <Clock3 size={10} />
+                  <time dateTime={item.airingAt}>
+                    {new Date(item.airingAt).toLocaleTimeString(undefined, {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                    })}
+                  </time>
+                  <b>EP {item.episode || 'TBA'}</b>
+                  <span>{airingLabel(item, now)}</span>
+                </span>
+              </div>
+            </a>
+          ))}
+        </div>
+        {!items.length && (
+          <p className="rail-empty">
+            {calendar.loading
+              ? 'Loading today’s schedule…'
+              : calendar.error || ['unavailable', 'not-configured'].includes(calendar.data?.state)
+                ? 'Schedule temporarily unavailable.'
+                : 'No episodes in this selection.'}
+          </p>
         )}
-        <Link className="rail-more" to="/schedule">
-          Full airing schedule
-        </Link>
+        <div className="home-airing-footer">
+          {items.length > 6 && (
+            <button className="rail-more" onClick={() => setExpanded(!expanded)}>
+              {expanded ? 'Show less' : `Show more (${items.length - 6} more)`}
+              <ChevronDown size={12} />
+            </button>
+          )}
+          <Link className="rail-more" to="/schedule">
+            Full airing schedule
+          </Link>
+        </div>
       </div>
     </section>
   );

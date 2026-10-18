@@ -1037,23 +1037,80 @@
   font-size: 11px;
 }
 .home-airing-schedule .rail-days {
-  gap: 8px;
-  margin: 20px 0 18px;
+  gap: 0;
+  margin: 24px 0 20px;
 }
 .home-airing-schedule .rail-days button {
-  padding: 12px 4px;
-  border-radius: 10px;
-  background: #ffffff03;
-  transition: background 180ms;
+  position: relative;
+  padding: 10px 4px 4px;
+  min-height: 65px;
+  border-radius: 8px;
+  background: transparent;
+  color: #848484;
+  font-size: clamp(14px, 1.5vw, 20px);
+  font-weight: 650;
+  transition: color 220ms ease;
 }
-.home-airing-schedule .rail-days button:hover,
+.home-airing-schedule .rail-days button + button::before {
+  content: '/';
+  position: absolute;
+  left: -3px;
+  top: 13px;
+  color: #ffffff24;
+  font-size: 18px;
+  font-weight: 400;
+}
+.home-airing-schedule .rail-days button > span {
+  display: block;
+  transform: scale(0.9);
+  transition:
+    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    color 220ms ease;
+}
+.home-airing-schedule .rail-days button:hover {
+  color: #ddd;
+  background: transparent;
+}
+.home-airing-schedule .rail-days button:hover > span {
+  transform: scale(1);
+}
 .home-airing-schedule .rail-days button[aria-pressed='true'] {
-  background: #ffffff10;
+  background: transparent;
+  color: #fafafa;
+  font-weight: 850;
+}
+.home-airing-schedule .rail-days button[aria-pressed='true'] > span {
+  transform: scale(1.22);
+}
+.home-airing-schedule .rail-days button:focus-visible {
+  outline: 2px solid #aaa;
+  outline-offset: 3px;
 }
 .home-airing-schedule .rail-days small {
   visibility: visible;
+  opacity: 0;
+  transform: translateY(-3px);
   color: #aaa;
   font-size: 10px;
+  font-weight: 600;
+  margin-top: 8px;
+  transition:
+    opacity 220ms ease,
+    transform 280ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.home-airing-schedule .rail-days button[aria-pressed='true'] small {
+  opacity: 1;
+  transform: translateY(0);
+}
+.home-schedule-results {
+  overflow: hidden;
+}
+@media (prefers-reduced-motion: reduce) {
+  .home-airing-schedule .rail-days button,
+  .home-airing-schedule .rail-days button > span,
+  .home-airing-schedule .rail-days small {
+    transition: none;
+  }
 }
 .home-airing-schedule .rail-filters button,
 .home-airing-schedule .rail-filters > small {
