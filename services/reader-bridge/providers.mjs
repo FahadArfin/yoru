@@ -3,6 +3,7 @@ import { mkdir, readFile, writeFile, rename } from 'node:fs/promises';
 import { join } from 'node:path';
 import { getChapterCatalog, getCatalogChapter } from '../../server/chapter-catalog.js';
 import { ImageCache, pruneSuwayomiCache } from './cache.mjs';
+import { discoverCatalogs } from '../../shared/reader-connection.js';
 
 const SW_SOURCE = '2131019126180322627';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -80,6 +81,14 @@ export async function boundedBytes(response, max = 4 * 1024 ** 2) {
 }
 
 export class Providers {
+  async catalogs() {
+    return this.cached('supported-catalogs-v1', 60000, () =>
+      discoverCatalogs(this.suwayomiUrl, {
+        authorization: this.authorization,
+        fetchImpl: this.fetchImpl,
+      }),
+    );
+  }
   constructor({
     directory = '/data',
     suwayomiUrl = 'http://suwayomi:4567',

@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ context, page, baseURL }) => {
+  await page.route('**/api/reader/catalogs', (route) => route.fulfill({ json: { sources: [] } }));
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );

@@ -5,6 +5,7 @@ COPY --from=tunnel /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/ca-certific
 COPY --from=tunnel /usr/local/bin/cloudflared /usr/local/bin/cloudflared
 COPY services/reader-bridge ./services/reader-bridge
 COPY server/chapter-catalog.js server/validation.js ./server/
+COPY shared/reader-connection.js ./shared/
 COPY package.json ./package.json
 RUN mkdir -p /data && chown node:node /data
 USER node

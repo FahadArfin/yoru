@@ -55,6 +55,7 @@ import {
   getReaderChapter,
   getReaderPage,
   registerReaderBridge,
+  getReaderCatalogs,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
 import { requireAuth } from './security.js';
@@ -176,6 +177,10 @@ app.post('/api/reader-bridge/register', async (c) =>
 app.get('/api/media/:id/reading-sources', async (c) =>
   c.json(await getReadingSources(c.req.param('id'), chapterOptions(c))),
 );
+app.get('/api/reader/catalogs', async (c) => {
+  c.header('Cache-Control', 'no-store');
+  return c.json(await getReaderCatalogs(chapterOptions(c)));
+});
 app.get('/api/media/:id/reader/:chapter', async (c) =>
   c.json(await getReaderChapter(c.req.param('id'), c.req.param('chapter'), chapterOptions(c))),
 );

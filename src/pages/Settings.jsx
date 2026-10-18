@@ -21,6 +21,7 @@ import { useWebMCPStatus } from '../webmcp-state';
 import { useTheme } from '../theme';
 import '../section-pages.css';
 import '../settings-page.css';
+import ReaderConnection from '../ReaderConnection';
 export default function Settings() {
   const [theme, setTheme] = useTheme();
   const webmcp = useWebMCPStatus();
@@ -237,6 +238,7 @@ export default function Settings() {
               </p>
             </details>
           </section>
+          <ReaderConnection />
         </div>
         <div className="settings-column">
           <section className="panel settings-card" aria-labelledby="settings-comfort">

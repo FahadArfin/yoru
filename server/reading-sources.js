@@ -41,6 +41,35 @@ export async function readerBridge(options) {
   const data = await options.load?.(REGISTRATION);
   return data?.expiresAt > (options.now || Date.now)() ? data : null;
 }
+// Expose source names only, never the host's indexed library or administration.
+export async function getReaderCatalogs(options) {
+  const bridge = await readerBridge(options);
+  if (!bridge) throw apiError(503, 'Yoru’s reader server is offline. Try again shortly.');
+  try {
+    const response = await (options.fetchImpl || fetch)(`${bridge.url}/catalogs`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json', authorization: `Bearer ${options.bridgeKey}` },
+      body: '{}',
+      redirect: 'error',
+      signal: AbortSignal.timeout(20000),
+    });
+    if (!response.ok) throw new Error('Unavailable');
+    const data = JSON.parse((await bytes(response, 1024 ** 2)).toString());
+    if (!Array.isArray(data.sources)) throw new Error('Invalid response');
+    return {
+      sources: data.sources
+        .filter((s) => /^[1-9]\d{0,23}$/.test(s.id) && typeof s.name === 'string')
+        .slice(0, 500)
+        .map((s) => ({
+          id: String(s.id),
+          name: s.name.slice(0, 100),
+          language: String(s.language || '').slice(0, 20),
+        })),
+    };
+  } catch {
+    throw apiError(503, 'Yoru’s reader server is temporarily unavailable. Try again shortly.');
+  }
+}
 async function title(id, options) {
   if (!/^mal-manga-[1-9]\d{0,8}$/.test(id || '')) throw apiError(400, 'Invalid manga ID.');
   const media = await options.media(id);

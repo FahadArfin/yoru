@@ -23,7 +23,7 @@ export function bridgeHandler({ key, provider }) {
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const path = new URL(request.url).pathname;
     if (
-      !['/sources', '/chapters', '/chapter', '/reader', '/page'].includes(path) ||
+      !['/catalogs', '/sources', '/chapters', '/chapter', '/reader', '/page'].includes(path) ||
       request.method !== 'POST'
     )
       return Response.json({ error: 'Not found' }, { status: 404 });
@@ -38,6 +38,11 @@ export function bridgeHandler({ key, provider }) {
       if (text.length > 16000)
         return Response.json({ error: 'Request too large' }, { status: 413 });
       const { media, source, filters, chapterId, page } = JSON.parse(text);
+      if (path === '/catalogs') {
+        return Response.json(await provider.catalogs(), {
+          headers: { 'cache-control': 'no-store' },
+        });
+      }
       if (
         !/^mal-manga-[1-9]\d{0,8}$/.test(media?.id || '') ||
         !['MANGA', 'MANHWA'].includes(media.category) ||

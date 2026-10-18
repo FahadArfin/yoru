@@ -1,0 +1,13 @@
+# Reader catalog connection
+
+Settings → Reader catalogs checks Yoru's existing reader server automatically. No server address is required for that check. It lists installed online sources classified as safe; local files, mixed-content sources, adult sources and unknown classifications are excluded. Older Suwayomi versions use the explicit `isNsfw: false` flag only when their schema lacks `contentWarning`.
+
+“Use another server” connects directly from your browser to your own Suwayomi server. Paste its base URL or `/api/graphql` address and choose Connect. A bare hostname is treated as HTTPS. The server must allow browser access from Yoru's origin (CORS), and an HTTPS website may block an HTTP server. Optional Basic authentication credentials remain in memory and are never saved or sent to Yoru's backend. Session-login authentication is not supported by this connector.
+
+The URL is saved only after successful discovery. Invalid addresses, extension repository/index links, failed authentication, incompatible responses and unreachable hosts show an error. A saved custom address is never contacted automatically on a subsequent visit; choose Connect again.
+
+Custom catalog switches control browsing in this settings panel on the current device. They are not server extension installation/uninstallation controls, and do not change Yoru's existing chapter providers. Browse reads only metadata already indexed by your server, 20 titles per page. “Find in Yoru” searches the main catalog by title; Suwayomi IDs are never treated as MAL IDs, and a search result is not proof of a reader mapping.
+
+Yoru's shared server exposes only supported catalog names via an authenticated bridge. Its private indexed titles, local library, credentials and administration are not exposed. `/api/reader/catalogs` does not accept a server URL or arbitrary GraphQL operation. The existing reader continues to use its validated per-title mappings.
+
+The [Suwayomi Tachiyomi extension repository](https://github.com/Suwayomi/tachiyomi-extension) contains the Suwayomi connector for compatible reader apps. Its JSON index is an extension list, not a running server and not a guarantee that any arbitrary extension is compatible.

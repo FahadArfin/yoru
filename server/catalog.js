@@ -26,6 +26,7 @@ import {
   getReaderChapter,
   getReaderPage,
   registerReaderBridge,
+  getReaderCatalogs,
 } from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
 import { getPopularAnime } from './home-discovery.js';
@@ -84,6 +85,12 @@ const chapterOptions = (req) => ({
   userId: req.user?.id,
   sessionHash: req.sessionHash,
 });
+catalogRouter.get(
+  '/reader/catalogs',
+  asyncRoute(async (req, res) => {
+    res.set('Cache-Control', 'no-store').json(await getReaderCatalogs(chapterOptions(req)));
+  }),
+);
 catalogRouter.post(
   '/reader-bridge/register',
   asyncRoute(async (req, res) => {
