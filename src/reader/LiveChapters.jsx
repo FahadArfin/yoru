@@ -156,11 +156,14 @@ export default function LiveChapters({ media }) {
   }
   function updateStats(id, stats) {
     invalidateApi(path);
+    const visibleStats = scope === null ? { ...stats, myRating: 0 } : stats;
     setData(
       (old) =>
         old && {
           ...old,
-          items: old.items.map((item) => (item.id === id ? { ...item, stats } : item)),
+          items: old.items.map((item) =>
+            item.id === id ? { ...item, stats: visibleStats } : item,
+          ),
         },
     );
   }

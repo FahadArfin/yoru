@@ -135,6 +135,53 @@ test('failed main and recommendation covers recover to a usable image', async ({
   await expect(recommendation).toHaveAttribute('src', /456l\.jpg$/);
 });
 
+test('a failed identity check keeps personal ratings hidden after an external chapter open', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await fixtures(page, context, baseURL);
+  await page.route('**/api/auth/me', (route) =>
+    route.fulfill({ status: 503, json: { error: 'Unavailable' } }),
+  );
+  await page.route('**/api/media/*/chapters?*', (route) =>
+    route.fulfill({
+      json: {
+        total: 1,
+        nextOffset: null,
+        languages: ['en'],
+        items: [
+          {
+            id: chapterId,
+            number: '1',
+            title: 'External edition',
+            language: 'en',
+            groups: [],
+            native: false,
+            readUrl: `${baseURL}/external-test`,
+            readLabel: 'Publisher',
+            stats: { opens: 0, votes: 2, rating: 4, myRating: 4 },
+          },
+        ],
+      },
+    }),
+  );
+  await page.route('**/api/media/*/chapters/*/open', (route) =>
+    route.fulfill({ json: { opens: 7, votes: 2, rating: 4, myRating: 4 } }),
+  );
+  await page.route('**/external-test', (route) =>
+    route.fulfill({ contentType: 'text/html', body: '<p>Publisher</p>' }),
+  );
+  await page.goto('/title/mal-manga-21');
+  const rating = page.getByRole('button', { name: 'Rate Chapter 1 in English', exact: true });
+  await expect(rating).not.toHaveClass(/rated/);
+  const popup = context.waitForEvent('page');
+  await page.locator('.live-chapter-link').click();
+  await (await popup).close();
+  await expect(page.locator('.chapter-open-count')).toContainText('7');
+  await expect(rating).not.toHaveClass(/rated/);
+});
+
 test('chapter intent prepares pages and opening it retains the app and prepared manifest', async ({
   page,
   context,
