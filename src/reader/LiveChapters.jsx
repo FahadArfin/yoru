@@ -24,21 +24,32 @@ export default function LiveChapters({ media }) {
   const [language, setLanguage] = useState('en');
   const [source, setSource] = useState(savedReadingSource(media.id) || 'mangadex');
   const [sources, setSources] = useState([{ id: 'mangadex', name: 'MangaDex' }]);
+  const [sourceIssue, setSourceIssue] = useState('');
+  const [sourceRevision, setSourceRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
     api(`/api/media/${media.id}/reading-sources`, { signal: controller.signal })
       .then((result) => {
-        setSources(result.sources);
+        if (controller.signal.aborted) return;
+        const unavailable = result.partial || result.state === 'offline';
+        setSourceIssue(unavailable ? 'Some reading sources are temporarily unavailable.' : '');
         const preferred = savedReadingSource(media.id);
+        const choices = [...result.sources];
+        if (unavailable && preferred === 'weebcentral' && !choices.some((s) => s.id === preferred))
+          choices.push({ id: preferred, name: 'Weeb Central (unavailable)' });
+        setSources(choices);
         setSource(
-          result.sources.some((s) => s.id === preferred)
+          choices.some((s) => s.id === preferred)
             ? preferred
             : result.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex',
         );
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!controller.signal.aborted)
+          setSourceIssue('Some reading sources are temporarily unavailable.');
+      });
     return () => controller.abort();
-  }, [media.id]);
+  }, [media.id, sourceRevision]);
   const [group, setGroup] = useState('all');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -188,6 +199,20 @@ export default function LiveChapters({ media }) {
           {sources.find((s) => s.id === source)?.name || 'MangaDex'} <ExternalLink size={13} />
         </a>
       </header>
+      {sourceIssue && (
+        <p className="chapter-saved-note" role="status">
+          <span>{sourceIssue}</span>{' '}
+          <button
+            className="text-link"
+            onClick={() => {
+              setSourceRevision((n) => n + 1);
+              setRevision((n) => n + 1);
+            }}
+          >
+            Retry sources
+          </button>
+        </p>
+      )}
       <div className="live-chapter-controls">
         {sources.length > 1 && (
           <label className="chapter-translation-filter">

@@ -31,9 +31,9 @@ Files: `services/reader-bridge/{server,providers,cache}.mjs`, Dockerfile and Com
 
 Interfaces: authenticated POST `/sources`, `/chapters`, `/chapter`, `/page`; inputs contain server-validated MAL title metadata and selected source/edition identity. Return normalized source lists, chapters, and relative page identities only.
 
-- [ ] Add and run tests for exact matching, unsupported hosts, title ownership, authentication and cache limits; expect missing implementation to fail.
-- [ ] Implement the bridge, local cache, container setup and authenticated tunnel registration.
-- [ ] Run focused tests and prove live GraphQL and page fetching in Docker.
+- [x] Add and run tests for exact matching, unsupported hosts, title ownership, authentication and cache limits; expect missing implementation to fail.
+- [x] Implement the bridge, local cache, container setup and authenticated tunnel registration.
+- [x] Run focused tests and prove live GraphQL and page fetching in Docker.
 
 ### Task 2: Sites and Node reader API
 
@@ -41,15 +41,15 @@ Files: `server/reading-sources.js`, `server/catalog.js`, `server/chapter-activit
 
 Interfaces: `/api/reader-bridge/register`, `/api/media/:id/reading-sources`, `/api/media/:id/chapters?source=...`, `/api/media/:id/reader/:chapter`, `/api/media/:id/reader/:chapter/page/:page`.
 
-- [ ] Add failing tests for registration authentication/expiry, source outage, bounded proxy responses and mismatched chapters.
-- [ ] Implement both backends using shared functions and existing cache storage.
-- [ ] Run unit and Worker tests, preserving all existing metadata-only contracts.
+- [x] Add failing tests for registration authentication/expiry, source outage, bounded proxy responses and mismatched chapters.
+- [x] Implement both backends using shared functions and existing cache storage.
+- [x] Run unit and Worker tests, preserving all existing metadata-only contracts.
 
 ### Task 3: Native reader source choices and release
 
 Files: `src/reader/{LiveChapters,ChapterDirectory,Reader,ReaderMenu}.jsx`, a remote reader hook, browser tests, deployment/source docs.
 
-- [ ] Add browser coverage for a remote chapter, switching sources, default language, next chapter and saved position.
-- [ ] Connect chapter links to the existing reader; retain local imports and original manga/manhwa reading defaults.
-- [ ] Run format, build, unit, Worker and browser suites; review the whole diff.
+- [x] Add browser coverage for a remote chapter, switching sources, default language, next chapter and saved position.
+- [x] Connect chapter links to the existing reader; retain local imports and original manga/manhwa reading defaults.
+- [x] Run format, build, unit, Worker and browser suites; review the whole diff.
 - [ ] Publish the validated artifact, configure the bridge secret, then verify live manga/manhwa images and cache reuse. Document startup, cache, tunnel limitations and migration steps.

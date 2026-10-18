@@ -602,6 +602,15 @@ function ReaderSession({ media, unit }) {
             currentId={chapter?.id}
             onSelect={selectChapter}
             onRead={read}
+            remote={chapters.remote}
+            loading={chapters.loading}
+            language={chapters.remote ? chapters.language : undefined}
+            languages={chapters.languages}
+            onLanguageChange={
+              chapters.remote
+                ? (language) => setParams({ source: chapters.source, language })
+                : undefined
+            }
           />
           <div className="reader-actions">
             <Button variant="secondary" onClick={openImport}>

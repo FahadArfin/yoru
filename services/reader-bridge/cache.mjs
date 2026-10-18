@@ -47,6 +47,14 @@ export class ImageCache {
   async clean() {
     const entries = [];
     for (const name of await readdir(this.directory).catch(() => [])) {
+      // An interrupted atomic write must not survive outside the cache budget forever.
+      // Maintenance shares the write queue; the age grace also protects recent external writes.
+      if (/^[a-f0-9]{64}\.[a-f0-9-]{36}\.tmp$/.test(name)) {
+        const temporary = join(this.directory, name);
+        const info = await stat(temporary).catch(() => null);
+        if (info && this.now() - info.mtimeMs > 3600000) await unlink(temporary).catch(() => {});
+        continue;
+      }
       if (!/^[a-f0-9]{64}$/.test(name)) continue;
       const file = join(this.directory, name);
       const info = await stat(file).catch(() => null);

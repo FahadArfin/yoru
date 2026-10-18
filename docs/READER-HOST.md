@@ -20,6 +20,8 @@ Suwayomi's authenticated API binds to `127.0.0.1:4567`; the authenticated bridge
 
 ## Sources and caching
 
+The title page and reader both offer source choices. Translations default to English; the reader's Chapters panel can request another available language or all languages. Local imports remain a separate “On this device” choice. An explicit remote selection never falls back to unrelated imported pages during an outage. Partial source discovery is visible and has a retry button.
+
 - MangaDex uses its official API, credited chapter editions and its image service through the bridge.
 - Weeb Central uses the installed Suwayomi extension `eu.kanade.tachiyomi.extension.en.weebcentral` from the configured Keiyoushi store. The current installation was verified with version 1.6.25. Extensions are third-party code; review updates before installing them. Automatic extension updates and challenge-solving services are disabled.
 - MALSync supplies exact MAL-to-source links. Matching also checks the source's returned URL and manga ID. Similar names alone are insufficient. Chapter ownership is checked again before images or chapter activity writes.

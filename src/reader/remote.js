@@ -24,20 +24,24 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
   const [revision, setRevision] = useState(0);
   const localSelected = requested
     ? local.items.some((x) => x.id === requested)
-    : local.items.length > 0 && !sourceParam;
-  const source = requested?.startsWith('sw-')
-    ? 'weebcentral'
-    : requested && /^[a-f0-9-]{36}$/i.test(requested)
-      ? 'mangadex'
-      : sourceParam ||
-        (sources?.sources.some((s) => s.id === savedReadingSource(media.id))
-          ? savedReadingSource(media.id)
-          : sources?.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex');
-  const language = /^[a-z]{2}(?:-[a-z]{2,4})?$/.test(languageParam || '')
-    ? languageParam
-    : requested && edition.key === `${media.id}:${source}:${requested}`
-      ? edition.item?.language || 'en'
-      : 'en';
+    : sourceParam === 'local' || (local.items.length > 0 && !sourceParam);
+  const source = localSelected
+    ? 'local'
+    : requested?.startsWith('sw-')
+      ? 'weebcentral'
+      : requested && /^[a-f0-9-]{36}$/i.test(requested)
+        ? 'mangadex'
+        : sourceParam ||
+          (sources?.sources.some((s) => s.id === savedReadingSource(media.id)) ||
+          (sources?.partial && savedReadingSource(media.id) === 'weebcentral')
+            ? savedReadingSource(media.id)
+            : sources?.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex');
+  const language =
+    languageParam === 'all' || /^[a-z]{2}(?:-[a-z]{2,4})?$/.test(languageParam || '')
+      ? languageParam
+      : requested && edition.key === `${media.id}:${source}:${requested}`
+        ? edition.item?.language || 'en'
+        : 'en';
   const listingKey = `${media.id}:${source}:${language}`;
   useEffect(() => {
     const controller = new AbortController();
@@ -52,7 +56,13 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
   const enabled = !local.loading && !localSelected && sources?.state === 'ready';
   useEffect(() => {
     const controller = new AbortController();
-    setListing({ items: [], key: listingKey, loading: !!enabled, error: '' });
+    setListing((old) => ({
+      items: [],
+      key: listingKey,
+      loading: !!enabled,
+      error: '',
+      languages: old.key.startsWith(`${media.id}:${source}:`) ? old.languages : [],
+    }));
     if (!enabled) return () => controller.abort();
     (async () => {
       let offset = 0,
@@ -71,11 +81,18 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
               ...c,
               kind: 'remote',
               group: c.groups.map((g) => g.name).join(', ') || c.readLabel,
+              pageCount: c.pages,
               pages: [],
             })),
         ];
         if (controller.signal.aborted) return;
-        setListing({ items, key: listingKey, loading: false, error: '' });
+        setListing({
+          items,
+          key: listingKey,
+          loading: false,
+          error: '',
+          languages: result.languages || [],
+        });
         if (result.nextOffset == null || result.nextOffset <= offset) break;
         offset = result.nextOffset;
       }
@@ -109,7 +126,7 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
       });
     return () => controller.abort();
   }, [selected, media.id, source, revision]);
-  let items = local.items;
+  let items = localSelected ? local.items : [];
   const loaded = !!(
     selected &&
     edition.item &&
@@ -128,9 +145,23 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
   return {
     ...local,
     items,
-    sources: sources?.sources || [],
+    sources: [
+      ...(sources?.sources || []),
+      ...(!localSelected && source && sources && !sources.sources.some((s) => s.id === source)
+        ? [
+            {
+              id: source,
+              name:
+                source === 'weebcentral' ? 'Weeb Central (unavailable)' : 'MangaDex (unavailable)',
+            },
+          ]
+        : []),
+      ...(local.items.length ? [{ id: 'local', name: 'On this device' }] : []),
+    ],
     source,
-    remote: enabled,
+    remote: !localSelected,
+    language,
+    languages: listing.languages || [],
     loading:
       local.loading ||
       (!localSelected && !sources) ||
@@ -143,7 +174,7 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
       local.error ||
       (enabled
         ? listing.error || edition.error
-        : sources?.state === 'offline' && requested
+        : !localSelected && sources?.state === 'offline'
           ? 'The reading server is offline. Try again shortly.'
           : ''),
     refresh: () => {

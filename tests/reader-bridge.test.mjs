@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, rm, readdir } from 'node:fs/promises';
+import { mkdtemp, rm, readdir, writeFile, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
@@ -122,4 +122,21 @@ test('tunnel registration accepts only a success banner, never a TLS error conta
     ),
     'https://a-test-reader.trycloudflare.com',
   );
+});
+
+test('cache maintenance removes abandoned writes but preserves recent temporary files', async () => {
+  const { ImageCache } = await import('../services/reader-bridge/cache.mjs');
+  const dir = await mkdtemp(join(tmpdir(), 'yoru-interrupted-cache-'));
+  const now = Date.now();
+  const old = `${'a'.repeat(64)}.aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.tmp`;
+  const fresh = `${'b'.repeat(64)}.aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee.tmp`;
+  try {
+    await writeFile(join(dir, old), 'abandoned');
+    await writeFile(join(dir, fresh), 'in progress');
+    await utimes(join(dir, old), new Date(now - 7200000), new Date(now - 7200000));
+    await new ImageCache(dir, { now: () => now }).prune();
+    assert.deepEqual(await readdir(dir), [fresh]);
+  } finally {
+    await rm(dir, { recursive: true, force: true });
+  }
 });
