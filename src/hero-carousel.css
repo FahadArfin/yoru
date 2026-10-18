@@ -71,7 +71,10 @@
 }
 .home-resume {
   padding-top: 22px;
-  padding-bottom: 20px;
+  padding-bottom: 8px;
+}
+.home-resume:has(.continue-reading) + .home-content-layout .release-section:first-child {
+  padding-top: 16px;
 }
 .home-resume:empty {
   display: none;
