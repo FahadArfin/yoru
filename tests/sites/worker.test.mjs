@@ -208,6 +208,11 @@ test('nested discussions, votes and concurrent reviews preserve their ownership 
     ),
   );
   assert.equal((await request('b', `/api/reviews/${media}`)).body.items.length, 1);
+  const feed = (await request('b', '/api/community')).body.items;
+  assert.ok(feed.some((item) => item.kind === 'review'));
+  const comments = (await request('b', '/api/community?type=comment')).body.items;
+  assert.ok(comments.some((item) => item.id === comment.body.comment.id));
+  assert.ok(comments.every((item) => item.kind === 'comment' && item.media));
   assert.equal(
     (
       await request('b', `/api/comments/${comment.body.comment.id}`, {

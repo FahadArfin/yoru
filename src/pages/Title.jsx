@@ -22,6 +22,7 @@ import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
 import MangaTitle from './MangaTitle';
+import MangaRecommendations from './MangaRecommendations';
 const selectedTab = (params) =>
   params.get('unit')
     ? 'discussion'
@@ -316,6 +317,7 @@ export default function Title() {
             {tab === 'reviews' && <Reviews mediaId={id} />}
           </div>
           <aside className="detail-aside">
+            <MangaRecommendations key={id} media={media} />
             <div className="panel tracking-panel">
               <div className="panel-heading">
                 <Bookmark size={18} />

@@ -17,6 +17,7 @@ import Browse from './Browse';
 import MangaHero from './MangaHero';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';
 import HomeDiscovery from './HomeDiscovery';
+import LiveComments from './LiveComments';
 import { ContinueReading } from '../reader/ReadingCollection';
 import '../manga.css';
 
@@ -72,6 +73,7 @@ export function MangaLanding({ category, label, homepage = false, children }) {
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
           {homepage && <ContinueReading category={category} />}
+          {homepage && <LiveComments />}
           {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
           {children}
         </div>

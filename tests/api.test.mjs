@@ -478,6 +478,9 @@ test('reviews are whole-title records, one per author, with session-owned edits'
   );
   const feed = (await request('/api/community')).body.items;
   assert.ok(feed.some((item) => item.kind === 'review' && item.media.id === media.id));
+  const comments = (await request('/api/community?type=comment')).body.items;
+  assert.ok(comments.length > 0);
+  assert.ok(comments.every((item) => item.kind === 'comment' && item.media));
 });
 test('live presence and global chat are real, persisted, and broadcast to two clients', async () => {
   const a = await stream(alice);

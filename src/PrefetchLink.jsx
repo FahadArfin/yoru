@@ -22,7 +22,10 @@ export async function warmTitle(media, scope, signal) {
     warmImage(coverCandidates(title)[0], signal);
     if (!['MANGA', 'MANHWA'].includes(title.category)) return;
     await Promise.allSettled([
-      cachedApi(recommendationQuery(title)).then((result) => {
+      (recommendationQuery(title)
+        ? cachedApi(recommendationQuery(title))
+        : Promise.resolve({ items: [] })
+      ).then((result) => {
         if (!signal?.aborted)
           relatedTitles(title, result.items)
             .slice(0, 4)
