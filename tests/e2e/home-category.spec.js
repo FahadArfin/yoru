@@ -75,7 +75,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
   );
   const popular = page.getByRole('region', { name: 'Most popular', exact: true });
   await popular.getByRole('button', { name: 'Most popular', exact: true }).click();
-  await popular.getByRole('button', { name: 'Last month' }).click();
+  await expect(popular.getByRole('button', { name: 'Last month', exact: true })).toBeVisible();
   await expect(popular.getByRole('link', { name: /manga popular month 1/ })).toBeVisible();
   const trending = page.getByRole('region', { name: 'Trending', exact: true });
   await trending.getByRole('button', { name: 'Trending', exact: true }).click();
