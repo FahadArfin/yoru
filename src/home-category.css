@@ -74,10 +74,6 @@
   outline: 2px solid #c4a3ff;
   outline-offset: -2px;
 }
-.category-home .weekly-hero {
-  height: calc(90svh - 162px);
-  min-height: 540px;
-}
 .home-category-content {
   animation: category-enter 220ms ease-out;
 }
@@ -129,10 +125,6 @@
     padding: 12px 9px;
     font-size: 12px;
     gap: 7px;
-  }
-  .category-home .weekly-hero {
-    height: 76svh;
-    min-height: 550px;
   }
 }
 @media (max-width: 600px) {
