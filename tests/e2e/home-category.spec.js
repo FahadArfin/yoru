@@ -41,6 +41,18 @@ test('homepage switches complete categories, retains links, filters and saved pr
   await mockFeeds(page, context, baseURL);
   await page.goto('/');
   const toggle = page.getByRole('tablist', { name: 'Homepage category' });
+  const checkBannerSwitch = async () => {
+    const switchBounds = await toggle.boundingBox();
+    const banner = await page.locator('.weekly-hero').boundingBox();
+    const header = await page.locator('.topbar').boundingBox();
+    expect(switchBounds.y).toBeGreaterThanOrEqual(header.y + header.height);
+    expect(switchBounds.y).toBeGreaterThanOrEqual(banner.y);
+    expect(switchBounds.y + switchBounds.height).toBeLessThan(banner.y + banner.height);
+    expect(banner.x + banner.width - switchBounds.x - switchBounds.width).toBeLessThan(60);
+    await expect(page.getByText('MAKE YOURSELF AT HOME', { exact: true })).toHaveCount(0);
+    await expect(page.locator('.home-category-intro')).toHaveCount(0);
+  };
+  await checkBannerSwitch();
   await expect(toggle.getByRole('tab', { name: 'Anime', exact: true })).toHaveAttribute(
     'aria-selected',
     'true',
@@ -49,6 +61,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
   await expect(page).toHaveURL(/\?category=manga$/);
   const hero = page.getByRole('region', { name: 'Featured manga', exact: true });
   await expect(hero.getByRole('heading', { name: 'manga popular all 1' })).toBeVisible();
+  await checkBannerSwitch();
   await expect(page.getByRole('region', { name: 'Hot this week', exact: true })).toHaveCount(0);
   await expect(page.getByRole('complementary', { name: 'Anime highlights' })).toHaveCount(0);
   await expect(page.getByRole('group', { name: 'Release filter' })).toHaveCount(0);
@@ -76,6 +89,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
       .getByRole('heading', { name: 'manhwa popular all 1' }),
   ).toBeVisible();
   await expect(page.getByRole('heading', { name: 'Explore the manhwa collection' })).toBeVisible();
+  await checkBannerSwitch();
   const highlights = await page
     .getByRole('complementary', { name: 'Manhwa highlights' })
     .boundingBox();
