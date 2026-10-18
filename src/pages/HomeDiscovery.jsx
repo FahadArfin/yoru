@@ -2,7 +2,6 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from '../collection-router';
 import {
   ArrowRight,
-  CalendarDays,
   Clock3,
   Crown,
   Eye,
@@ -419,13 +418,6 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
           </div>
         )}
       </div>
-      {expanded && animeReleases && (
-        <footer className="discovery-panel-footer">
-          <Link to="/schedule">
-            <CalendarDays size={13} /> Full schedule
-          </Link>
-        </footer>
-      )}
     </section>
   );
 }
