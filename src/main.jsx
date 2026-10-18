@@ -18,6 +18,7 @@ import { setupWebMCP } from './webmcp';
 import { NsfwMenu } from './nsfw';
 import CategoryNavigation from './CategoryNavigation';
 import GlobalSearch from './GlobalSearch';
+import SiteFooter from './SiteFooter';
 import './styles.css';
 import './home.css';
 import './browse.css';
@@ -45,7 +46,7 @@ function Brand() {
   );
 }
 function Shell() {
-  const { user, setAuthOpen, online, connected, toast, refreshLibrary } = useApp();
+  const { user, setAuthOpen, visitors, toast, refreshLibrary } = useApp();
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
@@ -119,8 +120,8 @@ function Shell() {
           </div>
           <GlobalSearch inputRef={input} />
           <Link className="online-pill" to="/community">
-            <span className={`live-dot ${!connected ? 'muted-dot' : ''}`} />
-            <strong>{connected ? online.count || 0 : '—'}</strong>
+            <span className={`live-dot ${!visitors.connected ? 'muted-dot' : ''}`} />
+            <strong>{visitors.connected ? visitors.data?.count || 0 : '—'}</strong>
             <span>online</span>
           </Link>
           {user ? (
@@ -176,20 +177,7 @@ function Shell() {
             </Routes>
           </Suspense>
         </main>
-        <footer className="site-footer">
-          <div>
-            <Brand />
-            <span>Stories hit different when you share them.</span>
-          </div>
-          <p>
-            Metadata from MyAnimeList via Tenrai and Kitsu. Media belongs to its respective owners.
-            <br />
-            Reading sources are credited in the reader. Availability depends on the provider.
-          </p>
-          <Link to="/settings">
-            About Yoru <ArrowRight size={13} />
-          </Link>
-        </footer>
+        <SiteFooter />
       </div>
       <AuthModal />
       {toast && (
