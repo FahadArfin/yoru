@@ -1,5 +1,5 @@
 import { createHash, randomBytes } from 'node:crypto';
-import { getCatalogChapter } from './chapter-catalog.js';
+import { getReadingChapter } from './reading-sources.js';
 import { apiError } from './validation.js';
 
 export async function chapterStats(db, mediaId, ids, userId = null) {
@@ -33,7 +33,7 @@ export async function chapterStats(db, mediaId, ids, userId = null) {
   return stats;
 }
 export async function recordChapterOpen(mediaId, chapterId, cookie, options) {
-  await getCatalogChapter(mediaId, chapterId, options);
+  await getReadingChapter(mediaId, chapterId, options);
   const visitor = /^[A-Za-z0-9_-]{43}$/.test(cookie || '')
     ? cookie
     : randomBytes(32).toString('base64url');
@@ -53,7 +53,7 @@ export async function rateChapter(mediaId, chapterId, rating, options) {
   if (!options.userId || !options.sessionHash) throw apiError(401, 'Sign in to rate a chapter.');
   if (!Number.isInteger(rating) || rating < 1 || rating > 5)
     throw apiError(400, 'Choose a rating from 1 to 5 stars.');
-  await getCatalogChapter(mediaId, chapterId, options);
+  await getReadingChapter(mediaId, chapterId, options);
   // Recheck session ownership at the write, after any provider wait.
   const result = await options.db.run(
     `INSERT INTO chapter_ratings(media_id,chapter_id,user_id,rating,updated_at)

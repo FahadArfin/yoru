@@ -356,7 +356,7 @@ function Shell() {
           <p>
             Metadata from MyAnimeList via Tenrai and Kitsu. Media belongs to its respective owners.
             <br />
-            Yoru links to external providers. No video or comic files are hosted here.
+            Reading sources are credited in the reader. Availability depends on the provider.
           </p>
           <Link to="/settings">
             About Yoru <ArrowRight size={13} />

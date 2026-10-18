@@ -1,0 +1,4 @@
+FROM ghcr.io/suwayomi/suwayomi-server:stable@sha256:1fac27c387dc2ea9949e1a01ad7f6d6de9d72d3988338a95476748e5c45c4582
+USER root
+RUN mkdir -p /tmp/Tachidesk/manga-cache && chown -R 1000:1000 /tmp/Tachidesk
+USER 1000:1000

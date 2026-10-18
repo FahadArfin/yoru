@@ -152,6 +152,7 @@ export function readerLink(mediaId, chapter, page) {
   const number = chapter && /^\d+(\.\d+)?$/.test(chapter.number) ? chapter.number : '1';
   const params = new URLSearchParams();
   if (chapter?.id) params.set('chapter', chapter.id);
+  if (chapter?.kind === 'remote' && chapter.language) params.set('language', chapter.language);
   if (page) params.set('page', String(page));
   return `/read/${mediaId}/${number}${params.size ? `?${params}` : ''}`;
 }

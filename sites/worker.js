@@ -42,7 +42,13 @@ import {
   VIEW_COOKIE_SECONDS,
 } from '../server/watch-views.js';
 import { seed, isOffline } from './catalog-storage.js';
-import { getChapterCatalog } from '../server/chapter-catalog.js';
+import {
+  getReadingCatalog,
+  getReadingSources,
+  getReaderChapter,
+  getReaderPage,
+  registerReaderBridge,
+} from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
 import { requireAuth } from './security.js';
 
@@ -127,6 +133,8 @@ app.get('/api/config', (c) => {
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
 const chapterOptions = (c) => ({
   ...scheduleOptions(c.env),
+  bridgeKey: c.env.READER_BRIDGE_KEY,
+  bridgeUrl: c.env.READER_BRIDGE_URL,
   cacheScope: c.env.DB,
   offline: isOffline(),
   media: getMedia,
@@ -134,9 +142,40 @@ const chapterOptions = (c) => ({
   userId: c.get('user')?.id,
   sessionHash: c.get('sessionHash'),
 });
+app.post('/api/reader-bridge/register', async (c) =>
+  c.json(
+    await registerReaderBridge(
+      (c.req.header('authorization') || '').replace(/^Bearer /, ''),
+      await c.req.json(),
+      chapterOptions(c),
+    ),
+  ),
+);
+app.get('/api/media/:id/reading-sources', async (c) =>
+  c.json(await getReadingSources(c.req.param('id'), chapterOptions(c))),
+);
+app.get('/api/media/:id/reader/:chapter', async (c) =>
+  c.json(await getReaderChapter(c.req.param('id'), c.req.param('chapter'), chapterOptions(c))),
+);
+app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
+  const page = await getReaderPage(
+    c.req.param('id'),
+    c.req.param('chapter'),
+    c.req.param('page'),
+    chapterOptions(c),
+  );
+  return new Response(page.body, {
+    headers: {
+      'content-type': page.type,
+      'cache-control': 'private, max-age=300',
+      'x-yoru-cache': page.cached ? 'hit' : 'miss',
+      'x-content-type-options': 'nosniff',
+    },
+  });
+});
 app.get('/api/media/:id/chapters', async (c) => {
   const options = chapterOptions(c);
-  const result = await getChapterCatalog(c.req.param('id'), c.req.query(), options);
+  const result = await getReadingCatalog(c.req.param('id'), c.req.query(), options);
   const stats = await chapterStats(
     options.db,
     c.req.param('id'),

@@ -15,12 +15,30 @@ import { useApp } from '../state';
 import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { recordChapterView } from '../watch-views';
 import ChapterDirectory, { languageLabel } from './ChapterDirectory';
+import { savedReadingSource, rememberReadingSource } from './remote';
 
 const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
 
 export default function LiveChapters({ media }) {
   const { user, setAuthOpen, notify } = useApp();
   const [language, setLanguage] = useState('en');
+  const [source, setSource] = useState(savedReadingSource(media.id) || 'mangadex');
+  const [sources, setSources] = useState([{ id: 'mangadex', name: 'MangaDex' }]);
+  useEffect(() => {
+    const controller = new AbortController();
+    api(`/api/media/${media.id}/reading-sources`, { signal: controller.signal })
+      .then((result) => {
+        setSources(result.sources);
+        const preferred = savedReadingSource(media.id);
+        setSource(
+          result.sources.some((s) => s.id === preferred)
+            ? preferred
+            : result.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex',
+        );
+      })
+      .catch(() => {});
+    return () => controller.abort();
+  }, [media.id]);
   const [group, setGroup] = useState('all');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -41,7 +59,7 @@ export default function LiveChapters({ media }) {
   const path = `/api/media/${media.id}/chapters`;
   function request(offset, signal) {
     return api(
-      `${path}?${new URLSearchParams({ language, group, q: query, sort, offset: String(offset) })}`,
+      `${path}?${new URLSearchParams({ source, language, group, q: query, sort, offset: String(offset) })}`,
       { signal },
     );
   }
@@ -79,7 +97,7 @@ export default function LiveChapters({ media }) {
       abort.abort();
       generation.current++;
     };
-  }, [media.id, language, group, query, sort, revision, user?.id]);
+  }, [media.id, source, language, group, query, sort, revision, user?.id]);
   useEffect(() => {
     setRating(null);
     setRatingError('');
@@ -158,15 +176,41 @@ export default function LiveChapters({ media }) {
         <a
           className="chapter-source"
           href={
-            data?.mangaId ? `https://mangadex.org/title/${data.mangaId}` : 'https://mangadex.org/'
+            source === 'weebcentral'
+              ? 'https://weebcentral.com/'
+              : data?.mangaId
+                ? `https://mangadex.org/title/${data.mangaId}`
+                : 'https://mangadex.org/'
           }
           target="_blank"
           rel="noopener noreferrer"
         >
-          MangaDex <ExternalLink size={13} />
+          {sources.find((s) => s.id === source)?.name || 'MangaDex'} <ExternalLink size={13} />
         </a>
       </header>
       <div className="live-chapter-controls">
+        {sources.length > 1 && (
+          <label className="chapter-translation-filter">
+            <BookOpen size={15} />
+            <span>Source</span>
+            <select
+              aria-label="Chapter source"
+              value={source}
+              onChange={(e) => {
+                setSource(e.target.value);
+                setGroup('all');
+                setGroups([]);
+                rememberReadingSource(media.id, e.target.value);
+              }}
+            >
+              {sources.map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
         <form
           onSubmit={(event) => {
             event.preventDefault();
