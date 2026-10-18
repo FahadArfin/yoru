@@ -72,7 +72,7 @@ test('category strip filters collections, dismisses menus, and follows the chose
     await expect(nav.getByRole('link', { name: 'Full collection', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Yoru' })
-    .getByRole('link', { name: 'Community', exact: true })
+    .getByRole('link', { name: 'My Space', exact: true })
     .click();
   await expect(page.locator('.category-navigation')).toHaveCount(0);
 });

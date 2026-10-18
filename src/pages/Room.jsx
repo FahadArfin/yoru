@@ -1,5 +1,10 @@
+import { readerAtUnit } from '../../shared/room-reader';
+import { rememberRoomInvite, roomInvite } from '../room-invites';
+import RoomInvite from '../RoomInvite';
+import { sourceForUnit } from '../room-source';
+import '../space.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
 import {
   ArrowLeft,
   ArrowRight,
@@ -27,18 +32,27 @@ export default function Room() {
   const [params] = useSearchParams();
   const invite = params.get('invite');
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, requireUser, notify, config } = useApp();
   const resource = useResource(
     `/api/rooms/${id}${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`,
     false,
   );
   const room = resource.data?.room;
+  const sharedInvite =
+    room &&
+    (invite ? `/rooms/${id}?invite=${encodeURIComponent(invite)}` : roomInvite(user?.id, room));
+  useEffect(() => {
+    if (room?.joined && invite)
+      rememberRoomInvite(user?.id, id, `/rooms/${id}?invite=${encodeURIComponent(invite)}`);
+  }, [id, user?.id, invite, room?.joined]);
   const [roomEvent, setRoomEvent] = useState(null);
+  const [inviteOpen, setInviteOpen] = useState(Boolean(location.state?.shareRoom));
   const [sourceOpen, setSourceOpen] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [unitDraft, setUnitDraft] = useState(1);
-  const [positionDraft, setPositionDraft] = useState(0);
+
   const joined = Boolean(room?.joined && user);
   const host = Boolean(user && room?.hostId === user.id);
   const [live, setLive] = useState(false);
@@ -56,7 +70,6 @@ export default function Room() {
   useEffect(() => {
     if (room) {
       setUnitDraft(room.unit);
-      setPositionDraft(Math.floor(room.position));
     }
   }, [room?.unit, room?.version]);
   useEffect(() => {
@@ -112,17 +125,37 @@ export default function Room() {
       if (identityRef.current === requestedIdentity) setBusy(false);
     }
   };
-  const update = async (patch) => {
+  const stateRef = useRef(room);
+  stateRef.current = room;
+  const updates = useRef(Promise.resolve());
+  const update = (patch) => {
     const requestedIdentity = identityRef.current;
-    try {
-      const data = await send(`/api/rooms/${id}`, { ...patch, version: room.version }, 'PATCH');
-      if (identityRef.current === requestedIdentity)
-        resource.setData((old) =>
-          old?.room?.version > data.room.version ? old : { room: { ...old?.room, ...data.room } },
-        );
-    } catch (e) {
-      if (identityRef.current === requestedIdentity) setError(e.message);
-    }
+    updates.current = updates.current
+      .catch(() => {})
+      .then(async () => {
+        if (identityRef.current !== requestedIdentity) return;
+        try {
+          const data = await send(
+            `/api/rooms/${id}`,
+            { ...patch, version: stateRef.current?.version },
+            'PATCH',
+          );
+          if (
+            identityRef.current === requestedIdentity &&
+            data.room.version >= (stateRef.current?.version || 0)
+          )
+            stateRef.current = { ...stateRef.current, ...data.room };
+          if (identityRef.current === requestedIdentity)
+            resource.setData((old) =>
+              old?.room?.version > data.room.version
+                ? old
+                : { room: { ...old?.room, ...data.room } },
+            );
+        } catch (e) {
+          if (identityRef.current === requestedIdentity) setError(e.message);
+        }
+      });
+    return updates.current;
   };
   const leave = async () => {
     const requestedIdentity = identityRef.current;
@@ -133,14 +166,6 @@ export default function Room() {
       notify('You left the room.');
     } catch (e) {
       if (identityRef.current === requestedIdentity) setError(e.message);
-    }
-  };
-  const copy = async () => {
-    try {
-      await navigator.clipboard.writeText(window.location.href);
-      notify('Invitation copied');
-    } catch {
-      notify('Copy the invitation from your address bar.', 'error');
     }
   };
   if (resource.loading) return <Loading />;
@@ -176,7 +201,12 @@ export default function Room() {
           </p>
         </div>
         <div className="heading-buttons">
-          <Button variant="secondary" onClick={copy}>
+          <Button
+            variant="secondary"
+            disabled={!sharedInvite}
+            title={!sharedInvite ? 'Open the original private invitation to share it.' : undefined}
+            onClick={() => setInviteOpen(true)}
+          >
             <Copy size={16} />
             Invite friends
           </Button>
@@ -197,7 +227,18 @@ export default function Room() {
       <div className="room-layout">
         <div className="room-stage">
           {joined ? (
-            room.sourceUrl ? (
+            room.type === 'read' && (!room.sourceUrl || room.sourceKind === 'reader') ? (
+              <iframe
+                className="room-reader"
+                title="Shared reader"
+                src={
+                  room.sourceKind === 'reader'
+                    ? room.sourceUrl
+                    : `/read/${room.mediaId}/${room.unit}`
+                }
+                sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
+              />
+            ) : room.sourceUrl ? (
               ['video', 'hls'].includes(room.sourceKind) ? (
                 <SyncedVideo
                   room={room}
@@ -267,7 +308,28 @@ export default function Room() {
               <form
                 onSubmit={(e) => {
                   e.preventDefault();
-                  update({ unit: Number(unitDraft), position: 0, paused: true });
+                  const nextUnit = Number(unitDraft);
+                  const nextSource =
+                    nextUnit === room.unit
+                      ? { url: room.sourceUrl, kind: room.sourceKind }
+                      : room.sourceKind === 'reader'
+                        ? {
+                            kind: 'reader',
+                            url: readerAtUnit(room.sourceUrl, room.mediaId, nextUnit),
+                          }
+                        : sourceForUnit(
+                            room.mediaId,
+                            nextUnit,
+                            { url: room.sourceUrl, kind: room.sourceKind },
+                            room.unit,
+                          );
+                  update({
+                    unit: nextUnit,
+                    position: 0,
+                    paused: true,
+                    sourceUrl: nextSource?.url || '',
+                    sourceKind: nextSource?.kind || 'external',
+                  });
                 }}
               >
                 <label>
@@ -275,7 +337,8 @@ export default function Room() {
                   <input
                     aria-label="Room unit"
                     type="number"
-                    min="1"
+                    min={room.type === 'watch' ? 1 : 0}
+                    step={room.type === 'watch' ? 1 : 'any'}
                     max="100000"
                     value={unitDraft}
                     onChange={(e) => setUnitDraft(e.target.value)}
@@ -334,6 +397,13 @@ export default function Room() {
         </div>
         <Chat roomId={id} roomEvent={roomEvent} enabled={joined} live={live} />
       </div>
+      {inviteOpen && (
+        <RoomInvite
+          close={() => setInviteOpen(false)}
+          inviteUrl={sharedInvite}
+          created={Boolean(location.state?.shareRoom)}
+        />
+      )}
       {sourceOpen && (
         <SourceForm
           close={() => setSourceOpen(false)}

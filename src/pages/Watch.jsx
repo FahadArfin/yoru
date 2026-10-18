@@ -1,3 +1,4 @@
+import RoomLauncher from '../RoomLauncher';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -243,10 +244,12 @@ export default function Watch() {
             {total ? ` of ${total}` : ''}
           </p>
         </div>
-        <Link className="btn btn-secondary" to={`/rooms?media=${id}`}>
-          <Users size={17} />
-          Enjoy together
-        </Link>
+        <RoomLauncher
+          media={media}
+          unit={unit}
+          source={source}
+          getPosition={() => Number(readSource(`yoru:position:${id}:${unit}`)) || 0}
+        />
       </div>
       <div className="watch-layout">
         <div className="watch-stage">

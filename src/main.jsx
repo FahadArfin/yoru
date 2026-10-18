@@ -19,6 +19,7 @@ import { NsfwMenu } from './nsfw';
 import CategoryNavigation from './CategoryNavigation';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
+import SpaceLayout from './SpaceLayout';
 import './styles.css';
 import './home.css';
 import './browse.css';
@@ -111,9 +112,19 @@ function Shell() {
                 <NavLink to="/browse/manga">Manga</NavLink>
                 <NavLink to="/browse/manhwa">Manhwa</NavLink>
                 <Link to="/schedule">Schedule</Link>
-                <Link to="/community">Community</Link>
-                <Link to="/library">My library</Link>
-                <Link to="/rooms">Watch &amp; read</Link>
+                <Link
+                  to="/community"
+                  className={
+                    ['/community', '/library', '/rooms'].some(
+                      (path) =>
+                        location.pathname === path || location.pathname.startsWith(path + '/'),
+                    )
+                      ? 'active'
+                      : ''
+                  }
+                >
+                  My Space
+                </Link>
                 <NsfwMenu />
               </nav>
             </>
@@ -161,9 +172,11 @@ function Shell() {
               <Route path="/watch/:id/:unit" element={<Watch />} />
               <Route path="/watch/:id/latest" element={<WatchLatest />} />
               <Route path="/read/:id/:unit" element={<Reader />} />
-              <Route path="/library" element={<Library />} />
-              <Route path="/community" element={<Community />} />
-              <Route path="/rooms" element={<Rooms />} />
+              <Route element={<SpaceLayout />}>
+                <Route path="/library" element={<Library />} />
+                <Route path="/community" element={<Community />} />
+                <Route path="/rooms" element={<Rooms />} />
+              </Route>
               <Route path="/rooms/:id" element={<Room />} />
               <Route path="/settings" element={<SettingsPage key={user?.id || 'guest'} />} />
               <Route path="/schedule" element={<Schedule />} />

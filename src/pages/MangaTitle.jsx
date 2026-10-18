@@ -1,3 +1,4 @@
+import RoomLauncher from '../RoomLauncher';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useSearchParams } from 'react-router-dom';
 import {
@@ -148,10 +149,7 @@ export default function MangaTitle({ media }) {
               <Heart size={18} fill={entry?.favorite ? 'currentColor' : 'none'} />
               <span>Favorite</span>
             </button>
-            <Link className="btn btn-secondary" to={`/rooms?media=${media.id}`}>
-              <Users size={18} />
-              Read together
-            </Link>
+            <RoomLauncher media={media} />
           </div>
           <div className="manga-title-tags">
             {media.genres?.slice(0, 8).map((genre) => (

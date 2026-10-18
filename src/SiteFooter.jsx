@@ -81,7 +81,7 @@ export default function SiteFooter() {
         <nav aria-label="Footer community">
           <h3>Your corner</h3>
           <Link to="/community">Community</Link>
-          <Link to="/rooms">Watch &amp; read together</Link>
+          <Link to="/rooms">Public rooms</Link>
           <Link to="/library">My library</Link>
           <Link to="/settings">Settings &amp; about</Link>
         </nav>

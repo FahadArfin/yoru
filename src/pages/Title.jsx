@@ -1,3 +1,4 @@
+import RoomLauncher from '../RoomLauncher';
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -150,10 +151,7 @@ export default function Title() {
               >
                 <Heart size={19} fill={entry?.favorite ? 'currentColor' : 'none'} />
               </button>
-              <Link className="btn btn-secondary" to={`/rooms?media=${id}`}>
-                <Users size={18} />
-                Enjoy together
-              </Link>
+              <RoomLauncher media={media} />
             </div>
           </div>
         </div>

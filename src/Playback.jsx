@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { ExternalLink, Link2, Play, Plus, X } from 'lucide-react';
+import { ExternalLink, Link2, Play, Plus, X, Volume2, VolumeX, Maximize } from 'lucide-react';
 import { Button, Empty, ErrorNotice, Modal } from './components';
 import { safeLink } from './api';
 export function SourceForm({ close, onSave, initial = {} }) {
@@ -248,6 +248,42 @@ export function SyncedVideo({ room, isHost, onState, poster }) {
         onEnded={hostChange}
       />
       {!isHost && <span className="sync-tag">Following the host</span>}
+      {!isHost && (
+        <div className="follower-controls">
+          <button
+            aria-label="Toggle sound"
+            onClick={() => {
+              const video = videoRef.current;
+              video.muted = !video.muted;
+            }}
+          >
+            <Volume2 size={17} />
+          </button>
+          <input
+            type="range"
+            aria-label="Playback volume"
+            min="0"
+            max="1"
+            step="0.05"
+            defaultValue="1"
+            onChange={(e) => {
+              videoRef.current.volume = Number(e.target.value);
+              videoRef.current.muted = false;
+            }}
+          />
+          <button aria-label="Resync to host" onClick={() => applyRef.current(true)}>
+            Sync to host
+          </button>
+          <button
+            aria-label="Fullscreen video"
+            onClick={() => {
+              videoRef.current.requestFullscreen?.().catch(() => {});
+            }}
+          >
+            <Maximize size={17} />
+          </button>
+        </div>
+      )}
       {needsPlay && (
         <button
           className="btn btn-primary playback-join"

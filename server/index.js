@@ -29,7 +29,7 @@ app.use(
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'https:', 'data:', 'blob:'],
         connectSrc: ["'self'", 'https:', 'blob:'],
-        frameSrc: ['https:'],
+        frameSrc: ["'self'", 'https:'],
         mediaSrc: ["'self'", 'https:', 'blob:'],
         workerSrc: ["'self'", 'blob:'],
         objectSrc: ["'none'"],

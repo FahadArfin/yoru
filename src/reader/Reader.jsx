@@ -1,3 +1,4 @@
+import RoomLauncher from '../RoomLauncher';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import {
@@ -309,6 +310,12 @@ function ReaderSession({ media, unit }) {
   }, []);
   const selectChapter = (next, startPage) => {
     if (!next) return;
+    if (window.self !== window.top) {
+      setError(
+        'Use the host chapter control below the shared reader to change chapters for everyone.',
+      );
+      return;
+    }
     setDialog('');
     if (!wide) setMenuOpen(false);
     navigate(readerLink(media.id, next, startPage));
@@ -401,12 +408,22 @@ function ReaderSession({ media, unit }) {
     }
   };
   const read = (item, value) => write({}, item.id, { read: value });
-  const openImport = () => setDialog('import');
+  const openImport = () => {
+    if (window.self !== window.top) {
+      setError(
+        'Open your own reader tab to add personal files. The host chooses the shared chapter.',
+      );
+      return;
+    }
+    setDialog('import');
+  };
   const sourcePicker = chapters.sources.length > 0 && (
     <label className="reader-source-picker">
       <span>Reading source</span>
       <select
         aria-label="Reading source"
+        disabled={window.self !== window.top}
+        title={window.self !== window.top ? 'The host chooses the shared source.' : undefined}
         value={chapters.source}
         onChange={(e) => {
           rememberReadingSource(media.id, e.target.value);
@@ -460,6 +477,7 @@ function ReaderSession({ media, unit }) {
         <div className="reader-top-title">
           <Link
             className="reader-exit"
+            target={window.self !== window.top ? '_blank' : undefined}
             to={`/title/${media.id}`}
             aria-label={`Back to ${titleOf(media)}`}
           >
@@ -469,10 +487,27 @@ function ReaderSession({ media, unit }) {
             <strong>
               {chapter?.title || (chapter ? `Chapter ${chapter.number}` : 'Your reading space')}
             </strong>
-            <Link to={`/title/${media.id}`}>{titleOf(media)}</Link>
+            <Link
+              to={`/title/${media.id}`}
+              target={window.self !== window.top ? '_blank' : undefined}
+            >
+              {titleOf(media)}
+            </Link>
           </div>
         </div>
         <nav className="reader-quick-bar" aria-label="Reader navigation">
+          {window.self === window.top && (
+            <RoomLauncher
+              media={media}
+              unit={chapterUnit(chapter?.number) ?? chapterUnit(unit) ?? 1}
+              source={{
+                kind: 'reader',
+                url: chapter
+                  ? `${readerLink(media.id, chapter, page)}&source=${encodeURIComponent(chapters.source)}`
+                  : `${readerLink(media.id, { number: String(unit), id: requested, kind: 'remote', language: chapters.language }, page)}&source=${encodeURIComponent(chapters.source)}`,
+              }}
+            />
+          )}
           <button onClick={() => setDialog('chapters')} aria-label="Choose chapter">
             {chapter ? `Ch. ${chapter.number}` : 'Chapters'}
             <ChevronRight size={14} />
@@ -636,7 +671,7 @@ function ReaderSession({ media, unit }) {
             language={chapters.remote ? chapters.language : undefined}
             languages={chapters.languages}
             onLanguageChange={
-              chapters.remote
+              chapters.remote && window.self === window.top
                 ? (language) => setParams({ source: chapters.source, language })
                 : undefined
             }

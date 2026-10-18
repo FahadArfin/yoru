@@ -362,7 +362,11 @@ test('top navigation keeps settings next to the account control without a side m
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Yoru' })
-    .getByRole('link', { name: 'My library', exact: true })
+    .getByRole('link', { name: 'My Space', exact: true })
+    .click();
+  await page
+    .getByRole('navigation', { name: 'My Space sections' })
+    .getByRole('link', { name: 'Library', exact: true })
     .click();
   await expect(page).toHaveURL(/\/library$/);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);

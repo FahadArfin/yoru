@@ -1,3 +1,4 @@
+import { roomReaderPath, readerAtUnit } from '../shared/room-reader.js';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { getMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
@@ -130,15 +131,35 @@ export function roomRoutes(app) {
     const unit =
       input.unit === undefined
         ? 1
-        : numeric(input.unit, { name: 'Episode or chapter', min: 1, integer: true });
+        : numeric(input.unit, {
+            name: 'Episode or chapter',
+            min: type === 'read' ? 0 : 1,
+            max: 100000,
+            integer: type !== 'read',
+          });
     const media = await getMedia(titleId);
     if (!media) throw apiError(404, 'Choose an available title.');
+    const initialSource =
+      input.sourceKind === 'reader'
+        ? roomReaderPath(input.sourceUrl, titleId, unit)
+        : input.sourceUrl === undefined
+          ? ''
+          : sourceUrl(input.sourceUrl);
+    if (initialSource === null)
+      throw apiError(400, 'Choose a reader link for this title and chapter.');
+    const initialKind = input.sourceKind ?? 'external';
+    if (!['external', 'embed', 'hls', 'video', 'reader'].includes(initialKind))
+      throw apiError(400, 'Choose a valid source type.');
+    const initialPosition =
+      input.position === undefined
+        ? 0
+        : numeric(input.position, { name: 'Playback position', max: 604800 });
     const invite = visibility === 'private' ? randomBytes(24).toString('base64url') : null;
     await reconcileRooms(db);
     const result = await db.batch([
       db.statement(
-        `INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,state_updated_at,created_at)
-        SELECT ?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM rooms WHERE host_id=? AND closed_at IS NULL)<5 AND ${liveSession}`,
+        `INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at)
+        SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM rooms WHERE host_id=? AND closed_at IS NULL)<5 AND ${liveSession}`,
         id,
         userId,
         name,
@@ -148,6 +169,9 @@ export function roomRoutes(app) {
         invite ? hashToken(invite) : null,
         capacity,
         unit,
+        initialSource,
+        initialKind,
+        initialPosition,
         now(),
         now(),
         userId,
@@ -267,7 +291,12 @@ export function roomRoutes(app) {
     const unit =
       input.unit === undefined
         ? room.unit
-        : numeric(input.unit, { name: 'Episode or chapter', min: 1, integer: true });
+        : numeric(input.unit, {
+            name: 'Episode or chapter',
+            min: room.type === 'read' ? 0 : 1,
+            max: 100000,
+            integer: room.type !== 'read',
+          });
     const paused = input.paused === undefined ? Boolean(room.paused) : bool(input.paused, 'Paused');
     const elapsed = room.paused
       ? 0
@@ -278,8 +307,18 @@ export function roomRoutes(app) {
           ? Math.min(604800, room.position + elapsed)
           : 0
         : numeric(input.position, { name: 'Playback position', max: 604800 });
-    const source = input.sourceUrl === undefined ? room.source_url : sourceUrl(input.sourceUrl),
-      kind = input.sourceKind ?? room.source_kind;
+    const kind = input.sourceKind ?? room.source_kind;
+    const requestedSource =
+      input.sourceUrl === undefined
+        ? kind === 'reader' && unit !== room.unit
+          ? readerAtUnit(room.source_url, room.media_id, unit)
+          : room.source_url
+        : input.sourceUrl;
+    const source =
+      kind === 'reader'
+        ? roomReaderPath(requestedSource, room.media_id, unit)
+        : sourceUrl(requestedSource);
+    if (source === null) throw apiError(400, 'Choose a reader link for this title and chapter.');
     if (!['external', 'embed', 'hls', 'video', 'reader'].includes(kind))
       throw apiError(400, 'Choose a valid source type.');
     const result = await db.batch([
