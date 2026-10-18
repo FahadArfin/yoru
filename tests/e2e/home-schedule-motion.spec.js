@@ -31,6 +31,10 @@ test('schedule emphasizes only the selected date and rapid day changes settle on
   const schedule = page.getByRole('region', { name: 'Airing schedule', exact: true });
   const tuesday = schedule.getByRole('button', { name: /^Tue/ });
   await expect(tuesday).toHaveAttribute('aria-pressed', 'true');
+  await expect(schedule.locator('.rail-days button').first()).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
   await expect(tuesday.locator('small')).toHaveCSS('opacity', '1');
   await expect(schedule.getByRole('button', { name: /^Wed/ }).locator('small')).toHaveCSS(
     'opacity',
@@ -39,6 +43,18 @@ test('schedule emphasizes only the selected date and rapid day changes settle on
   await schedule.getByRole('button', { name: /^Wed/ }).click();
   await schedule.getByRole('button', { name: /^Thu/ }).click();
   await expect(schedule.getByRole('link', { name: /Show 29/ })).toBeVisible();
+  await expect(schedule.locator('.rail-days button span')).toHaveText([
+    'Thu',
+    'Fri',
+    'Sat',
+    'Sun',
+    'Mon',
+    'Tue',
+    'Wed',
+  ]);
+  const firstDay = await schedule.locator('.rail-days button').first().boundingBox();
+  const lastDay = await schedule.locator('.rail-days button').last().boundingBox();
+  expect(firstDay.x).toBeLessThan(lastDay.x);
   await expect(schedule.getByRole('link', { name: /Show 28/ })).toHaveCount(0);
   await expect(schedule.locator('.home-schedule-results')).toHaveAttribute('aria-busy', 'false');
   await schedule.getByRole('button', { name: /^Fri/ }).click();
@@ -55,6 +71,15 @@ test('reduced motion changes the schedule without running reveal animations', as
   const schedule = page.getByRole('region', { name: 'Airing schedule', exact: true });
   await schedule.getByRole('button', { name: /^Wed/ }).click();
   await expect(schedule.getByRole('link', { name: /Show 28/ })).toBeVisible();
+  await expect(schedule.locator('.rail-days button').first()).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(
+    await schedule
+      .locator('.rail-days')
+      .evaluate((node) => node.getAnimations({ subtree: true }).length),
+  ).toBe(0);
   expect(
     await schedule
       .locator('.home-schedule-results')
