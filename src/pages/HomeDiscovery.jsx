@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   ArrowRight,
@@ -277,6 +277,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
     <section
       className={`discovery-panel ${expanded ? 'is-expanded' : 'is-compact'}`}
       aria-label={active.label}
+      data-category={mode}
     >
       <header className="discovery-category-heading">
         <h2>
@@ -289,7 +290,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
           >
             <Icon size={16} />
             <span>{active.label}</span>
-            <Maximize2 className="discovery-expand-icon" size={14} />
+            {expanded && <Maximize2 className="discovery-expand-icon" size={14} />}
           </button>
         </h2>
         <span className="discovery-category-hint">
@@ -439,19 +440,16 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
             </>
           )}
         </span>
-        {!expanded ? (
-          <button onClick={onExpand}>
-            Expand collection <ArrowRight size={13} />
-          </button>
-        ) : animeReleases ? (
-          <Link to="/schedule">
-            <CalendarDays size={13} /> Full schedule
-          </Link>
-        ) : (
-          <Link to={`/browse/${category}`}>
-            Discover more <ArrowRight size={13} />
-          </Link>
-        )}
+        {expanded &&
+          (animeReleases ? (
+            <Link to="/schedule">
+              <CalendarDays size={13} /> Full schedule
+            </Link>
+          ) : (
+            <Link to={`/browse/${category}`}>
+              Discover more <ArrowRight size={13} />
+            </Link>
+          ))}
       </footer>
     </section>
   );
@@ -459,33 +457,72 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
 
 export default function HomeDiscovery({ home, language, onLanguage, category = 'anime' }) {
   const [mode, setMode] = useState('released');
+  const panelsRef = useRef(null);
+  const previousBounds = useRef(null);
+  const motion = useRef([]);
+  const selectMode = (nextMode) => {
+    if (nextMode === mode) return;
+    // Capture the visible position even if another selection is still moving.
+    previousBounds.current = new Map(
+      Array.from(panelsRef.current.children, (panel) => [
+        panel.dataset.category,
+        panel.getBoundingClientRect(),
+      ]),
+    );
+    motion.current.forEach((animation) => animation.cancel());
+    setMode(nextMode);
+  };
+  useLayoutEffect(() => {
+    const before = previousBounds.current;
+    previousBounds.current = null;
+    if (
+      !before ||
+      window.matchMedia('(prefers-reduced-motion: reduce)').matches ||
+      document.documentElement.dataset.reduceMotion === 'true'
+    )
+      return;
+    // Move the same keyed panels, preserving their filters and loaded feeds.
+    // Animate width rather than scale so the lettering and artwork stay sharp.
+    motion.current = Array.from(panelsRef.current.children, (panel) => {
+      const old = before.get(panel.dataset.category);
+      const next = panel.getBoundingClientRect();
+      return panel.animate(
+        [
+          {
+            transform: `translate(${old.x - next.x}px, ${old.y - next.y}px)`,
+            width: `${old.width}px`,
+          },
+          { transform: 'translate(0, 0)', width: `${next.width}px` },
+        ],
+        { duration: 620, easing: 'cubic-bezier(0.22, 1, 0.36, 1)' },
+      );
+    });
+    return () => motion.current.forEach((animation) => animation.cancel());
+  }, [mode]);
   const categories = tabs.map((tab) => ({
     ...tab,
     label: category !== 'anime' && tab.value === 'released' ? 'New series' : tab.label,
   }));
+  const orderedCategories = [
+    ...categories.filter((tab) => tab.value !== mode),
+    categories.find((tab) => tab.value === mode),
+  ];
   return (
     <div className="release-section discovery-section">
       <div className="discovery-mobile-switcher" role="group" aria-label="Choose expanded category">
         {categories.map(({ value, label }) => (
-          <button key={value} aria-pressed={mode === value} onClick={() => setMode(value)}>
+          <button key={value} aria-pressed={mode === value} onClick={() => selectMode(value)}>
             {label}
           </button>
         ))}
       </div>
-      <div
-        className="discovery-panels"
-        style={{
-          '--discovery-columns': tabs
-            .map((tab) => (tab.value === mode ? 'minmax(0, 2.6fr)' : 'minmax(0, 1fr)'))
-            .join(' '),
-        }}
-      >
-        {categories.map((tab) => (
+      <div className="discovery-panels" ref={panelsRef}>
+        {orderedCategories.map((tab) => (
           <DiscoveryPanel
             key={tab.value}
             mode={tab.value}
             expanded={mode === tab.value}
-            onExpand={() => setMode(tab.value)}
+            onExpand={() => selectMode(tab.value)}
             home={home}
             language={language}
             onLanguage={onLanguage}
