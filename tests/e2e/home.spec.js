@@ -72,6 +72,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
   await page.goto('/');
   await expect(page.getByRole('heading', { name: 'Weekly One', exact: true })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Add to watchlist', exact: true })).toBeVisible();
+  await page.locator('.weekly-hero').hover();
   await page.getByRole('button', { name: 'Next featured title' }).click();
   await expect(page.getByRole('heading', { name: 'Weekly Two', exact: true })).toBeVisible();
   const hero = await page.locator('.weekly-hero').boundingBox(),
@@ -232,6 +233,7 @@ test('late artwork cannot evict the current slide from the larger weekly pool', 
   releaseGroup();
   await expect(hero.locator('.weekly-dot')).toHaveCount(8);
   await expect(hero.getByRole('heading', { name: 'Weekly pick 9', exact: true })).toBeVisible();
+  await page.locator('.weekly-hero').hover();
   await hero.getByRole('button', { name: 'Next featured title' }).click();
   await expect(hero.getByRole('heading', { name: 'Weekly pick 1', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);

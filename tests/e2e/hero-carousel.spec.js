@@ -39,6 +39,7 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       name: category === 'anime' ? 'Next featured title' : `Next featured ${category}`,
       exact: true,
     });
+    await page.locator('.weekly-hero').hover();
     await next.click();
     await expect(heading(2)).toBeVisible();
     await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
@@ -83,10 +84,12 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       await expect(heading(3)).toBeVisible();
       await touch.detach();
     }
+    await page.locator('.weekly-hero').hover();
     await hero.getByRole('button', { name: 'Pause banner rotation', exact: true }).click();
     await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(60000);
     await expect(heading(3)).toBeVisible();
+    await page.locator('.weekly-hero').hover();
     await hero.getByRole('button', { name: 'Resume banner rotation', exact: true }).click();
     await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(30000);
@@ -97,6 +100,7 @@ for (const category of ['anime', 'manga', 'manhwa']) {
     ).toHaveCount(0);
     await page.clock.runFor(60000);
     await expect(heading(1)).toBeVisible();
+    await page.locator('.weekly-hero').hover();
     await next.click();
     await expect(heading(2)).toBeVisible();
     expect(

@@ -48,7 +48,9 @@ test('homepage switches complete categories, retains links, filters and saved pr
     expect(switchBounds.y).toBeGreaterThanOrEqual(header.y + header.height);
     expect(switchBounds.y).toBeGreaterThanOrEqual(banner.y);
     expect(switchBounds.y + switchBounds.height).toBeLessThan(banner.y + banner.height);
-    expect(banner.x + banner.width - switchBounds.x - switchBounds.width).toBeLessThan(60);
+    expect(
+      Math.abs(switchBounds.x + switchBounds.width / 2 - (banner.x + banner.width / 2)),
+    ).toBeLessThan(2);
     await expect(page.getByText('MAKE YOURSELF AT HOME', { exact: true })).toHaveCount(0);
     await expect(page.locator('.home-category-intro')).toHaveCount(0);
   };
@@ -57,6 +59,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
     'aria-selected',
     'true',
   );
+  await page.locator('.weekly-hero').hover();
   await toggle.getByRole('tab', { name: 'Manga', exact: true }).click();
   await expect(page).toHaveURL(/\?category=manga$/);
   const hero = page.getByRole('region', { name: 'Featured manga', exact: true });
@@ -114,6 +117,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
     'aria-selected',
     'true',
   );
+  await page.locator('.weekly-hero').hover();
   await toggle.getByRole('tab', { name: 'Anime', exact: true }).click();
   await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Featured manga', exact: true })).toHaveCount(0);
@@ -235,6 +239,7 @@ test('homepage resumes anime, manga and manhwa together below every category ban
     ['manga', 'Manga', 2],
     ['manhwa', 'Manhwa', 3],
   ]) {
+    await page.locator('.weekly-hero').hover();
     await toggle.getByRole('tab', { name: label, exact: true }).click();
     await expect(
       page.getByRole('region', {
@@ -284,4 +289,54 @@ test('homepage resumes anime, manga and manhwa together below every category ban
     await page.goto(`/browse/${category}`);
     await expect(page.getByRole('region', { name: 'Pick up where you left off' })).toHaveCount(0);
   }
+});
+
+test('banner controls sit at bottom center, reveal on hover or keyboard, and stay available on touch', async ({
+  page,
+  context,
+  baseURL,
+  isMobile,
+}, testInfo) => {
+  await mockFeeds(page, context, baseURL);
+  await page.goto('/?category=manga');
+  const hero = page.locator('.weekly-hero');
+  const tabs = page.getByRole('tablist', { name: 'Homepage category' });
+  const bar = page.locator('.home-category-bar');
+  const controls = hero.locator('.weekly-controls');
+  await expect(controls).toBeAttached();
+  const frame = await hero.boundingBox();
+  const bounds = await bar.boundingBox();
+  expect(Math.abs(bounds.x + bounds.width / 2 - (frame.x + frame.width / 2))).toBeLessThan(2);
+  expect(frame.y + frame.height - bounds.y - bounds.height).toBeLessThan(30);
+  const actions = await hero.locator('.weekly-actions').boundingBox();
+  expect(actions.y + actions.height).toBeLessThan(bounds.y);
+  if (!isMobile) {
+    await page.mouse.move(10, frame.y + frame.height + 25);
+    await expect(bar).toHaveCSS('opacity', '0');
+    await expect(controls).toHaveCSS('opacity', '0');
+    await hero.hover({ position: { x: frame.width - 20, y: frame.height - 20 } });
+    await expect(bar).toHaveCSS('opacity', '1');
+    await expect(controls).toHaveCSS('opacity', '1');
+    await tabs.getByRole('tab', { name: 'Manga', exact: true }).click();
+    await page.mouse.move(10, frame.y + frame.height + 25);
+    await expect(bar).toHaveCSS('opacity', '0');
+    await expect(controls).toHaveCSS('opacity', '0');
+    await page.keyboard.press('Tab');
+    await expect(bar).toHaveCSS('opacity', '1');
+    await tabs.getByRole('tab', { name: 'Manga', exact: true }).focus();
+    await page.keyboard.press('ArrowRight');
+    await expect(tabs.getByRole('tab', { name: 'Manhwa', exact: true })).toBeFocused();
+    await expect(bar).toHaveCSS('opacity', '1');
+  } else {
+    await expect(bar).toHaveCSS('opacity', '1');
+    await expect(controls).toHaveCSS('opacity', '1');
+    await tabs.getByRole('tab', { name: 'Manhwa', exact: true }).click();
+  }
+  await expect(tabs.getByRole('tab', { name: 'Manhwa', exact: true })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await page.screenshot({ path: testInfo.outputPath('banner-controls.png') });
+  await tabs.getByRole('tab', { name: 'Anime', exact: true }).click();
+  await expect(page.getByText('Popular anime airing this week')).toHaveCount(0);
 });

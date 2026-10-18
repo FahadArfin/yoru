@@ -10,7 +10,7 @@ import { useHeroCarousel } from '../useHeroCarousel';
 import HeroArtwork from '../HeroArtwork';
 import { coverCandidates, warmImage } from '../image-loading';
 
-export default function MangaHero({ items, category, label }) {
+export default function MangaHero({ items, category, label, categoryControls }) {
   const [selected, setSelected] = useState(null);
   const { entryFor, updateEntry } = useApp();
   const picks = items.slice(0, 8);
@@ -113,6 +113,7 @@ export default function MangaHero({ items, category, label }) {
           </p>
         )}
       </div>
+      {categoryControls}
       {picks.length > 0 && (
         <div className="weekly-bottom">
           <span className="weekly-caption">
