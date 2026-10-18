@@ -382,27 +382,6 @@ export default function Watch() {
               </button>
             </div>
           </div>
-          {anime && (
-            <div className="source-discovery-note" role="status">
-              {automatic.loading
-                ? 'Finding more providers…'
-                : automatic.error ||
-                  automatic.data?.warnings?.[0] ||
-                  'Sources matched automatically. Try another match if this episode does not play.'}
-              {(automatic.error || automatic.data?.warnings?.length > 0) && (
-                <button className="text-link" onClick={automatic.refresh}>
-                  Retry lookup
-                </button>
-              )}
-            </div>
-          )}
-          <p className="player-note">
-            {source?.kind === 'external'
-              ? 'The provider opens separately. Your discussion stays here.'
-              : source?.kind === 'embed'
-                ? 'An external player is shown here. If it cannot load, open the provider or choose another source.'
-                : 'Your video source stays with its provider. Playback position is saved on this device.'}
-          </p>
         </div>
         <div className="watch-sidebar">
           <aside className="watch-units" aria-label="Episode browser">
