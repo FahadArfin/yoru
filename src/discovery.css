@@ -260,7 +260,7 @@
 }
 .discovery-panels {
   display: grid;
-  grid-template-columns: repeat(2, minmax(160px, 1fr)) minmax(0, 7.2fr);
+  grid-template-columns: minmax(0, 7.2fr) repeat(2, minmax(160px, 1fr));
   gap: 22px;
   align-items: start;
   isolation: isolate;

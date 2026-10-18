@@ -504,8 +504,8 @@ export default function HomeDiscovery({ home, language, onLanguage, category = '
     label: category !== 'anime' && tab.value === 'released' ? 'New series' : tab.label,
   }));
   const orderedCategories = [
-    ...categories.filter((tab) => tab.value !== mode),
     categories.find((tab) => tab.value === mode),
+    ...categories.filter((tab) => tab.value !== mode),
   ];
   return (
     <div className="release-section discovery-section">

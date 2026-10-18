@@ -86,7 +86,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
     for (const compact of await page.locator('.discovery-panel.is-compact').all()) {
       const bounds = await compact.boundingBox();
       if (page.viewportSize().width > 950) {
-        expect(bounds.x + bounds.width).toBeLessThan(active.x);
+        expect(bounds.x).toBeGreaterThan(active.x + active.width);
         expect(bounds.width).toBeLessThan(active.width * 0.23);
       } else {
         expect(bounds.y).toBeGreaterThanOrEqual(active.y + active.height);
