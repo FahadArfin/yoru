@@ -245,21 +245,7 @@ export default function Watch() {
         <ArrowLeft size={16} />
         {titleOf(media)}
       </Link>
-      <div className="watch-heading">
-        <div>
-          <h1>{titleOf(media)}</h1>
-          <p>
-            {anime ? 'Episode' : 'Chapter'} {unit}
-            {total ? ` of ${total}` : ''}
-          </p>
-        </div>
-        <RoomLauncher
-          media={media}
-          unit={unit}
-          source={source}
-          getPosition={() => Number(readSource(`yoru:position:${id}:${unit}`)) || 0}
-        />
-      </div>
+      <h1 className="watch-page-title">{titleOf(media)}</h1>
       <div className="watch-layout">
         <div className="watch-stage">
           {source ? (
@@ -418,128 +404,138 @@ export default function Watch() {
                 : 'Your video source stays with its provider. Playback position is saved on this device.'}
           </p>
         </div>
-        <aside className="watch-units" aria-label="Episode browser">
-          <div className="panel-heading">
-            <h3>{anime ? 'Episodes' : 'Chapters'}</h3>
-            <span>{total || 'Ongoing'}</span>
-            <div className="episode-view-toggle" role="group" aria-label="Episode display">
-              <button
-                aria-label="Episode tiles"
-                aria-pressed={episodeView === 'tiles'}
-                onClick={() => savePreference('yoru:episode-view', 'tiles', setEpisodeView)}
-              >
-                <Grid2X2 size={16} />
+        <div className="watch-sidebar">
+          <aside className="watch-units" aria-label="Episode browser">
+            <div className="panel-heading">
+              <h3>{anime ? 'Episodes' : 'Chapters'}</h3>
+              <span>{total || 'Ongoing'}</span>
+              <div className="episode-view-toggle" role="group" aria-label="Episode display">
+                <button
+                  aria-label="Episode tiles"
+                  aria-pressed={episodeView === 'tiles'}
+                  onClick={() => savePreference('yoru:episode-view', 'tiles', setEpisodeView)}
+                >
+                  <Grid2X2 size={16} />
+                </button>
+                <button
+                  aria-label="Episode list"
+                  aria-pressed={episodeView === 'list'}
+                  onClick={() => savePreference('yoru:episode-view', 'list', setEpisodeView)}
+                >
+                  <List size={17} />
+                </button>
+              </div>
+            </div>
+            <form
+              className="unit-jump"
+              onSubmit={(e) => {
+                e.preventDefault();
+                nextUnit(Number(unitDraft));
+              }}
+            >
+              <input
+                aria-label={`Go to ${anime ? 'episode' : 'chapter'}`}
+                type="number"
+                min="1"
+                max={total || 100000}
+                required
+                value={unitDraft}
+                onChange={(e) => setUnitDraft(e.target.value)}
+              />
+              <button className="btn btn-subtle" type="submit">
+                Go
+                <ArrowRight size={14} />
               </button>
+            </form>
+            <div className="episode-range">
               <button
-                aria-label="Episode list"
-                aria-pressed={episodeView === 'list'}
-                onClick={() => savePreference('yoru:episode-view', 'list', setEpisodeView)}
+                aria-label="Previous episode group"
+                disabled={episodeGroup === 0}
+                onClick={() => setEpisodeGroup((value) => Math.max(0, value - 1))}
               >
-                <List size={17} />
+                <ChevronLeft size={16} />
+              </button>
+              <span>
+                {String(episodeGroup * 50 + 1).padStart(3, '0')} –{' '}
+                {String(
+                  Math.min((episodeGroup + 1) * 50, total || (episodeGroup + 1) * 50),
+                ).padStart(3, '0')}
+              </span>
+              <button
+                aria-label="Next episode group"
+                disabled={Boolean(total && (episodeGroup + 1) * 50 >= total)}
+                onClick={() => setEpisodeGroup((value) => value + 1)}
+              >
+                <ChevronRight size={16} />
               </button>
             </div>
-          </div>
-          <form
-            className="unit-jump"
-            onSubmit={(e) => {
-              e.preventDefault();
-              nextUnit(Number(unitDraft));
-            }}
-          >
-            <input
-              aria-label={`Go to ${anime ? 'episode' : 'chapter'}`}
-              type="number"
-              min="1"
-              max={total || 100000}
-              required
-              value={unitDraft}
-              onChange={(e) => setUnitDraft(e.target.value)}
-            />
-            <button className="btn btn-subtle" type="submit">
-              Go
-              <ArrowRight size={14} />
-            </button>
-          </form>
-          <div className="episode-range">
-            <button
-              aria-label="Previous episode group"
-              disabled={episodeGroup === 0}
-              onClick={() => setEpisodeGroup((value) => Math.max(0, value - 1))}
-            >
-              <ChevronLeft size={16} />
-            </button>
-            <span>
-              {String(episodeGroup * 50 + 1).padStart(3, '0')} –{' '}
-              {String(Math.min((episodeGroup + 1) * 50, total || (episodeGroup + 1) * 50)).padStart(
-                3,
-                '0',
+            {anime &&
+              episodeView === 'list' &&
+              (episodeDetails.error || episodeDetails.data?.partial) && (
+                <p className="watch-episode-note" role="status">
+                  Some episode details are unavailable.{' '}
+                  <button onClick={episodeDetails.refresh}>Retry details</button>
+                </p>
               )}
-            </span>
-            <button
-              aria-label="Next episode group"
-              disabled={Boolean(total && (episodeGroup + 1) * 50 >= total)}
-              onClick={() => setEpisodeGroup((value) => value + 1)}
-            >
-              <ChevronRight size={16} />
-            </button>
-          </div>
-          {anime &&
-            episodeView === 'list' &&
-            (episodeDetails.error || episodeDetails.data?.partial) && (
-              <p className="watch-episode-note" role="status">
-                Some episode details are unavailable.{' '}
-                <button onClick={episodeDetails.refresh}>Retry details</button>
-              </p>
-            )}
-          <div key={`${id}:${episodeGroup}`} className={`watch-unit-list episode-${episodeView}`}>
-            {Array.from({ length: Math.min(50, total || 50) }, (_, i) => episodeGroup * 50 + i + 1)
-              .filter((number) => !total || number <= total)
-              .map((number) => (
-                <button
-                  className={number === unit ? 'active' : ''}
-                  aria-label={`${anime ? 'Episode' : 'Chapter'} ${number}${number === unit ? ', now playing' : number <= entry?.progress ? ', completed' : ''}`}
-                  aria-current={number === unit ? 'true' : undefined}
-                  key={number}
-                  onClick={() => nextUnit(number)}
-                >
-                  {episodeView === 'list' && anime ? (
-                    <WatchEpisodePreview
-                      key={`${id}:${number}`}
-                      media={media}
-                      episode={episodeByNumber.get(number)}
-                      number={number}
-                      active={number === unit}
-                      completed={number <= entry?.progress}
-                      language={language}
-                      loading={episodeDetails.loading}
-                    />
-                  ) : (
-                    <span className="episode-number">{String(number).padStart(2, '0')}</span>
-                  )}
-                  {episodeView === 'list' && !anime && (
-                    <span className="episode-copy">
-                      <strong>
-                        {anime ? 'Episode' : 'Chapter'} {number}
-                      </strong>
-                      <small>
-                        {number === unit
-                          ? 'Now playing'
-                          : number <= entry?.progress
-                            ? 'Completed'
-                            : 'Select episode'}
-                      </small>
-                    </span>
-                  )}
-                  {(episodeView !== 'list' || !anime) &&
-                    (number === unit ? (
-                      <Play className="episode-state" size={12} fill="currentColor" />
-                    ) : number <= entry?.progress ? (
-                      <Check className="episode-state" size={13} />
-                    ) : null)}
-                </button>
-              ))}
-          </div>
-        </aside>
+            <div key={`${id}:${episodeGroup}`} className={`watch-unit-list episode-${episodeView}`}>
+              {Array.from(
+                { length: Math.min(50, total || 50) },
+                (_, i) => episodeGroup * 50 + i + 1,
+              )
+                .filter((number) => !total || number <= total)
+                .map((number) => (
+                  <button
+                    className={number === unit ? 'active' : ''}
+                    aria-label={`${anime ? 'Episode' : 'Chapter'} ${number}${number === unit ? ', now playing' : number <= entry?.progress ? ', completed' : ''}`}
+                    aria-current={number === unit ? 'true' : undefined}
+                    key={number}
+                    onClick={() => nextUnit(number)}
+                  >
+                    {episodeView === 'list' && anime ? (
+                      <WatchEpisodePreview
+                        key={`${id}:${number}`}
+                        media={media}
+                        episode={episodeByNumber.get(number)}
+                        number={number}
+                        active={number === unit}
+                        completed={number <= entry?.progress}
+                        language={language}
+                        loading={episodeDetails.loading}
+                      />
+                    ) : (
+                      <span className="episode-number">{String(number).padStart(2, '0')}</span>
+                    )}
+                    {episodeView === 'list' && !anime && (
+                      <span className="episode-copy">
+                        <strong>
+                          {anime ? 'Episode' : 'Chapter'} {number}
+                        </strong>
+                        <small>
+                          {number === unit
+                            ? 'Now playing'
+                            : number <= entry?.progress
+                              ? 'Completed'
+                              : 'Select episode'}
+                        </small>
+                      </span>
+                    )}
+                    {(episodeView !== 'list' || !anime) &&
+                      (number === unit ? (
+                        <Play className="episode-state" size={12} fill="currentColor" />
+                      ) : number <= entry?.progress ? (
+                        <Check className="episode-state" size={13} />
+                      ) : null)}
+                  </button>
+                ))}
+            </div>
+          </aside>
+          <RoomLauncher
+            media={media}
+            unit={unit}
+            source={source}
+            getPosition={() => Number(readSource(`yoru:position:${id}:${unit}`)) || 0}
+          />
+        </div>
       </div>
       <WatchDetails media={media} />
       <AnimeCast key={id} mediaId={id} />
