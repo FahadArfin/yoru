@@ -3,26 +3,29 @@ import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
 import { kindOf, titleOf } from '../api';
 import { useResource } from '../state';
-import { recommendationQuery, relatedTitles } from '../recommendations';
+import {
+  recommendationGenre,
+  recommendationQuery,
+  relatedTitles,
+  sharedRecommendationGenres,
+} from '../recommendations';
 import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
 
 export default function MangaRecommendations({ media }) {
   const related = useResource(recommendationQuery(media));
-  const matches = relatedTitles(media, related.data?.items);
-  const usePopular = Boolean(media.genres?.length && !related.loading && !matches.length);
-  const popular = useResource(usePopular ? recommendationQuery(media, false) : null);
-  const resource = usePopular ? popular : related;
-  const items = usePopular ? relatedTitles(media, popular.data?.items) : matches;
-  const loading = related.loading || (usePopular && !popular.data && !popular.error);
+  const items = relatedTitles(media, related.data?.items);
+  const resource = related;
+  const loading = related.loading;
   const browse = new URLSearchParams({ sort: 'popular' });
-  if (!usePopular && media.genres?.[0]) browse.set('genre', media.genres[0]);
+  const genre = recommendationGenre(media);
+  if (genre) browse.set('genre', genre);
   return (
     <section className="manga-fact manga-recommendations" aria-labelledby="recommendations-heading">
       <h3 id="recommendations-heading">Recommendations</h3>
       {loading ? (
         <p className="manga-recommendation-status" role="status">
-          Finding your next read…
+          Finding similar stories…
         </p>
       ) : items.length ? (
         <div className="manga-recommendation-grid">
@@ -33,19 +36,19 @@ export default function MangaRecommendations({ media }) {
               className="manga-recommendation-card"
               to={`/title/${encodeURIComponent(item.id)}`}
               title={titleOf(item)}
+              aria-label={titleOf(item)}
             >
               <CoverImage media={item} alt="" loading="eager" fetchPriority="low" />
               <span>
                 <strong>{titleOf(item)}</strong>
+                <small>{sharedRecommendationGenres(media, item).slice(0, 2).join(' · ')}</small>
               </span>
             </PrefetchLink>
           ))}
         </div>
       ) : (
         <p className="manga-recommendation-status" role="status">
-          {resource.error
-            ? 'Recommendations are unavailable right now.'
-            : 'No recommendations yet.'}
+          {resource.error ? 'Recommendations are unavailable right now.' : 'No close matches yet.'}
         </p>
       )}
       {!loading && resource.error && !items.length && (

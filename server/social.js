@@ -472,13 +472,16 @@ socialRouter.delete('/comments/:id', requireAuth, (req, res) => {
 
 socialRouter.get(
   '/community',
-  asyncRoute(async (_req, res) => {
+  asyncRoute(async (req, res) => {
     const comments = all(`${COMMENT_QUERY} ORDER BY comments.created_at DESC LIMIT 20`, '').map(
       (row) => ({ ...commentShape(row), kind: 'comment', type: 'comment' }),
     );
-    const reviews = all(
-      'SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id ORDER BY updated_at DESC LIMIT 20',
-    ).map((row) => ({ ...reviewShape(row), kind: 'review', type: 'review' }));
+    const reviews =
+      req.query.type === 'comment'
+        ? []
+        : all(
+            'SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id ORDER BY updated_at DESC LIMIT 20',
+          ).map((row) => ({ ...reviewShape(row), kind: 'review', type: 'review' }));
     const items = await Promise.all(
       [...comments, ...reviews]
         .sort((a, b) => b.createdAt.localeCompare(a.createdAt))

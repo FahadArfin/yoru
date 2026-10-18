@@ -335,9 +335,14 @@ export function socialRoutes(app) {
     const comments = (
       await db.all(`${COMMENT_QUERY} ORDER BY comments.created_at DESC LIMIT 20`, '')
     ).map((x) => ({ ...commentShape(x), kind: 'comment', type: 'comment' }));
-    const reviews = (await db.all(`${REVIEW_QUERY} ORDER BY updated_at DESC LIMIT 20`)).map(
-      (x) => ({ ...reviewShape(x), kind: 'review', type: 'review' }),
-    );
+    const reviews =
+      c.req.query('type') === 'comment'
+        ? []
+        : (await db.all(`${REVIEW_QUERY} ORDER BY updated_at DESC LIMIT 20`)).map((x) => ({
+            ...reviewShape(x),
+            kind: 'review',
+            type: 'review',
+          }));
     return c.json({
       items: await Promise.all(
         [...comments, ...reviews]
