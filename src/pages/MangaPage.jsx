@@ -66,22 +66,24 @@ export function MangaLanding({ category, label, homepage = false, children }) {
           <ContinueReading category={category} />
         </div>
       )}
-      <div className="manga-intro home-width">
-        <div>
-          <BookOpen size={19} />
-          <span>
-            <strong>
-              {category === 'manhwa'
-                ? 'A little more obsessed. One scroll at a time.'
-                : 'A little more obsessed. One chapter at a time.'}
-            </strong>
-            <small>Discover something new, or fall back into an old favorite.</small>
-          </span>
+      {!homepage && (
+        <div className="manga-intro home-width">
+          <div>
+            <BookOpen size={19} />
+            <span>
+              <strong>
+                {category === 'manhwa'
+                  ? 'A little more obsessed. One scroll at a time.'
+                  : 'A little more obsessed. One chapter at a time.'}
+              </strong>
+              <small>Discover something new, or fall back into an old favorite.</small>
+            </span>
+          </div>
+          <a href={`#${category}-catalog`}>
+            Explore the collection <ArrowRight size={15} />
+          </a>
         </div>
-        <a href={homepage ? `/browse/${category}` : `#${category}-catalog`}>
-          Explore the collection <ArrowRight size={15} />
-        </a>
-      </div>
+      )}
       <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
