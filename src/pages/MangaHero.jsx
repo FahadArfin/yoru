@@ -5,6 +5,7 @@ import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
 import { useApp } from '../state';
 import { useBannerArtwork } from '../useBannerArtwork';
+import { isReadingBanner } from '../banner-quality';
 
 export default function MangaHero({ items, category, label }) {
   const [selected, setSelected] = useState(null);
@@ -15,7 +16,7 @@ export default function MangaHero({ items, category, label }) {
     picks.findIndex((item) => item.id === selected),
   );
   const hero = picks[index];
-  const artwork = useBannerArtwork(picks, hero?.id);
+  const artwork = useBannerArtwork(picks, hero?.id, isReadingBanner);
   const wide = hero && artwork.featured.some((item) => item.id === hero.id);
   const change = (step) => setSelected(picks[(index + step + picks.length) % picks.length].id);
   return (
@@ -34,21 +35,12 @@ export default function MangaHero({ items, category, label }) {
           onError={() => artwork.reject(hero.banner)}
         />
       )}
-      <div className="weekly-shade" />
       {!wide && hero && (
-        <div className="manga-cover-stage" key={hero.id}>
-          <span className="manga-cover-orbit" />
-          <CoverImage
-            media={hero}
-            alt={`${titleOf(hero)} cover`}
-            loading="eager"
-            fetchPriority="high"
-          />
-          <span className="manga-cover-label">
-            {category === 'manhwa' ? 'COLOR. SCROLL. OBSESSION.' : 'INK. PANELS. OBSESSION.'}
-          </span>
+        <div className="manga-cover-stage" key={hero.id} aria-hidden="true">
+          <CoverImage media={hero} alt="" loading="eager" fetchPriority="high" />
         </div>
       )}
+      <div className="weekly-shade" />
       <div className="weekly-content">
         <span className="weekly-kicker">
           <BookOpen size={16} /> THE {category.toUpperCase()} COLLECTION{' '}

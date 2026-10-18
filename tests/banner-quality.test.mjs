@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { isBannerSharp } from '../src/banner-quality.js';
+import { isBannerSharp, isReadingBanner } from '../src/banner-quality.js';
 
 test('banner requires Full HD landscape pixels and enough resolution for cover cropping', () => {
   const box = { width: 1440, height: 900, density: 1 };
@@ -18,4 +18,14 @@ test('banner requires Full HD landscape pixels and enough resolution for cover c
   );
   assert.equal(isBannerSharp({ width: 1920, height: 1080 }, { ...box, width: 2400 }), false);
   assert.equal(isBannerSharp(null, box), false);
+});
+
+test('reading banners accept panoramic originals but reject thumbnails and portraits', () => {
+  assert.equal(isReadingBanner({ width: 1900, height: 492 }), true);
+  assert.equal(isReadingBanner({ width: 1400, height: 600 }), true);
+  assert.equal(isReadingBanner({ width: 3840, height: 2160 }), true);
+  assert.equal(isReadingBanner({ width: 600, height: 400 }), false);
+  assert.equal(isReadingBanner({ width: 1900, height: 200 }), false);
+  assert.equal(isReadingBanner({ width: 1600, height: 2400 }), false);
+  assert.equal(isReadingBanner(null), false);
 });

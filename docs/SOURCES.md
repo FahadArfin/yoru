@@ -34,6 +34,8 @@ The native solo player derives from the user’s original FahadList project. Oth
 
 The `qs` transitive dependency is overridden to 6.16.0 to include its current denial-of-service fixes while retaining Express 4 compatibility. See the [upstream security advisory](https://github.com/advisories/GHSA-x5fp-wj9c-mxmx).
 
+Manga and manhwa discovery banners use the selected reading title's original Kitsu landscape artwork when decoded dimensions are at least 1200 by 400 with a landscape ratio of 1.5 or greater. Panoramic originals do not need to be 1080 pixels tall. When unavailable, the title's cover fills the same hero area; failed covers leave a neutral background. These images are cropped without distorting their proportions, so sharpness depends on the provider's original artwork and screen size. Anime banners retain their separate Full HD and display-resolution checks.
+
 ## Airing schedule
 
 Yoru uses the [AnimeSchedule v3 API](https://animeschedule.net/api/v3/documentation/anime) for episode dates. It fetches three neighboring UTC ISO weeks so a visitor's local Monday–Sunday week includes either date-line boundary. Dates and daylight-saving offsets are converted with the browser's IANA timezone; raw/broadcast, English sub, and English dub remain separate. Provider delays and missing times are retained. Cards link to the provider because timetable entries do not supply verified MAL identities.
