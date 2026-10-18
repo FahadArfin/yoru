@@ -36,6 +36,7 @@ import '../watch.css';
 import WatchDetails from '../WatchDetails';
 import AnimeCast from '../AnimeCast';
 import WatchEpisodePreview from '../WatchEpisodePreview';
+import useEpisodeAvailability from '../useEpisodeAvailability';
 const readSource = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -106,10 +107,6 @@ function WatchSession() {
   }, [id, unit]);
   const anime = isAnime(media);
   useEffect(() => {
-    if (media?.id === id && anime)
-      saveResume(media, { number: unit, position: positionRef.current, language });
-  }, [media?.id, id, unit, anime, language, saveResume]);
-  useEffect(() => {
     if (
       (!anime && !['MANGA', 'MANHWA'].includes(media?.category)) ||
       media?.id !== id ||
@@ -127,21 +124,26 @@ function WatchSession() {
     document.addEventListener('visibilitychange', record);
     return () => document.removeEventListener('visibilitychange', record);
   }, [id, anime, media?.id, media?.category, resource.loading, resource.error]);
-  const automatic = useResource(
-    anime ? `/api/media/${id}/sources?episode=${unit}&language=${language}` : null,
-    false,
-  );
   const total = anime ? media?.episodes : media?.chapters;
   const episodeDetails = useResource(
-    anime && episodeView === 'list'
-      ? `/api/media/${id}/episodes?page=${Math.floor(episodeGroup / 2) + 1}`
-      : null,
+    anime ? `/api/media/${id}/episodes?page=${Math.floor(episodeGroup / 2) + 1}` : null,
   );
   const episodeByNumber = new Map(
     (episodeDetails.data?.items || []).map((item) => [item.number, item]),
   );
+  const availability = useEpisodeAvailability(media, episodeDetails.data);
+  const unreleased = anime && availability.state(unit) === 'unreleased';
+  const blocked = availability.loading || unreleased;
+  const automatic = useResource(
+    anime && !blocked ? `/api/media/${id}/sources?episode=${unit}&language=${language}` : null,
+    false,
+  );
+  useEffect(() => {
+    if (media?.id === id && anime && !blocked)
+      saveResume(media, { number: unit, position: positionRef.current, language });
+  }, [media?.id, id, unit, anime, blocked, language, saveResume]);
   const sources = useMemo(() => {
-    if (!media) return [];
+    if (!media || blocked) return [];
     const result = [];
     if (custom?.url && safeLink(custom.url))
       result.push({ ...custom, id: 'custom', label: 'Your source' });
@@ -176,7 +178,7 @@ function WatchSession() {
           })),
       );
     return result;
-  }, [media, custom, unit, language, automatic.data, id]);
+  }, [media, custom, unit, language, automatic.data, id, blocked]);
   const source = sources.find((item) => item.id === selected) || sources[0];
   const nativePlayback = ['video', 'hls'].includes(source?.kind);
   // A custom URL belongs to this title, not a verified sequence of episode URLs.
@@ -201,10 +203,20 @@ function WatchSession() {
     });
     return () => setWatchPage(null);
   }, [id, unit, anime, language, media, source, sources, automatic.loading]);
-  const nextUnit = (number) =>
+  const nextUnit = (number) => {
+    if (availability.loading || availability.state(number) === 'unreleased') {
+      notify(
+        availability.loading
+          ? 'Checking episode releases…'
+          : `Episode ${number} has not been released yet.`,
+        'error',
+      );
+      return;
+    }
     navigate(
       `/${anime ? 'watch' : 'read'}/${id}/${Math.max(1, total ? Math.min(total, number) : number)}${anime ? `?${params}` : ''}`,
     );
+  };
   const mark = async () => {
     const saved = await updateEntry(media, {
       progress: Math.max(entry?.progress || 0, unit),
@@ -224,7 +236,15 @@ function WatchSession() {
         progress: Math.max(entry?.progress || 0, unit),
         status: total && unit >= total ? 'completed' : 'watching',
       });
-    if (autoNext && canAutoNext && total && unit < total) nextUnit(unit + 1);
+    if (
+      autoNext &&
+      canAutoNext &&
+      total &&
+      unit < total &&
+      !availability.loading &&
+      availability.state(unit + 1) !== 'unreleased'
+    )
+      nextUnit(unit + 1);
   };
   const bookmark = async () => {
     setBookmarkBusy(true);
@@ -253,7 +273,17 @@ function WatchSession() {
       <h1 className="watch-page-title">{titleOf(media)}</h1>
       <div className="watch-layout">
         <div className="watch-stage">
-          {source ? (
+          {blocked ? (
+            <div className="room-empty-stage episode-unreleased-stage" role="status">
+              <span className="eyebrow">{unreleased ? 'UPCOMING EPISODE' : 'EPISODE GUIDE'}</span>
+              <h2>
+                {unreleased
+                  ? `Episode ${unit} hasn’t been released yet`
+                  : 'Checking episode releases…'}
+              </h2>
+              {unreleased && <p>Choose an available episode from the list.</p>}
+            </div>
+          ) : source ? (
             ['video', 'hls'].includes(source.kind) ? (
               <SourcePlayer
                 key={`${id}:${unit}:${source.id}`}
@@ -323,17 +353,29 @@ function WatchSession() {
                 Autoplay
                 <span className="watch-switch" />
               </button>
-              <button disabled={unit <= 1} onClick={() => nextUnit(unit - 1)}>
+              <button
+                disabled={
+                  unit <= 1 || availability.loading || availability.state(unit - 1) === 'unreleased'
+                }
+                onClick={() => nextUnit(unit - 1)}
+              >
                 <ChevronLeft size={16} />
                 Previous
               </button>
-              <button disabled={Boolean(total && unit >= total)} onClick={() => nextUnit(unit + 1)}>
+              <button
+                disabled={
+                  Boolean(total && unit >= total) ||
+                  availability.loading ||
+                  availability.state(unit + 1) === 'unreleased'
+                }
+                onClick={() => nextUnit(unit + 1)}
+              >
                 Next
                 <ChevronRight size={16} />
               </button>
             </div>
             <div className="watch-control-group">
-              <button onClick={mark}>
+              <button onClick={mark} disabled={blocked}>
                 <Check size={16} />
                 {playerSaved || entry?.progress >= unit ? 'Marked complete' : 'Mark complete'}
               </button>
@@ -350,9 +392,10 @@ function WatchSession() {
           <div className="watch-source-heading">
             <div>
               <strong>
-                You are watching {anime ? 'Episode' : 'Chapter'} {unit}
+                {unreleased ? 'Unreleased' : 'You are watching'} {anime ? 'Episode' : 'Chapter'}{' '}
+                {unit}
               </strong>
-              <span>Choose another source if playback is unstable.</span>
+              {!blocked && <span>Choose another source if playback is unstable.</span>}
             </div>
             {playbackHint && <p>{playbackHint}</p>}
           </div>
@@ -467,50 +510,60 @@ function WatchSession() {
                 (_, i) => episodeGroup * 50 + i + 1,
               )
                 .filter((number) => !total || number <= total)
-                .map((number) => (
-                  <button
-                    className={number === unit ? 'active' : ''}
-                    aria-label={`${anime ? 'Episode' : 'Chapter'} ${number}${number === unit ? ', now playing' : number <= entry?.progress ? ', completed' : ''}`}
-                    aria-current={number === unit ? 'true' : undefined}
-                    key={number}
-                    onClick={() => nextUnit(number)}
-                  >
-                    {episodeView === 'list' && anime ? (
-                      <WatchEpisodePreview
-                        key={`${id}:${number}`}
-                        media={media}
-                        episode={episodeByNumber.get(number)}
-                        number={number}
-                        active={number === unit}
-                        completed={number <= entry?.progress}
-                        language={language}
-                        loading={episodeDetails.loading}
-                      />
-                    ) : (
-                      <span className="episode-number">{String(number).padStart(2, '0')}</span>
-                    )}
-                    {episodeView === 'list' && !anime && (
-                      <span className="episode-copy">
-                        <strong>
-                          {anime ? 'Episode' : 'Chapter'} {number}
-                        </strong>
-                        <small>
-                          {number === unit
-                            ? 'Now playing'
-                            : number <= entry?.progress
-                              ? 'Completed'
-                              : 'Select episode'}
-                        </small>
-                      </span>
-                    )}
-                    {(episodeView !== 'list' || !anime) &&
-                      (number === unit ? (
-                        <Play className="episode-state" size={12} fill="currentColor" />
-                      ) : number <= entry?.progress ? (
-                        <Check className="episode-state" size={13} />
-                      ) : null)}
-                  </button>
-                ))}
+                .map((number) => {
+                  const future = anime && availability.state(number) === 'unreleased';
+                  return (
+                    <button
+                      className={future ? 'is-unreleased' : number === unit ? 'active' : ''}
+                      disabled={future || availability.loading}
+                      title={future ? `Episode ${number} · Unreleased` : undefined}
+                      aria-label={`${anime ? 'Episode' : 'Chapter'} ${number}${future ? ', unreleased' : number === unit ? ', now playing' : number <= entry?.progress ? ', completed' : ''}`}
+                      aria-current={number === unit ? 'true' : undefined}
+                      key={number}
+                      onClick={() => nextUnit(number)}
+                    >
+                      {episodeView === 'list' && anime ? (
+                        <WatchEpisodePreview
+                          key={`${id}:${number}`}
+                          media={media}
+                          episode={episodeByNumber.get(number)}
+                          number={number}
+                          active={number === unit}
+                          completed={number <= entry?.progress}
+                          language={language}
+                          loading={episodeDetails.loading}
+                          unreleased={future}
+                        />
+                      ) : (
+                        <span className="episode-number">{String(number).padStart(2, '0')}</span>
+                      )}
+                      {future && episodeView === 'tiles' && (
+                        <small className="episode-soon">Soon</small>
+                      )}
+                      {episodeView === 'list' && !anime && (
+                        <span className="episode-copy">
+                          <strong>
+                            {anime ? 'Episode' : 'Chapter'} {number}
+                          </strong>
+                          <small>
+                            {number === unit
+                              ? 'Now playing'
+                              : number <= entry?.progress
+                                ? 'Completed'
+                                : 'Select episode'}
+                          </small>
+                        </span>
+                      )}
+                      {!future &&
+                        (episodeView !== 'list' || !anime) &&
+                        (number === unit ? (
+                          <Play className="episode-state" size={12} fill="currentColor" />
+                        ) : number <= entry?.progress ? (
+                          <Check className="episode-state" size={13} />
+                        ) : null)}
+                    </button>
+                  );
+                })}
             </div>
           </aside>
           <RoomLauncher
