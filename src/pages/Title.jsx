@@ -23,6 +23,7 @@ import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
 import MangaTitle from './MangaTitle';
 import AnimeEpisodeGrid from '../AnimeEpisodeGrid';
+import AnimeCast from '../AnimeCast';
 import MangaRecommendations from './MangaRecommendations';
 const selectedTab = (params) =>
   params.get('unit')
@@ -332,6 +333,7 @@ export default function Title() {
             </div>
           </aside>
         </div>
+        {tab === 'overview' && <AnimeCast key={id} mediaId={id} />}
       </div>
     </div>
   );
