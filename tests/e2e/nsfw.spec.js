@@ -35,26 +35,18 @@ test('adult section guards direct category links and can be hidden again', async
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
 });
 
-test('NSFW navigation opens from the top bar or mobile navigation', async ({ page, isMobile }) => {
+test('NSFW navigation opens from the top bar on desktop and mobile', async ({ page }) => {
   await page.goto('/browse/anime');
-  if (isMobile) {
-    await page.getByRole('button', { name: 'Open navigation' }).click();
-    await page
-      .getByRole('dialog', { name: 'Navigation' })
-      .getByRole('link', { name: /NSFW/ })
-      .click();
-  } else {
-    const menu = page.getByRole('button', { name: 'NSFW menu' });
-    await menu.click();
-    const dropdown = page.getByRole('navigation', { name: 'NSFW categories' });
-    await expect(dropdown.getByRole('link')).toHaveCount(3);
-    await page.keyboard.press('Escape');
-    await expect(menu).toBeFocused();
-    await expect(dropdown).toHaveCount(0);
-    await menu.press('ArrowDown');
-    await expect(page.getByRole('link', { name: 'Hentai anime', exact: true })).toBeFocused();
-    await page.getByRole('link', { name: 'Adult manhwa', exact: true }).click();
-  }
+  const menu = page.getByRole('button', { name: 'NSFW menu' });
+  await menu.click();
+  const dropdown = page.getByRole('navigation', { name: 'NSFW categories' });
+  await expect(dropdown.getByRole('link')).toHaveCount(3);
+  await page.keyboard.press('Escape');
+  await expect(menu).toBeFocused();
+  await expect(dropdown).toHaveCount(0);
+  await menu.press('ArrowDown');
+  await expect(page.getByRole('link', { name: 'Hentai anime', exact: true })).toBeFocused();
+  await page.getByRole('link', { name: 'Adult manhwa', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
   await page.getByRole('link', { name: 'Back to Yoru', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);

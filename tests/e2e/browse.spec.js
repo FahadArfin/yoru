@@ -69,8 +69,6 @@ test('compact catalog keeps 48-title pagination, filters and navigation usable',
   await expect(
     page.getByRole('link', { name: 'View Catalog title 1', exact: true }),
   ).toHaveAttribute('href', '/title/mal-manga-1');
-  await page.getByRole('button', { name: 'Open navigation' }).click();
-  await expect(page.getByRole('dialog', { name: 'Navigation' })).toBeVisible();
-  await page.keyboard.press('Escape');
+  await expect(page.getByRole('button', { name: 'Open navigation' })).toHaveCount(0);
   await expect(page.locator('.sidebar')).toBeHidden();
 });
