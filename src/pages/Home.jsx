@@ -101,6 +101,7 @@ export default function Home() {
   const category = validCategory(requested) ? requested : saved;
   const selected = categories.find((item) => item.value === category);
   const refs = useRef([]);
+  const restoreFocus = useRef(null);
   useEffect(() => {
     try {
       localStorage.setItem('yoru:home-category', category);
@@ -124,33 +125,39 @@ export default function Home() {
               : null;
     if (next === null) return;
     event.preventDefault();
+    restoreFocus.current = categories[next].value;
     select(categories[next].value);
-    refs.current[next]?.focus();
   };
+  const categoryControls = (
+    <div className="home-category-bar">
+      <div className="home-category-switch" role="tablist" aria-label="Homepage category">
+        {categories.map(({ value, label, icon: Icon }, index) => (
+          <button
+            key={value}
+            ref={(node) => {
+              refs.current[index] = node;
+              if (node && restoreFocus.current === value) {
+                restoreFocus.current = null;
+                node.focus({ preventScroll: true });
+              }
+            }}
+            role="tab"
+            id={`home-category-${value}`}
+            aria-controls="home-category-content"
+            aria-selected={category === value}
+            tabIndex={category === value ? 0 : -1}
+            onClick={() => select(value)}
+            onKeyDown={(event) => keyboardSelect(event, index)}
+          >
+            <Icon size={17} />
+            <span>{label}</span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
   return (
     <div className="home-page cinema-home category-home" data-category={category}>
-      <div className="home-category-bar">
-        <div className="home-category-switch" role="tablist" aria-label="Homepage category">
-          {categories.map(({ value, label, icon: Icon }, index) => (
-            <button
-              key={value}
-              ref={(node) => {
-                refs.current[index] = node;
-              }}
-              role="tab"
-              id={`home-category-${value}`}
-              aria-controls="home-category-content"
-              aria-selected={category === value}
-              tabIndex={category === value ? 0 : -1}
-              onClick={() => select(value)}
-              onKeyDown={(event) => keyboardSelect(event, index)}
-            >
-              <Icon size={17} />
-              <span>{label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
       <div
         id="home-category-content"
         role="tabpanel"
@@ -166,11 +173,16 @@ export default function Home() {
         >
           <div key={category} className="home-category-content">
             {category === 'anime' ? (
-              <HomeLead>
+              <HomeLead categoryControls={categoryControls}>
                 <HomeCollection category={category} />
               </HomeLead>
             ) : (
-              <ReadingHome category={category} label={selected.label} homepage>
+              <ReadingHome
+                category={category}
+                label={selected.label}
+                homepage
+                categoryControls={categoryControls}
+              >
                 <HomeCollection category={category} />
               </ReadingHome>
             )}

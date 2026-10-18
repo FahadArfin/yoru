@@ -20,7 +20,7 @@ import { useBannerArtwork } from '../useBannerArtwork';
 import { useHeroCarousel } from '../useHeroCarousel';
 import HeroArtwork from '../HeroArtwork';
 
-export default function HomeLead({ children, heroOnly = false }) {
+export default function HomeLead({ children, heroOnly = false, categoryControls }) {
   const [language, setLanguage] = useState('sub');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
@@ -145,11 +145,9 @@ export default function HomeLead({ children, heroOnly = false }) {
             </>
           )}
         </div>
+        {categoryControls}
         {featured.length > 0 && (
           <div className="weekly-bottom">
-            <span className="weekly-caption" title={home.data?.ranking}>
-              Popular anime airing this week <span> / </span> AnimeSchedule
-            </span>
             <div className="weekly-controls" aria-label="Featured anime">
               {featured.length > 1 && !carousel.reduced && (
                 <button

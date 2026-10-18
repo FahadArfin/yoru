@@ -42,7 +42,7 @@ function MangaRow({ media }) {
   );
 }
 
-export function MangaLanding({ category, label, homepage = false, children }) {
+export function MangaLanding({ category, label, homepage = false, children, categoryControls }) {
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
   const previousPopular = useRef({ category, items: [] });
@@ -60,7 +60,12 @@ export function MangaLanding({ category, label, homepage = false, children }) {
     <div
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''} ${homepage ? '' : 'compact-category-page'}`}
     >
-      <MangaHero items={picks} category={category} label={label} />
+      <MangaHero
+        items={picks}
+        category={category}
+        label={label}
+        categoryControls={categoryControls}
+      />
       {homepage && (
         <div className="home-resume home-width">
           <PickUpWhereLeftOff />

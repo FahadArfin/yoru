@@ -4,8 +4,11 @@
 .home-category-bar {
   position: absolute;
   z-index: 5;
-  top: 88px;
-  right: 3.5vw;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: max-content;
+  max-width: calc(100% - 32px);
 }
 .home-category-switch {
   display: flex;
@@ -79,22 +82,12 @@
     opacity: 1;
   }
 }
-@media (max-width: 1400px) {
-  .home-category-bar {
-    top: 130px;
-  }
-}
 @media (max-width: 1250px) {
   .home-lower-highlights.home-right-rail {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 @media (max-width: 700px) {
-  .home-category-bar {
-    top: 142px;
-    right: 16px;
-    max-width: calc(100% - 32px);
-  }
   .home-category-switch button {
     flex: 1;
     min-width: 86px;
@@ -285,5 +278,63 @@ html[data-reduce-motion='true'] .home-category-switch button {
   }
 }
 html[data-reduce-motion='true'] :is(.home-genre-card, .home-genre-arrow, .home-genre-watermark) {
+  transition: none;
+}
+
+/* Keep homepage navigation anchored to the artwork instead of the page header. */
+.category-home .weekly-bottom {
+  justify-content: flex-end;
+  bottom: 25px;
+}
+.category-home .weekly-caption {
+  display: none;
+}
+.category-home .weekly-content,
+.category-home .manga-hero .weekly-content {
+  height: calc(100% - 66px);
+  padding-bottom: 30px;
+}
+@media (max-width: 1400px) {
+  .category-home .weekly-bottom {
+    top: 148px;
+    bottom: auto;
+  }
+}
+@media (max-width: 700px) {
+  .category-home .weekly-bottom {
+    top: 136px;
+    justify-content: center;
+  }
+  .category-home .weekly-controls {
+    gap: 3px;
+  }
+  .category-home .weekly-controls .weekly-dot {
+    width: 16px;
+  }
+}
+@media (hover: hover) and (pointer: fine) {
+  .category-home .home-category-bar,
+  .category-home .weekly-controls {
+    opacity: 0;
+    pointer-events: none;
+    transition: none;
+  }
+  .category-home .weekly-hero:hover .home-category-bar,
+  .category-home .weekly-hero:hover .weekly-controls,
+  .category-home .weekly-hero:has(:focus-visible) .home-category-bar,
+  .category-home .weekly-hero:has(:focus-visible) .weekly-controls {
+    opacity: 1;
+    pointer-events: auto;
+    transition: opacity 160ms ease-out;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .category-home .weekly-hero .home-category-bar,
+  .category-home .weekly-hero .weekly-controls {
+    transition: none;
+  }
+}
+html[data-reduce-motion='true'] .category-home .weekly-hero .home-category-bar,
+html[data-reduce-motion='true'] .category-home .weekly-hero .weekly-controls {
   transition: none;
 }
