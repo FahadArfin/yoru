@@ -210,13 +210,6 @@
     justify-content: flex-start;
   }
 }
-.watch-cinema .source-discovery-note {
-  font-size: 11px;
-  padding: 4px 0;
-}
-.watch-cinema .player-note {
-  font-size: 10px;
-}
 .watch-cinema .watch-units {
   background: rgb(var(--chrome-surface));
   border: 1px solid rgb(var(--chrome-bright) / 0.047);
