@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronDown, Clock3, ExternalLink, Eye, List, Star, Users } from 'lucide-react';
 import { groupChapterEditions } from './chapter-groups';
 import { languageName } from './model';
+import PrefetchLink from '../PrefetchLink';
 
 const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
@@ -39,11 +40,12 @@ function dateLabel(value) {
   return relative.format(Math.trunc(days * 24), 'hour');
 }
 function Edition({ item, opened, rate, nested }) {
+  const ChapterLink = item.native ? PrefetchLink : 'a';
   return (
     <article className={`live-chapter-row${nested ? ' nested-edition' : ''}`}>
-      <a
+      <ChapterLink
         className="live-chapter-link"
-        href={item.readUrl}
+        {...(item.native ? { to: item.readUrl } : { href: item.readUrl })}
         target={item.native ? undefined : '_blank'}
         rel="noopener noreferrer"
         onClick={() => opened(item)}
@@ -74,7 +76,7 @@ function Edition({ item, opened, rate, nested }) {
             </span>
           </span>
         </span>
-      </a>
+      </ChapterLink>
       <span className="chapter-edition-date">
         {item.publishedAt && (
           <time dateTime={item.publishedAt} title={new Date(item.publishedAt).toLocaleString()}>

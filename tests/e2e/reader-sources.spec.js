@@ -224,6 +224,13 @@ test('live manhwa opens vertically and an offline server preserves access to loc
   await page.route('**/api/media/*/reading-sources', (route) =>
     route.fulfill({ json: { state: 'offline', sources: [{ id: 'mangadex', name: 'MangaDex' }] } }),
   );
+  // An exact chapter can still open when discovery alone is down; a full outage also fails its manifest.
+  await page.route(`**/api/media/*/reader/${sw}`, (route) =>
+    route.fulfill({
+      status: 503,
+      json: { error: 'The reading server is offline. Try again shortly.' },
+    }),
+  );
   await page.reload();
   await expect(
     page.getByText('The reading server is offline. Try again shortly.', { exact: true }),

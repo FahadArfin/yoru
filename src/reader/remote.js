@@ -1,22 +1,16 @@
 import { useEffect, useState } from 'react';
-import { api } from '../api';
 import { useChapters } from './hooks';
+import { chapterList, readerChapter, readingSources, savedReadingSource } from './requests';
+export { savedReadingSource, rememberReadingSource } from './requests';
 
-export function savedReadingSource(id) {
-  try {
-    return localStorage.getItem(`yoru:reading-source:${id}`) || '';
-  } catch {
-    return '';
-  }
-}
-export function rememberReadingSource(id, source) {
-  try {
-    localStorage.setItem(`yoru:reading-source:${id}`, source);
-  } catch {
-    /* Device storage is optional. */
-  }
-}
-export function useReaderChapters(media, unit, requested, sourceParam, languageParam) {
+export function useReaderChapters(
+  media,
+  unit,
+  requested,
+  sourceParam,
+  languageParam,
+  scope = null,
+) {
   const local = useChapters(media.id);
   const [sources, setSources] = useState(null);
   const [listing, setListing] = useState({ items: [], key: '', loading: false, error: '' });
@@ -46,14 +40,19 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
   useEffect(() => {
     const controller = new AbortController();
     setSources(null);
-    api(`/api/media/${media.id}/reading-sources`, { signal: controller.signal })
-      .then(setSources)
+    readingSources(media.id, revision > 0)
+      .then((result) => {
+        if (!controller.signal.aborted) setSources(result);
+      })
       .catch(() => {
         if (!controller.signal.aborted) setSources({ sources: [], state: 'offline' });
       });
     return () => controller.abort();
   }, [media.id, revision]);
-  const enabled = !local.loading && !localSelected && sources?.state === 'ready';
+  const explicitChapter = /^(?:[a-f0-9-]{36}|sw-weebcentral-\d+-\d+)$/i.test(requested || '');
+  // An exact edition can be verified by the reader endpoint without waiting for other providers.
+  const enabled =
+    !local.loading && !localSelected && (explicitChapter || sources?.state === 'ready');
   useEffect(() => {
     const controller = new AbortController();
     setListing((old) => ({
@@ -69,9 +68,11 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
         items = [];
       // Fetch only the opened title. Keep the picker responsive while its editions load.
       for (let n = 0; n < 100; n++) {
-        const result = await api(
-          `/api/media/${media.id}/chapters?${new URLSearchParams({ source, language, sort: 'asc', offset: String(offset) })}`,
-          { signal: controller.signal },
+        const result = await chapterList(
+          media.id,
+          { source, language, sort: 'asc', offset },
+          scope,
+          revision > 0,
         );
         items = [
           ...items,
@@ -101,7 +102,7 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
         setListing((old) => ({ ...old, loading: false, error: e.message }));
     });
     return () => controller.abort();
-  }, [enabled, media.id, source, language, revision]);
+  }, [enabled, media.id, source, language, revision, scope]);
   const selected = enabled
     ? requested ||
       (listing.key === listingKey
@@ -113,9 +114,7 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
     const controller = new AbortController();
     setEdition({ item: null, key: editionKey, loading: !!selected, error: '' });
     if (!selected) return () => controller.abort();
-    api(`/api/media/${media.id}/reader/${encodeURIComponent(selected)}`, {
-      signal: controller.signal,
-    })
+    readerChapter(media.id, selected, revision > 0)
       .then((item) => {
         if (!controller.signal.aborted)
           setEdition({ item, key: editionKey, loading: false, error: '' });
@@ -164,7 +163,7 @@ export function useReaderChapters(media, unit, requested, sourceParam, languageP
     languages: listing.languages || [],
     loading:
       local.loading ||
-      (!localSelected && !sources) ||
+      (!loaded && !localSelected && !sources && !explicitChapter) ||
       (enabled &&
         !loaded &&
         (listing.key !== listingKey ||

@@ -16,22 +16,48 @@ export async function api(path, options = {}) {
 }
 export const send = (path, body, method = 'POST') =>
   api(path, { method, body: JSON.stringify(body) });
-export function cachedApi(path, force = false) {
-  const saved = cache.get(path);
-  const ttl = saved?.data?.providerUnavailable || saved?.data?.totalIsEstimate ? 10000 : 120000;
+export function cachedApi(path, force = false, { scope = '', ttl = 120000 } = {}) {
+  if (scope === null) return api(path, { signal: AbortSignal.timeout(60000) });
+  const key = `${scope}\n${path}`;
+  const saved = cache.get(key);
+  if (
+    saved?.data?.providerUnavailable ||
+    saved?.data?.totalIsEstimate ||
+    saved?.data?.partial ||
+    saved?.data?.state === 'offline'
+  )
+    ttl = Math.min(ttl, 10000);
   if (!force && saved && Date.now() - saved.time < ttl) return Promise.resolve(saved.data);
-  if (inflight.has(path)) return inflight.get(path);
-  const request = api(path)
+  if (inflight.has(key)) return inflight.get(key);
+  const request = api(path, { signal: AbortSignal.timeout(60000) })
     .then((data) => {
-      cache.set(path, { data, time: Date.now() });
+      // A mutation may invalidate this response while it is still on the wire.
+      if (inflight.get(key) === request) {
+        cache.delete(key);
+        cache.set(key, { data, time: Date.now() });
+        while (cache.size > 160) cache.delete(cache.keys().next().value);
+      }
       return data;
     })
-    .finally(() => inflight.delete(path));
-  inflight.set(path, request);
+    .finally(() => {
+      if (inflight.get(key) === request) inflight.delete(key);
+    });
+  inflight.set(key, request);
   return request;
 }
-export function peek(path) {
-  return cache.get(path)?.data;
+export function peek(path, scope = '', maxAge = 120000) {
+  if (scope === null) return undefined;
+  const saved = cache.get(`${scope}\n${path}`);
+  return saved && Date.now() - saved.time < maxAge ? saved.data : undefined;
+}
+export function invalidateApi(prefix) {
+  for (const map of [cache, inflight])
+    for (const key of map.keys())
+      if (key.slice(key.indexOf('\n') + 1).startsWith(prefix)) map.delete(key);
+}
+export function invalidateScopedApi() {
+  for (const map of [cache, inflight])
+    for (const key of map.keys()) if (!key.startsWith('\n')) map.delete(key);
 }
 export const titleOf = (media) =>
   typeof media?.title === 'string'

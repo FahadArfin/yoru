@@ -10,25 +10,33 @@ import {
   Star,
   Users,
 } from 'lucide-react';
-import { api, send } from '../api';
+import { invalidateApi, peek, send } from '../api';
 import { useApp } from '../state';
 import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { recordChapterView } from '../watch-views';
 import ChapterDirectory, { languageLabel } from './ChapterDirectory';
 import { savedReadingSource, rememberReadingSource } from './remote';
+import { chapterList, chapterListPath, readingSources } from './requests';
 
 const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
 
 export default function LiveChapters({ media }) {
-  const { user, setAuthOpen, notify } = useApp();
+  const { user, authLoading, authKnown, setAuthOpen, notify } = useApp();
   const [language, setLanguage] = useState('en');
-  const [source, setSource] = useState(savedReadingSource(media.id) || 'mangadex');
+  const [source, setSource] = useState(
+    () =>
+      savedReadingSource(media.id) ||
+      peek(`/api/media/${media.id}/reading-sources`, '', 30000)?.sources?.find(
+        (item) => item.id === 'weebcentral',
+      )?.id ||
+      'mangadex',
+  );
   const [sources, setSources] = useState([{ id: 'mangadex', name: 'MangaDex' }]);
   const [sourceIssue, setSourceIssue] = useState('');
   const [sourceRevision, setSourceRevision] = useState(0);
   useEffect(() => {
     const controller = new AbortController();
-    api(`/api/media/${media.id}/reading-sources`, { signal: controller.signal })
+    readingSources(media.id, sourceRevision > 0)
       .then((result) => {
         if (controller.signal.aborted) return;
         const unavailable = result.partial || result.state === 'offline';
@@ -55,10 +63,12 @@ export default function LiveChapters({ media }) {
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('desc');
   const [revision, setRevision] = useState(0);
-  const [data, setData] = useState(null);
+  const scope = authLoading || !authKnown ? null : user?.id || 'guest';
+  const initial = peek(chapterListPath(media.id, { source }), scope, 30000);
+  const [data, setData] = useState(initial || null);
   const [groups, setGroups] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initial);
   const [more, setMore] = useState(false);
   const [error, setError] = useState('');
   const [rating, setRating] = useState(null);
@@ -66,12 +76,13 @@ export default function LiveChapters({ media }) {
   const [saving, setSaving] = useState(false);
   const [ratingError, setRatingError] = useState('');
   const generation = useRef(0);
-  const controller = useRef(null);
   const path = `/api/media/${media.id}/chapters`;
-  function request(offset, signal) {
-    return api(
-      `${path}?${new URLSearchParams({ source, language, group, q: query, sort, offset: String(offset) })}`,
-      { signal },
+  function request(offset) {
+    return chapterList(
+      media.id,
+      { source, language, group, q: query, sort, offset },
+      scope,
+      revision > 0,
     );
   }
   function remember(result) {
@@ -87,12 +98,22 @@ export default function LiveChapters({ media }) {
   useEffect(() => {
     const token = ++generation.current;
     const abort = new AbortController();
-    controller.current = abort;
-    setLoading(true);
+    const existing = peek(
+      chapterListPath(media.id, { source, language, group, q: query, sort }),
+      scope,
+      30000,
+    );
+    setLoading(!existing);
     setMore(false);
     setError('');
-    setData(null);
-    request(0, abort.signal)
+    setData(existing || null);
+    if (authLoading)
+      return () => {
+        abort.abort();
+        generation.current++;
+      };
+    if (existing) remember(existing);
+    request(0)
       .then((result) => {
         if (generation.current !== token) return;
         setData(result);
@@ -108,7 +129,7 @@ export default function LiveChapters({ media }) {
       abort.abort();
       generation.current++;
     };
-  }, [media.id, source, language, group, query, sort, revision, user?.id]);
+  }, [media.id, source, language, group, query, sort, revision, scope, authLoading]);
   useEffect(() => {
     setRating(null);
     setRatingError('');
@@ -118,7 +139,7 @@ export default function LiveChapters({ media }) {
     setMore(true);
     setError('');
     try {
-      const result = await request(data.nextOffset, controller.current.signal);
+      const result = await request(data.nextOffset);
       if (generation.current !== token) return;
       setData((old) => ({
         ...result,
@@ -134,6 +155,7 @@ export default function LiveChapters({ media }) {
     }
   }
   function updateStats(id, stats) {
+    invalidateApi(path);
     setData(
       (old) =>
         old && {
@@ -146,6 +168,7 @@ export default function LiveChapters({ media }) {
     const token = generation.current;
     recordChapterView(media.id, item.id)
       .then((stats) => {
+        invalidateApi(path);
         if (generation.current === token) updateStats(item.id, stats);
       })
       .catch(() => {});
@@ -165,6 +188,7 @@ export default function LiveChapters({ media }) {
     const token = generation.current;
     try {
       const stats = await send(`${path}/${rating.id}/rating`, { rating: stars });
+      invalidateApi(path);
       if (generation.current !== token) return;
       updateStats(rating.id, stats);
       setRating(null);

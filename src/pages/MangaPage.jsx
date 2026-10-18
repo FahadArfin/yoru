@@ -10,7 +10,9 @@ import {
   Star,
 } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { bannerOf, coverOf, itemsOf, titleOf } from '../api';
+import { bannerOf, itemsOf, titleOf } from '../api';
+import CoverImage from '../CoverImage';
+import PrefetchLink from '../PrefetchLink';
 import Browse from './Browse';
 import MangaHero from './MangaHero';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';
@@ -19,9 +21,9 @@ import '../manga.css';
 
 function MangaRow({ media }) {
   return (
-    <Link className="rail-media-row" to={`/title/${media.id}`}>
+    <PrefetchLink media={media} className="rail-media-row" to={`/title/${media.id}`}>
       <img className="rail-backdrop" src={bannerOf(media)} alt="" loading="lazy" />
-      <img className="rail-poster" src={coverOf(media)} alt="" loading="lazy" />
+      <CoverImage className="rail-poster" media={media} alt="" />
       <div className="rail-row-copy">
         <strong>{titleOf(media)}</strong>
         <span className="rail-meta">
@@ -34,7 +36,7 @@ function MangaRow({ media }) {
           )}
         </span>
       </div>
-    </Link>
+    </PrefetchLink>
   );
 }
 
