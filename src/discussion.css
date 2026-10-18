@@ -1,6 +1,6 @@
 .discussion .comment-compose {
-  background: #141414;
-  border: 1px solid #ffffff12;
+  background: rgb(var(--chrome-surface));
+  border: 1px solid rgb(var(--chrome-bright) / 0.071);
   border-radius: 12px;
   padding: 18px;
   overflow: visible;
@@ -18,7 +18,7 @@
 }
 .comment-compose-identity button {
   background: transparent;
-  color: #ccc;
+  color: rgb(var(--chrome-soft));
   padding: 8px 0;
   font-weight: 600;
   text-align: left;
@@ -36,7 +36,7 @@
   cursor: not-allowed;
 }
 .discussion .compose-footer {
-  border-top: 1px solid #ffffff0c;
+  border-top: 1px solid rgb(var(--chrome-bright) / 0.047);
   padding: 12px 0 0;
   gap: 12px;
   flex-wrap: wrap;
@@ -57,7 +57,7 @@
   background: transparent;
   padding: 8px;
   border-radius: 6px;
-  color: #999;
+  color: rgb(var(--chrome-muted));
   font-size: 11px;
   min-height: 36px;
   transition:
@@ -66,12 +66,12 @@
 }
 .comment-media-tools button:hover,
 .comment-media-tools button[aria-expanded='true'] {
-  background: #ffffff0d;
-  color: #eee;
+  background: rgb(var(--chrome-bright) / 0.051);
+  color: rgb(var(--chrome-text));
 }
 .comment-media-picker {
-  background: #1b1b1b;
-  border: 1px solid #ffffff15;
+  background: rgb(var(--chrome-surface));
+  border: 1px solid rgb(var(--chrome-bright) / 0.082);
   border-radius: 10px;
   padding: 14px;
   width: min(100%, 440px);
@@ -85,7 +85,7 @@
   font-size: 12px;
 }
 .comment-picker-heading button {
-  color: #aaa;
+  color: rgb(var(--chrome-muted));
   background: transparent;
   font-size: 22px;
   width: 30px;
@@ -94,17 +94,17 @@
 .comment-media-picker p,
 .comment-media-picker small {
   font-size: 11px;
-  color: #999;
+  color: rgb(var(--chrome-muted));
   line-height: 1.6;
 }
 .comment-media-picker input {
   width: 100%;
   min-width: 0;
   font-size: 12px;
-  background: #101010;
+  background: rgb(var(--chrome-surface));
 }
 .comment-media-picker a {
-  color: #ddd;
+  color: rgb(var(--chrome-text));
   text-decoration: underline;
 }
 .comment-emoji-grid {
@@ -127,10 +127,10 @@
   margin: 12px 0;
 }
 .comment-emote-grid button {
-  background: #ffffff04;
+  background: rgb(var(--chrome-bright) / 0.016);
   padding: 8px 3px;
   border-radius: 6px;
-  color: #aaa;
+  color: rgb(var(--chrome-muted));
   min-width: 0;
 }
 .comment-emote-grid img {
@@ -148,7 +148,7 @@
 }
 .comment-emote-grid button:hover,
 .comment-emoji-grid button:hover {
-  background: #ffffff10;
+  background: rgb(var(--chrome-bright) / 0.063);
 }
 .comment-body {
   overflow-wrap: anywhere;
@@ -180,8 +180,8 @@
 .comment-gif-preview button,
 .comment-attach,
 .comment-media-picker p button {
-  background: #ffffff0d;
-  color: #ddd;
+  background: rgb(var(--chrome-bright) / 0.051);
+  color: rgb(var(--chrome-text));
   padding: 8px 12px;
   font-size: 11px;
   border-radius: 6px;
@@ -192,12 +192,12 @@
   cursor: not-allowed;
 }
 .comment-media-unavailable {
-  color: #888;
+  color: rgb(var(--chrome-muted));
   font-size: 11px;
 }
 .discussion .comment {
   padding: 22px 0;
-  border-bottom: 1px solid #ffffff0b;
+  border-bottom: 1px solid rgb(var(--chrome-bright) / 0.043);
 }
 .discussion .comment-reply {
   border-bottom: 0;
@@ -213,7 +213,7 @@
 }
 .discussion .comment-byline > span {
   font-size: 10px;
-  color: #888;
+  color: rgb(var(--chrome-muted));
 }
 .discussion .vote-controls {
   background: transparent;
@@ -225,20 +225,20 @@
   align-items: center;
   gap: 6px;
   padding: 6px;
-  color: #999;
+  color: rgb(var(--chrome-muted));
   background: transparent;
   min-height: 34px;
 }
 .discussion .vote-controls button.voted {
-  color: #f2f2f2;
-  background: #ffffff0b;
+  color: rgb(var(--chrome-text));
+  background: rgb(var(--chrome-bright) / 0.043);
   border-radius: 5px;
 }
 .discussion .comment-actions {
   gap: 16px;
 }
 .discussion button:focus-visible {
-  outline: 2px solid #ddd;
+  outline: 2px solid rgb(var(--chrome-text));
   outline-offset: 3px;
 }
 @media (max-width: 540px) {

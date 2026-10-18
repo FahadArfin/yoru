@@ -7,10 +7,10 @@
   align-items: center;
   gap: 5px;
   padding: 7px 9px;
-  border: 1px solid #cdcdcd35;
+  border: 1px solid rgb(var(--chrome-soft) / 0.208);
   border-radius: 8px;
-  background: #c5c5c50c;
-  color: #e7e7e7;
+  background: rgb(var(--chrome-soft) / 0.047);
+  color: rgb(var(--chrome-text));
   font-size: 10px;
   font-weight: 750;
   letter-spacing: 0.5px;
@@ -18,12 +18,12 @@
 .nsfw-menu-trigger:hover,
 .nsfw-menu-trigger.active,
 .nsfw-menu-trigger[aria-expanded='true'] {
-  background: #c5c5c524;
-  border-color: #cdcdcd70;
+  background: rgb(var(--chrome-soft) / 0.141);
+  border-color: rgb(var(--chrome-soft) / 0.439);
 }
 .nsfw-menu-trigger > span {
   font-size: 8px;
-  color: #ababab;
+  color: rgb(var(--chrome-muted));
 }
 .nsfw-dropdown {
   position: absolute;
@@ -31,15 +31,15 @@
   right: 0;
   width: 225px;
   padding: 9px;
-  border: 1px solid #ffffff18;
+  border: 1px solid rgb(var(--chrome-bright) / 0.094);
   border-radius: 14px;
-  background: #262626;
+  background: rgb(var(--chrome-raised));
   box-shadow: 0 18px 50px #0008;
 }
 .nsfw-dropdown > small {
   display: block;
   padding: 8px 10px 10px;
-  color: #a0a0a0;
+  color: rgb(var(--chrome-muted));
   font-size: 9px;
   letter-spacing: 1.2px;
 }
@@ -52,14 +52,14 @@
   text-transform: none;
   font-size: 12px;
   letter-spacing: 0;
-  color: #eaeaea;
+  color: rgb(var(--chrome-text));
 }
 .nsfw-dropdown > a:hover,
 .nsfw-dropdown > a:focus-visible {
-  background: #c5c5c51c;
+  background: rgb(var(--chrome-soft) / 0.11);
 }
 .nsfw-dropdown svg {
-  color: #d4d4d4;
+  color: rgb(var(--chrome-text));
 }
 .nsfw-page {
   width: min(1100px, calc(100% - 64px));
@@ -69,7 +69,7 @@
 }
 .nsfw-eyebrow {
   display: block;
-  color: #cdcdcd;
+  color: rgb(var(--chrome-soft));
   font-size: 10px;
   font-weight: 750;
   text-transform: uppercase;
@@ -81,7 +81,7 @@
   letter-spacing: -1px;
 }
 .nsfw-page p {
-  color: #b0b0b0;
+  color: rgb(var(--chrome-soft));
   line-height: 1.6;
 }
 .nsfw-page-heading {
@@ -96,10 +96,10 @@
   align-items: center;
   gap: 7px;
   padding: 10px 12px;
-  border: 1px solid #ffffff16;
+  border: 1px solid rgb(var(--chrome-bright) / 0.086);
   border-radius: 8px;
-  background: #ffffff05;
-  color: #cdcdcd;
+  background: rgb(var(--chrome-bright) / 0.02);
+  color: rgb(var(--chrome-soft));
   font-size: 12px;
 }
 .nsfw-collections {
@@ -110,36 +110,38 @@
 .nsfw-collection {
   position: relative;
   padding: 25px;
-  border: 1px solid #ffffff12;
+  border: 1px solid rgb(var(--chrome-bright) / 0.071);
   border-radius: 16px;
-  background: radial-gradient(ellipse at 100% 0, #c5c5c512, transparent 75%), #272727;
+  background:
+    radial-gradient(ellipse at 100% 0, rgb(var(--chrome-soft) / 0.071), transparent 75%),
+    rgb(var(--chrome-raised));
   transition:
     border-color 180ms,
     background-color 180ms;
 }
 .nsfw-collection:hover,
 .nsfw-collection.selected {
-  border-color: #c5c5c58c;
-  background-color: #2f2f2f;
+  border-color: rgb(var(--chrome-soft) / 0.549);
+  background-color: rgb(var(--chrome-raised));
 }
 .nsfw-collection-top {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  color: #c2c2c2;
+  color: rgb(var(--chrome-soft));
   margin-bottom: 33px;
 }
 .nsfw-age-label {
   padding: 4px 7px;
   border-radius: 5px;
-  border: 1px solid #ffffff15;
-  color: #aeaeae;
+  border: 1px solid rgb(var(--chrome-bright) / 0.082);
+  color: rgb(var(--chrome-muted));
   font-size: 10px;
 }
 .nsfw-collection-format {
   display: block;
   margin-bottom: 8px;
-  color: #aeaeae;
+  color: rgb(var(--chrome-muted));
   font-size: 10px;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -147,34 +149,34 @@
 .nsfw-collection strong {
   display: block;
   padding-right: 24px;
-  color: #f5f5f5;
+  color: rgb(var(--chrome-text));
   font-size: 20px;
 }
 .nsfw-collection-arrow {
   position: absolute;
   right: 22px;
   bottom: 27px;
-  color: #b3b3b3;
+  color: rgb(var(--chrome-soft));
 }
 .nsfw-catalog-state {
   text-align: center;
   margin-top: 24px;
   padding: 40px 24px;
-  border: 1px dashed #ffffff1c;
+  border: 1px dashed rgb(var(--chrome-bright) / 0.11);
   border-radius: 16px;
-  background: #ffffff02;
+  background: rgb(var(--chrome-bright) / 0.008);
 }
 .nsfw-catalog-icon {
   display: block;
-  color: #aaaaaa;
+  color: rgb(var(--chrome-muted));
   margin-bottom: 16px;
 }
 .nsfw-status {
   display: inline-block;
   padding: 5px 9px;
   border-radius: 5px;
-  background: #ffffff06;
-  color: #bcbcbc;
+  background: rgb(var(--chrome-bright) / 0.024);
+  color: rgb(var(--chrome-soft));
   font-size: 10px;
 }
 .nsfw-catalog-state h2 {
@@ -189,7 +191,7 @@
   align-items: center;
   gap: 5px;
   margin-top: 15px;
-  color: #cdcdcd;
+  color: rgb(var(--chrome-soft));
   font-size: 12px;
 }
 .nsfw-session-note {
@@ -213,10 +215,10 @@
   display: grid;
   place-items: center;
   margin: 0 auto 25px;
-  border: 1px solid #c5c5c533;
+  border: 1px solid rgb(var(--chrome-soft) / 0.2);
   border-radius: 22px;
-  color: #cdcdcd;
-  background: #c5c5c50d;
+  color: rgb(var(--chrome-soft));
+  background: rgb(var(--chrome-soft) / 0.051);
 }
 .nsfw-gate .nsfw-gate-detail {
   font-size: 13px;

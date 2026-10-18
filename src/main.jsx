@@ -23,6 +23,8 @@ import './styles.css';
 import './home.css';
 import './browse.css';
 import './nsfw.css';
+import './theme.css';
+import { useTheme } from './theme';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -47,6 +49,7 @@ function Brand() {
   );
 }
 function Shell() {
+  useTheme();
   const { user, setAuthOpen, visitors, toast, refreshLibrary } = useApp();
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);

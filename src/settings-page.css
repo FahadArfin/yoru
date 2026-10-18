@@ -28,8 +28,8 @@
   flex-shrink: 0;
   border-radius: 11px;
   color: var(--section-accent);
-  background: #c5c5c510;
-  border: 1px solid #c5c5c514;
+  background: rgb(var(--chrome-soft) / 0.063);
+  border: 1px solid rgb(var(--chrome-soft) / 0.078);
 }
 .settings-label {
   display: block;
@@ -41,7 +41,7 @@
 }
 .settings-page .settings-card h2 {
   font-size: 17px;
-  color: #f5f5f5;
+  color: rgb(var(--chrome-text));
   letter-spacing: -0.3px;
   margin: 0;
 }
@@ -65,7 +65,7 @@
 }
 .settings-page .setting-row strong {
   font-size: 12px;
-  color: #eaeaea;
+  color: rgb(var(--chrome-text));
 }
 .settings-page .setting-row > div > span {
   font-size: 11px;
@@ -82,14 +82,14 @@
 .settings-page .badge {
   font-size: 8px;
   padding: 5px 7px;
-  background: #ffffff06;
-  border-color: #ffffff0d;
-  color: #c0c0c0;
+  background: rgb(var(--chrome-bright) / 0.024);
+  border-color: rgb(var(--chrome-bright) / 0.051);
+  color: rgb(var(--chrome-soft));
   flex-shrink: 0;
 }
 .settings-page .badge.green {
   background: #87d9b510;
-  color: #9bdebf;
+  color: var(--status-success);
   border-color: #87d9b51c;
 }
 .settings-page .settings-card .btn {
@@ -100,22 +100,22 @@
   gap: 9px;
 }
 .settings-page .btn-primary {
-  color: #252525;
-  background: #ececec;
-  border: 1px solid #ececec;
+  color: rgb(var(--chrome-raised));
+  background: rgb(var(--chrome-text));
+  border: 1px solid rgb(var(--chrome-text));
 }
 .settings-page .btn-primary:hover {
-  background: #f6f6f6;
+  background: rgb(var(--chrome-text));
 }
 .settings-page .btn-secondary,
 .settings-page .btn-subtle {
-  color: #e5e5e5;
-  background: #c5c5c515;
-  border: 1px solid #c5c5c523;
+  color: rgb(var(--chrome-text));
+  background: rgb(var(--chrome-soft) / 0.082);
+  border: 1px solid rgb(var(--chrome-soft) / 0.137);
 }
 .settings-page .btn-secondary:hover,
 .settings-page .btn-subtle:hover {
-  background: #c5c5c528;
+  background: rgb(var(--chrome-soft) / 0.157);
 }
 .settings-page .text-link {
   color: var(--section-accent);
@@ -125,36 +125,36 @@
   padding: 16px;
   margin: 0 0 20px;
   border-radius: 9px;
-  background: #1d1d1d70;
+  background: rgb(var(--chrome-surface) / 0.439);
 }
 .settings-page .settings-user strong {
-  color: #f2f2f2;
+  color: rgb(var(--chrome-text));
 }
 .settings-page .settings-user > div > span {
   color: var(--section-muted);
   font-size: 11px;
 }
 .settings-page .settings-user .icon-button {
-  color: #bebebe;
-  background: #ffffff07;
+  color: rgb(var(--chrome-soft));
+  background: rgb(var(--chrome-bright) / 0.027);
 }
 .settings-page .switch {
   width: 40px;
   height: 24px;
-  background: #4a4a4a;
-  border-color: #ffffff15;
+  background: rgb(var(--chrome-hover));
+  border-color: rgb(var(--chrome-bright) / 0.082);
 }
 .settings-page .switch:after {
   width: 16px;
   height: 16px;
-  background: #cacaca;
+  background: rgb(var(--chrome-soft));
 }
 .settings-page .switch:checked {
   background: var(--accent);
 }
 .settings-page .switch:checked:after {
   transform: translateX(16px);
-  background: #161616;
+  background: rgb(var(--chrome-surface));
 }
 .settings-page input:focus-visible,
 .settings-page summary:focus-visible {
@@ -166,7 +166,7 @@
 }
 .settings-page .install-hint > div {
   padding: 13px 15px;
-  background: #1d1d1d70;
+  background: rgb(var(--chrome-surface) / 0.439);
   border: 1px solid var(--section-line);
   border-radius: 8px;
 }
@@ -174,7 +174,7 @@
   display: block;
   margin: 0 0 5px;
   font-size: 12px;
-  color: #eaeaea;
+  color: rgb(var(--chrome-text));
 }
 .settings-page .install-hint span {
   font-size: 11px;
@@ -183,7 +183,7 @@
 .settings-connect-note {
   padding: 15px;
   border-radius: 9px;
-  background: #1d1d1d70;
+  background: rgb(var(--chrome-surface) / 0.439);
   margin-bottom: 16px;
 }
 .settings-connect-note p {
@@ -198,12 +198,12 @@
   padding: 16px 0;
   border-top: 1px solid var(--section-line);
   border-bottom: 1px solid var(--section-line);
-  color: #e5e5e5;
+  color: rgb(var(--chrome-text));
   font-size: 12px;
   font-weight: 600;
 }
 .settings-library-link:hover {
-  color: #fff;
+  color: rgb(var(--chrome-bright));
 }
 .settings-library-link svg {
   flex-shrink: 0;
@@ -224,7 +224,7 @@
   display: none;
 }
 .settings-details summary:hover {
-  color: #f5f5f5;
+  color: rgb(var(--chrome-text));
 }
 .settings-details[open] summary svg {
   transform: rotate(180deg);
@@ -237,7 +237,7 @@
   display: grid;
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 36px;
-  background: #1c1c1c;
+  background: rgb(var(--chrome-surface));
 }
 .settings-page .about-card .auth-brand {
   font-size: 24px;
@@ -248,7 +248,7 @@
   height: 28px;
 }
 .settings-page .about-card .auth-brand span {
-  color: #949494;
+  color: rgb(var(--chrome-muted));
 }
 .settings-page .about-card h2 {
   font-size: 20px;
@@ -268,7 +268,7 @@
 }
 .settings-page .about-card [role='status'] {
   font-size: 10px;
-  color: #9b9b9b;
+  color: rgb(var(--chrome-muted));
 }
 @media (max-width: 900px) {
   .settings-page .settings-grid {
