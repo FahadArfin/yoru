@@ -2,9 +2,9 @@ import { Link, NavLink, Navigate, useParams } from 'react-router-dom';
 import { BookOpen, Layers, MonitorPlay } from 'lucide-react';
 
 export const nsfwCategories = [
-  { id: 'anime', label: 'Adult anime', format: 'Anime', Icon: MonitorPlay },
-  { id: 'manga', label: 'Adult manga', format: 'Manga', Icon: BookOpen },
-  { id: 'manhwa', label: 'Adult manhwa', format: 'Manhwa', Icon: Layers },
+  { id: 'anime', label: 'Mature anime', format: 'Anime', Icon: MonitorPlay },
+  { id: 'manga', label: 'Mature manga', format: 'Manga', Icon: BookOpen },
+  { id: 'manhwa', label: 'Mature manhwa', format: 'Manhwa', Icon: Layers },
 ];
 export const confirmationKey = 'yoru:nsfw:confirmed';
 export function clearAdultConfirmation() {
@@ -40,6 +40,8 @@ export function AraAraNavigation() {
           {format}
         </NavLink>
       ))}
+      <NavLink to="/ara-ara/schedule">Schedule</NavLink>
+      <NavLink to="/ara-ara/community">Community</NavLink>
       <Link to="/" className="nsfw-menu-trigger" onClick={clearAdultConfirmation}>
         Back to Yoru
       </Link>
@@ -59,6 +61,8 @@ export function AraAraFooter() {
             {format}
           </Link>
         ))}
+        <Link to="/ara-ara/schedule">Schedule</Link>
+        <Link to="/ara-ara/community">Community</Link>
       </nav>
       <Link to="/" onClick={clearAdultConfirmation}>
         Return to Yoru

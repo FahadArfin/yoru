@@ -175,6 +175,7 @@ function Shell() {
               <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />
               <Route path="/ara-ara" element={<NsfwPage />} />
+              <Route path="/ara-ara/title/:id" element={<NsfwPage />} />
               <Route path="/ara-ara/:category" element={<NsfwPage />} />
               <Route path="/nsfw" element={<LegacyNsfwRedirect />} />
               <Route path="/nsfw/:category" element={<LegacyNsfwRedirect />} />

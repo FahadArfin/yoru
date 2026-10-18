@@ -9,26 +9,33 @@ test.beforeEach(async ({ context, baseURL }) => {
 test('adult section guards direct category links and can be hidden again', async ({ page }) => {
   const catalogRequests = [];
   page.on('request', (request) => {
-    if (request.url().includes('/api/catalog?')) catalogRequests.push(request.url());
+    if (request.url().includes('/api/ara-ara/catalog')) catalogRequests.push(request.url());
   });
   await page.goto('/nsfw/manhwa');
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Adult manhwa', exact: true })).toHaveCount(0);
+  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toHaveCount(0);
+  expect(catalogRequests).toEqual([]);
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
   await expect(page.getByRole('heading', { name: 'Ara Ara', exact: true })).toBeFocused();
   await page.keyboard.press('Tab');
   await expect(page.getByRole('button', { name: 'Leave this section' })).toBeFocused();
-  await expect(page.getByRole('heading', { name: 'Adult manhwa', exact: true })).toBeVisible();
-  await expect(page.getByText('Catalog not connected', { exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toBeVisible();
+  await expect(page.getByRole('link', { name: 'View Bastard', exact: true })).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Adult manhwa', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Adult manga', exact: true }).click();
+  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Explore Ara Ara' })
+    .getByRole('link', { name: 'Manga', exact: true })
+    .click();
   await expect(page).toHaveURL(/\/ara-ara\/manga$/);
-  await expect(page.getByRole('heading', { name: 'Adult manga', exact: true })).toBeVisible();
-  await page.getByRole('link', { name: 'Adult anime', exact: true }).click();
-  await expect(page.getByRole('heading', { name: 'Adult anime', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mature manga', exact: true })).toBeVisible();
+  await page
+    .getByRole('navigation', { name: 'Explore Ara Ara' })
+    .getByRole('link', { name: 'Anime', exact: true })
+    .click();
+  await expect(page.getByRole('heading', { name: 'Mature anime', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  expect(catalogRequests).toEqual([]);
+  expect(catalogRequests.length).toBeGreaterThan(0);
   await page.getByRole('button', { name: 'Leave this section' }).click();
   await expect(page).toHaveURL(/\/$/);
   await page.goto('/nsfw/anime');
@@ -55,7 +62,7 @@ test('NSFW is a direct link into the separately branded Ara Ara area', async ({ 
     .getByRole('link', { name: 'Manga', exact: true })
     .click();
   await expect(page).toHaveURL(/\/ara-ara\/manga$/);
-  await expect(page.getByRole('heading', { name: 'Adult manga', exact: true })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Mature manga', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Ara Ara' })
     .getByRole('link', { name: 'Back to Yoru', exact: true })

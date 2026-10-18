@@ -1,3 +1,4 @@
+import { getAraCatalog, scopeAraSchedule } from '../server/ara-ara.js';
 import { Hono } from 'hono';
 import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
@@ -137,6 +138,7 @@ app.get('/api/config', (c) => {
     realtime: { transport: 'poll', membershipTimeoutSeconds: 90 },
   });
 });
+app.get('/api/ara-ara/catalog', async (c) => c.json(await getAraCatalog()));
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
 app.post('/api/presence', async (c) => {
   const result = await touchVisitor(
@@ -300,14 +302,22 @@ app.get('/api/home/sidebar', async (c) =>
 app.get('/api/home', async (c) =>
   c.json(await getHome(c.req.query(), { ...scheduleOptions(c.env), artwork: seed.items })),
 );
-app.get('/api/calendar', async (c) =>
-  c.json(await getSchedule(c.req.query(), scheduleOptions(c.env))),
-);
-app.get('/api/chapter-calendar', async (c) =>
-  c.json(
-    await getChapterCalendar(c.req.query(), { ...scheduleOptions(c.env), offline: isOffline() }),
-  ),
-);
+app.get('/api/calendar', async (c) => {
+  const result = await getSchedule(c.req.query(), scheduleOptions(c.env));
+  return c.json(c.req.query('collection') === 'ara-ara' ? await scopeAraSchedule(result) : result);
+});
+app.get('/api/chapter-calendar', async (c) => {
+  const result = await getChapterCalendar(c.req.query(), {
+    ...scheduleOptions(c.env),
+    offline: isOffline(),
+  });
+  return c.json(
+    c.req.query('collection') === 'ara-ara'
+      ? await scopeAraSchedule(result, result.category.toUpperCase())
+      : result,
+  );
+});
+
 authRoutes(app, { onLogout: reconcileRooms });
 socialRoutes(app);
 roomRoutes(app);

@@ -1,3 +1,4 @@
+import { getAraCatalog } from '../server/ara-ara.js';
 import { roomReaderPath, readerAtUnit } from '../shared/room-reader.js';
 import { Router } from 'express';
 import { randomBytes, randomUUID } from 'node:crypto';
@@ -503,14 +504,25 @@ socialRouter.delete('/comments/:id', requireAuth, (req, res) => {
 socialRouter.get(
   '/community',
   asyncRoute(async (req, res) => {
-    const comments = all(`${COMMENT_QUERY} ORDER BY comments.created_at DESC LIMIT 20`, '').map(
-      (row) => ({ ...commentShape(row), kind: 'comment', type: 'comment' }),
-    );
+    const scopedIds =
+      req.query.collection === 'ara-ara'
+        ? (await getAraCatalog()).items.map((item) => item.id)
+        : null;
+    const filter = scopedIds
+      ? ` WHERE media_id IN (${scopedIds.map(() => '?').join(',') || 'NULL'})`
+      : '';
+    const bindings = scopedIds || [];
+    const comments = all(
+      `${COMMENT_QUERY}${filter} ORDER BY comments.created_at DESC LIMIT 20`,
+      '',
+      ...bindings,
+    ).map((row) => ({ ...commentShape(row), kind: 'comment', type: 'comment' }));
     const reviews =
       req.query.type === 'comment'
         ? []
         : all(
-            'SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id ORDER BY updated_at DESC LIMIT 20',
+            `SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id${filter} ORDER BY updated_at DESC LIMIT 20`,
+            ...bindings,
           ).map((row) => ({ ...reviewShape(row), kind: 'review', type: 'review' }));
     const items = await Promise.all(
       [...comments, ...reviews]
