@@ -3,11 +3,13 @@ import { Link } from 'react-router-dom';
 import {
   ArrowRight,
   ChevronDown,
+  Check,
   Download,
   Link2,
   LogOut,
   MonitorSmartphone,
   Moon,
+  Sun,
   RefreshCw,
   ShieldCheck,
   Settings2,
@@ -16,9 +18,11 @@ import { useApp, useResource } from '../state';
 import { send } from '../api';
 import { Avatar, Badge, Button, ErrorNotice } from '../components';
 import { useWebMCPStatus } from '../webmcp-state';
+import { useTheme } from '../theme';
 import '../section-pages.css';
 import '../settings-page.css';
 export default function Settings() {
+  const [theme, setTheme] = useTheme();
   const webmcp = useWebMCPStatus();
   const { user, setAuthOpen, config, refreshLibrary, notify, logout } = useApp();
   const mal = useResource(user ? '/api/mal/status' : null, false);
@@ -243,6 +247,41 @@ export default function Settings() {
               <div>
                 <span className="settings-label">MAKE IT YOURS</span>
                 <h2 id="settings-comfort">Viewing comfort</h2>
+              </div>
+            </div>
+            <div className="theme-setting">
+              <strong id="theme-label">Appearance</strong>
+              <p id="theme-description">Choose your light. Saved on this device, across Yoru.</p>
+              <div
+                className="theme-options"
+                role="group"
+                aria-labelledby="theme-label"
+                aria-describedby="theme-description"
+              >
+                {[
+                  ['dark', Moon, 'Dark', 'Soft blue charcoal'],
+                  ['light', Sun, 'Light', 'Bright and easygoing'],
+                ].map(([value, Icon, label, description]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    aria-pressed={theme === value}
+                    onClick={() => setTheme(value)}
+                    className={`theme-option theme-option-${value}`}
+                  >
+                    <span className="theme-preview" aria-hidden="true">
+                      <i />
+                      <i />
+                      <i />
+                    </span>
+                    <span className="theme-option-name">
+                      <Icon size={16} />
+                      {label}
+                      {theme === value && <Check size={15} aria-hidden="true" />}
+                    </span>
+                    <small>{description}</small>
+                  </button>
+                ))}
               </div>
             </div>
             <label className="setting-row">

@@ -35,22 +35,22 @@
   gap: 6px;
   flex-shrink: 0;
   background: transparent;
-  color: #aeaeae;
+  color: rgb(var(--chrome-muted));
   font-size: 10px;
   padding: 6px;
 }
 .browse-page .filter-bar {
   gap: 4px;
   padding: 3px 8px;
-  background: #252525;
-  border: 1px solid #ffffff08;
+  background: rgb(var(--chrome-raised));
+  border: 1px solid rgb(var(--chrome-bright) / 0.031);
   border-radius: 12px;
 }
 .browse-page .inline-search,
 .browse-page .filter-select {
   background: transparent;
   border: 0;
-  color: #aeaeae;
+  color: rgb(var(--chrome-muted));
 }
 .browse-page .inline-search {
   min-width: 120px;
@@ -60,24 +60,24 @@
 .browse-page .filter-select select {
   width: auto;
   max-width: 170px;
-  color: #cacaca;
+  color: rgb(var(--chrome-soft));
   font-size: 11px;
   padding: 10px 8px;
 }
 .browse-page .filter-select select option {
-  background: #252525;
+  background: rgb(var(--chrome-raised));
 }
 .browse-page .search-submit {
-  background: #ffffff09;
-  color: #dadada;
+  background: rgb(var(--chrome-bright) / 0.035);
+  color: rgb(var(--chrome-text));
 }
 .browse-page .results-bar {
   margin: 10px 0 14px;
-  color: #a8a8a8;
+  color: rgb(var(--chrome-muted));
   flex-wrap: wrap;
 }
 .browse-page .results-bar > span:last-child {
-  color: #9f9f9f;
+  color: rgb(var(--chrome-muted));
 }
 .browse-page .poster-grid {
   grid-template-columns: repeat(9, minmax(0, 1fr));
@@ -107,7 +107,7 @@
   left: 6px;
   padding: 3px 5px;
   font-size: 8px;
-  background: #191919e6;
+  background: rgb(var(--chrome-surface) / 0.902);
 }
 .browse-page .poster-score {
   right: 6px;
@@ -118,11 +118,11 @@
   width: 10px;
 }
 .browse-page .pagination {
-  color: #c9c9c9;
+  color: rgb(var(--chrome-soft));
 }
 .browse-page .pagination button {
-  background: #2c2c2c;
-  color: #e3e3e3;
+  background: rgb(var(--chrome-raised));
+  color: rgb(var(--chrome-text));
 }
 @media (max-width: 1600px) {
   .browse-page .poster-grid {

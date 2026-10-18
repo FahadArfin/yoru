@@ -1,0 +1,166 @@
+/* Shared tonal palette. Artwork and playback keep a dark local palette. */
+:root {
+  --status-success: #9bd8b5;
+  --status-gold: #dfbd78;
+  --status-danger: #e8b5b5;
+  --status-rose: #d6a1c2;
+  --status-danger-bg: #53252b50;
+  --chrome-canvas: 24 28 38;
+  --chrome-surface: 31 36 47;
+  --chrome-raised: 40 46 59;
+  --chrome-hover: 57 65 81;
+  --chrome-quiet: 130 141 160;
+  --chrome-muted: 164 175 193;
+  --chrome-soft: 199 208 222;
+  --chrome-text: 235 239 246;
+  --chrome-bright: 255 255 255;
+  color-scheme: dark;
+}
+:root[data-theme='light'] {
+  --status-success: #237b54;
+  --status-gold: #805718;
+  --status-danger: #a32c3a;
+  --status-rose: #9a3a78;
+  --status-danger-bg: #fff0f1;
+  --chrome-canvas: 245 247 250;
+  --chrome-surface: 255 255 255;
+  --chrome-raised: 233 238 245;
+  --chrome-hover: 214 222 234;
+  --chrome-quiet: 100 113 133;
+  --chrome-muted: 80 94 115;
+  --chrome-soft: 55 69 91;
+  --chrome-text: 29 42 62;
+  --chrome-bright: 18 29 46;
+  color-scheme: light;
+  --green: #237b54;
+}
+:is(
+  .weekly-hero,
+  .hero,
+  .poster-art,
+  .release-poster,
+  .discovery-preview-card,
+  .rail-media-row,
+  .schedule-row,
+  .home-category-switch,
+  .continue-card,
+  .room-card-art,
+  .reader-shell,
+  .watch-stage,
+  .room-stage
+) {
+  --chrome-canvas: 24 28 38;
+  --chrome-surface: 31 36 47;
+  --chrome-raised: 40 46 59;
+  --chrome-hover: 57 65 81;
+  --chrome-quiet: 130 141 160;
+  --chrome-muted: 164 175 193;
+  --chrome-soft: 199 208 222;
+  --chrome-text: 235 239 246;
+  --chrome-bright: 255 255 255;
+  --bg: rgb(var(--chrome-canvas));
+  --panel: rgb(var(--chrome-surface));
+  --panel2: rgb(var(--chrome-raised));
+  --line: rgb(var(--chrome-bright) / 0.055);
+  --muted: rgb(var(--chrome-muted));
+  --soft: rgb(var(--chrome-soft));
+  --accent: rgb(var(--chrome-text));
+  --accent-soft: rgb(var(--chrome-text));
+  --green: #8edfb4;
+  --status-success: #9bd8b5;
+  --status-gold: #dfbd78;
+  --status-danger: #e8b5b5;
+  --status-rose: #d6a1c2;
+  --status-danger-bg: #53252b50;
+  color: rgb(var(--chrome-text));
+  color-scheme: dark;
+}
+.theme-setting > strong {
+  font-size: 12px;
+}
+.settings-page .theme-setting > p {
+  margin: 6px 0 14px;
+  font-size: 11px;
+}
+.theme-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.theme-option {
+  text-align: left;
+  padding: 10px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+  min-width: 0;
+}
+.theme-option:hover {
+  background: var(--panel2);
+}
+.theme-option[aria-pressed='true'] {
+  border-color: var(--soft);
+  box-shadow: 0 0 0 1px var(--soft);
+}
+.theme-preview {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 5px;
+  height: 61px;
+  padding: 19px 8px 8px;
+  border-radius: 6px;
+  position: relative;
+  background: #181c26;
+}
+.theme-preview:before {
+  content: '';
+  position: absolute;
+  height: 5px;
+  top: 7px;
+  left: 8px;
+  right: 8px;
+  border-radius: 4px;
+  background: #3d4657;
+}
+.theme-preview i {
+  background: #2c3444;
+  border-radius: 3px;
+}
+.theme-option-light .theme-preview {
+  background: #f5f7fa;
+  box-shadow: inset 0 0 0 1px #dbe2ec;
+}
+.theme-option-light .theme-preview:before {
+  background: #bdc9db;
+}
+.theme-option-light .theme-preview i {
+  background: #dbe3ee;
+}
+.theme-option-name {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  margin: 11px 0 5px;
+  font-size: 12px;
+  font-weight: 700;
+}
+.theme-option-name > svg:last-child:not(:first-child) {
+  margin-left: auto;
+}
+.theme-option small {
+  color: var(--muted);
+  font-size: 10px;
+}
+/* Backdrops dim the page in either appearance. Video remains truly black. */
+.modal-backdrop {
+  background: #080c14b8;
+}
+.watch-stage,
+.native-player,
+.embed-player {
+  background: #000;
+}
+.btn-discord {
+  color: #fff;
+}
