@@ -9,7 +9,9 @@ import CoverImage from '../CoverImage';
 import '../section-pages.css';
 export default function Community() {
   const resource = useResource('/api/community', false);
-  const { online, event, config, connected } = useApp();
+  const { visitors, event, config } = useApp();
+  const connected = visitors.connected;
+  const online = connected ? visitors.data : { count: 0, users: [] };
   const [filter, setFilter] = useState('all');
   useEffect(() => {
     if (['comments', 'reviews', 'snapshot'].includes(event?.type)) resource.refresh();

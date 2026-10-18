@@ -53,6 +53,7 @@ import {
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
 import { requireAuth } from './security.js';
+import { touchVisitor, PRESENCE_COOKIE } from '../server/visitor-presence.js';
 
 const app = new Hono();
 app.use('/api/*', async (c, next) => {
@@ -133,6 +134,18 @@ app.get('/api/config', (c) => {
   });
 });
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.post('/api/presence', async (c) => {
+  const result = await touchVisitor(
+    c.get('db'),
+    await c.req.json(),
+    getCookie(c, PRESENCE_COOKIE),
+    c.get('user'),
+    c.get('sessionHash'),
+  );
+  if (result.visitor !== getCookie(c, PRESENCE_COOKIE))
+    setCookie(c, PRESENCE_COOKIE, result.visitor, cookieOptions(c));
+  return c.json(result.online);
+});
 app.get('/api/search/suggestions', async (c) => c.json(await searchSuggestions(c.req.query())));
 const chapterOptions = (c) => ({
   ...scheduleOptions(c.env),

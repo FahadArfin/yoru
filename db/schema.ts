@@ -228,6 +228,17 @@ export const presence = sqliteTable(
     index('presence_user_room').on(t.user_id, t.room_id),
   ],
 );
+export const visitorPresence = sqliteTable(
+  'visitor_presence',
+  {
+    visitor_hash: text().primaryKey(),
+    user_id: text().references(() => users.id, { onDelete: 'cascade' }),
+    session_hash: text().references(() => sessions.token_hash, { onDelete: 'cascade' }),
+    activity: text().notNull(),
+    last_seen: integer().notNull(),
+  },
+  (t) => [index('visitor_presence_seen').on(t.last_seen)],
+);
 export const previews = sqliteTable(
   'favorite_previews',
   {

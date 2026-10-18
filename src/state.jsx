@@ -1,6 +1,7 @@
 import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
 import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
 import { connectEvents } from './realtime';
+import useVisitorPresence from './useVisitorPresence';
 const Context = createContext(null);
 export function useApp() {
   return useContext(Context);
@@ -47,6 +48,7 @@ export function useResource(path, cache = true) {
 }
 export function AppProvider({ children }) {
   const [user, setUserState] = useState(null);
+  const visitors = useVisitorPresence(user?.id);
   const [authKnown, setAuthKnown] = useState(false);
   const setUser = useCallback((value) => {
     invalidateScopedApi();
@@ -202,6 +204,7 @@ export function AppProvider({ children }) {
         entryFor,
         updateEntry,
         online,
+        visitors,
         connected,
         event,
         notify,

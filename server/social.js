@@ -4,6 +4,7 @@ import { all, get, run, transaction, now } from './db.js';
 import {
   apiError,
   asyncRoute,
+  cookie,
   authEvents,
   hashToken,
   mediaId,
@@ -13,8 +14,29 @@ import {
   text,
 } from './auth.js';
 import { getMedia } from './catalog.js';
+import { touchVisitor, PRESENCE_COOKIE } from './visitor-presence.js';
 
 export const socialRouter = Router();
+socialRouter.post(
+  '/presence',
+  asyncRoute(async (req, res) => {
+    const result = await touchVisitor(
+      { all, get, run },
+      req.body,
+      cookie(req, PRESENCE_COOKIE),
+      req.user,
+      req.sessionHash,
+    );
+    if (result.visitor !== cookie(req, PRESENCE_COOKIE))
+      res.cookie(PRESENCE_COOKIE, result.visitor, {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production' && process.env.COOKIE_SECURE !== 'false',
+      });
+    res.json(result.online);
+  }),
+);
 const connections = new Set();
 const PRESENCE_TTL = 90_000;
 const STATUS = new Set(['planned', 'watching', 'reading', 'completed', 'paused', 'dropped']);

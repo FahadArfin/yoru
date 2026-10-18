@@ -249,6 +249,43 @@ test('presence deduplicates users and chat crosses isolates with replayable even
   await replay.close();
   await guest.close();
 });
+
+test('visitor presence counts anonymous readers across isolates and derives member identity from sessions', async () => {
+  const first = await request('a', '/api/presence', {
+    method: 'POST',
+    body: { activity: 'reading', userId: alice.user.id },
+  });
+  assert.equal(first.status, 200);
+  assert.equal(first.body.guests, 1);
+  assert.equal(first.body.registered, 0);
+  assert.equal(first.body.reading, 1);
+  const visitorCookie = first.headers.get('set-cookie').split(';')[0];
+  const next = await request('b', '/api/presence', {
+    method: 'POST',
+    headers: { cookie: visitorCookie },
+    body: { activity: 'watching' },
+  });
+  assert.equal(next.body.count, 1);
+  assert.equal(next.body.watching, 1);
+  const member = await request('a', '/api/presence', {
+    method: 'POST',
+    headers: { cookie: `${visitorCookie}; ${alice.cookie}` },
+    body: { activity: 'browsing', userId: bob.user.id },
+  });
+  assert.equal(member.body.guests, 0);
+  assert.equal(member.body.users[0].id, alice.user.id);
+  const another = await request('b', '/api/presence', {
+    method: 'POST',
+    session: alice,
+    body: { activity: 'reading' },
+  });
+  assert.equal(another.body.count, 1);
+  assert.deepEqual(Object.keys(another.body.users[0]).sort(), ['avatar', 'id', 'name']);
+  assert.equal(
+    (await request('a', '/api/presence', { method: 'POST', body: { activity: 'other' } })).status,
+    400,
+  );
+});
 let room;
 test('simultaneous final-seat joins and versioned host changes are atomic', async () => {
   const created = await request('a', '/api/rooms', {

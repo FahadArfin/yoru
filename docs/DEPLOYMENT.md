@@ -23,6 +23,8 @@ Discord and MAL use the environment variables documented below, with the deploye
 
 For releases, validate both the Sites and Node paths. The `Sites runtime, D1 concurrency, and browser journeys` CI job builds the Worker, exercises independent isolates against shared D1, and runs the existing desktop/mobile journeys. Test harness routes exist only in the local test bundle, never in the published Worker.
 
+The shared footer uses `/api/presence` to refresh visitor totals every 25 seconds while a tab is visible. Presence expires after 75 seconds without a heartbeat. A session cookie deduplicates guest browser tabs; authenticated members are deduplicated across devices using their verified account. Watching and reading describe open player/reader pages, not confirmed playback. Only aggregate activities and public member names/avatars are returned; guest identifiers, sessions, and title choices are never included. The member preview is capped at 80 while totals include every active visitor. `visitor_presence` is an additive migration, separate from room membership and event-stream leases.
+
 ## Local production build
 
 Use Node.js 22.14 or newer within the Node 22 release line. The Docker image uses Node 22.

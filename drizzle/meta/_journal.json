@@ -36,6 +36,13 @@
       "when": 1792262208689,
       "tag": "0004_chapter_activity",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "6",
+      "when": 1792314950387,
+      "tag": "0005_visitor_presence",
+      "breakpoints": true
     }
   ]
 }
