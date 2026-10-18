@@ -41,6 +41,17 @@ function AnimeHomeLead({ children, heroOnly = false, categoryControls }) {
   );
   const hero = featured[index];
   const carousel = useHeroCarousel(featured, hero?.id, setSelectedId, artwork.ref);
+  const renderArtwork = (item) =>
+    item && (
+      <img
+        key={item.id}
+        className="weekly-backdrop"
+        src={item.banner}
+        alt=""
+        fetchPriority={item.id === hero?.id ? 'high' : 'auto'}
+        onError={() => artwork.reject(item.banner)}
+      />
+    );
   useEffect(() => {
     if (hero) setSelectedId(hero.id);
   }, [hero?.id]);
@@ -62,21 +73,20 @@ function AnimeHomeLead({ children, heroOnly = false, categoryControls }) {
     <>
       <section
         ref={artwork.ref}
-        className={`weekly-hero has-wide-art${carousel.dragging ? ' is-dragging' : ''}`}
+        className={`weekly-hero has-wide-art${carousel.dragging ? ' is-dragging' : ''}${carousel.settling ? ' is-settling' : ''}`}
         aria-label="Hot this week"
         {...carousel.bindings}
       >
-        <HeroArtwork identity={hero?.id} offset={carousel.offset}>
-          {hero && (
-            <img
-              key={hero.id}
-              className="weekly-backdrop"
-              src={hero.banner}
-              alt=""
-              fetchPriority="high"
-              onError={() => artwork.reject(hero.banner)}
-            />
-          )}
+        <HeroArtwork
+          identity={hero?.id}
+          dragCommit={carousel.dragCommit}
+          previous={
+            featured.length > 1 &&
+            renderArtwork(featured[(index - 1 + featured.length) % featured.length])
+          }
+          next={featured.length > 1 && renderArtwork(featured[(index + 1) % featured.length])}
+        >
+          {renderArtwork(hero)}
         </HeroArtwork>
         <div className="weekly-shade" />
         <div className="weekly-content" key={hero?.id}>

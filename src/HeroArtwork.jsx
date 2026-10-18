@@ -2,13 +2,17 @@ import React, { useEffect, useState } from 'react';
 import './hero-carousel.css';
 
 // Keep the outgoing artwork underneath the incoming frame throughout the fade.
-export default function HeroArtwork({ identity, children, offset = 0 }) {
-  const [frame, setFrame] = useState({ identity, children, previous: null });
+export default function HeroArtwork({ identity, children, previous, next, dragCommit = 0 }) {
+  const [frame, setFrame] = useState({ identity, children, dragCommit, previous: null });
   if (frame.identity !== identity) {
     setFrame({
       identity,
       children,
-      previous: frame.identity ? { identity: frame.identity, children: frame.children } : null,
+      dragCommit,
+      previous:
+        frame.identity && frame.dragCommit === dragCommit
+          ? { identity: frame.identity, children: frame.children }
+          : null,
     });
   }
   useEffect(() => {
@@ -17,7 +21,9 @@ export default function HeroArtwork({ identity, children, offset = 0 }) {
     return () => clearTimeout(timer);
   }, [frame.identity]);
   return (
-    <div className="hero-art-stack" style={{ '--hero-drag': `${offset}px` }} aria-hidden="true">
+    <div className="hero-art-stack" aria-hidden="true">
+      {previous && <div className="hero-art-layer hero-art-neighbor previous">{previous}</div>}
+      {next && <div className="hero-art-layer hero-art-neighbor next">{next}</div>}
       {frame.previous && (
         <div className="hero-art-layer outgoing" key={frame.previous.identity}>
           {frame.previous.children}

@@ -55,12 +55,37 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       await page.mouse.move(x, y);
       await page.mouse.down();
       await page.mouse.move(x + direction * 150, y, { steps: 8 });
+      await expect(hero).toHaveClass(/is-dragging/);
+      expect(
+        await hero
+          .locator('.hero-art-stack')
+          .evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41),
+      ).toBeCloseTo(direction * 150, 0);
+      const neighbor = hero.locator(`.hero-art-neighbor.${direction < 0 ? 'next' : 'previous'}`);
+      const bounds = await neighbor.boundingBox();
+      expect(bounds.x).toBeLessThan(frame.width);
+      expect(bounds.x + bounds.width).toBeGreaterThan(0);
       await page.mouse.up();
+      await page.clock.runFor(450);
     };
     await drag(-1);
     await expect(heading(1)).toBeVisible();
     await drag(1);
     await expect(heading(3)).toBeVisible();
+    await page.mouse.move(frame.width * 0.5, frame.y + frame.height * 0.45);
+    await page.mouse.down();
+    await page.mouse.move(frame.width * 0.5 + 25, frame.y + frame.height * 0.45);
+    await page.mouse.up();
+    await page.clock.runFor(500);
+    await expect(heading(3)).toBeVisible();
+    await expect(hero).not.toHaveClass(/is-settling/);
+    await expect
+      .poll(() =>
+        hero
+          .locator('.hero-art-stack')
+          .evaluate((el) => new DOMMatrixReadOnly(getComputedStyle(el).transform).m41),
+      )
+      .toBe(0);
     if (isMobile) {
       const touch = await context.newCDPSession(page);
       const swipe = async (direction) => {
@@ -77,6 +102,7 @@ for (const category of ['anime', 'manga', 'manhwa']) {
           });
         }
         await touch.send('Input.dispatchTouchEvent', { type: 'touchEnd', touchPoints: [] });
+        await page.clock.runFor(450);
       };
       await swipe(-1);
       await expect(heading(1)).toBeVisible();
