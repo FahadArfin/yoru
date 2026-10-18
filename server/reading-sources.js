@@ -50,7 +50,7 @@ export async function getReaderCatalogs(options) {
       method: 'POST',
       headers: { 'content-type': 'application/json', authorization: `Bearer ${options.bridgeKey}` },
       body: '{}',
-      redirect: 'error',
+      redirect: 'manual',
       signal: AbortSignal.timeout(20000),
     });
     if (!response.ok) throw new Error('Unavailable');

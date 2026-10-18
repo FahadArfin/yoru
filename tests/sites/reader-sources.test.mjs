@@ -36,6 +36,15 @@ test('Sites connects the private reader across Workers without exposing its cred
       assert.equal(request.headers.get('authorization'), `Bearer ${key}`);
       assert.equal(request.method, 'POST');
       const body = await request.json();
+      if (new URL(request.url).pathname === '/catalogs') {
+        assert.deepEqual(body, {});
+        if (redirect)
+          return new Response(null, {
+            status: 302,
+            headers: { location: 'https://attacker.test' },
+          });
+        return Response.json({ sources: [{ id: '1', name: 'Safe catalog', language: 'en' }] });
+      }
       assert.equal(body.media.id, media.id);
       calls++;
       if (redirect)
@@ -83,6 +92,11 @@ test('Sites connects the private reader across Workers without exposing its cred
     assert.equal((await register('wrong')).status, 401);
     assert.equal((await register(key, 'https://attacker.test')).status, 400);
     assert.equal((await register(key)).status, 200);
+    const discovered = await runtime.dispatchFetch('http://b.test/api/reader/catalogs');
+    assert.equal(discovered.status, 200);
+    assert.deepEqual(await discovered.json(), {
+      sources: [{ id: '1', name: 'Safe catalog', language: 'en' }],
+    });
     const get = (path) => runtime.dispatchFetch(`http://b.test/api/media/${media.id}${path}`);
     const sources = await (await get('/reading-sources')).json();
     assert.equal(sources.state, 'ready');
@@ -100,6 +114,7 @@ test('Sites connects the private reader across Workers without exposing its cred
     assert.equal((await page.arrayBuffer()).byteLength, 4);
     assert.equal((await get(`/reader/${chapter.id}/page/500`)).status, 400);
     redirect = true;
+    assert.equal((await runtime.dispatchFetch('http://b.test/api/reader/catalogs')).status, 503);
     assert.equal((await get(`/reader/${chapter.id}`)).status, 503);
     redirect = false;
     wrongTitle = true;
