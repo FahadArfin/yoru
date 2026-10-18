@@ -85,9 +85,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
   const schedule = page.getByRole('region', { name: 'Airing schedule' });
   await expect(rail.getByRole('region', { name: 'Airing schedule' })).toHaveCount(0);
   const scheduleBox = await schedule.boundingBox();
-  const collectionBox = await page
-    .getByRole('heading', { name: 'Find your next world' })
-    .boundingBox();
+  const collectionBox = await page.getByRole('heading', { name: 'More stories' }).boundingBox();
   const columnBox = await page.locator('.home-release-column').boundingBox();
   expect(scheduleBox.y + scheduleBox.height).toBeLessThan(collectionBox.y);
   expect(Math.abs(scheduleBox.width - columnBox.width)).toBeLessThan(2);

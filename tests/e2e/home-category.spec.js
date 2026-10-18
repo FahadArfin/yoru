@@ -92,7 +92,7 @@ test('homepage switches complete categories, retains links, filters and saved pr
       .getByRole('heading', { name: 'manhwa popular all 1' }),
   ).toBeVisible();
   const explorer = page.getByRole('region', { name: 'Explore manhwa', exact: true });
-  await expect(explorer.getByRole('heading', { name: 'Find your next world' })).toBeVisible();
+  await expect(explorer.getByRole('heading', { name: 'More stories' })).toBeVisible();
   await expect(explorer.getByRole('link', { name: /Fantasy/ })).toHaveAttribute(
     'href',
     '/browse/manhwa?genre=Fantasy',
