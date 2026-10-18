@@ -78,10 +78,18 @@ test('weekly banner and release feed navigate with exact identity and selected l
     feed = await page.locator('.release-section').boundingBox();
   expect(hero.height).toBeGreaterThan(page.viewportSize().height * 0.8);
   const rail = page.getByRole('complementary', { name: 'Anime highlights' });
-  for (const name of ['Most viewed', 'Upcoming anime', 'Airing schedule', 'Community'])
+  for (const name of ['Most viewed', 'Upcoming anime', 'Community'])
     await expect(rail.getByRole('region', { name, exact: true })).toBeVisible();
   await expect(rail.getByText('3 viewers')).toBeVisible();
-  const schedule = rail.getByRole('region', { name: 'Airing schedule' });
+  const schedule = page.getByRole('region', { name: 'Airing schedule' });
+  await expect(rail.getByRole('region', { name: 'Airing schedule' })).toHaveCount(0);
+  const scheduleBox = await schedule.boundingBox();
+  const collectionBox = await page
+    .getByRole('heading', { name: 'Explore the anime collection' })
+    .boundingBox();
+  const columnBox = await page.locator('.home-release-column').boundingBox();
+  expect(scheduleBox.y + scheduleBox.height).toBeLessThan(collectionBox.y);
+  expect(Math.abs(scheduleBox.width - columnBox.width)).toBeLessThan(2);
   await expect(schedule.getByRole('link', { name: /Today episode/ })).toBeVisible();
   await schedule.getByRole('button', { name: 'upcoming', exact: true }).click();
   await expect(schedule.getByRole('button', { name: 'upcoming', exact: true })).toHaveAttribute(
@@ -265,7 +273,7 @@ test('sidebar schedule shows the selected day timezone across daylight saving ch
   await page.goto('/');
   const schedule = page.getByRole('region', { name: 'Airing schedule', exact: true });
   await expect(schedule.getByText('GMT-4', { exact: true })).toBeVisible();
-  await schedule.getByRole('button', { name: 'Sun', exact: true }).click();
+  await schedule.getByRole('button', { name: /^Sun/ }).click();
   await expect(schedule.getByText('GMT-5', { exact: true })).toBeVisible();
   await expect(schedule.getByRole('link', { name: /Sunday episode/ })).toContainText('12:00 PM');
 });

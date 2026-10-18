@@ -51,7 +51,7 @@ function MediaRow({ media, upcoming = false }) {
     </a>
   );
 }
-function ScheduleCard({ language }) {
+export function HomeAiringSchedule({ language }) {
   const [now, setNow] = useState(Date.now());
   const today = localDateKey(now);
   const [selected, setSelected] = useState(null);
@@ -90,7 +90,10 @@ function ScheduleCard({ language }) {
     .formatToParts(new Date(`${day}T12:00:00`))
     .find((x) => x.type === 'timeZoneName')?.value;
   return (
-    <section className="home-rail-panel rail-schedule" aria-label="Airing schedule">
+    <section
+      className="home-rail-panel rail-schedule home-airing-schedule"
+      aria-label="Airing schedule"
+    >
       <div className="rail-heading">
         <h2>
           <CalendarDays size={14} /> Airing schedule
@@ -138,7 +141,7 @@ function ScheduleCard({ language }) {
       </div>
       {calendar.data?.stale && <p className="rail-note">Showing the latest saved schedule.</p>}
       <div className="rail-schedule-list">
-        {items.slice(0, expanded ? items.length : 5).map((item) => (
+        {items.slice(0, expanded ? items.length : 6).map((item) => (
           <a
             className="rail-media-row schedule-row"
             key={item.id}
@@ -174,19 +177,21 @@ function ScheduleCard({ language }) {
               : 'No episodes in this selection.'}
         </p>
       )}
-      {items.length > 5 && (
-        <button className="rail-more" onClick={() => setExpanded(!expanded)}>
-          {expanded ? 'Show less' : `Show more (${items.length - 5} more)`}
-          <ChevronDown size={12} />
-        </button>
-      )}
-      <Link className="rail-more" to="/schedule">
-        Full airing schedule
-      </Link>
+      <div className="home-airing-footer">
+        {items.length > 6 && (
+          <button className="rail-more" onClick={() => setExpanded(!expanded)}>
+            {expanded ? 'Show less' : `Show more (${items.length - 6} more)`}
+            <ChevronDown size={12} />
+          </button>
+        )}
+        <Link className="rail-more" to="/schedule">
+          Full airing schedule
+        </Link>
+      </div>
     </section>
   );
 }
-export default function HomeSidebar({ popular = [], language }) {
+export default function HomeSidebar({ popular = [] }) {
   const sidebar = useResource('/api/home/sidebar');
   const community = useResource('/api/community', false);
   const { event } = useApp();
@@ -249,7 +254,6 @@ export default function HomeSidebar({ popular = [], language }) {
           </button>
         )}
       </section>
-      <ScheduleCard language={language} />
       <section className="home-rail-panel" aria-label="Community">
         <div className="rail-heading">
           <h2>
