@@ -178,6 +178,53 @@
   margin: 0 0 22px;
   gap: 15px;
 }
+.schedule-animation-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 18px;
+  margin-bottom: 18px;
+  border-bottom: 1px solid var(--section-line);
+}
+.schedule-animation-header p {
+  margin: 0;
+  font-size: 11px;
+  color: var(--section-muted);
+}
+.schedule-animation-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.schedule-animation-filters button {
+  border: 1px solid transparent;
+  border-radius: 20px;
+  padding: 9px 15px;
+  background: transparent;
+  color: var(--section-muted);
+  font-size: 12px;
+  font-weight: 650;
+  transition:
+    background 160ms,
+    color 160ms,
+    border-color 160ms;
+}
+.schedule-animation-filters button:hover {
+  color: rgb(var(--chrome-text));
+  background: rgb(var(--chrome-hover));
+}
+.schedule-animation-filters button[aria-pressed='true'] {
+  color: rgb(var(--chrome-text));
+  background: rgb(var(--chrome-hover));
+  border-color: var(--section-line);
+}
+@media (prefers-reduced-motion: reduce) {
+  .schedule-animation-filters button {
+    transition: none;
+  }
+}
 .section-page .schedule-types,
 .section-page .segmented {
   display: inline-flex;

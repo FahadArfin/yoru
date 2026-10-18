@@ -102,6 +102,14 @@ The browser shares bounded in-memory request caches (160 entries): title/catalog
 
 After the displayed page loads, the reader prepares the next five pages through the browser's normal image cache. At halfway, it prepares the next chapter's manifest and first three pages in the current source/language, favoring the current release group. Two low-priority image downloads run at once, with a bounded queue. Navigation cancels abandoned work; hidden tabs, Data Saver and 2G connections skip speculative downloads. These temporary buffers complement the desktop bridge cache, without adding an offline library or guaranteeing that an unavailable provider will load.
 
+### Schedule animation categories
+
+The anime schedule defaults to Japanese and offers Korean, Chinese, Cartoons, and All. Its `animation` URL parameter preserves the selection independently of the broadcast/sub/dub filter. Day counts and unconfirmed releases use the same category filter. Manga/manhwa calendars are unchanged.
+
+`shared/schedule-category.js` holds the reviewed exact AnimeSchedule routes for children’s/family series and Korean productions. Family classification takes priority over country. This deliberately does not classify every shounen, G/PG-rated title, or cute-looking series as children’s television. Pokémon’s [official parents guide](https://parents.pokemon.com/en-us/animation/) describes its family audience; Sazae-san’s [provider entry](https://animeschedule.net/anime/sazae-san) describes its family programming. Lookism’s Korean Studio Mir production is documented by [Netflix](https://media.netflix.com/en/only-on-netflix/81177634); the origin of a source webtoon alone does not establish the animation’s country.
+
+Coverage is limited: the timetable provides a `donghua` flag, but no comprehensive country or target-audience field. Chinese uses that flag, Korean uses reviewed production mappings, and the remaining feed uses the Japanese default. Unreviewed family titles may therefore still appear under Japanese or Chinese. All retains every source entry. Extend the reviewed route sets when adding verified titles; do not infer categories from translated names, dub language, or guessed fields, and do not add per-card provider requests.
+
 ### Live chapter directory
 
 Manga and manhwa title pages show a live chapter directory under the overview and in the Chapters tab (`?tab=chapters`). `GET /api/media/:id/chapters` uses the public [MangaDex API](https://api.mangadex.org/docs/swagger.html), with no API key. Title search only locates candidates: a match requires the exact `attributes.links.mal` manga ID and a safe/suggestive content rating. Similar names and unmapped titles never produce guessed chapter links. Only released, available chapter editions belonging to that verified manga are returned. Chapter numbers, titles, volume, language, release groups and dates come from MangaDex; absent titles are not invented.

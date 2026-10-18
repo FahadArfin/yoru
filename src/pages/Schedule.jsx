@@ -14,6 +14,7 @@ import { Empty, ErrorNotice } from '../components';
 import CoverImage from '../CoverImage';
 import '../section-pages.css';
 import { localDateKey, shiftDate, weekStart, weekDays, airingLabel } from '../../shared/schedule';
+import { animationCategories, scheduleCategory } from '../../shared/schedule-category';
 const types = { raw: 'Broadcast', sub: 'English sub', dub: 'English dub' };
 export default function Schedule() {
   const [params, setParams] = useSearchParams();
@@ -45,6 +46,11 @@ export default function Schedule() {
   );
 }
 function AnimeSchedule({ picker }) {
+  const [params, setParams] = useSearchParams();
+  const requestedAnimation = params.get('animation');
+  const animation = Object.hasOwn(animationCategories, requestedAnimation)
+    ? requestedAnimation
+    : 'japanese';
   const [zone] = useState(() => Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC');
   const [now, setNow] = useState(Date.now);
   useEffect(() => {
@@ -58,7 +64,10 @@ function AnimeSchedule({ picker }) {
     [type, setType] = useState('raw');
   const { data, loading, error, refresh } = useResource(`/api/calendar?week=${week}`, false);
   const days = weekDays(week),
-    all = (data?.items || []).filter((item) => item.airType === type);
+    all = (data?.items || []).filter(
+      (item) =>
+        item.airType === type && (animation === 'all' || scheduleCategory(item) === animation),
+    );
   const localDay = (item) => (item.airingAt ? localDateKey(item.airingAt, zone) : null);
   const list = all
     .filter((item) => localDay(item) === day)
@@ -82,7 +91,7 @@ function AnimeSchedule({ picker }) {
   }
   const unavailable = data && data.state !== 'ready';
   const cards = (items) => (
-    <div className="schedule-list" key={`${day}:${type}`}>
+    <div className="schedule-list" key={`${day}:${type}:${animation}`}>
       {items.map((item) => (
         <a
           className="schedule-item"
@@ -146,6 +155,24 @@ function AnimeSchedule({ picker }) {
         {picker}
       </header>
       <section className="schedule-calendar" aria-label="Choose a day and release type">
+        <div className="schedule-animation-header">
+          <div className="schedule-animation-filters" role="group" aria-label="Animation category">
+            {Object.entries(animationCategories).map(([value, label]) => (
+              <button
+                key={value}
+                aria-pressed={animation === value}
+                onClick={() => {
+                  const next = new URLSearchParams(params);
+                  next.set('animation', value);
+                  setParams(next);
+                }}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p>Cartoons groups children’s and family series.</p>
+        </div>
         <div className="schedule-toolbar">
           <div className="schedule-types" role="group" aria-label="Release type">
             {Object.entries(types).map(([value, label]) => (
@@ -260,8 +287,8 @@ function AnimeSchedule({ picker }) {
             ? cards(list)
             : !unavailable && (
                 <Empty icon={CalendarDays} title="A little breathing room.">
-                  No {types[type].toLowerCase()} releases scheduled for this day. Try another day or
-                  release type.
+                  No {types[type].toLowerCase()} releases in this category for this day. Try another
+                  day, category, or release type.
                 </Empty>
               )}
           {unconfirmed.length > 0 && (

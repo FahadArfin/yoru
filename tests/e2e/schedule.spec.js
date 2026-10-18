@@ -10,6 +10,74 @@ const item = (id, airingAt, airType = 'raw', extra = {}) => ({
   providerUrl: 'https://animeschedule.net/anime/test',
   ...extra,
 });
+
+test('animation filters separate family shows, preserve release tracks and survive reload', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.clock.install({ time: new Date('2026-10-12T12:00:00Z') });
+  await page.route('**/api/calendar?**', (route) =>
+    route.fulfill({
+      json: {
+        state: 'ready',
+        items: [
+          item('Japanese drama', '2026-10-12T15:00:00Z', 'raw', { route: 'drama', donghua: false }),
+          item('Doraemon', '2026-10-12T16:00:00Z', 'raw', {
+            route: 'doraemon-2005',
+            donghua: false,
+          }),
+          item('Lookism', '2026-10-12T17:00:00Z', 'raw', {
+            route: 'gaiken-shijou-shugi',
+            donghua: false,
+          }),
+          item('Chinese adventure', '2026-10-12T18:00:00Z', 'raw', {
+            route: 'chinese-adventure',
+            donghua: true,
+          }),
+          item('Chinese dub', '2026-10-12T18:00:00Z', 'dub', {
+            route: 'chinese-adventure',
+            donghua: true,
+          }),
+          item('Family TBA', null, 'raw', { route: 'sazae-san' }),
+        ],
+      },
+    }),
+  );
+  await page.goto('/schedule');
+  const filter = page.getByRole('group', { name: 'Animation category' });
+  await expect(filter.getByRole('button', { name: 'Japanese', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Japanese drama']);
+  await filter.getByRole('button', { name: 'Cartoons', exact: true }).click();
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Doraemon', 'Family TBA']);
+  await expect(page.locator('.schedule-day-heading')).toContainText('1 releases');
+  await filter.getByRole('button', { name: 'Korean', exact: true }).click();
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Lookism']);
+  await filter.getByRole('button', { name: 'Chinese', exact: true }).click();
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Chinese adventure']);
+  await page.getByRole('button', { name: 'English dub', exact: true }).click();
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Chinese dub']);
+  await page.reload();
+  await expect(filter.getByRole('button', { name: 'Chinese', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(page.locator('.schedule-list h3')).toHaveText(['Chinese adventure']);
+  await filter.getByRole('button', { name: 'All', exact: true }).click();
+  await expect(page.locator('.schedule-list h3')).toHaveCount(5);
+  await page.goto('/schedule?animation=invalid');
+  await expect(filter.getByRole('button', { name: 'Japanese', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
 test('schedule groups local dates, sorts times, filters releases and identifies delays', async ({
   page,
   context,
