@@ -62,6 +62,142 @@
   background: transparent;
   font-size: 12px;
 }
+.episode-picker-anchor {
+  position: relative;
+}
+.episode-guide-controls .episode-picker-trigger {
+  display: flex;
+  justify-content: space-between;
+  gap: 24px;
+  min-width: 160px;
+  background: transparent;
+  font-size: 12px;
+}
+.episode-picker-trigger > svg {
+  transition: transform 180ms ease;
+}
+.episode-picker-trigger[aria-expanded='true'] > svg {
+  transform: rotate(180deg);
+}
+.episode-picker {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 20;
+  width: min(320px, calc(100vw - 48px));
+  padding: 16px;
+  border: 1px solid rgb(var(--chrome-bright) / 0.12);
+  border-radius: 14px;
+  background: rgb(var(--chrome-surface));
+  box-shadow: 0 18px 55px #0005;
+  animation: episode-picker-enter 160ms ease-out;
+}
+.episode-picker-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+.episode-picker-heading strong {
+  font-size: 11px;
+  letter-spacing: 0.1em;
+}
+.episode-picker-heading > span {
+  font-size: 10px;
+  color: rgb(var(--chrome-muted));
+}
+.episode-picker-heading button {
+  margin-left: auto;
+  background: transparent;
+  min-width: 28px;
+  min-height: 28px;
+}
+.episode-picker form {
+  background: rgb(var(--chrome-canvas));
+  padding: 3px;
+}
+.episode-picker form input {
+  min-width: 0;
+  width: 100%;
+}
+.episode-picker form button {
+  display: flex;
+  gap: 5px;
+}
+.episode-picker-range {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 12px 0;
+  padding-top: 10px;
+  border-top: 1px solid rgb(var(--chrome-bright) / 0.06);
+}
+.episode-picker-range select {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: 0;
+  font-size: 11px;
+  text-align: center;
+  color: rgb(var(--chrome-text));
+}
+.episode-picker-range button {
+  background: transparent;
+}
+.episode-picker-tiles {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+  max-height: min(350px, 45vh);
+  overflow-y: auto;
+  padding: 3px;
+}
+.episode-picker-tiles a,
+.episode-picker-tiles button {
+  position: relative;
+  display: grid;
+  place-items: center;
+  min-width: 0;
+  min-height: 40px;
+  border-radius: 7px;
+  color: rgb(var(--chrome-muted));
+  background: transparent;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  transition:
+    background 150ms ease,
+    color 150ms ease;
+}
+.episode-picker-tiles a:hover,
+.episode-picker-tiles a:focus-visible,
+.episode-picker-tiles .is-highlighted {
+  background: rgb(var(--chrome-text));
+  color: rgb(var(--chrome-surface));
+}
+.episode-picker-tiles .is-completed {
+  background: rgb(var(--chrome-bright) / 0.06);
+}
+.episode-picker-tiles svg {
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+}
+.episode-picker-hint {
+  margin: 12px 0 0;
+  font-size: 10px;
+  color: rgb(var(--chrome-quiet));
+  line-height: 1.5;
+}
+@keyframes episode-picker-enter {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
 .anime-episode-cards {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -231,6 +367,11 @@
   }
 }
 @media (prefers-reduced-motion: reduce) {
+  .episode-picker {
+    animation: none;
+  }
+  .episode-picker-trigger > svg,
+  .episode-picker-tiles a,
   .anime-episode-card,
   .episode-card-play {
     transition: none;

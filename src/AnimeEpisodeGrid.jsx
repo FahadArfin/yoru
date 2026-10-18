@@ -1,6 +1,15 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check, ChevronLeft, ChevronRight, Play, Search } from 'lucide-react';
+import {
+  Check,
+  ChevronDown,
+  ChevronLeft,
+  ChevronRight,
+  Grid2X2,
+  Play,
+  Search,
+  X,
+} from 'lucide-react';
 import { useApp, useResource } from './state';
 import CoverImage from './CoverImage';
 import './anime-episodes.css';
@@ -9,6 +18,11 @@ export default function AnimeEpisodeGrid({ media }) {
   const [group, setGroup] = useState(0);
   const [draft, setDraft] = useState('');
   const [highlight, setHighlight] = useState(null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const pickerId = useId();
+  const picker = useRef();
+  const pickerTrigger = useRef();
+  const pickerInput = useRef();
   const section = useRef();
   const { entryFor } = useApp();
   const progress = entryFor(media.id)?.progress || 0;
@@ -32,17 +46,48 @@ export default function AnimeEpisodeGrid({ media }) {
     );
   }
   useEffect(() => {
-    if (highlight && !result.loading)
+    if (highlight && !result.loading && !pickerOpen)
       section.current
         ?.querySelector(`[data-episode="${highlight}"]`)
         ?.focus({ preventScroll: true });
+    if (highlight && !result.loading && pickerOpen)
+      picker.current?.querySelector(`[data-picker-episode="${highlight}"]`)?.focus();
   }, [highlight, result.loading, group]);
+  useEffect(() => {
+    if (!pickerOpen) return;
+    pickerInput.current?.focus({ preventScroll: true });
+    picker.current?.querySelector('[role="dialog"]')?.scrollIntoView({
+      block: 'nearest',
+      behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
+        ? 'instant'
+        : 'smooth',
+    });
+    const dismiss = (event) => {
+      if (!picker.current?.contains(event.target)) setPickerOpen(false);
+    };
+    const escape = (event) => {
+      if (event.key === 'Escape') {
+        setPickerOpen(false);
+        pickerTrigger.current?.focus({ preventScroll: true });
+      }
+    };
+    document.addEventListener('pointerdown', dismiss);
+    document.addEventListener('keydown', escape);
+    return () => {
+      document.removeEventListener('pointerdown', dismiss);
+      document.removeEventListener('keydown', escape);
+    };
+  }, [pickerOpen]);
   const findEpisode = (event) => {
     event.preventDefault();
     const value = Number(draft);
     if (!Number.isInteger(value) || value < 1 || value > rangeTotal) return;
     setGroup(Math.floor((value - 1) / 50));
     setHighlight(value);
+    // A repeated jump does not change state, but should still move keyboard focus.
+    if (pickerOpen) picker.current?.querySelector(`[data-picker-episode="${value}"]`)?.focus();
+    else
+      section.current?.querySelector(`[data-episode="${value}"]`)?.focus({ preventScroll: true });
   };
   return (
     <section ref={section} className="anime-episode-guide" aria-label="Episode guide">
@@ -54,35 +99,157 @@ export default function AnimeEpisodeGrid({ media }) {
         <span>{knownTotal ? `${knownTotal.toLocaleString()} episodes` : 'Ongoing series'}</span>
       </div>
       <div className="episode-guide-controls">
-        <div className="episode-guide-ranges">
-          <button
-            aria-label="Previous episode range"
-            disabled={!group}
-            onClick={() => setGroup((value) => value - 1)}
-          >
-            <ChevronLeft size={16} />
-          </button>
-          <select
-            aria-label="Episode range"
-            value={group}
-            onChange={(e) => {
-              setGroup(Number(e.target.value));
-              setHighlight(null);
-            }}
-          >
-            {Array.from({ length: groups }, (_, index) => (
-              <option key={index} value={index}>
-                Episodes {index * 50 + 1}–{Math.min((index + 1) * 50, rangeTotal)}
-              </option>
-            ))}
-          </select>
-          <button
-            aria-label="Next episode range"
-            disabled={group >= groups - 1}
-            onClick={() => setGroup((value) => value + 1)}
-          >
-            <ChevronRight size={16} />
-          </button>
+        <div
+          className="episode-picker-anchor"
+          ref={picker}
+          onBlur={(event) => {
+            if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
+              setPickerOpen(false);
+          }}
+        >
+          <div className="episode-guide-ranges">
+            <button
+              aria-label="Previous episode range"
+              disabled={!group}
+              onClick={() => setGroup((value) => value - 1)}
+            >
+              <ChevronLeft size={16} />
+            </button>
+            <button
+              className="episode-picker-trigger"
+              ref={pickerTrigger}
+              aria-haspopup="dialog"
+              aria-expanded={pickerOpen}
+              aria-controls={pickerId}
+              onClick={() => setPickerOpen((value) => !value)}
+            >
+              Episodes {lower}–{upper} <ChevronDown size={14} />
+            </button>
+            <button
+              aria-label="Next episode range"
+              disabled={group >= groups - 1}
+              onClick={() => setGroup((value) => value + 1)}
+            >
+              <ChevronRight size={16} />
+            </button>
+          </div>
+          {pickerOpen && (
+            <div
+              className="episode-picker"
+              id={pickerId}
+              role="dialog"
+              aria-label="Choose an episode"
+            >
+              <div className="episode-picker-heading">
+                <Grid2X2 size={16} />
+                <strong>EPISODES</strong>
+                <span>{knownTotal || ''}</span>
+                <button
+                  aria-label="Close episode picker"
+                  onClick={() => {
+                    setPickerOpen(false);
+                    pickerTrigger.current?.focus({ preventScroll: true });
+                  }}
+                >
+                  <X size={15} />
+                </button>
+              </div>
+              <form onSubmit={findEpisode}>
+                <input
+                  ref={pickerInput}
+                  aria-label="Jump to episode"
+                  type="number"
+                  min="1"
+                  max={rangeTotal}
+                  required
+                  placeholder="Episode number"
+                  value={draft}
+                  onChange={(event) => setDraft(event.target.value)}
+                />
+                <button type="submit">
+                  Go <ChevronRight size={14} />
+                </button>
+              </form>
+              <div className="episode-picker-range">
+                <button
+                  aria-label="Previous picker range"
+                  disabled={!group}
+                  onClick={() => {
+                    setGroup(group - 1);
+                    setHighlight(null);
+                  }}
+                >
+                  <ChevronLeft size={15} />
+                </button>
+                <select
+                  aria-label="Episode range"
+                  value={group}
+                  onChange={(event) => {
+                    setGroup(Number(event.target.value));
+                    setHighlight(null);
+                  }}
+                >
+                  {Array.from({ length: groups }, (_, index) => (
+                    <option key={index} value={index}>
+                      {index * 50 + 1}–{Math.min((index + 1) * 50, rangeTotal)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  aria-label="Next picker range"
+                  disabled={group >= groups - 1}
+                  onClick={() => {
+                    setGroup(group + 1);
+                    setHighlight(null);
+                  }}
+                >
+                  <ChevronRight size={15} />
+                </button>
+              </div>
+              <div className="episode-picker-tiles" aria-busy={result.loading}>
+                {Array.from({ length: Math.max(0, upper - lower + 1) }, (_, index) => {
+                  const number = lower + index;
+                  const item = items.find((episode) => episode.number === number);
+                  const future =
+                    upcoming || Boolean(item?.aired && Date.parse(item.aired) > Date.now());
+                  const disabled = result.loading || !item || future;
+                  const completed = number <= progress;
+                  const label = `Episode ${number}${future ? ', not aired yet' : !item ? ', details unavailable' : completed ? ', completed' : ''}`;
+                  const content = (
+                    <>
+                      {String(number).padStart(2, '0')}
+                      {completed && <Check size={9} />}
+                    </>
+                  );
+                  return disabled ? (
+                    <button key={number} disabled aria-label={label}>
+                      {content}
+                    </button>
+                  ) : (
+                    <Link
+                      key={number}
+                      to={`/watch/${media.id}/${number}`}
+                      data-picker-episode={number}
+                      aria-label={label}
+                      title={item.title}
+                      className={
+                        highlight === number ? 'is-highlighted' : completed ? 'is-completed' : ''
+                      }
+                    >
+                      {content}
+                    </Link>
+                  );
+                })}
+              </div>
+              <p className="episode-picker-hint">
+                {result.loading
+                  ? 'Loading episodes…'
+                  : upcoming
+                    ? 'Episodes have not aired yet.'
+                    : 'Choose an episode to start watching.'}
+              </p>
+            </div>
+          )}
         </div>
         <form onSubmit={findEpisode}>
           <Search size={15} />

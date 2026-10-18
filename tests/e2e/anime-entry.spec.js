@@ -100,7 +100,22 @@ test('title overview has an episode grid with real metadata, ranges and number j
   await expect(page.locator('iframe')).toHaveCount(0);
   const guide = page.getByRole('region', { name: 'Episode guide' });
   await expect(guide.getByRole('link', { name: /Watch episode/ })).toHaveCount(50);
+  const trigger = guide.getByRole('button', { name: 'Episodes 1–50', exact: true });
+  await trigger.click();
+  const picker = guide.getByRole('dialog', { name: 'Choose an episode' });
+  await expect(picker).toBeVisible();
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await expect(picker.getByRole('link', { name: /^Episode \d+$/ })).toHaveCount(50);
+  await picker.getByRole('spinbutton', { name: 'Jump to episode' }).press('Escape');
+  await expect(picker).not.toBeVisible();
+  await expect(trigger).toBeFocused();
+  await trigger.click();
   await guide.getByRole('combobox', { name: 'Episode range' }).selectOption('21');
+  await expect(picker.getByRole('link', { name: 'Episode 1051', exact: true })).toHaveAttribute(
+    'href',
+    `/watch/${id}/1051`,
+  );
+  await picker.getByRole('button', { name: 'Close episode picker' }).click();
   await expect(
     guide.getByRole('link', {
       name: 'Watch episode 1051: Chapter of the journey 1051',
@@ -114,7 +129,11 @@ test('title overview has an episode grid with real metadata, ranges and number j
     exact: true,
   });
   await expect(target).toHaveClass(/is-highlighted/);
-  await target.click();
+  await guide.getByRole('button', { name: 'Episodes 1151–1200', exact: true }).click();
+  await picker.getByRole('spinbutton', { name: 'Jump to episode' }).fill('1187');
+  await picker.getByRole('button', { name: 'Go', exact: true }).click();
+  await expect(picker.getByRole('link', { name: 'Episode 1187', exact: true })).toBeFocused();
+  await picker.getByRole('link', { name: 'Episode 1187', exact: true }).click();
   await expect(page).toHaveURL(new RegExp(`/watch/${id}/1187$`));
   expect(requests).toEqual([1, 11, 12]);
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
@@ -139,6 +158,14 @@ test('future episodes stay unavailable and latest lookup failure never starts ep
   const guide = page.getByRole('region', { name: 'Episode guide' });
   await expect(guide.getByText('Coming soon')).toBeVisible();
   await expect(guide.getByRole('link', { name: /Watch episode 28/ })).toHaveCount(0);
+  await guide.getByRole('button', { name: 'Episodes 1–28', exact: true }).click();
+  await expect(
+    guide
+      .getByRole('dialog')
+      .getByRole('button', { name: 'Episode 28, not aired yet', exact: true }),
+  ).toBeDisabled();
+  await guide.getByRole('heading', { name: 'Episodes', exact: true }).click();
+  await expect(guide.getByRole('dialog')).not.toBeVisible();
   await page.goto(`/watch/${id}/latest`);
   await expect(page.getByRole('heading', { name: 'Choose your episode.' })).toBeVisible();
   await expect(page.locator('iframe')).toHaveCount(0);
