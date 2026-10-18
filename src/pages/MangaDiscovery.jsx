@@ -8,9 +8,11 @@ import {
   Sparkles,
   Star,
   TrendingUp,
+  Play,
+  Eye,
 } from 'lucide-react';
 import { useResource } from '../state';
-import { titleOf } from '../api';
+import { isAnime, titleOf } from '../api';
 import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
 import '../discovery.css';
@@ -27,8 +29,13 @@ const periods = [
 ];
 
 export function useMangaFeed(mode, period = 'all', category = 'manga') {
+  const animeNew = category === 'anime' && mode === 'new';
   const resource = useResource(
-    mode ? `/api/${category}/discovery?mode=${mode}&period=${period}` : null,
+    !mode
+      ? null
+      : animeNew
+        ? '/api/catalog?category=ANIME&sort=newest&page=1&limit=24'
+        : `/api/${category === 'anime' ? 'home' : category}/discovery?mode=${mode}&period=${period}`,
   );
   const [timedOut, setTimedOut] = useState(false);
   useEffect(() => {
@@ -53,12 +60,31 @@ export function useMangaFeed(mode, period = 'all', category = 'manga') {
       clearTimeout(timeout);
     };
   }, [mode, period, resource.data?.state, resource.refresh]);
-  return { ...resource, timedOut };
+  const data =
+    animeNew && resource.data && !resource.data.mode
+      ? {
+          ...resource.data,
+          mode: 'new',
+          period: 'all',
+          state:
+            resource.data.catalogState === 'fallback' || resource.data.catalogState === 'stale'
+              ? 'stale'
+              : 'ready',
+          caption: 'Newest series by premiere date',
+        }
+      : resource.data;
+  return { ...resource, data, timedOut };
 }
 
 export function MangaCard({ media, index, mode }) {
+  const anime = isAnime(media);
+  const Icon = anime ? Play : BookOpen;
   return (
-    <PrefetchLink media={media} className="release-card" to={`/title/${media.id}`}>
+    <PrefetchLink
+      media={media}
+      className="release-card"
+      to={anime && mode === 'trending' ? `/watch/${media.id}/latest` : `/title/${media.id}`}
+    >
       <div className="release-poster">
         <CoverImage media={media} alt="" loading="lazy" />
         {mode !== 'new' && (
@@ -68,10 +94,10 @@ export function MangaCard({ media, index, mode }) {
           </span>
         )}
         <span className="release-play">
-          <BookOpen size={25} />
+          <Icon size={25} />
         </span>
         <span className="release-badges">
-          <span>{media.category}</span>
+          <span>{media.category || (anime ? 'ANIME' : 'MANGA')}</span>
           {media.score > 0 && (
             <strong className="discovery-score">
               <Star size={10} fill="currentColor" />
@@ -85,13 +111,20 @@ export function MangaCard({ media, index, mode }) {
         <span>
           {mode === 'trending' ? (
             <>
-              <BookOpen size={12} />
-              {Number(media.viewers).toLocaleString()} {media.viewers === 1 ? 'reader' : 'readers'}{' '}
+              {anime ? <Eye size={12} /> : <BookOpen size={12} />}
+              {Number(media.viewers).toLocaleString()}{' '}
+              {anime
+                ? media.viewers === 1
+                  ? 'viewer'
+                  : 'viewers'
+                : media.viewers === 1
+                  ? 'reader'
+                  : 'readers'}{' '}
               this week
             </>
           ) : mode === 'new' && media.startDate ? (
             <time dateTime={media.startDate}>
-              Started{' '}
+              {anime ? 'Premiere' : 'Started'}{' '}
               {new Date(media.startDate).toLocaleDateString(undefined, {
                 month: 'short',
                 year: 'numeric',
@@ -101,10 +134,10 @@ export function MangaCard({ media, index, mode }) {
           ) : (
             <>
               {media.year || media.category}
-              {media.chapters > 0 && (
+              {(anime ? media.episodes : media.chapters) > 0 && (
                 <>
                   <i>·</i>
-                  {media.chapters} chapters
+                  {anime ? `${media.episodes} episodes` : `${media.chapters} chapters`}
                 </>
               )}
             </>
@@ -116,6 +149,7 @@ export function MangaCard({ media, index, mode }) {
 }
 
 export default function MangaDiscovery({ popular, category, label }) {
+  const anime = category === 'anime';
   const [mode, setMode] = useState('new');
   const [period, setPeriod] = useState('all');
   const refs = useRef([]);
@@ -213,7 +247,9 @@ export default function MangaDiscovery({ popular, category, label }) {
                 )}
                 <span className="discovery-caption">
                   {mode === 'trending'
-                    ? 'Most read on Yoru'
+                    ? anime
+                      ? 'Most watched on Yoru'
+                      : 'Most read on Yoru'
                     : data?.caption ||
                       (mode === 'new' ? `Recently published ${category} series` : '')}
                 </span>
@@ -251,7 +287,7 @@ export default function MangaDiscovery({ popular, category, label }) {
                       {unavailable
                         ? `The ${category} feed is temporarily unavailable. Your catalog is still below.`
                         : mode === 'trending'
-                          ? `${label} appear here as visitors open their reading pages.`
+                          ? `${label} appear here as visitors open their ${anime ? 'watch' : 'reading'} pages.`
                           : 'Try All time for more stories to discover.'}
                     </p>
                     {unavailable ? (
@@ -270,10 +306,14 @@ export default function MangaDiscovery({ popular, category, label }) {
                 <span>
                   {data?.state === 'stale' ? 'Latest saved picks · ' : ''}
                   {mode === 'trending'
-                    ? 'Unique reading-page visitors · Past 7 days'
+                    ? `Unique ${anime ? 'watch' : 'reading'}-page visitors · Past 7 days`
                     : mode === 'new'
-                      ? 'Series publication dates · Kitsu'
-                      : 'Ranked by Kitsu readers'}
+                      ? anime
+                        ? 'Series premiere dates · Catalog'
+                        : 'Series publication dates · Kitsu'
+                      : anime
+                        ? 'Popularity · AnimeSchedule'
+                        : 'Ranked by Kitsu readers'}
                 </span>
                 <a href={`#${category}-catalog`}>
                   Browse all {category} <ArrowRight size={13} />

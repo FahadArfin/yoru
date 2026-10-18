@@ -230,6 +230,12 @@ test('homepage resumes anime, manga and manhwa together below every category ban
     ['manhwa', 'Manhwa', 3],
   ]) {
     await toggle.getByRole('tab', { name: label, exact: true }).click();
+    await expect(
+      page.getByRole('region', {
+        name: category === 'anime' ? 'Hot this week' : `Featured ${category}`,
+        exact: true,
+      }),
+    ).toBeVisible();
     const row = page.getByRole('region', {
       name: 'Pick up where you left off',
       exact: true,
