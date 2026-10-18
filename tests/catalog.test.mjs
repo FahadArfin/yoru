@@ -93,6 +93,46 @@ test('seed offers immediate real anime, manga, and manhwa while completely offli
   assert.ok(search.items.some((item) => item.id === frieren.id));
 });
 
+test('anime type filters reach both providers, isolate caches, and constrain saved results', async () => {
+  const base = { category: 'ANIME', sort: 'title' };
+  assert.notEqual(catalogQueryKey(base), catalogQueryKey({ ...base, format: 'movie' }));
+  assert.equal(catalogQueryKey(base), catalogQueryKey({ ...base, format: 'invalid' }));
+  assert.equal(
+    catalogQueryKey({ category: 'MANGA' }),
+    catalogQueryKey({ category: 'MANGA', format: 'movie' }),
+  );
+  const offline = await searchCatalog({ category: 'ANIME', format: 'tv' });
+  assert.ok(offline.items.length > 0);
+  assert.ok(offline.items.every((item) => item.format.toLowerCase() === 'tv'));
+  const previousFetch = globalThis.fetch;
+  const urls = [];
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    globalThis.fetch = async (input) => {
+      const url = new URL(input);
+      urls.push(url);
+      return Response.json({
+        data: [{ mal_id: 920105, type: 'Movie', title: 'Type filter film' }],
+        pagination: { items: { total: 1 } },
+      });
+    };
+    const movies = await searchCatalog({ ...base, format: 'movie' });
+    assert.equal(urls.at(-1).searchParams.get('type'), 'movie');
+    assert.equal(movies.items[0].format, 'Movie');
+    globalThis.fetch = async (input) => {
+      const url = new URL(input);
+      urls.push(url);
+      if (url.hostname === 'api.tenrai.org') return new Response('{}', { status: 503 });
+      return Response.json({ data: [], meta: { count: 0 } });
+    };
+    await searchCatalog({ ...base, format: 'ova' });
+    assert.ok(urls.some((url) => url.searchParams.get('filter[subtype]') === 'ova'));
+  } finally {
+    globalThis.fetch = previousFetch;
+    process.env.CATALOG_OFFLINE = '1';
+  }
+});
+
 test('MAL import preserves separate media IDs, status, progress, ratings, and favorites', () => {
   const preview =
     parseMalXml(`<?xml version="1.0"?><myanimelist><myinfo><user_name>Fahad</user_name></myinfo>

@@ -304,6 +304,7 @@ async function kitsuSearch(query, category, offset, limit) {
       );
     if (category === 'MANHWA') params.set('filter[subtype]', 'manhwa');
     if (category === 'MANGA') params.set('filter[subtype]', 'manga');
+    if (category === 'ANIME' && query.format) params.set('filter[subtype]', query.format);
     const data = await kitsu(`/${kind}?${params}`);
     result.total = Number(data.meta?.count) || result.items.length;
     // Some Kitsu searches return their first results when an offset exceeds count.
@@ -525,6 +526,10 @@ function optionsFor(input = {}) {
     genre: String(query.genre || '')
       .trim()
       .slice(0, 60),
+    ...(String(query.category || query.type).toUpperCase() === 'ANIME' &&
+    ['tv', 'movie', 'ova', 'ona', 'special'].includes(String(query.format).toLowerCase())
+      ? { format: String(query.format).toLowerCase() }
+      : {}),
     sort: ['trending', 'popular', 'score', 'title', 'newest'].includes(query.sort)
       ? query.sort
       : 'trending',
@@ -547,6 +552,7 @@ function matches(item, query) {
     !item.isAdult &&
     !item.imported &&
     (!query.category || item.type === query.category) &&
+    (!query.format || String(item.format).toLowerCase() === query.format) &&
     (!query.search ||
       query.search
         .toLowerCase()
@@ -608,6 +614,7 @@ async function categoryPage(query, category) {
         sort: ['score', 'newest'].includes(query.sort) ? 'desc' : 'asc',
       });
       if (category !== 'ANIME') params.set('type', category.toLowerCase());
+      if (category === 'ANIME' && query.format) params.set('type', query.format);
       if (query.search) params.set('q', query.search);
       if (genreId) params.set('genres', String(genreId));
       const data = await tenrai(`/${kind}?${params}`);
