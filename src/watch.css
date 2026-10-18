@@ -130,24 +130,79 @@
   background: transparent;
   border: 0;
   margin: 0;
-  flex-wrap: wrap;
-  gap: 12px;
+  flex-wrap: nowrap;
+  align-items: flex-start;
+  justify-content: flex-end;
+  gap: 8px 26px;
 }
+.watch-language-options {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 14px;
+}
+.watch-cinema .source-buttons {
+  flex: 0 1 auto;
+  min-width: 0;
+  gap: 6px;
+  align-items: center;
+  justify-content: flex-start;
+}
+.watch-cinema .watch-language-options button,
 .watch-cinema .source-buttons button {
-  font-size: 11px;
-  padding: 8px 12px;
-  border-radius: 6px;
-  border: 1px solid #ffffff0d;
-  background: #151515;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 32px;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: 0.025em;
+  text-transform: uppercase;
+  padding: 6px 12px;
+  border-radius: 9px;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #949494;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background 180ms ease;
+}
+.watch-cinema .watch-language-options button {
+  padding-inline: 3px;
+}
+.watch-cinema .watch-language-options button[aria-pressed='true'] {
+  color: #f0f0f0;
+}
+.watch-cinema .player-toolbar button:hover {
+  color: #fff;
+  background: #ffffff05;
 }
 .watch-cinema .source-buttons button.active {
-  color: #fff;
-  border-color: #ffffff40;
-  background: #292929;
+  color: #efefef;
+  border-color: #ffffff1c;
+  background: #ffffff02;
 }
-.watch-cinema .player-toolbar .segmented button {
-  font-size: 11px;
-  padding: 7px 13px;
+.watch-cinema .source-buttons .source-add {
+  font-weight: 500;
+  color: #858585;
+}
+@media (pointer: coarse) {
+  .watch-cinema .player-toolbar button {
+    min-height: 44px;
+  }
+}
+@media (max-width: 540px) {
+  .watch-cinema .player-toolbar {
+    flex-wrap: wrap;
+    justify-content: flex-start;
+    gap: 6px 18px;
+  }
+  .watch-cinema .source-buttons {
+    max-width: none;
+    justify-content: flex-start;
+  }
 }
 .watch-cinema .source-discovery-note {
   font-size: 11px;

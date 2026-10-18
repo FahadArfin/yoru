@@ -19,6 +19,8 @@ import {
   Monitor,
   SkipForward,
   CirclePlay,
+  MessageSquare,
+  Mic,
 } from 'lucide-react';
 import { bannerOf, isAnime, safeLink, titleOf } from '../api';
 import { recordView } from '../watch-views';
@@ -352,6 +354,18 @@ export default function Watch() {
             {playbackHint && <p>{playbackHint}</p>}
           </div>
           <div className="player-toolbar">
+            {anime && (
+              <div className="watch-language-options" role="group" aria-label="Audio language">
+                <button aria-pressed={language === 'sub'} onClick={() => setLanguage('sub')}>
+                  <MessageSquare size={12} aria-hidden="true" />
+                  Sub
+                </button>
+                <button aria-pressed={language === 'dub'} onClick={() => setLanguage('dub')}>
+                  <Mic size={12} aria-hidden="true" />
+                  Dub
+                </button>
+              </div>
+            )}
             <div className="source-buttons">
               {sources.map((item) => (
                 <button
@@ -364,29 +378,11 @@ export default function Watch() {
                   {item.kind === 'external' && <ExternalLink size={12} />}
                 </button>
               ))}
-              <button onClick={() => setSourceOpen(true)}>
+              <button className="source-add" onClick={() => setSourceOpen(true)}>
                 <Plus size={14} />
                 Add source
               </button>
             </div>
-            {anime && (
-              <div className="segmented">
-                <button
-                  aria-pressed={language === 'sub'}
-                  className={language === 'sub' ? 'active' : ''}
-                  onClick={() => setLanguage('sub')}
-                >
-                  Sub
-                </button>
-                <button
-                  className={language === 'dub' ? 'active' : ''}
-                  aria-pressed={language === 'dub'}
-                  onClick={() => setLanguage('dub')}
-                >
-                  Dub
-                </button>
-              </div>
-            )}
           </div>
           {anime && (
             <div className="source-discovery-note" role="status">
