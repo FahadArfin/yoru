@@ -6,7 +6,7 @@ function applyTheme(value) {
   document.documentElement.style.colorScheme = theme;
   document
     .querySelector('meta[name="theme-color"]')
-    ?.setAttribute('content', theme === 'light' ? '#f5f7fa' : '#181c26');
+    ?.setAttribute('content', theme === 'light' ? '#f6f3ea' : '#181c26');
 }
 
 function subscribe(callback) {
