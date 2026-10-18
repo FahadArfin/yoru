@@ -1,10 +1,10 @@
 .manga-hero {
-  background: #13131f;
+  background: #191919;
 }
 .manga-hero .weekly-shade {
   background:
-    linear-gradient(90deg, #0e0f19e8 0%, #10121b72 46%, #10121b05 75%),
-    linear-gradient(0deg, #10121be0, transparent 65%);
+    linear-gradient(90deg, #141414e8 0%, #16161672 46%, #16161605 75%),
+    linear-gradient(0deg, #161616e0, transparent 65%);
 }
 .manga-hero .weekly-content {
   width: 93%;
@@ -23,16 +23,16 @@
 .manga-hero .weekly-description {
   max-width: 530px;
   font-size: 14px;
-  color: #cac6d4;
+  color: #cdcdcd;
   -webkit-line-clamp: 3;
   margin: 12px 0 26px;
 }
 .manga-hero .weekly-watch {
-  background: #b796f0;
-  color: #181121;
+  background: #ededed;
+  color: #191919;
 }
 .manga-hero .weekly-watch:hover {
-  background: #cdb1fa;
+  background: #ffffff;
 }
 .manga-rating {
   display: inline-flex;
@@ -42,20 +42,20 @@
 }
 .manga-cover-layout {
   background:
-    radial-gradient(ellipse at 72% 40%, #57407399, transparent 55%),
-    radial-gradient(ellipse at 20% 80%, #303c5544, transparent 65%), #11141e;
+    radial-gradient(ellipse at 72% 40%, #5a5a5a99, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, #43434344, transparent 65%), #181818;
 }
 .manhwa-home .manga-cover-layout {
   background:
-    radial-gradient(ellipse at 72% 40%, #286d6899, transparent 55%),
-    radial-gradient(ellipse at 20% 80%, #29445a44, transparent 65%), #10191e;
+    radial-gradient(ellipse at 72% 40%, #48484899, transparent 55%),
+    radial-gradient(ellipse at 20% 80%, #30303044, transparent 65%), #171717;
 }
 .manhwa-home .weekly-watch {
-  background: #83d9c3;
-  color: #102b28;
+  background: #ededed;
+  color: #181818;
 }
 .manhwa-home .weekly-watch:hover {
-  background: #a7ead9;
+  background: #ffffff;
 }
 .manhwa-home .manga-intro > div,
 .manhwa-home .manga-intro > a,
@@ -63,10 +63,10 @@
 .manhwa-home .manga-rail-cta a,
 .manhwa-home .manga-rail-cta button,
 .manhwa-home .manga-cover-label {
-  color: #9ddacb;
+  color: #d6d6d6;
 }
 .manhwa-home .manga-rail-cta {
-  background: linear-gradient(135deg, #223735, #22252b);
+  background: linear-gradient(135deg, #262626, #272727);
 }
 .manga-cover-stage {
   position: absolute;
@@ -83,7 +83,7 @@
   object-fit: contain;
   border-radius: 5px;
   box-shadow:
-    -14px 16px 0 #080b1244,
+    -14px 16px 0 #0d0d0d44,
     0 25px 70px #0009;
   transform: rotate(4deg);
   animation: discovery-card-in 450ms ease-out both;
@@ -92,11 +92,11 @@
   position: absolute;
   width: 90%;
   aspect-ratio: 1;
-  border: 1px solid #d0b3f51a;
+  border: 1px solid #d4d4d41a;
   border-radius: 50%;
   box-shadow:
-    0 0 0 45px #d0b3f507,
-    0 0 0 90px #d0b3f504;
+    0 0 0 45px #d4d4d407,
+    0 0 0 90px #d4d4d404;
 }
 .manga-cover-label {
   position: absolute;
@@ -105,7 +105,7 @@
   writing-mode: vertical-rl;
   font-size: 9px;
   letter-spacing: 4px;
-  color: #b9a4d2;
+  color: #bbbbbb;
 }
 .manga-intro {
   display: flex;
@@ -119,18 +119,18 @@
   display: flex;
   gap: 14px;
   align-items: center;
-  color: #d1b8f3;
+  color: #d6d6d6;
 }
 .manga-intro strong {
   display: block;
   font-size: 12px;
-  color: #ddd8e7;
+  color: #e0e0e0;
 }
 .manga-intro small {
   display: block;
   font-size: 11px;
   margin-top: 5px;
-  color: #8e91a3;
+  color: #999999;
 }
 .manga-intro > a,
 .manga-rail-cta a,
@@ -140,14 +140,14 @@
   gap: 8px;
   font-size: 11px;
   font-weight: 700;
-  color: #c4a4ef;
+  color: #cacaca;
 }
 .manga-rail-cta {
-  background: linear-gradient(135deg, #292637, #22252b);
+  background: linear-gradient(135deg, #2f2f2f, #272727);
   padding: 24px;
 }
 .manga-rail-cta > svg {
-  color: #b895e9;
+  color: #bfbfbf;
   margin-bottom: 10px;
 }
 .manga-rail-cta h2 {
@@ -156,7 +156,7 @@
   margin: 0;
 }
 .manga-rail-cta p {
-  color: #aaa7bb;
+  color: #b1b1b1;
   font-size: 12px;
   line-height: 1.7;
   margin: 12px 0 20px;
@@ -188,7 +188,7 @@
   width: 86%;
   margin: 24px auto 0;
   font-size: 12px;
-  color: #c4a4ef;
+  color: #cacaca;
 }
 @media (max-width: 900px) {
   .manga-hero .weekly-content h2 {
@@ -243,7 +243,7 @@
     display: none;
   }
   .manga-hero.has-wide-art .weekly-shade {
-    background: linear-gradient(0deg, #10121bf5, #10121b99 42%, #10121b05 85%);
+    background: linear-gradient(0deg, #161616f5, #16161699 42%, #16161605 85%);
   }
   .manga-hero .weekly-meta {
     font-size: 10px;

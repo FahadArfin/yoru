@@ -13,7 +13,7 @@
   padding: 3px;
   border: 1px solid #ffffff26;
   border-radius: 40px;
-  background: #10151c38;
+  background: #16161638;
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   box-shadow: 0 3px 16px #00000014;
@@ -29,7 +29,7 @@
   border: 1px solid transparent;
   border-radius: 30px;
   background: transparent;
-  color: #f0f0f4;
+  color: #f2f2f2;
   text-shadow: 0 1px 4px #000b;
   font: inherit;
   font-size: 12px;
@@ -45,22 +45,17 @@
   background: #ffffff1a;
 }
 .home-category-switch button[aria-selected='true'] {
-  color: #f6efff;
-  border-color: #c6adf140;
-  background: linear-gradient(125deg, #b796ef38, #ddd0f51a);
-  box-shadow: inset 0 1px #e7d5ff26;
-}
-.category-home[data-category='manhwa'] .home-category-switch button[aria-selected='true'] {
-  color: #c3f4e7;
-  border-color: #83d9c340;
-  background: linear-gradient(125deg, #83d9c338, #bce9dd1a);
+  color: #f7f7f7;
+  border-color: #cfcfcf40;
+  background: linear-gradient(125deg, #c3c3c338, #e3e3e31a);
+  box-shadow: inset 0 1px #eaeaea26;
 }
 .home-category-switch button:focus-visible {
-  outline: 2px solid #c4a3ff;
+  outline: 2px solid #d1d1d1;
   outline-offset: 3px;
 }
 #home-category-content:focus-visible {
-  outline: 2px solid #c4a3ff;
+  outline: 2px solid #d1d1d1;
   outline-offset: -2px;
 }
 .home-category-content {
