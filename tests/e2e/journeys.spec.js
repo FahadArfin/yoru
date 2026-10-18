@@ -359,7 +359,7 @@ test('top navigation keeps settings next to the account control without a side m
   await expect(settings).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/settings$/);
-  await expect(page.getByRole('heading', { name: 'Your corner of Yoru.' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Yoru' })
     .getByRole('link', { name: 'My library', exact: true })
