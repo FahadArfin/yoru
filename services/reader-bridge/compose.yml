@@ -1,0 +1,62 @@
+name: yoru-reader
+services:
+  suwayomi:
+    build:
+      context: .
+      dockerfile: Dockerfile.suwayomi
+    image: yoru-suwayomi
+    restart: unless-stopped
+    ports:
+      - '127.0.0.1:4567:4567'
+    environment:
+      TZ: America/New_York
+      AUTH_MODE: basic_auth
+      AUTH_USERNAME: yoru
+      AUTH_PASSWORD: ${SUWAYOMI_PASSWORD:?Set the private Suwayomi password}
+      EXTENSION_STORES: '["https://github.com/keiyoushi/extensions/raw/repo/index.pb"]'
+      UPDATE_INTERVAL: '0'
+      WEB_UI_UPDATE_INTERVAL: '0'
+      WEB_UI_ENABLED: 'false'
+      FLARESOLVERR_ENABLED: 'false'
+      KCEF_ENABLED: 'false'
+    volumes:
+      - suwayomi-data:/home/suwayomi/.local/share/Tachidesk
+      - suwayomi-cache:/tmp/Tachidesk/manga-cache
+    mem_limit: 2g
+    cpus: 2
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+  bridge:
+    build:
+      context: ../..
+      dockerfile: services/reader-bridge/Dockerfile
+    restart: unless-stopped
+    depends_on:
+      - suwayomi
+    ports:
+      - '127.0.0.1:4568:3000'
+    environment:
+      READER_BRIDGE_KEY: ${READER_BRIDGE_KEY:?Set the private bridge key}
+      SUWAYOMI_URL: http://suwayomi:4567
+      SUWAYOMI_PASSWORD: ${SUWAYOMI_PASSWORD}
+      YORU_ORIGIN: https://yoru.fwad101.chatgpt.site
+      READER_TUNNEL: '1'
+      CACHE_DIR: /data
+      SUWAYOMI_CACHE_DIR: /suwayomi-cache
+    volumes:
+      - bridge-data:/data
+      - suwayomi-cache:/suwayomi-cache
+    mem_limit: 512m
+    cpus: 1
+    security_opt:
+      - no-new-privileges:true
+    logging:
+      driver: json-file
+      options: { max-size: '10m', max-file: '3' }
+volumes:
+  suwayomi-data:
+  suwayomi-cache:
+  bridge-data:

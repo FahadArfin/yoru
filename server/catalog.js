@@ -13,7 +13,13 @@ import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
 import { all, run } from './db.js';
 import { cookie, asyncRoute, requireAuth } from './auth.js';
-import { getChapterCatalog } from './chapter-catalog.js';
+import {
+  getReadingCatalog,
+  getReadingSources,
+  getReaderChapter,
+  getReaderPage,
+  registerReaderBridge,
+} from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
 import { getPopularAnime } from './home-discovery.js';
 import {
@@ -32,6 +38,8 @@ export * from './catalog-core.js';
 export const catalogRouter = Router();
 const chapterOptions = (req) => ({
   ...scheduleOptions,
+  bridgeKey: process.env.READER_BRIDGE_KEY,
+  bridgeUrl: process.env.READER_BRIDGE_URL,
   cacheScope: scheduleOptions,
   offline: isOffline(),
   media: getMedia,
@@ -39,11 +47,54 @@ const chapterOptions = (req) => ({
   userId: req.user?.id,
   sessionHash: req.sessionHash,
 });
+catalogRouter.post(
+  '/reader-bridge/register',
+  asyncRoute(async (req, res) => {
+    res.json(
+      await registerReaderBridge(
+        (req.headers.authorization || '').replace(/^Bearer /, ''),
+        req.body,
+        chapterOptions(req),
+      ),
+    );
+  }),
+);
+catalogRouter.get(
+  '/media/:id/reading-sources',
+  asyncRoute(async (req, res) =>
+    res.json(await getReadingSources(req.params.id, chapterOptions(req))),
+  ),
+);
+catalogRouter.get(
+  '/media/:id/reader/:chapter',
+  asyncRoute(async (req, res) =>
+    res.json(await getReaderChapter(req.params.id, req.params.chapter, chapterOptions(req))),
+  ),
+);
+catalogRouter.get(
+  '/media/:id/reader/:chapter/page/:page',
+  asyncRoute(async (req, res) => {
+    const page = await getReaderPage(
+      req.params.id,
+      req.params.chapter,
+      req.params.page,
+      chapterOptions(req),
+    );
+    res
+      .set({
+        'content-type': page.type,
+        'cache-control': 'private, max-age=300',
+        'x-yoru-cache': page.cached ? 'hit' : 'miss',
+        'x-content-type-options': 'nosniff',
+      })
+      .send(page.body);
+  }),
+);
 catalogRouter.get(
   '/media/:id/chapters',
   asyncRoute(async (req, res) => {
     const options = chapterOptions(req);
-    const result = await getChapterCatalog(req.params.id, req.query, options);
+    const result = await getReadingCatalog(req.params.id, req.query, options);
     const stats = await chapterStats(
       options.db,
       req.params.id,

@@ -18,7 +18,8 @@ import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { dialogStack } from '../overlays';
 import { recordView } from '../watch-views';
 import { setWatchPage } from '../webmcp-state';
-import { useChapters, useReadingState } from './hooks';
+import { useReadingState } from './hooks';
+import { useReaderChapters, rememberReadingSource } from './remote';
 import { getReadingState, saveReadingState } from './storage';
 import { chapterUnit, languageName, pageStep, readerLink, readerPreferences } from './model';
 import ChapterList from './ChapterList';
@@ -116,7 +117,13 @@ function ReadingSources({ media, close }) {
 function ReaderSession({ media, unit }) {
   const navigate = useNavigate();
   const [params, setParams] = useSearchParams();
-  const chapters = useChapters(media.id);
+  const chapters = useReaderChapters(
+    media,
+    unit,
+    params.get('chapter'),
+    params.get('source'),
+    params.get('language'),
+  );
   const saved = useReadingState(media.id);
   const { entryFor, updateEntry, user } = useApp();
   const entry = entryFor(media.id);
@@ -366,6 +373,25 @@ function ReaderSession({ media, unit }) {
   };
   const read = (item, value) => write({}, item.id, { read: value });
   const openImport = () => setDialog('import');
+  const sourcePicker = chapters.sources.length > 0 && (
+    <label className="reader-source-picker">
+      <span>Reading source</span>
+      <select
+        aria-label="Reading source"
+        value={chapters.source}
+        onChange={(e) => {
+          rememberReadingSource(media.id, e.target.value);
+          setParams({ source: e.target.value });
+        }}
+      >
+        {chapters.sources.map((source) => (
+          <option key={source.id} value={source.id}>
+            {source.name}
+          </option>
+        ))}
+      </select>
+    </label>
+  );
   const menu = (close) => (
     <ReaderMenu
       media={media}
@@ -388,6 +414,7 @@ function ReaderSession({ media, unit }) {
       currentSaved={currentSaved}
       read={read}
       discussionUnit={hasChapterDiscussion ? numericChapter : 0}
+      sourcePicker={sourcePicker}
     />
   );
   return (
@@ -479,13 +506,18 @@ function ReaderSession({ media, unit }) {
                   : 'JUST YOU AND THE NEXT PAGE.'}
               </span>
               <h1>
-                {requested ? 'This chapter isn’t on this device.' : 'A story worth settling into.'}
+                {chapters.error
+                  ? 'This chapter couldn’t load.'
+                  : requested
+                    ? 'This edition is unavailable.'
+                    : 'A story worth settling into.'}
               </h1>
               <p>
                 {requested
-                  ? 'Choose a saved chapter or import the edition this link belongs to.'
-                  : 'Read with a publisher, or open your own pages in Yoru. Your layout, bookmarks and place are remembered here.'}
+                  ? 'Try another source, choose a saved chapter, or retry this edition.'
+                  : 'Choose a reading source or open your own pages. Your layout, bookmarks and place are remembered here.'}
               </p>
+              {sourcePicker}
               {chapters.error && <ErrorNotice message={chapters.error} retry={chapters.refresh} />}
               <div className="reader-actions">
                 <Button onClick={() => setDialog('sources')}>
@@ -570,6 +602,15 @@ function ReaderSession({ media, unit }) {
             currentId={chapter?.id}
             onSelect={selectChapter}
             onRead={read}
+            remote={chapters.remote}
+            loading={chapters.loading}
+            language={chapters.remote ? chapters.language : undefined}
+            languages={chapters.languages}
+            onLanguageChange={
+              chapters.remote
+                ? (language) => setParams({ source: chapters.source, language })
+                : undefined
+            }
           />
           <div className="reader-actions">
             <Button variant="secondary" onClick={openImport}>

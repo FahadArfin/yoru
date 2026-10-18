@@ -45,6 +45,7 @@ export default function ReaderMenu({
   currentSaved,
   read,
   discussionUnit,
+  sourcePicker,
 }) {
   const rtl = preferences.direction === 'rtl';
   const paged = ['single', 'double'].includes(preferences.mode);
@@ -81,6 +82,7 @@ export default function ReaderMenu({
         </span>
       </p>
       <div className="reader-menu-navigation">
+        {sourcePicker}
         <div className="reader-select-row">
           {pageArrow(rtl, ChevronLeft)}
           <label>

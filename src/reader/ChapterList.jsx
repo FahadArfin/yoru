@@ -2,7 +2,18 @@ import React, { useMemo, useState } from 'react';
 import { ArrowDownUp, Bookmark, Check, BookOpen, Search } from 'lucide-react';
 import { filterChapters, languageName, naturalCompare } from './model';
 
-export default function ChapterList({ chapters, states = {}, currentId, onSelect, onRead }) {
+export default function ChapterList({
+  chapters,
+  states = {},
+  currentId,
+  onSelect,
+  onRead,
+  remote = false,
+  language,
+  languages: availableLanguages = [],
+  onLanguageChange,
+  loading = false,
+}) {
   const [filters, setFilters] = useState({
     query: '',
     language: 'all',
@@ -16,10 +27,16 @@ export default function ChapterList({ chapters, states = {}, currentId, onSelect
     setLimit(60);
   };
   const rows = useMemo(
-    () => filterChapters(chapters, filters, states),
-    [chapters, filters, states],
+    () => filterChapters(chapters, { ...filters, language: language ?? filters.language }, states),
+    [chapters, filters, language, states],
   );
-  const languages = [...new Set(chapters.map((chapter) => chapter.language))].sort();
+  const languages = [
+    ...new Set([
+      ...availableLanguages,
+      ...chapters.map((chapter) => chapter.language),
+      ...(remote ? ['en'] : []),
+    ]),
+  ].sort();
   const volumes = [...new Set(chapters.map((chapter) => chapter.volume).filter(Boolean))].sort(
     naturalCompare,
   );
@@ -44,8 +61,10 @@ export default function ChapterList({ chapters, states = {}, currentId, onSelect
       <div className="chapter-filters">
         <select
           aria-label="Chapter language"
-          value={filters.language}
-          onChange={(e) => change('language', e.target.value)}
+          value={language ?? filters.language}
+          onChange={(e) =>
+            onLanguageChange ? onLanguageChange(e.target.value) : change('language', e.target.value)
+          }
         >
           <option value="all">All languages</option>
           {languages.map((lang) => (
@@ -81,7 +100,7 @@ export default function ChapterList({ chapters, states = {}, currentId, onSelect
       </div>
       <p className="chapter-count">
         {rows.length} chapter {rows.length === 1 ? 'edition' : 'editions'}{' '}
-        <span>Saved on this device</span>
+        <span>{remote ? 'Available from this source' : 'Saved on this device'}</span>
       </p>
       <div className="chapter-rows">
         {rows.slice(0, limit).map((chapter) => {
@@ -111,7 +130,9 @@ export default function ChapterList({ chapters, states = {}, currentId, onSelect
                   </small>
                   <small>
                     {chapter.volume ? `Vol. ${chapter.volume} · ` : ''}
-                    {chapter.pages.length} pages
+                    {chapter.pages.length || chapter.pageCount
+                      ? `${chapter.pages.length || chapter.pageCount} pages`
+                      : 'Pages load when opened'}
                     {saved.bookmark ? ` · Bookmark p. ${saved.bookmark}` : ''}
                   </small>
                 </span>
@@ -133,10 +154,14 @@ export default function ChapterList({ chapters, states = {}, currentId, onSelect
           <div className="chapter-empty">
             <BookOpen size={24} />
             <strong>
-              {chapters.length ? 'No chapters match these filters.' : 'Your chapters belong here.'}
+              {loading
+                ? 'Finding chapter editions…'
+                : chapters.length || remote
+                  ? 'No chapters match these filters.'
+                  : 'Your chapters belong here.'}
             </strong>
             <p>
-              {chapters.length
+              {chapters.length || remote
                 ? 'Try another language or clear your search.'
                 : 'Add a chapter manifest or your own page images to start reading in Yoru.'}
             </p>

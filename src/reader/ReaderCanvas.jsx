@@ -63,6 +63,7 @@ export default function ReaderCanvas({
   const container = useRef();
   const scrollPosition = useRef(0);
   const position = useRef(page);
+  const alignedSize = useRef('');
   position.current = page;
   const paged = ['single', 'double'].includes(preferences.mode);
   const [pages, setPages] = useState([]);
@@ -122,10 +123,12 @@ export default function ReaderCanvas({
     const strip = element.querySelector('.reader-pages');
     const measure = () => `${element.clientWidth}:${element.clientHeight}:${strip.clientWidth}`;
     let size = measure();
+    alignedSize.current = size;
     const observer = new ResizeObserver(() => {
       const next = measure();
       if (next === size) return;
       size = next;
+      alignedSize.current = next;
       const target = element.querySelector(`[data-page="${position.current}"]`);
       if (target)
         element.scrollTo({
@@ -161,6 +164,14 @@ export default function ReaderCanvas({
     const observe = () => {
       cancelAnimationFrame(frame);
       frame = requestAnimationFrame(() => {
+        // A viewport reflow can dispatch scroll before ResizeObserver restores the page.
+        // Do not save that intermediate position as a deliberate reading-page change.
+        const strip = element.querySelector('.reader-pages');
+        if (
+          `${element.clientWidth}:${element.clientHeight}:${strip.clientWidth}` !==
+          alignedSize.current
+        )
+          return;
         const marker =
           element.getBoundingClientRect().top + Math.min(180, element.clientHeight * 0.3);
         const nodes = [...element.querySelectorAll('[data-page]')];

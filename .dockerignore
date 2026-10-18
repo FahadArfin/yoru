@@ -1,6 +1,9 @@
 node_modules
 dist
 .git
+.cache
+.superpowers
+output
 .github
 .env
 .env.*

@@ -1,5 +1,5 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { ChevronDown, Clock3, ExternalLink, Eye, List, Star, Users } from 'lucide-react';
+import { BookOpen, ChevronDown, Clock3, ExternalLink, Eye, List, Star, Users } from 'lucide-react';
 import { groupChapterEditions } from './chapter-groups';
 import { languageName } from './model';
 
@@ -44,7 +44,7 @@ function Edition({ item, opened, rate, nested }) {
       <a
         className="live-chapter-link"
         href={item.readUrl}
-        target="_blank"
+        target={item.native ? undefined : '_blank'}
         rel="noopener noreferrer"
         onClick={() => opened(item)}
         onAuxClick={(e) => {
@@ -70,7 +70,7 @@ function Edition({ item, opened, rate, nested }) {
             <span>{item.groups.map((g) => g.name).join(', ') || 'No group credited'}</span>
             <span className="chapter-read-provider">
               {item.readLabel}
-              <ExternalLink size={11} />
+              {item.native ? <BookOpen size={11} /> : <ExternalLink size={11} />}
             </span>
           </span>
         </span>
@@ -82,7 +82,13 @@ function Edition({ item, opened, rate, nested }) {
             {dateLabel(item.publishedAt)}
           </time>
         )}
-        <span>{item.pages > 0 ? `${item.pages} pages` : `Read on ${item.readLabel}`}</span>
+        <span>
+          {item.pages > 0
+            ? `${item.pages} pages`
+            : item.native
+              ? 'Read in Yoru'
+              : `Read on ${item.readLabel}`}
+        </span>
       </span>
       <div className="chapter-activity">
         <span

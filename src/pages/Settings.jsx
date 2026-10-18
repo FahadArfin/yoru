@@ -264,8 +264,8 @@ export default function Settings() {
           </div>
           <p className="small muted">
             Metadata comes from MyAnimeList via Tenrai and Kitsu; ratings display their source. Yoru
-            links to external media and does not host video or comic files. Native WebMCP tools are
-            enabled when supported by your browser.
+            links to video providers and offers manga reading from credited sources. Native WebMCP
+            tools are enabled when supported by your browser.
           </p>
           <p className="small muted" role="status">
             {!webmcp.supported

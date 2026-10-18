@@ -490,3 +490,20 @@
     transition: none;
   }
 }
+.reader-source-picker {
+  display: grid;
+  gap: 6px;
+  margin: 10px 0;
+  text-align: left;
+  color: var(--text-muted, #a6a3b5);
+  font-size: 12px;
+}
+.reader-source-picker select {
+  min-height: 38px;
+  width: 100%;
+  padding: 8px 10px;
+  background: #252431;
+  color: #f4f1ff;
+  border: 1px solid #454054;
+  border-radius: 6px;
+}
