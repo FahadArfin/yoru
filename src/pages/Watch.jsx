@@ -31,6 +31,7 @@ import { defaultAnimeSources } from '../../shared/anime-sources';
 import { setWatchPage } from '../webmcp-state';
 import '../watch.css';
 import WatchDetails from '../WatchDetails';
+import AnimeCast from '../AnimeCast';
 const readSource = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -508,6 +509,7 @@ export default function Watch() {
         </aside>
       </div>
       <WatchDetails media={media} />
+      <AnimeCast key={id} mediaId={id} />
       <Discussion key={`${id}-${unit}`} mediaId={id} unit={unit} />
       {sourceOpen && (
         <SourceForm

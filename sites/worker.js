@@ -24,9 +24,11 @@ import {
   parseMediaId,
   rememberDiscoveredMedia,
   fetchAnimeEpisodePage,
+  fetchAnimeCast,
 } from '../server/catalog-core.js';
 import { getMangaDiscovery } from '../server/manga-discovery.js';
 import { getAnimeEpisodes } from '../server/anime-episodes.js';
+import { getAnimeCast } from '../server/anime-cast.js';
 import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
@@ -251,6 +253,16 @@ app.get('/api/media/:id/episodes', async (c) =>
       ...scheduleOptions(c.env),
       media: getMedia,
       request: fetchAnimeEpisodePage,
+      offline: isOffline(),
+    }),
+  ),
+);
+app.get('/api/media/:id/cast', async (c) =>
+  c.json(
+    await getAnimeCast(c.req.param('id'), {
+      ...scheduleOptions(c.env),
+      media: getMedia,
+      request: fetchAnimeCast,
       offline: isOffline(),
     }),
   ),

@@ -422,6 +422,8 @@ export const fetchAnimeEpisodePage = (malId, page) =>
   uniqueRequest(`anime-episodes:${malId}:${page}`, () =>
     tenrai(`/anime/${malId}/episodes?page=${page}`),
   );
+export const fetchAnimeCast = (malId) =>
+  uniqueRequest(`anime-cast:${malId}`, () => tenrai(`/anime/${malId}/characters`));
 
 async function refreshDetail(id) {
   const parsed = parseMediaId(id);

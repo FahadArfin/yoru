@@ -1,0 +1,180 @@
+.anime-cast {
+  margin: 38px 0;
+  padding: 28px 0;
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+}
+.cast-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 22px;
+}
+.cast-heading h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+}
+.cast-heading > div {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.cast-heading span {
+  color: #929292;
+  font-size: 11px;
+  white-space: nowrap;
+}
+.cast-heading select {
+  background: #181818;
+  color: #ccc;
+  border: 1px solid #303030;
+  border-radius: 8px;
+  padding: 7px 10px;
+  max-width: 160px;
+  font-size: 11px;
+}
+.cast-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px 26px;
+}
+.cast-pair {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-width: 0;
+  padding: 5px 0;
+}
+.cast-character,
+.cast-actor {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+.cast-character {
+  flex: 1;
+}
+.cast-actors {
+  flex: 1;
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+}
+.cast-actor {
+  justify-content: flex-end;
+  text-align: right;
+}
+.cast-character > div,
+.cast-actor > div {
+  min-width: 0;
+}
+.cast-pair strong {
+  display: block;
+  font-size: 11px;
+  line-height: 1.5;
+  font-weight: 650;
+  overflow-wrap: anywhere;
+}
+.cast-pair small {
+  display: block;
+  margin-top: 3px;
+  font-size: 9px;
+  text-transform: uppercase;
+  color: #929292;
+}
+.cast-portrait {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 43px;
+  width: 43px;
+  height: 59px;
+  border-radius: 7px;
+  overflow: hidden;
+  color: #858585;
+  background: #202020;
+}
+.cast-portrait img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.cast-missing {
+  color: #888;
+  font-size: 10px;
+  text-align: right;
+}
+.cast-expand {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin: 20px auto 0;
+  padding: 10px 20px;
+  color: #bdbdbd;
+  background: transparent;
+  border: 0;
+  border-radius: 8px;
+  font-size: 11px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.cast-expand:hover {
+  color: white;
+  background: #1b1b1b;
+}
+.cast-expand:focus-visible,
+.cast-heading select:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 3px;
+}
+.cast-note {
+  color: #aaa;
+  font-size: 13px;
+}
+.cast-note button {
+  color: inherit;
+  text-decoration: underline;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+.cast-skeleton {
+  height: 69px;
+  border-radius: 8px;
+  background: #181818;
+}
+@media (min-width: 1700px) {
+  .cast-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+@media (max-width: 1100px) {
+  .cast-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (max-width: 640px) {
+  .cast-grid {
+    grid-template-columns: 1fr;
+    gap: 8px;
+  }
+  .cast-heading {
+    align-items: flex-start;
+  }
+  .cast-heading > div {
+    gap: 8px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .cast-heading h2 {
+    white-space: nowrap;
+    font-size: 14px;
+  }
+  .cast-pair strong {
+    font-size: 12px;
+  }
+}
