@@ -134,10 +134,46 @@ test('release filters include Chinese originals, preserve dub identity and avoid
   ];
   const keys = (filter) =>
     releasedEpisodes(items, filter, now).map((x) => `${x.route}:${x.airType}`);
-  assert.deepEqual(keys('all'), ['japan:sub', 'japan:dub', 'china:sub', 'china-only:raw']);
+  assert.deepEqual(keys('all'), ['japan:sub', 'china:sub', 'china-only:raw']);
   assert.deepEqual(keys('sub'), ['japan:sub', 'china:sub']);
   assert.deepEqual(keys('dub'), ['japan:dub']);
   assert.deepEqual(keys('chinese'), ['china:sub', 'china-only:raw']);
+});
+
+test('release cards show each series once while preserving each language episode', () => {
+  const items = [
+    airing('series', now - 1000, { airType: 'dub', episode: 2 }),
+    airing('series', now - 2000, { episode: 4 }),
+    airing('series', now - 3000, { episode: 3 }),
+    airing('other-season', now - 4000),
+  ];
+  assert.deepEqual(
+    releasedEpisodes(items, 'all', now).map((x) => [x.route, x.episode, x.airType]),
+    [
+      ['series', 2, 'dub'],
+      ['other-season', 2, 'sub'],
+    ],
+  );
+  assert.equal(releasedEpisodes(items, 'sub', now)[0].episode, 4);
+  assert.equal(releasedEpisodes(items, 'dub', now)[0].episode, 2);
+  const tied = [
+    airing('same-time', now, { episode: 2, airType: 'dub' }),
+    airing('same-time', now, { episode: 4, airType: 'dub' }),
+    airing('same-time', now, { episode: 4 }),
+  ];
+  assert.equal(releasedEpisodes(tied, 'all', now)[0].airType, 'sub');
+  assert.equal(releasedEpisodes(tied, 'all', now)[0].episode, 4);
+});
+
+test('deduplicating releases before the card limit leaves room for eighteen different series', () => {
+  const items = Array.from({ length: 20 }, (_, i) => [
+    airing(`series-${i}`, now - i * 1000),
+    airing(`series-${i}`, now - i * 1000, { airType: 'dub' }),
+  ]).flat();
+  const result = releasedEpisodes(items, 'all', now);
+  assert.equal(result.length, 18);
+  assert.equal(new Set(result.map((x) => x.route)).size, 18);
+  assert.equal(result.at(-1).route, 'series-17');
 });
 
 test('home accepts every release filter and defaults to all', async () => {

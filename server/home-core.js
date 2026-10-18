@@ -65,9 +65,16 @@ export function releasedEpisodes(items, language, now) {
       if (language === 'all') return x.airType === 'sub' || x.airType === 'dub' || chineseOriginal;
       return x.airType === language;
     })
-    .sort((a, b) => Date.parse(b.airingAt) - Date.parse(a.airingAt))
+    .sort(
+      (a, b) =>
+        Date.parse(b.airingAt) - Date.parse(a.airingAt) ||
+        b.episode - a.episode ||
+        Number(b.airType === 'sub') - Number(a.airType === 'sub'),
+    )
     .filter((x) => {
-      const key = `${x.route}:${x.airType}`;
+      // Filter first so each language retains its own latest episode, then
+      // show a series only once (including across languages in the All view).
+      const key = x.route;
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
