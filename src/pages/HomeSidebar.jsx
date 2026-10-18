@@ -95,9 +95,11 @@ export function HomeAiringSchedule({ language }) {
   }, [shown]);
   const start = weekStart(today);
   const yesterday = shiftDate(today, -1);
-  const days = weekDays(today);
-  const selectedIndex = Math.max(0, days.indexOf(day));
-  const orderedDays = [yesterday, ...days.slice(selectedIndex), ...days.slice(0, selectedIndex)];
+  const days = weekDays(yesterday);
+  // Keep the previous date beside the selection; yesterday is a normal moving
+  // day, not a permanently pinned first slot. Stop at yesterday when selected.
+  const firstIndex = Math.max(0, days.indexOf(day) - 1);
+  const orderedDays = [...days.slice(firstIndex), ...days.slice(0, firstIndex)];
   const calendar = useResource(`/api/calendar?week=${start}`);
   useEffect(() => {
     const timer = setInterval(() => {
@@ -171,7 +173,8 @@ export function HomeAiringSchedule({ language }) {
             <span>
               {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, { weekday: 'short' })}
             </span>
-            <small aria-hidden={date !== day && date !== yesterday}>
+            <small aria-hidden={date !== day}>
+              {date === today && 'Today · '}
               {date === yesterday && 'Yesterday · '}
               {new Date(`${date}T12:00:00`).toLocaleDateString(undefined, {
                 month: 'short',
