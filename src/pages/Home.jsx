@@ -50,9 +50,7 @@ function HomeCollection({ category }) {
     <section className="home-explorer" aria-label={`Explore ${category}`}>
       <header className="home-explorer-heading">
         <div>
-          <span className="eyebrow">A WORLD FOR EVERY MOOD · {category}</span>
-          <h2>Find your next world</h2>
-          <p>Follow a feeling. Discover your next favorite {category}.</p>
+          <h2>More stories</h2>
         </div>
         <Link to={`/browse/${category}?view=all`} className="btn btn-secondary">
           Full collection <ArrowRight size={16} />
