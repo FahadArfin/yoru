@@ -41,7 +41,7 @@ for (const category of ['anime', 'manga', 'manhwa']) {
     });
     await next.click();
     await expect(heading(2)).toBeVisible();
-    await page.getByRole('textbox', { name: 'Search anime, manga, and manhwa' }).click();
+    await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(29999);
     await expect(heading(2)).toBeVisible();
     await page.clock.runFor(1);
@@ -84,11 +84,11 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       await touch.detach();
     }
     await hero.getByRole('button', { name: 'Pause banner rotation', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Search anime, manga, and manhwa' }).click();
+    await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(60000);
     await expect(heading(3)).toBeVisible();
     await hero.getByRole('button', { name: 'Resume banner rotation', exact: true }).click();
-    await page.getByRole('textbox', { name: 'Search anime, manga, and manhwa' }).click();
+    await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).click();
     await page.clock.runFor(30000);
     await expect(heading(1)).toBeVisible();
     await page.emulateMedia({ reducedMotion: 'reduce' });

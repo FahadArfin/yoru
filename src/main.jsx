@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef, useState } from 'react';
+import React, { Suspense, lazy, useEffect, useRef } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   BrowserRouter,
@@ -9,7 +9,7 @@ import {
   useLocation,
   useNavigate,
 } from 'react-router-dom';
-import { ArrowRight, Check, Search, Settings } from 'lucide-react';
+import { ArrowRight, Check, Settings } from 'lucide-react';
 import { AppProvider, useApp } from './state';
 import { AuthModal, Avatar, Loading } from './components';
 import Home from './pages/Home';
@@ -17,6 +17,7 @@ import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { NsfwMenu } from './nsfw';
 import CategoryNavigation from './CategoryNavigation';
+import GlobalSearch from './GlobalSearch';
 import './styles.css';
 import './home.css';
 import './browse.css';
@@ -45,7 +46,6 @@ function Brand() {
 }
 function Shell() {
   const { user, setAuthOpen, online, connected, toast, refreshLibrary } = useApp();
-  const [search, setSearch] = useState('');
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
@@ -117,24 +117,7 @@ function Shell() {
             <span className="live-dot" />
             YOUR NEXT OBSESSION STARTS HERE
           </div>
-          <form
-            className="global-search"
-            role="search"
-            onSubmit={(e) => {
-              e.preventDefault();
-              navigate(`/browse/all?q=${encodeURIComponent(search)}`);
-            }}
-          >
-            <Search size={18} />
-            <input
-              ref={input}
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              aria-label="Search anime, manga, and manhwa"
-              placeholder="Search your next obsession…"
-            />
-            <kbd>Ctrl K</kbd>
-          </form>
+          <GlobalSearch inputRef={input} />
           <Link className="online-pill" to="/community">
             <span className={`live-dot ${!connected ? 'muted-dot' : ''}`} />
             <strong>{connected ? online.count || 0 : '—'}</strong>

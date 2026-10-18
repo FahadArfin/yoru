@@ -10,6 +10,7 @@ import {
   loadMedia,
   saveMedia,
 } from './catalog-storage.js';
+import { titleRelevance, rankSearch, searchText } from './search-ranking.js';
 const TTL = 6 * 60 * 60 * 1000;
 // Tenrai v1 preserves the Jikan v4 catalog schema and MyAnimeList IDs.
 const TENRAI = 'https://api.tenrai.org/v1';
@@ -545,19 +546,12 @@ function optionsFor(input = {}) {
 }
 
 function matches(item, query) {
-  const text = [item.title, item.titleRomaji, item.titleNative, ...(item.synonyms || [])]
-    .join(' ')
-    .toLowerCase();
   return (
     !item.isAdult &&
     !item.imported &&
     (!query.category || item.type === query.category) &&
     (!query.format || String(item.format).toLowerCase() === query.format) &&
-    (!query.search ||
-      query.search
-        .toLowerCase()
-        .split(/\s+/)
-        .every((word) => text.includes(word))) &&
+    (!query.search || titleRelevance(item, query.search) >= 0) &&
     (!query.genre || item.genres.some((genre) => genreKey(genre) === genreKey(query.genre)))
   );
 }
@@ -771,7 +765,10 @@ export async function searchCatalog(input = {}) {
     : items.slice((query.page - 1) * query.limit, query.page * query.limit);
   const hasNextPage = remote?.hasNextPage ?? query.page * query.limit < total;
   return {
-    items: resultItems,
+    items:
+      query.search && query.sort === 'trending'
+        ? rankSearch(resultItems, query.search)
+        : resultItems,
     total,
     page: query.page,
     pages: remote?.pages ?? Math.max(1, Math.ceil(total / query.limit)),
@@ -785,6 +782,81 @@ export async function searchCatalog(input = {}) {
     providerUnavailable: providerUnavailable || !!remote?.partial,
     pageInfo: { currentPage: query.page, hasNextPage, total },
   };
+}
+
+export async function searchSuggestions(input = {}) {
+  const query = optionsFor({ q: input.q, category: input.category, limit: 24 });
+  if (searchText(query.search).length < 2) return { items: [], pending: false };
+  const key = catalogQueryKey(query);
+  let remote = searches.get(key);
+  if (!remote || Date.now() - remote.fetchedAt >= TTL) {
+    const stored = await loadSearch(key).catch(() => null);
+    if (stored && (!remote || stored.result.fetchedAt > remote.fetchedAt)) {
+      for (const item of stored.items) {
+        const current = cache.get(item.id);
+        if (
+          !current ||
+          Date.parse(item.metadataFetchedAt) > Date.parse(current.metadataFetchedAt || 0)
+        )
+          cache.set(item.id, item);
+      }
+      remote = stored.result;
+      searches.set(key, remote);
+      if (searches.size > 200) searches.delete(searches.keys().next().value);
+    }
+  }
+  let pending = false;
+  let unavailable = isOffline();
+  if (!isOffline() && (!remote || remote.partial || Date.now() - remote.fetchedAt >= TTL)) {
+    const refresh = refreshSearch(query);
+    background(refresh);
+    pending = true;
+    // Saved matches appear immediately; cold queries get a short first-response budget.
+    if (![...cache.values()].some((item) => matches(item, query))) {
+      try {
+        remote = await withDeadline(refresh, 1500);
+        pending = false;
+      } catch {
+        unavailable = true;
+      }
+    }
+  }
+  const items = rankSearch(
+    [...cache.values()].filter((item) => matches(item, query)),
+    query.search,
+  )
+    .slice(0, 12)
+    .map(
+      ({
+        id,
+        title,
+        titleEnglish,
+        titleRomaji,
+        category,
+        type,
+        format,
+        year,
+        score,
+        episodes,
+        chapters,
+        cover,
+        coverAlternates,
+      }) => ({
+        id,
+        title,
+        titleEnglish,
+        titleRomaji,
+        category: category || type,
+        format,
+        year,
+        score,
+        episodes,
+        chapters,
+        cover,
+        coverAlternates,
+      }),
+    );
+  return { items, pending, providerUnavailable: unavailable || !!remote?.partial };
 }
 
 const scheduleCaches = new Map(

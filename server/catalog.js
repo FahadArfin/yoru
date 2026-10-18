@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   searchCatalog,
+  searchSuggestions,
   getMedia,
   getCalendar,
   parseMediaId,
@@ -226,6 +227,13 @@ catalogRouter.get('/home', async (req, res, next) => {
 catalogRouter.get('/media/:id/sources', async (req, res, next) => {
   try {
     res.json(await resolveAnimeSources(req.params.id, req.query));
+  } catch (error) {
+    next(error);
+  }
+});
+catalogRouter.get('/search/suggestions', async (req, res, next) => {
+  try {
+    res.json(await searchSuggestions(req.query));
   } catch (error) {
     next(error);
   }

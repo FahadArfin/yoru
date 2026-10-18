@@ -11,12 +11,27 @@ const {
   normalizeKitsu,
   parseMediaId,
   searchCatalog,
+  searchSuggestions,
   getMedia,
   catalogQueryKey,
   catalogWindow,
   getCalendar,
 } = await import('../server/catalog.js');
 const { parseMalXml } = await import('../server/import.js');
+
+test('search suggestions return safe matching titles with category filters and bounded payloads', async () => {
+  assert.deepEqual((await searchSuggestions({ q: '!' })).items, []);
+  assert.deepEqual((await searchSuggestions({ q: '!!' })).items, []);
+  const result = await searchSuggestions({ q: 'attack on titan', category: 'anime' });
+  assert.ok(result.items.length > 0 && result.items.length <= 12);
+  assert.equal(result.items[0].title, 'Attack on Titan');
+  assert.ok(
+    result.items.every((item) => item.category === 'ANIME' && item.id.startsWith('mal-anime-')),
+  );
+  assert.equal(result.pending, false);
+  assert.equal(result.providerUnavailable, true);
+  assert.equal(result.items[0].description, undefined);
+});
 
 test('anime and manga MAL IDs stay distinct; invalid IDs cannot become provider URLs', () => {
   assert.deepEqual(parseMediaId('mal-anime-52991'), { kind: 'anime', malId: 52991 });
