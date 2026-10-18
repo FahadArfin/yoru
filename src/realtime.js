@@ -9,6 +9,7 @@ const names = [
   'room',
   'rooms',
   'comments',
+  'forum',
   'reviews',
   'library',
   'left',

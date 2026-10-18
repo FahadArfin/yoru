@@ -23,7 +23,7 @@ export default function CommunityThread() {
   const anime = isAnime(media);
   return (
     <div className="page section-page community-thread-page">
-      <Link className="text-link" to="/community">
+      <Link className="text-link" to="/community?view=releases">
         <ArrowLeft size={15} /> All discussions
       </Link>
       {!valid ? (

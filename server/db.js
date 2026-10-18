@@ -3,6 +3,7 @@ import { mkdirSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { presenceSchema } from './visitor-presence.js';
 import { resumeSchema } from './resume.js';
+import { forumSchema } from './forum.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -118,6 +119,7 @@ if (
 
 db.exec(presenceSchema);
 db.exec(resumeSchema);
+db.exec(forumSchema);
 export const get = (sql, ...values) => db.prepare(sql).get(...values);
 export const all = (sql, ...values) => db.prepare(sql).all(...values);
 export const run = (sql, ...values) => db.prepare(sql).run(...values);

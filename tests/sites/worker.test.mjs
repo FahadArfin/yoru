@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { resumeContract } from '../resume-contract.mjs';
+import { forumContract } from '../forum-contract.mjs';
 import { before, after, test } from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -14,6 +15,13 @@ let runtime,
   charlie,
   media = 'mal-anime-52991';
 const streams = [];
+test('forum topics and replies are shared across Workers with scoped ownership', async () => {
+  let instance = 'a';
+  await forumContract((...args) => {
+    instance = instance === 'a' ? 'b' : 'a';
+    return request(instance, ...args);
+  }, register);
+});
 test('resume progress is shared across D1 workers and isolated by account', async () => {
   let instance = 'a';
   await resumeContract((...args) => {

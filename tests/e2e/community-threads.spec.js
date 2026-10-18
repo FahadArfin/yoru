@@ -32,7 +32,7 @@ test('automatic cards open shared discussion routes and category filters preserv
       },
     });
   });
-  await page.goto('/community');
+  await page.goto('/community?view=releases');
   const section = page.getByRole('region', { name: 'Episode and chapter threads' });
   await expect(section.getByText('Be the first to join')).toBeVisible();
   await expect(section.getByRole('link', { name: 'Watch', exact: true })).toHaveAttribute(

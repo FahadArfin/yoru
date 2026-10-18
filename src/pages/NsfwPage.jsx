@@ -16,6 +16,7 @@ const Reader = lazy(() => import('../reader/Reader'));
 const Schedule = lazy(() => import('./Schedule'));
 const Community = lazy(() => import('./Community'));
 const CommunityThread = lazy(() => import('./CommunityThread'));
+const ForumTopic = lazy(() => import('./ForumTopic'));
 const Library = lazy(() => import('./Library'));
 const Rooms = lazy(() => import('./Rooms'));
 const Room = lazy(() => import('./Room'));
@@ -126,6 +127,14 @@ export default function NsfwPage() {
                 <CommunityThread />
               </SpaceLayout>
             </ReviewedTitle>
+          }
+        />
+        <Route
+          path="community/forum/:topicId"
+          element={
+            <SpaceLayout>
+              <ForumTopic />
+            </SpaceLayout>
           }
         />
         <Route

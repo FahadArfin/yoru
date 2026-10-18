@@ -9,6 +9,7 @@ import { getCommunityThreads } from '../server/community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
 import { resumeInput, resumeUpsert } from '../server/resume.js';
+import { forumRoutes } from './forum.js';
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -91,6 +92,7 @@ export async function onlineState(db) {
   return { count: users.length, users };
 }
 export function socialRoutes(app) {
+  forumRoutes(app);
   app.get('/api/resume', requireAuth, async (c) =>
     c.json({
       items: (

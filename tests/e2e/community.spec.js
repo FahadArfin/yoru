@@ -45,6 +45,7 @@ test('community filters preserve discussions, review destinations and spoiler pr
 }, testInfo) => {
   await page.route('**/api/community', (route) => route.fulfill({ json: { items: entries } }));
   await page.goto('/community');
+  await page.getByRole('button', { name: 'Latest activity', exact: true }).click();
   await expect(page.locator('.feed-card')).toHaveCount(2);
   await expect(page.getByText('PRIVATE SPOILER TEXT')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Find a room' })).toHaveAttribute('href', '/rooms');
@@ -84,6 +85,7 @@ test('community keeps loading, failed and empty feed states distinct', async ({ 
     });
   });
   await page.goto('/community');
+  await page.getByRole('button', { name: 'Latest activity', exact: true }).click();
   await expect(page.getByRole('status', { name: 'Loading conversations' })).toBeVisible();
   await expect(page.getByText('Every conversation starts with a story.')).toHaveCount(0);
   release();
