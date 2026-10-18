@@ -1,3 +1,4 @@
+import { navigateCollection, navigatePrimary } from './navigation';
 import { test, expect } from '@playwright/test';
 
 test('catalog controls filter each category without a duplicate navigation strip', async ({
@@ -30,10 +31,7 @@ test('catalog controls filter each category without a duplicate navigation strip
       sort: 'title',
     });
   for (const category of ['manga', 'manhwa']) {
-    await page
-      .getByRole('navigation', { name: 'Explore Yoru' })
-      .getByRole('link', { name: new RegExp(`^${category}$`, 'i') })
-      .click();
+    await navigateCollection(page, category[0].toUpperCase() + category.slice(1));
     await expect(page.getByRole('navigation', { name: `${category} collections` })).toHaveCount(0);
     await expect(filters).toHaveCount(1);
     await expect(filters.getByLabel('Anime format')).toHaveCount(0);
@@ -44,9 +42,6 @@ test('catalog controls filter each category without a duplicate navigation strip
     expect(queries.at(-1).format).toBeUndefined();
   }
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page
-    .getByRole('navigation', { name: 'Explore Yoru' })
-    .getByRole('link', { name: 'My Space', exact: true })
-    .click();
+  await navigatePrimary(page, 'My Space');
   await expect(page.locator('.category-navigation')).toHaveCount(0);
 });

@@ -59,7 +59,10 @@ export default function GlobalSearch({ inputRef, collection }) {
     const align = () => {
       const bounds = root.current.getBoundingClientRect();
       const viewport = document.documentElement.clientWidth;
-      const width = Math.min(Math.max(bounds.width, 320), viewport - 24);
+      const width = Math.min(
+        viewport <= 760 ? bounds.width : Math.max(bounds.width, 320),
+        viewport - 24,
+      );
       const left = Math.max(12, Math.min(bounds.left, viewport - width - 12)) - bounds.left;
       setPanelStyle({ width, left });
     };

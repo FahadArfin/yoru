@@ -1,3 +1,4 @@
+import { navigatePrimary } from './navigation';
 import { test, expect } from '@playwright/test';
 import { fileURLToPath } from 'node:url';
 const fixture = (name) => fileURLToPath(new URL(`../fixtures/${name}.png`, import.meta.url));
@@ -104,10 +105,7 @@ test('weekly banner and release feed navigate with exact identity and selected l
     '/watch/mal-anime-21/5?language=dub',
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await page
-    .getByRole('navigation', { name: 'Explore Yoru' })
-    .getByRole('link', { name: 'Schedule', exact: true })
-    .click();
+  await navigatePrimary(page, 'Schedule');
   await expect(page).toHaveURL(/\/schedule$/);
 });
 

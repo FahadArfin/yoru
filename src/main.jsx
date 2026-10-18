@@ -21,11 +21,13 @@ import { confirmationKey } from './nsfw';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import SpaceLayout from './SpaceLayout';
+import MobileNavigation from './MobileNavigation';
 import './styles.css';
 import './home.css';
 import './browse.css';
 import './nsfw.css';
 import './theme.css';
+import './mobile.css';
 import { useTheme } from './theme';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
@@ -242,6 +244,7 @@ function Shell() {
         </main>
         <SiteFooter />
       </div>
+      {!isReader && <MobileNavigation adult={isAraAra} />}
       <AuthModal />
       {toast && (
         <div className={`toast ${toast.type}`} role="status">

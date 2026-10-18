@@ -1,3 +1,4 @@
+import { navigateCollection } from './navigation';
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 test.beforeEach(async ({ context, baseURL }) => {
@@ -14,10 +15,7 @@ test('shared homepage, discovery, search and title pages stay inside the collect
   await expect(page.getByRole('region', { name: 'New series', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Most popular', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Trending', exact: true })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Explore Ara Ara' })
-    .getByRole('link', { name: 'Manhwa', exact: true })
-    .click();
+  await navigateCollection(page, 'Manhwa', true);
   await expect(page.locator('.compact-category-page')).toBeVisible();
   await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'New series', exact: true }).click();

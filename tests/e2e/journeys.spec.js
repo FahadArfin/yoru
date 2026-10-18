@@ -1,3 +1,4 @@
+import { navigatePrimary } from './navigation';
 import { test as base, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
@@ -360,10 +361,7 @@ test('top navigation keeps settings next to the account control without a side m
   await page.keyboard.press('Enter');
   await expect(page).toHaveURL(/\/settings$/);
   await expect(page.getByRole('heading', { name: 'Settings', exact: true })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Explore Yoru' })
-    .getByRole('link', { name: 'My Space', exact: true })
-    .click();
+  await navigatePrimary(page, 'My Space');
   await page
     .getByRole('navigation', { name: 'My Space sections' })
     .getByRole('link', { name: 'Library', exact: true })
