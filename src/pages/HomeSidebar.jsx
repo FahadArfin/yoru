@@ -50,7 +50,7 @@ export function HomeAiringSchedule({ language }) {
     return () => animations.forEach((animation) => animation.cancel());
   }, [day]);
   const [filter, setFilter] = useState('all');
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(true);
   const [shown, setShown] = useState({ day, filter, language });
   const results = useRef(null);
   const previousHeight = useRef(0);
@@ -115,7 +115,7 @@ export function HomeAiringSchedule({ language }) {
   }, [calendar.refresh]);
   useEffect(() => {
     setSelected(null);
-    setExpanded(false);
+    setExpanded(true);
   }, [today]);
   const items = (calendar.data?.items || [])
     .filter(
@@ -167,7 +167,7 @@ export function HomeAiringSchedule({ language }) {
                 ]),
               );
               setSelected(date);
-              setExpanded(false);
+              setExpanded(true);
             }}
           >
             <span>
@@ -191,7 +191,7 @@ export function HomeAiringSchedule({ language }) {
               aria-pressed={filter === value}
               onClick={() => {
                 setFilter(value);
-                setExpanded(false);
+                setExpanded(true);
               }}
             >
               {value}
