@@ -1,15 +1,6 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
 import { Link } from './collection-router';
-import {
-  Check,
-  ChevronDown,
-  ChevronLeft,
-  ChevronRight,
-  Grid2X2,
-  Play,
-  Search,
-  X,
-} from 'lucide-react';
+import { Check, ChevronDown, ChevronLeft, ChevronRight, Grid2X2, Play, X } from 'lucide-react';
 import { useApp, useResource } from './state';
 import CoverImage from './CoverImage';
 import useEpisodeAvailability from './useEpisodeAvailability';
@@ -17,14 +8,11 @@ import './anime-episodes.css';
 
 export default function AnimeEpisodeGrid({ media }) {
   const [group, setGroup] = useState(0);
-  const [draft, setDraft] = useState('');
-  const [highlight, setHighlight] = useState(null);
   const [pickerOpen, setPickerOpen] = useState(false);
   const pickerId = useId();
   const picker = useRef();
   const pickerTrigger = useRef();
-  const pickerInput = useRef();
-  const section = useRef();
+  const pickerRange = useRef();
   const { entryFor } = useApp();
   const progress = entryFor(media.id)?.progress || 0;
   const providerPage = Math.floor(group / 2) + 1;
@@ -56,16 +44,8 @@ export default function AnimeEpisodeGrid({ media }) {
     items = [...byNumber.values()].sort((a, b) => a.number - b.number);
   }
   useEffect(() => {
-    if (highlight && !result.loading && !pickerOpen)
-      section.current
-        ?.querySelector(`[data-episode="${highlight}"]`)
-        ?.focus({ preventScroll: true });
-    if (highlight && !result.loading && pickerOpen)
-      picker.current?.querySelector(`[data-picker-episode="${highlight}"]`)?.focus();
-  }, [highlight, result.loading, group]);
-  useEffect(() => {
     if (!pickerOpen) return;
-    pickerInput.current?.focus({ preventScroll: true });
+    pickerRange.current?.focus({ preventScroll: true });
     picker.current?.querySelector('[role="dialog"]')?.scrollIntoView({
       block: 'nearest',
       behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches
@@ -88,19 +68,8 @@ export default function AnimeEpisodeGrid({ media }) {
       document.removeEventListener('keydown', escape);
     };
   }, [pickerOpen]);
-  const findEpisode = (event) => {
-    event.preventDefault();
-    const value = Number(draft);
-    if (!Number.isInteger(value) || value < 1 || value > rangeTotal) return;
-    setGroup(Math.floor((value - 1) / 50));
-    setHighlight(value);
-    // A repeated jump does not change state, but should still move keyboard focus.
-    if (pickerOpen) picker.current?.querySelector(`[data-picker-episode="${value}"]`)?.focus();
-    else
-      section.current?.querySelector(`[data-episode="${value}"]`)?.focus({ preventScroll: true });
-  };
   return (
-    <section ref={section} className="anime-episode-guide" aria-label="Episode guide">
+    <section className="anime-episode-guide" aria-label="Episode guide">
       <div className="episode-guide-heading">
         <div>
           <span className="eyebrow">PICK YOUR NEXT EPISODE</span>
@@ -164,39 +133,22 @@ export default function AnimeEpisodeGrid({ media }) {
                   <X size={15} />
                 </button>
               </div>
-              <form onSubmit={findEpisode}>
-                <input
-                  ref={pickerInput}
-                  aria-label="Jump to episode"
-                  type="number"
-                  min="1"
-                  max={rangeTotal}
-                  required
-                  placeholder="Episode number"
-                  value={draft}
-                  onChange={(event) => setDraft(event.target.value)}
-                />
-                <button type="submit">
-                  Go <ChevronRight size={14} />
-                </button>
-              </form>
               <div className="episode-picker-range">
                 <button
                   aria-label="Previous picker range"
                   disabled={!group}
                   onClick={() => {
                     setGroup(group - 1);
-                    setHighlight(null);
                   }}
                 >
                   <ChevronLeft size={15} />
                 </button>
                 <select
+                  ref={pickerRange}
                   aria-label="Episode range"
                   value={group}
                   onChange={(event) => {
                     setGroup(Number(event.target.value));
-                    setHighlight(null);
                   }}
                 >
                   {Array.from({ length: groups }, (_, index) => (
@@ -210,7 +162,6 @@ export default function AnimeEpisodeGrid({ media }) {
                   disabled={group >= groups - 1}
                   onClick={() => {
                     setGroup(group + 1);
-                    setHighlight(null);
                   }}
                 >
                   <ChevronRight size={15} />
@@ -241,9 +192,7 @@ export default function AnimeEpisodeGrid({ media }) {
                       data-picker-episode={number}
                       aria-label={label}
                       title={item.title}
-                      className={
-                        highlight === number ? 'is-highlighted' : completed ? 'is-completed' : ''
-                      }
+                      className={completed ? 'is-completed' : ''}
                     >
                       {content}
                     </Link>
@@ -260,20 +209,6 @@ export default function AnimeEpisodeGrid({ media }) {
             </div>
           )}
         </div>
-        <form onSubmit={findEpisode}>
-          <Search size={15} />
-          <input
-            aria-label="Find episode number"
-            type="number"
-            min="1"
-            max={rangeTotal}
-            required
-            placeholder="Episode number"
-            value={draft}
-            onChange={(e) => setDraft(e.target.value)}
-          />
-          <button type="submit">Find</button>
-        </form>
       </div>
       {partial && (
         <p className="episode-guide-note" role="status">
@@ -329,7 +264,7 @@ export default function AnimeEpisodeGrid({ media }) {
                 </article>
               ) : (
                 <Link
-                  className={`anime-episode-card${highlight === item.number ? ' is-highlighted' : ''}`}
+                  className="anime-episode-card"
                   key={item.number}
                   data-episode={item.number}
                   aria-label={`Watch episode ${item.number}: ${item.title}`}
