@@ -143,7 +143,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   await checkSelectedLayout(trending);
   await expect(panel.getByRole('link', { name: /trending week pick/ })).toHaveAttribute(
     'href',
-    '/title/mal-anime-21',
+    '/watch/mal-anime-21/latest',
   );
   // Interrupt a moving layout several times; the final choice must win without
   // losing the Popular period or leaving transform/width effects behind.

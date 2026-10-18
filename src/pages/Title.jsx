@@ -22,6 +22,7 @@ import { ChapterCollection } from '../reader/ReadingCollection';
 import { useReadingState } from '../reader/hooks';
 import { readerLink } from '../reader/model';
 import MangaTitle from './MangaTitle';
+import AnimeEpisodeGrid from '../AnimeEpisodeGrid';
 import MangaRecommendations from './MangaRecommendations';
 const selectedTab = (params) =>
   params.get('unit')
@@ -36,7 +37,6 @@ export default function Title() {
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(id);
   const [tab, setTab] = useState(() => selectedTab(params));
-  const [unitPage, setUnitPage] = useState(0);
   const progressDirty = useRef(false);
   const [progress, setProgress] = useState(entry?.progress || 0);
   const unit =
@@ -52,7 +52,6 @@ export default function Title() {
   }, [id]);
   useEffect(() => {
     setTab(selectedTab(params));
-    setUnitPage(0);
   }, [id, params.get('unit'), params.get('tab')]);
   useEffect(() => {
     if (media) document.title = `${titleOf(media)} · Yoru`;
@@ -231,64 +230,8 @@ export default function Title() {
             {['overview', 'units'].includes(tab) && !anime && (
               <ChapterCollection key={id} media={media} />
             )}
-            {tab === 'units' && anime && (
-              <section>
-                <div className="section-heading">
-                  <h2>{anime ? 'Episode guide' : 'Your next chapter'}</h2>
-                  <span className="muted">
-                    {knownTotal
-                      ? `${knownTotal} ${anime ? 'episodes' : 'chapters'}`
-                      : 'Ongoing · enter a number below'}
-                  </span>
-                </div>
-                <p className="muted">
-                  Choose a discussion or open a source. External provider availability can vary.
-                </p>
-                <div className="unit-grid">
-                  {Array.from(
-                    {
-                      length: knownTotal
-                        ? Math.min(50, Math.max(0, knownTotal - unitPage * 50))
-                        : 50,
-                    },
-                    (_, i) => i + 1 + unitPage * 50,
-                  ).map((number) => (
-                    <Link
-                      key={number}
-                      to={`/${anime ? 'watch' : 'read'}/${id}/${number}`}
-                      className={number <= (entry?.progress || 0) ? 'completed' : ''}
-                    >
-                      <span>
-                        {number <= (entry?.progress || 0) ? (
-                          <Check size={13} />
-                        ) : anime ? (
-                          <Play size={12} />
-                        ) : (
-                          <BookOpen size={13} />
-                        )}
-                      </span>
-                      {unitName} {number}
-                    </Link>
-                  ))}
-                </div>
-                <div className="pagination">
-                  <button disabled={!unitPage} onClick={() => setUnitPage((n) => n - 1)}>
-                    <ArrowLeft size={15} />
-                    Previous
-                  </button>
-                  <span>
-                    {unitPage * 50 + 1}–
-                    {knownTotal ? Math.min(knownTotal, (unitPage + 1) * 50) : unitPage * 50 + 50}
-                  </span>
-                  <button
-                    disabled={Boolean(knownTotal && (unitPage + 1) * 50 >= knownTotal)}
-                    onClick={() => setUnitPage((n) => n + 1)}
-                  >
-                    Next
-                    <ArrowRight size={15} />
-                  </button>
-                </div>
-              </section>
+            {['overview', 'units'].includes(tab) && anime && (
+              <AnimeEpisodeGrid key={id} media={media} />
             )}
             {tab === 'discussion' && (
               <>

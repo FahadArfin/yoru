@@ -23,8 +23,10 @@ import {
   getCalendar,
   parseMediaId,
   rememberDiscoveredMedia,
+  fetchAnimeEpisodePage,
 } from '../server/catalog-core.js';
 import { getMangaDiscovery } from '../server/manga-discovery.js';
+import { getAnimeEpisodes } from '../server/anime-episodes.js';
 import { apiError } from '../server/validation.js';
 import { withCatalog } from './catalog-storage.js';
 import { resolveAnimeSources } from '../server/sources-core.js';
@@ -242,6 +244,16 @@ app.post('/api/media/:id/read-view', async (c) => {
 });
 app.get('/api/media/:id/sources', async (c) =>
   c.json(await resolveAnimeSources(c.req.param('id'), c.req.query())),
+);
+app.get('/api/media/:id/episodes', async (c) =>
+  c.json(
+    await getAnimeEpisodes(c.req.param('id'), c.req.query(), {
+      ...scheduleOptions(c.env),
+      media: getMedia,
+      request: fetchAnimeEpisodePage,
+      offline: isOffline(),
+    }),
+  ),
 );
 app.get('/api/media/:id', async (c) => {
   if (!parseMediaId(c.req.param('id'))) throw apiError(400, 'Invalid media ID');
