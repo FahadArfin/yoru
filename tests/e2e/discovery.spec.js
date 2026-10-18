@@ -1,6 +1,6 @@
 import { test, expect } from '@playwright/test';
 
-test('discovery tabs filter release periods, preserve languages, handle fast switches, and support reduced motion', async ({
+test('discovery collections expand, preserve filters, handle fast switches, and support reduced motion', async ({
   page,
   context,
   baseURL,
@@ -61,9 +61,31 @@ test('discovery tabs filter release periods, preserve languages, handle fast swi
   });
   await page.goto('/');
   await page.getByRole('button', { name: 'English dub', exact: true }).click();
-  const tabs = page.getByRole('tablist', { name: 'Discover anime' });
-  await tabs.getByRole('tab', { name: 'Most popular' }).click();
-  let panel = page.getByRole('tabpanel', { name: 'Most popular' });
+  const released = page.getByRole('region', { name: 'Just released', exact: true });
+  const popular = page.getByRole('region', { name: 'Most popular', exact: true });
+  const trending = page.getByRole('region', { name: 'Trending', exact: true });
+  await expect(
+    released.getByRole('button', { name: 'Just released', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'true');
+  await expect(popular.locator('.discovery-preview-card')).toHaveCount(1);
+  await expect(trending.locator('.discovery-preview-card')).toHaveCount(1);
+  for (const category of [popular, trending]) {
+    const bounds = await category.boundingBox();
+    const card = await category.locator('.discovery-preview-card').boundingBox();
+    expect(card.x + card.width).toBeLessThanOrEqual(bounds.x + bounds.width + 1);
+  }
+  const highlights = await page
+    .getByRole('complementary', { name: 'Anime highlights' })
+    .boundingBox();
+  const discovery = await page.locator('.discovery-panels').boundingBox();
+  expect(highlights.y).toBeGreaterThanOrEqual(discovery.y + discovery.height);
+  await page
+    .locator('.discovery-section')
+    .screenshot({ path: testInfo.outputPath('discovery-default.png') });
+  await popular.getByRole('button', { name: 'Most popular', exact: true }).click();
+  let panel = popular;
+  await expect(released.locator('.discovery-preview-card')).toHaveCount(1);
+  await expect(page.locator('.discovery-panel.is-expanded')).toHaveCount(1);
   await expect(panel.getByRole('link', { name: /popular all pick/ })).toBeVisible();
   expect(popularRequests).toBe(2);
   await panel.getByRole('button', { name: 'Last year' }).click();
@@ -73,21 +95,24 @@ test('discovery tabs filter release periods, preserve languages, handle fast swi
   finishYear();
   await expect(panel.getByRole('link', { name: /popular year pick/ })).toHaveCount(0);
   await expect(panel.getByText('September 2026 releases')).toBeVisible();
-  await tabs.getByRole('tab', { name: 'Most popular' }).focus();
-  await page.keyboard.press('ArrowRight');
-  await expect(tabs.getByRole('tab', { name: /Trending/ })).toHaveAttribute(
-    'aria-selected',
+  await page
+    .locator('.discovery-section')
+    .screenshot({ path: testInfo.outputPath('discovery-popular.png') });
+  await trending.getByRole('button', { name: 'Trending', exact: true }).focus();
+  await page.keyboard.press('Enter');
+  await expect(trending.getByRole('button', { name: 'Trending', exact: true })).toHaveAttribute(
+    'aria-expanded',
     'true',
   );
-  panel = page.getByRole('tabpanel', { name: /Trending/ });
+  panel = trending;
   await expect(panel.getByText('12 viewers this week')).toBeVisible();
   await expect(panel.getByRole('link', { name: /trending week pick/ })).toHaveAttribute(
     'href',
     '/title/mal-anime-21',
   );
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await tabs.getByRole('tab', { name: 'Just released' }).click();
-  panel = page.getByRole('tabpanel', { name: 'Just released' });
+  await released.getByRole('button', { name: 'Just released', exact: true }).click();
+  panel = released;
   await expect(panel.getByRole('button', { name: 'English dub', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -181,8 +206,13 @@ test('watch page visits populate real local trending without counting refreshes 
   const after = await (await page.request.get('/api/home/discovery?mode=trending')).json();
   expect(after.items.find((x) => x.id === mediaId).viewers).toBe(initial + 1);
   await page.goto('/');
-  await page.getByRole('tab', { name: /Trending/ }).click();
+  await page
+    .getByRole('region', { name: 'Trending', exact: true })
+    .getByRole('button', { name: 'Trending', exact: true })
+    .click();
   await expect(
-    page.getByRole('tabpanel', { name: /Trending/ }).getByRole('link', { name: new RegExp(title) }),
+    page
+      .getByRole('region', { name: 'Trending', exact: true })
+      .getByRole('link', { name: new RegExp(title) }),
   ).toBeVisible();
 });

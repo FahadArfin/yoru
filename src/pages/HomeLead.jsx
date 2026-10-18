@@ -161,12 +161,14 @@ export default function HomeLead({ children }) {
           </div>
         )}
       </section>
-      <div className="home-content-layout home-width">
+      <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">
           <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
           {children}
         </div>
-        <HomeSidebar popular={popular} language={language === 'dub' ? 'dub' : 'sub'} />
+        <div className="home-lower-highlights">
+          <HomeSidebar popular={popular} language={language === 'dub' ? 'dub' : 'sub'} />
+        </div>
       </div>
     </>
   );
