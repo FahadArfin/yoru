@@ -16,6 +16,7 @@ import PrefetchLink from '../PrefetchLink';
 import Browse from './Browse';
 import MangaHero from './MangaHero';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';
+import HomeDiscovery from './HomeDiscovery';
 import { ContinueReading } from '../reader/ReadingCollection';
 import '../manga.css';
 
@@ -40,7 +41,7 @@ function MangaRow({ media }) {
   );
 }
 
-function MangaLanding({ category, label }) {
+export function MangaLanding({ category, label, homepage = false, children }) {
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
   const picks = popular.data?.items?.length ? popular.data.items : itemsOf(curated.data);
@@ -63,16 +64,21 @@ function MangaLanding({ category, label }) {
             <small>Discover something new, or fall back into an old favorite.</small>
           </span>
         </div>
-        <a href={`#${category}-catalog`}>
+        <a href={homepage ? `/browse/${category}` : `#${category}-catalog`}>
           Explore the collection <ArrowRight size={15} />
         </a>
       </div>
-      <div className="home-content-layout home-width">
+      <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
         <div className="home-release-column">
+          {homepage && <HomeDiscovery category={category} />}
           <ContinueReading category={category} />
-          <MangaDiscovery popular={popular} category={category} label={label} />
+          {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
+          {children}
         </div>
-        <aside className="home-right-rail" aria-label={`${label} highlights`}>
+        <aside
+          className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
+          aria-label={`${label} highlights`}
+        >
           <section className="home-rail-panel" aria-label="Reader favorites">
             <div className="rail-heading">
               <h2>
@@ -127,9 +133,11 @@ function MangaLanding({ category, label }) {
           </section>
         </aside>
       </div>
-      <div className="manga-catalog-wrap home-width">
-        <Browse embedded categoryOverride={category} />
-      </div>
+      {!homepage && (
+        <div className="manga-catalog-wrap home-width">
+          <Browse embedded categoryOverride={category} />
+        </div>
+      )}
     </div>
   );
 }
