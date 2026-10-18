@@ -11,3 +11,10 @@ export function isBannerSharp(image, box) {
     height >= Math.ceil(box.height * density)
   );
 }
+// Reading providers supply panoramic cover art, often shorter than 1080px.
+// Keep genuine landscape originals rather than replacing them with a portrait.
+export function isReadingBanner(image) {
+  return Boolean(
+    image && image.width >= 1200 && image.height >= 400 && image.width / image.height >= 1.5,
+  );
+}
