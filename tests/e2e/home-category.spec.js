@@ -142,7 +142,7 @@ test('explicit homepage category works with unavailable storage and invalid valu
   await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
 });
 
-test('homepage resumes the selected category directly below discovery and browse stays focused on discovery', async ({
+test('homepage resumes the selected category directly below the banner and browse stays focused on discovery', async ({
   page,
   context,
   baseURL,
@@ -236,9 +236,12 @@ test('homepage resumes the selected category directly below discovery and browse
     });
     await expect(row).toHaveCount(1);
     await expect(row).toBeVisible();
-    expect(
-      await row.evaluate((el) => el.previousElementSibling.classList.contains('discovery-section')),
-    ).toBe(true);
+    const resume = await row.boundingBox();
+    const banner = await page.locator('.weekly-hero').boundingBox();
+    const discovery = await page.locator('.discovery-panels').boundingBox();
+    expect(resume.y).toBeGreaterThanOrEqual(banner.y + banner.height);
+    expect(resume.y + resume.height).toBeLessThan(discovery.y);
+    expect(resume.y).toBeLessThan(page.viewportSize().height - 100);
     const card = row.getByRole('link', { name: new RegExp(`Saved ${category}`) });
     await expect(card).toHaveCount(1);
     await expect(card).toHaveAttribute(

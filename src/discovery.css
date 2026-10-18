@@ -445,6 +445,8 @@
   color: #dadada;
 }
 .discovery-preview-list .release-skeleton {
+  width: 100%;
+  min-width: 0;
   height: 92px;
   aspect-ratio: auto;
   border-radius: 8px;

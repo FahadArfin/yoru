@@ -53,6 +53,11 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''}`}
     >
       <MangaHero items={picks} category={category} label={label} />
+      {homepage && (
+        <div className="home-resume home-width">
+          <ContinueReading category={category} />
+        </div>
+      )}
       <div className="manga-intro home-width">
         <div>
           <BookOpen size={19} />
@@ -72,7 +77,6 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
-          {homepage && <ContinueReading category={category} />}
           {homepage && <LiveComments />}
           {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
           {children}

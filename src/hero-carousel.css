@@ -1,0 +1,126 @@
+.weekly-hero {
+  touch-action: pan-y pinch-zoom;
+  cursor: grab;
+}
+.weekly-hero.is-dragging {
+  cursor: grabbing;
+  user-select: none;
+}
+.weekly-hero img {
+  -webkit-user-drag: none;
+  user-select: none;
+}
+.hero-art-stack {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  transform: translateX(var(--hero-drag, 0px));
+  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+.is-dragging .hero-art-stack {
+  transition: none;
+}
+.hero-art-layer {
+  position: absolute;
+  inset: 0;
+}
+.hero-art-layer.incoming {
+  animation: hero-crossfade 800ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.weekly-hero .hero-art-layer .weekly-backdrop,
+.weekly-hero .hero-art-layer .manga-cover-stage > img {
+  animation: none;
+}
+.weekly-hero .hero-art-layer .manga-cover-stage {
+  inset: 0;
+  height: 100%;
+}
+.weekly-hero .weekly-content {
+  animation: hero-copy-in 650ms ease-out both;
+}
+@keyframes hero-crossfade {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+@keyframes hero-copy-in {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.category-home .weekly-hero {
+  height: min(64svh, 720px);
+  min-height: 440px;
+}
+.category-home .manga-hero .weekly-content {
+  padding-bottom: 40px;
+}
+.category-home .manga-hero .weekly-content h2 {
+  font-size: clamp(30px, 3vw, 52px);
+  margin-bottom: 12px;
+}
+.category-home .manga-hero .weekly-description {
+  -webkit-line-clamp: 2;
+  margin: 6px 0 16px;
+}
+.home-resume {
+  padding-top: 22px;
+  padding-bottom: 20px;
+}
+.home-resume:empty {
+  display: none;
+}
+.home-resume .home-continue,
+.home-resume .continue-reading,
+.home-resume .section {
+  margin: 0;
+}
+.home-resume .section-heading {
+  margin-bottom: 12px;
+}
+.home-resume .eyebrow {
+  display: none;
+}
+.cinema-home .home-resume .section-heading h2 {
+  font-size: 20px;
+  margin: 0;
+}
+@media (max-width: 600px) {
+  .category-home .manga-hero .weekly-content {
+    padding-top: 200px;
+    padding-bottom: 20px;
+  }
+  .category-home .manga-hero .weekly-content h2 {
+    font-size: 29px;
+  }
+  .category-home .manga-hero .weekly-description {
+    display: none;
+  }
+  .home-resume {
+    padding-top: 16px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-art-layer.incoming,
+  .weekly-hero .weekly-content {
+    animation: none;
+  }
+  .hero-art-stack {
+    transition: none;
+    transform: none;
+  }
+}
+html[data-reduce-motion='true'] .hero-art-layer.incoming,
+html[data-reduce-motion='true'] .weekly-hero .weekly-content {
+  animation: none;
+}
+html[data-reduce-motion='true'] .hero-art-stack {
+  transition: none;
+  transform: none;
+}
