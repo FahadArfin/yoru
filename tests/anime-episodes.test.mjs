@@ -21,7 +21,11 @@ test('episode metadata preserves numbers and dates, sanitizes images and dedupli
       },
       { mal_id: 2, title: 'The beginning' },
       { mal_id: 0 },
-      { mal_id: 1, images: { jpg: { image_url: 'https://cdn.example/1.jpg' } } },
+      {
+        mal_id: 1,
+        synopsis: '<b>A new adventure.</b>',
+        images: { jpg: { image_url: 'https://cdn.example/1.jpg' } },
+      },
     ]),
     1,
   );
@@ -30,6 +34,8 @@ test('episode metadata preserves numbers and dates, sanitizes images and dedupli
     [1, 2],
   );
   assert.equal(result.items[0].image, 'https://cdn.example/1.jpg');
+  assert.equal(result.items[0].description, 'A new adventure.');
+  assert.equal(result.items[1].description, '');
   assert.equal(result.items[1].image, null);
 });
 test('latest lookup reads bounded final pages and excludes future episodes and planned totals', async () => {

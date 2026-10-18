@@ -24,7 +24,7 @@
 }
 .watch-cinema .watch-layout {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) clamp(270px, 19vw, 350px);
+  grid-template-columns: minmax(0, 1fr) clamp(290px, 21vw, 390px);
   gap: clamp(18px, 1.8vw, 36px);
   align-items: start;
 }
@@ -290,6 +290,8 @@
   font-size: 11px;
   font-variant-numeric: tabular-nums;
   color: rgb(var(--chrome-muted));
+  font-weight: 750;
+  letter-spacing: 0.04em;
 }
 .watch-cinema .watch-unit-list {
   overflow-y: auto;
@@ -346,12 +348,30 @@
 .watch-cinema .episode-list {
   display: flex;
   flex-direction: column;
-  gap: 7px;
+  gap: 8px;
+  scrollbar-gutter: stable;
 }
 .watch-cinema .episode-list button {
-  padding: 10px;
-  gap: 12px;
+  display: flex;
+  align-items: center;
+  padding: 7px;
+  gap: 10px;
   flex-shrink: 0;
+  min-height: 82px;
+  text-align: left;
+  border-radius: 11px;
+  background: transparent;
+  color: rgb(var(--chrome-text));
+}
+.watch-cinema .episode-list button.active {
+  background: rgb(var(--chrome-soft) / 0.055);
+  color: rgb(var(--chrome-text));
+  border-color: rgb(var(--chrome-soft) / 0.25);
+  box-shadow: inset 2px 0 0 rgb(var(--chrome-soft) / 0.65);
+}
+.watch-cinema .episode-list button:hover {
+  background: rgb(var(--chrome-soft) / 0.09);
+  border-color: rgb(var(--chrome-soft) / 0.2);
 }
 .watch-cinema .episode-list .episode-number {
   display: grid;
@@ -366,17 +386,132 @@
   display: flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 4px;
+  gap: 5px;
+  flex: 1;
   width: auto;
   min-width: 0;
   color: inherit;
 }
 .episode-copy strong {
   font-size: 12px;
+  line-height: 1.35;
+  width: 100%;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  overflow: hidden;
 }
 .episode-copy small {
   font-size: 10px;
-  opacity: 0.7;
+  line-height: 1.45;
+  color: rgb(var(--chrome-muted));
+  width: 100%;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
+.watch-cinema .episode-list .watch-episode-art {
+  position: relative;
+  display: block;
+  width: clamp(88px, 7.5vw, 112px);
+  flex-shrink: 0;
+  aspect-ratio: 16 / 10;
+  border-radius: 8px;
+  overflow: hidden;
+  background: rgb(var(--chrome-raised));
+  height: auto;
+}
+.watch-episode-art > img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform 180ms ease;
+}
+.watch-episode-art::after {
+  content: '';
+  position: absolute;
+  inset: 30% 0 0;
+  background: linear-gradient(transparent, #0009);
+  pointer-events: none;
+}
+.watch-episode-badge {
+  position: absolute;
+  bottom: 5px;
+  left: 5px;
+  z-index: 1;
+  padding: 4px 5px;
+  border-radius: 4px;
+  background: #161a22de;
+  color: #fff;
+  font-size: 9px;
+  font-weight: 800;
+  line-height: 1;
+}
+.watch-episode-art-label {
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  z-index: 1;
+  color: #fff;
+  background: #161a22d9;
+  padding: 2px 4px;
+  border-radius: 3px;
+  font-size: 7px;
+}
+.watch-episode-play {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: #0003;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+.episode-list button:is(:hover, :focus-visible) .watch-episode-play {
+  opacity: 1;
+}
+.episode-list button:is(:hover, :focus-visible) .watch-episode-art > img {
+  transform: scale(1.04);
+}
+.watch-episode-meta,
+.watch-episode-meta > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.watch-episode-meta {
+  flex-wrap: wrap;
+  gap: 7px;
+  color: rgb(var(--chrome-muted));
+  font-size: 8px;
+  line-height: 1.4;
+}
+.watch-episode-language {
+  font-size: 8px;
+  font-weight: 750;
+  padding: 2px 4px;
+  border-radius: 3px;
+  background: rgb(var(--chrome-soft) / 0.08);
+}
+.watch-episode-current {
+  color: rgb(var(--chrome-text));
+}
+.watch-episode-note {
+  font-size: 10px;
+  line-height: 1.5;
+  color: rgb(var(--chrome-muted));
+  margin: 0 0 8px;
+}
+.watch-episode-note button {
+  color: rgb(var(--chrome-text));
+  background: transparent;
+  text-decoration: underline;
+}
+.episode-detail-loading {
+  opacity: 0.6;
 }
 .episode-list .episode-state {
   margin-left: auto;

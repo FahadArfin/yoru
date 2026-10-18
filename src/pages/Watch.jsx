@@ -35,6 +35,7 @@ import { setWatchPage } from '../webmcp-state';
 import '../watch.css';
 import WatchDetails from '../WatchDetails';
 import AnimeCast from '../AnimeCast';
+import WatchEpisodePreview from '../WatchEpisodePreview';
 const readSource = (key) => {
   try {
     return JSON.parse(localStorage.getItem(key)) || null;
@@ -123,6 +124,14 @@ export default function Watch() {
     false,
   );
   const total = anime ? media?.episodes : media?.chapters;
+  const episodeDetails = useResource(
+    anime && episodeView === 'list'
+      ? `/api/media/${id}/episodes?page=${Math.floor(episodeGroup / 2) + 1}`
+      : null,
+  );
+  const episodeByNumber = new Map(
+    (episodeDetails.data?.items || []).map((item) => [item.number, item]),
+  );
   const sources = useMemo(() => {
     if (!media) return [];
     const result = [];
@@ -460,8 +469,11 @@ export default function Watch() {
               <ChevronLeft size={16} />
             </button>
             <span>
-              {episodeGroup * 50 + 1} –{' '}
-              {Math.min((episodeGroup + 1) * 50, total || (episodeGroup + 1) * 50)}
+              {String(episodeGroup * 50 + 1).padStart(3, '0')} –{' '}
+              {String(Math.min((episodeGroup + 1) * 50, total || (episodeGroup + 1) * 50)).padStart(
+                3,
+                '0',
+              )}
             </span>
             <button
               aria-label="Next episode group"
@@ -471,7 +483,15 @@ export default function Watch() {
               <ChevronRight size={16} />
             </button>
           </div>
-          <div className={`watch-unit-list episode-${episodeView}`}>
+          {anime &&
+            episodeView === 'list' &&
+            (episodeDetails.error || episodeDetails.data?.partial) && (
+              <p className="watch-episode-note" role="status">
+                Some episode details are unavailable.{' '}
+                <button onClick={episodeDetails.refresh}>Retry details</button>
+              </p>
+            )}
+          <div key={`${id}:${episodeGroup}`} className={`watch-unit-list episode-${episodeView}`}>
             {Array.from({ length: Math.min(50, total || 50) }, (_, i) => episodeGroup * 50 + i + 1)
               .filter((number) => !total || number <= total)
               .map((number) => (
@@ -482,8 +502,21 @@ export default function Watch() {
                   key={number}
                   onClick={() => nextUnit(number)}
                 >
-                  <span className="episode-number">{String(number).padStart(2, '0')}</span>
-                  {episodeView === 'list' && (
+                  {episodeView === 'list' && anime ? (
+                    <WatchEpisodePreview
+                      key={`${id}:${number}`}
+                      media={media}
+                      episode={episodeByNumber.get(number)}
+                      number={number}
+                      active={number === unit}
+                      completed={number <= entry?.progress}
+                      language={language}
+                      loading={episodeDetails.loading}
+                    />
+                  ) : (
+                    <span className="episode-number">{String(number).padStart(2, '0')}</span>
+                  )}
+                  {episodeView === 'list' && !anime && (
                     <span className="episode-copy">
                       <strong>
                         {anime ? 'Episode' : 'Chapter'} {number}
@@ -497,11 +530,12 @@ export default function Watch() {
                       </small>
                     </span>
                   )}
-                  {number === unit ? (
-                    <Play className="episode-state" size={12} fill="currentColor" />
-                  ) : number <= entry?.progress ? (
-                    <Check className="episode-state" size={13} />
-                  ) : null}
+                  {(episodeView !== 'list' || !anime) &&
+                    (number === unit ? (
+                      <Play className="episode-state" size={12} fill="currentColor" />
+                    ) : number <= entry?.progress ? (
+                      <Check className="episode-state" size={13} />
+                    ) : null)}
                 </button>
               ))}
           </div>

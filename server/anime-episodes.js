@@ -28,6 +28,7 @@ export function normalizeEpisodes(data, page) {
             {
               number: episode,
               title: text(raw.title) || `Episode ${episode}`,
+              description: text(raw.synopsis),
               aired: Number.isFinite(Date.parse(raw.aired))
                 ? new Date(raw.aired).toISOString()
                 : null,
@@ -71,7 +72,7 @@ export async function getAnimeEpisodes(id, input = {}, options = {}) {
   const total = number(media.episodes);
   let partial = false;
   async function getPage(index) {
-    const key = `anime-episodes:v1:${match[1]}:${index}`;
+    const key = `anime-episodes:v2:${match[1]}:${index}`;
     const cached = await load(key).catch(() => null);
     if (cached?.value && now - cached.fetchedAt < 20 * 60000) return cached.value;
     if (!offline && (await claim(key, now).catch(() => false))) {
