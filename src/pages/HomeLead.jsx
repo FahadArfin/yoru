@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HomeSidebar, { HomeAiringSchedule } from './HomeSidebar';
 import HomeDiscovery from './HomeDiscovery';
+import ContinueWatching from './ContinueWatching';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Flame, Play, Plus } from 'lucide-react';
 import { useApp, useResource } from '../state';
@@ -164,6 +165,7 @@ export default function HomeLead({ children }) {
       <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">
           <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
+          <ContinueWatching />
           <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
           {children}
         </div>

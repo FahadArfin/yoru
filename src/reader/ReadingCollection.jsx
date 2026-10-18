@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ArrowRight, BookOpen, Plus } from 'lucide-react';
 import { Button, ErrorNotice, Loading } from '../components';
+import { useApp } from '../state';
+import { kindOf, titleOf } from '../api';
 import { useChapters, useReadingState } from './hooks';
 import { readerLink } from './model';
 import { READER_EVENT, readingHistory, saveReadingState } from './storage';
@@ -68,6 +70,7 @@ export function ChapterCollection({ media }) {
   );
 }
 export function ContinueReading({ category }) {
+  const { library } = useApp();
   const [items, setItems] = useState(() => readingHistory(category.toUpperCase()));
   useEffect(() => {
     const update = () => setItems(readingHistory(category.toUpperCase()));
@@ -79,7 +82,33 @@ export function ContinueReading({ category }) {
       window.removeEventListener('storage', update);
     };
   }, [category]);
-  if (!items.length) return null;
+  const local = items.map((item) => ({
+    ...item,
+    page: item.chapters[item.lastChapter].page,
+    href: readerLink(
+      item.mediaId,
+      { id: item.lastChapter, number: item.number },
+      item.chapters[item.lastChapter].page,
+    ),
+  }));
+  const saved = library
+    .filter(
+      (entry) =>
+        entry.media &&
+        kindOf(entry.media).toLowerCase() === category &&
+        ['reading', 'current'].includes(entry.status) &&
+        entry.progress > 0 &&
+        !items.some((item) => item.mediaId === entry.mediaId),
+    )
+    .slice(0, 3)
+    .map((entry) => ({
+      mediaId: entry.mediaId,
+      title: titleOf(entry.media),
+      cover: entry.media.cover,
+      number: entry.progress,
+      href: `/read/${entry.mediaId}/${Math.max(1, entry.progress)}`,
+    }));
+  if (!local.length && !saved.length) return null;
   return (
     <section className="continue-reading" aria-label="Continue reading">
       <div className="section-heading">
@@ -87,26 +116,18 @@ export function ContinueReading({ category }) {
           <span className="eyebrow">RIGHT WHERE YOU LEFT OFF</span>
           <h2>Continue reading</h2>
         </div>
-        <span className="muted">On this device</span>
+        <span className="muted">{saved.length ? 'Your reading progress' : 'On this device'}</span>
       </div>
       <div className="continue-reading-rail">
-        {items.map((item) => {
-          const position = item.chapters[item.lastChapter];
+        {[...local, ...saved].map((item) => {
           return (
-            <Link
-              key={item.mediaId}
-              to={readerLink(
-                item.mediaId,
-                { id: item.lastChapter, number: item.number },
-                position.page,
-              )}
-              className="continue-reading-card"
-            >
+            <Link key={item.mediaId} to={item.href} className="continue-reading-card">
               <img src={item.cover || '/icon.svg'} alt="" loading="lazy" />
               <div>
                 <strong>{item.title}</strong>
                 <span>
-                  Chapter {item.number} · Page {position.page}
+                  Chapter {item.number}
+                  {item.page ? ` · Page ${item.page}` : ' · Pick it back up'}
                 </span>
                 <small>
                   <BookOpen size={12} />

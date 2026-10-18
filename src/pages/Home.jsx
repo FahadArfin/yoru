@@ -2,8 +2,8 @@ import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import HomeLead from './HomeLead';
 import { Link, useSearchParams } from 'react-router-dom';
 import { ArrowRight, BookOpen, Play, Sparkles } from 'lucide-react';
-import { useApp, useResource } from '../state';
-import { bannerOf, isAnime, itemsOf, kindOf, titleOf } from '../api';
+import { useResource } from '../state';
+import { itemsOf } from '../api';
 import { ErrorNotice, Loading, Poster, Section } from '../components';
 import '../home-category.css';
 
@@ -27,45 +27,8 @@ function savedCategory() {
 
 function HomeCollection({ category }) {
   const current = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
-  const { library } = useApp();
-  const inProgress = library.filter(
-    (item) =>
-      item.media &&
-      kindOf(item.media).toLowerCase() === category &&
-      ['watching', 'reading', 'current'].includes(item.status) &&
-      item.progress > 0,
-  );
   return (
     <div className="home-secondary">
-      {inProgress.length > 0 && (
-        <Section
-          eyebrow="RIGHT WHERE YOU LEFT OFF"
-          title={category === 'anime' ? 'One more episode.' : 'One more chapter.'}
-          href="/library"
-        >
-          <div className="continue-grid">
-            {inProgress.slice(0, 3).map((entry) => (
-              <Link
-                key={entry.mediaId}
-                to={`/${isAnime(entry.media) ? 'watch' : 'read'}/${entry.mediaId}/${Math.max(1, entry.progress)}`}
-                className="continue-card"
-              >
-                <img src={bannerOf(entry.media)} alt="" />
-                <span className="continue-play">
-                  {isAnime(entry.media) ? <Play size={19} /> : <BookOpen size={19} />}
-                </span>
-                <div>
-                  <strong>{titleOf(entry.media)}</strong>
-                  <span>
-                    {isAnime(entry.media) ? 'Episode' : 'Chapter'} {entry.progress} · Pick it back
-                    up
-                  </span>
-                </div>
-              </Link>
-            ))}
-          </div>
-        </Section>
-      )}
       <div className="home-columns">
         <div className="home-primary">
           <Section
