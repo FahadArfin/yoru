@@ -82,7 +82,7 @@ function AnimeSchedule({ picker }) {
   }
   const unavailable = data && data.state !== 'ready';
   const cards = (items) => (
-    <div className="schedule-list">
+    <div className="schedule-list" key={`${day}:${type}`}>
       {items.map((item) => (
         <a
           className="schedule-item"
@@ -91,6 +91,7 @@ function AnimeSchedule({ picker }) {
           target="_blank"
           rel="noopener noreferrer"
         >
+          <CoverImage media={item} alt="" className="schedule-artwork" aria-hidden="true" />
           <span className="schedule-time">
             {item.airingAt ? (
               <time dateTime={item.airingAt}>{timeLabel(item.airingAt)}</time>
@@ -191,7 +192,7 @@ function AnimeSchedule({ picker }) {
               onClick={() => setDay(date)}
             >
               <span>{dateLabel(date, { weekday: 'short' })}</span>
-              <strong>{dateLabel(date, { day: 'numeric' })}</strong>
+              <strong>{dateLabel(date, { month: 'short', day: 'numeric' })}</strong>
               <small>
                 {loading ||
                 error ||
