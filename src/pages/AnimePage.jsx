@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from '../collection-router';
 import Browse from './Browse';
 import HomeLead from './HomeLead';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';

@@ -1,7 +1,7 @@
 import { readerAtUnit } from '../shared/room-reader';
 import { rememberRoomInvite } from './room-invites';
 import React, { useEffect, useRef, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate } from './collection-router';
 import { ArrowRight, Users } from 'lucide-react';
 import { coverOf, isAnime, itemsOf, send, titleOf } from './api';
 import { useApp, useResource } from './state';

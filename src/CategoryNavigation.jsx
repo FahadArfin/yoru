@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from './collection-router';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
 import { browseGenres } from './pages/GenreCollections';
 import './category-navigation.css';

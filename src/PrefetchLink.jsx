@@ -1,5 +1,5 @@
 import React, { useEffect, useRef } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from './collection-router';
 import { cachedApi } from './api';
 import { useApp } from './state';
 import { canPreload, coverCandidates, warmImage } from './image-loading';

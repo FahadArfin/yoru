@@ -1,5 +1,5 @@
 import React, { useRef } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from '../collection-router';
 import {
   ArrowRight,
   BookCheck,
@@ -20,6 +20,7 @@ import HomeDiscovery from './HomeDiscovery';
 import LiveComments from './LiveComments';
 import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import '../manga.css';
+import { useCollection } from '../collection-context';
 
 function MangaRow({ media }) {
   return (
@@ -43,6 +44,7 @@ function MangaRow({ media }) {
 }
 
 export function MangaLanding({ category, label, homepage = false, children, categoryControls }) {
+  const scope = useCollection();
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
   const previousPopular = useRef({ category, items: [] });
@@ -107,9 +109,11 @@ export function MangaLanding({ category, label, homepage = false, children, cate
               </h2>
             </div>
             <p className="rail-note">
-              {popular.data?.items?.length
-                ? 'Popular with Kitsu readers'
-                : 'From the Yoru collection'}
+              {scope?.active
+                ? 'From the Ara Ara collection'
+                : popular.data?.items?.length
+                  ? 'Popular with Kitsu readers'
+                  : 'From the Yoru collection'}
             </p>
             {picks.slice(0, 4).map((media) => (
               <MangaRow key={media.id} media={media} />

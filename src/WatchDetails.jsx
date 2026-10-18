@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from './collection-router';
 import { titleOf, plainText, scoreOf } from './api';
 import CoverImage from './CoverImage';
 

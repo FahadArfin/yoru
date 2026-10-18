@@ -1,7 +1,7 @@
 import { roomInvite } from '../room-invites';
 import { CreateRoom } from '../RoomLauncher';
 import React, { useEffect, useState } from 'react';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from '../collection-router';
 import { ArrowRight, BookOpen, Play, Plus, Radio, Users } from 'lucide-react';
 import { bannerOf, itemsOf, titleOf } from '../api';
 import { useApp, useResource } from '../state';

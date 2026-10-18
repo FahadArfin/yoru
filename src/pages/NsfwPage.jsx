@@ -1,49 +1,49 @@
-import { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, LockKeyhole, ShieldCheck } from 'lucide-react';
-import AraContent from './AraContent';
-import { nsfwCategories, confirmationKey } from '../nsfw';
-
+import React, { lazy, Suspense, useEffect } from 'react';
+import { Link, Route, Routes, useParams, useLocation } from 'react-router-dom';
+import { ArrowUpRight, LockKeyhole } from 'lucide-react';
+import { confirmationKey } from '../nsfw';
+import { useCollection } from '../collection-context';
+import { Empty, Loading, ErrorNotice } from '../components';
+import Home from './Home';
+import Browse from './Browse';
+import AnimePage from './AnimePage';
+import MangaPage from './MangaPage';
+import SpaceLayout from '../SpaceLayout';
+const Title = lazy(() => import('./Title'));
+const Watch = lazy(() => import('./Watch'));
+const WatchLatest = lazy(() => import('./WatchLatest'));
+const Reader = lazy(() => import('../reader/Reader'));
+const Schedule = lazy(() => import('./Schedule'));
+const Community = lazy(() => import('./Community'));
+const CommunityThread = lazy(() => import('./CommunityThread'));
+const Library = lazy(() => import('./Library'));
+const Rooms = lazy(() => import('./Rooms'));
+const Room = lazy(() => import('./Room'));
+const Settings = lazy(() => import('./Settings'));
+function ReviewedTitle({ children }) {
+  const { id } = useParams();
+  const scope = useCollection();
+  return scope.catalog?.items?.some((item) => item.id === id) ? (
+    children
+  ) : (
+    <Empty title="Title not in this collection">
+      <Link to="/ara-ara">Explore Ara Ara</Link>
+    </Empty>
+  );
+}
 export default function NsfwPage() {
-  const { category, id } = useParams();
-  const navigate = useNavigate();
-  const heading = useRef(null);
-  const [confirmed, setConfirmed] = useState(() => {
-    try {
-      return sessionStorage.getItem(confirmationKey) === '1';
-    } catch {
-      return false;
-    }
-  });
+  const scope = useCollection();
+  const { pathname } = useLocation();
   useEffect(() => {
-    if (confirmed) heading.current?.focus();
-  }, [confirmed]);
-  const selected = nsfwCategories.find((item) => item.id === category);
+    if (scope.confirmed) document.getElementById('main-content')?.focus({ preventScroll: true });
+  }, [scope.confirmed]);
   const confirm = () => {
     try {
       sessionStorage.setItem(confirmationKey, '1');
     } catch {}
-    setConfirmed(true);
+    window.dispatchEvent(new CustomEvent('ara-confirmation', { detail: { confirmed: true } }));
   };
-  const leave = () => {
-    try {
-      sessionStorage.removeItem(confirmationKey);
-    } catch {}
-    setConfirmed(false);
-    navigate('/');
-  };
-
-  if (category && !selected && !['schedule', 'community'].includes(category))
-    return (
-      <section className="nsfw-page nsfw-gate">
-        <h1>Collection not found</h1>
-        <Link className="btn btn-primary" to="/ara-ara">
-          Back to collections
-        </Link>
-      </section>
-    );
-
-  if (!confirmed)
+  if (!scope.confirmed)
     return (
       <section className="nsfw-page nsfw-gate" aria-labelledby="nsfw-gate-title">
         <span className="nsfw-gate-symbol" aria-hidden="true">
@@ -67,25 +67,94 @@ export default function NsfwPage() {
       </section>
     );
 
+  if (scope.loading) return <Loading cards />;
+  if (scope.error) return <ErrorNotice message={scope.error} retry={scope.refresh} />;
   return (
-    <section className="nsfw-page" aria-labelledby="nsfw-title">
-      <header className="nsfw-page-heading">
-        <div>
-          <span className="nsfw-eyebrow">A separate space · 18+</span>
-          <h1 id="nsfw-title" ref={heading} tabIndex={-1}>
-            Ara Ara
-          </h1>
-          <p>Mature stories. Darker worlds. Anime, manga and manhwa, curated for adults.</p>
-        </div>
-        <button className="nsfw-leave" onClick={leave}>
-          <ArrowLeft size={15} /> Leave this section
-        </button>
-      </header>
-      <AraContent key={category || id || 'discover'} category={category} id={id} />
-      <p className="nsfw-session-note">
-        <ShieldCheck size={14} aria-hidden="true" />
-        Confirmation lasts for this tab’s session. Leave this section to reset it.
-      </p>
-    </section>
+    <Suspense fallback={<Loading />}>
+      <Routes>
+        <Route index element={<Home />} />
+        <Route path="anime" element={<AnimePage />} />
+        <Route path="manga" element={<MangaPage />} />
+        <Route path="manhwa" element={<MangaPage category="manhwa" />} />
+        <Route path="all" element={<Browse categoryOverride="all" />} />
+        <Route
+          path="title/:id"
+          element={
+            <ReviewedTitle>
+              <Title />
+            </ReviewedTitle>
+          }
+        />
+        <Route
+          path="watch/:id/latest"
+          element={
+            <ReviewedTitle>
+              <WatchLatest />
+            </ReviewedTitle>
+          }
+        />
+        <Route
+          path="watch/:id/:unit"
+          element={
+            <ReviewedTitle>
+              <Watch />
+            </ReviewedTitle>
+          }
+        />
+        <Route
+          path="read/:id/:unit"
+          element={
+            <ReviewedTitle>
+              <Reader />
+            </ReviewedTitle>
+          }
+        />
+        <Route path="schedule" element={<Schedule />} />
+        <Route
+          path="community"
+          element={
+            <SpaceLayout>
+              <Community />
+            </SpaceLayout>
+          }
+        />
+        <Route
+          path="community/:id/:unit"
+          element={
+            <ReviewedTitle>
+              <SpaceLayout>
+                <CommunityThread />
+              </SpaceLayout>
+            </ReviewedTitle>
+          }
+        />
+        <Route
+          path="library"
+          element={
+            <SpaceLayout>
+              <Library />
+            </SpaceLayout>
+          }
+        />
+        <Route
+          path="rooms"
+          element={
+            <SpaceLayout>
+              <Rooms />
+            </SpaceLayout>
+          }
+        />
+        <Route path="rooms/:id" element={<Room />} />
+        <Route path="settings" element={<Settings key={pathname} />} />
+        <Route
+          path="*"
+          element={
+            <Empty title="Collection not found">
+              <Link to="/ara-ara">Explore Ara Ara</Link>
+            </Empty>
+          }
+        />
+      </Routes>
+    </Suspense>
   );
 }

@@ -259,10 +259,6 @@
     width: calc(100% - 32px);
   }
 }
-.ara-shell .topbar > .btn,
-.ara-shell .topbar > .header-avatar {
-  margin-left: auto;
-}
 .ara-feature {
   position: relative;
   min-height: 290px;

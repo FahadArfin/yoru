@@ -213,6 +213,34 @@ test('homepage resumes anime, manga and manhwa together below every category ban
       },
     }),
   );
+  await page.route('**/api/resume', (route) =>
+    route.fulfill({
+      json: {
+        items: [
+          {
+            mediaId: 'mal-manga-2',
+            category: 'MANGA',
+            title: 'Saved manga',
+            cover: '/icon.svg',
+            number: 7,
+            chapterId: 'saved-chapter-2',
+            page: 9,
+            updatedAt: Date.now(),
+          },
+          {
+            mediaId: 'mal-manga-3',
+            category: 'MANHWA',
+            title: 'Saved manhwa',
+            cover: '/icon.svg',
+            number: 7,
+            chapterId: 'saved-chapter-3',
+            page: 9,
+            updatedAt: Date.now(),
+          },
+        ],
+      },
+    }),
+  );
   await context.addInitScript(() => {
     for (const [id, category, title] of [
       [2, 'MANGA', 'Saved manga'],

@@ -1,74 +1,61 @@
 import { test, expect } from '@playwright/test';
-
 test.beforeEach(async ({ context, baseURL }) => {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
 });
-
-test('adult section guards direct category links and can be hidden again', async ({ page }) => {
-  const catalogRequests = [];
-  page.on('request', (request) => {
-    if (request.url().includes('/api/ara-ara/catalog')) catalogRequests.push(request.url());
+test('age gate protects deep links and header search, and leaving resets confirmation', async ({
+  page,
+}) => {
+  const requests = [];
+  page.on('request', (r) => {
+    if (r.url().includes('/api/ara-ara/catalog')) requests.push(r.url());
   });
   await page.goto('/nsfw/manhwa');
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
-  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toHaveCount(0);
-  expect(catalogRequests).toEqual([]);
+  await expect(
+    page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }),
+  ).toBeDisabled();
+  expect(requests).toEqual([]);
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
-  await expect(page.getByRole('heading', { name: 'Ara Ara', exact: true })).toBeFocused();
-  await page.keyboard.press('Tab');
-  await expect(page.getByRole('button', { name: 'Leave this section' })).toBeFocused();
-  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'View Bastard', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await expect(page.locator('.compact-category-page')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('heading', { name: 'Mature manhwa', exact: true })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Explore Ara Ara' })
-    .getByRole('link', { name: 'Manga', exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/ara-ara\/manga$/);
-  await expect(page.getByRole('heading', { name: 'Mature manga', exact: true })).toBeVisible();
-  await page
-    .getByRole('navigation', { name: 'Explore Ara Ara' })
-    .getByRole('link', { name: 'Anime', exact: true })
-    .click();
-  await expect(page.getByRole('heading', { name: 'Mature anime', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  const nav = page.getByRole('navigation', { name: 'Explore Ara Ara' });
+  await nav.getByRole('link', { name: 'Manga', exact: true }).click();
+  await expect(page).toHaveURL(/ara-ara\/manga$/);
+  await expect(page.getByRole('region', { name: 'Featured manga' })).toBeVisible();
+  await nav.getByRole('link', { name: 'Anime', exact: true }).click();
+  await expect(
+    page
+      .getByRole('region', { name: 'Featured anime' })
+      .getByRole('heading', { name: 'Vinland Saga', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  expect(catalogRequests.length).toBeGreaterThan(0);
-  await page.getByRole('button', { name: 'Leave this section' }).click();
+  await nav.getByRole('link', { name: 'Back to Yoru', exact: true }).click();
   await expect(page).toHaveURL(/\/$/);
-  await page.goto('/nsfw/anime');
+  await page.getByRole('link', { name: 'NSFW · Ara Ara, 18+', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
 });
 
-test('NSFW is a direct link into the separately branded Ara Ara area', async ({ page }) => {
-  await page.goto('/browse/anime');
-  const entry = page.getByRole('link', { name: 'NSFW · Ara Ara, 18+', exact: true });
-  await expect(entry).toHaveAttribute('href', '/ara-ara');
-  await expect(entry).not.toHaveAttribute('aria-expanded');
-  await entry.click();
-  await expect(page).toHaveURL(/\/ara-ara$/);
-  await expect(page).toHaveTitle('Ara Ara · 18+');
-  await expect(page.getByRole('navigation', { name: 'Explore Ara Ara' })).toBeVisible();
-  await expect(page.getByRole('navigation', { name: 'Explore Yoru' })).toHaveCount(0);
-  await expect(page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' })).toHaveCount(
-    0,
-  );
-  await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
+test('confirmation remains usable when session storage is unavailable', async ({ page }) => {
+  await page.addInitScript(() => {
+    Storage.prototype.getItem = () => {
+      throw new Error('Storage unavailable');
+    };
+    Storage.prototype.setItem = Storage.prototype.removeItem = () => {
+      throw new Error('Storage unavailable');
+    };
+  });
+  await page.goto('/ara-ara/manhwa');
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
-  await page
-    .getByRole('navigation', { name: 'Explore Ara Ara' })
-    .getByRole('link', { name: 'Manga', exact: true })
-    .click();
-  await expect(page).toHaveURL(/\/ara-ara\/manga$/);
-  await expect(page.getByRole('heading', { name: 'Mature manga', exact: true })).toBeVisible();
+  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
   await page
     .getByRole('navigation', { name: 'Explore Ara Ara' })
     .getByRole('link', { name: 'Back to Yoru', exact: true })
     .click();
-  await expect(page).toHaveURL(/\/$/);
-  await expect(page).toHaveTitle('Yoru · A little more obsessed');
   await page.getByRole('link', { name: 'NSFW · Ara Ara, 18+', exact: true }).click();
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();
 });

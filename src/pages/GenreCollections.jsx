@@ -1,10 +1,11 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../collection-router';
 import { ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import { itemsOf } from '../api';
 import { useResource } from '../state';
 import { Poster } from '../components';
 import './genre-collections.css';
+import { useCollection } from '../collection-context';
 
 export const browseGenres = [
   'Action',
@@ -166,10 +167,18 @@ function CollectionShelf({ category, genre = '', children }) {
 }
 
 export default function GenreCollections({ category, collectionControls }) {
+  const scope = useCollection();
+  const genres = scope?.active
+    ? browseGenres.filter((genre) =>
+        scope.catalog?.items.some(
+          (item) => item.category.toLowerCase() === category && item.genres?.includes(genre),
+        ),
+      )
+    : browseGenres;
   return (
     <div className="genre-collections" key={category}>
       <nav className="genre-jump-list" aria-label="Explore genres">
-        {browseGenres.map((genre) => (
+        {genres.map((genre) => (
           <a key={genre} href={`#${genreId(category, genre)}`}>
             {genre}
           </a>
@@ -178,7 +187,7 @@ export default function GenreCollections({ category, collectionControls }) {
           Full collection <ArrowRight size={12} />
         </a>
       </nav>
-      {browseGenres.map((genre) => (
+      {genres.map((genre) => (
         <CollectionShelf key={`${category}-${genre}`} category={category} genre={genre} />
       ))}
       <CollectionShelf key={`${category}-all`} category={category}>

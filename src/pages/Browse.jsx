@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { useNavigate, useParams, useSearchParams } from '../collection-router';
 import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-react';
 import { itemsOf } from '../api';
 import { useResource } from '../state';

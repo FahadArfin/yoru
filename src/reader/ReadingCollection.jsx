@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate } from '../collection-router';
 import { ArrowRight, BookOpen, Play, Plus } from 'lucide-react';
 import { Button, ErrorNotice, Loading } from '../components';
 import { useApp } from '../state';
@@ -11,6 +11,7 @@ import ChapterList from './ChapterList';
 import ReaderImport from './ReaderImport';
 import LiveChapters from './LiveChapters';
 import './reader.css';
+import { useCollection } from '../collection-context';
 
 export function ChapterCollection({ media }) {
   const data = useChapters(media.id);
@@ -70,6 +71,7 @@ export function ChapterCollection({ media }) {
   );
 }
 export function PickUpWhereLeftOff() {
+  const scope = useCollection();
   const { library, user, resumeItems } = useApp();
   const [items, setItems] = useState(() => [
     ...readingHistory('MANGA'),
@@ -137,6 +139,9 @@ export function PickUpWhereLeftOff() {
     ...local.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
     ...saved.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
   ]
+    .filter(
+      (item) => !scope?.active || scope.catalog?.items.some((media) => media.id === item.mediaId),
+    )
     .sort((a, b) => updatedAt(b) - updatedAt(a))
     .slice(0, 12);
   if (!progress.length) return null;

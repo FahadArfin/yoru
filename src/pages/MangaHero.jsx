@@ -11,6 +11,8 @@ import HeroArtwork from '../HeroArtwork';
 import { coverCandidates, warmImage } from '../image-loading';
 
 export default function MangaHero({ items, category, label, categoryControls }) {
+  const anime = category === 'anime';
+  const ContentIcon = anime ? Play : BookOpen;
   const [selected, setSelected] = useState(null);
   const { entryFor, updateEntry } = useApp();
   const picks = items.slice(0, 8);
@@ -62,7 +64,7 @@ export default function MangaHero({ items, category, label, categoryControls }) 
       <div className="weekly-shade" />
       <div className="weekly-content" key={hero?.id}>
         <span className="weekly-kicker">
-          <BookOpen size={16} /> THE {category.toUpperCase()} COLLECTION{' '}
+          <ContentIcon size={16} /> THE {category.toUpperCase()} COLLECTION{' '}
           <span className="weekly-line" />
         </span>
         <h1 className="sr-only">{label}</h1>
@@ -95,15 +97,23 @@ export default function MangaHero({ items, category, label, categoryControls }) 
             </p>
             <div className="weekly-actions">
               <PrefetchLink media={hero} className="weekly-watch" to={`/title/${hero.id}`}>
-                <BookOpen size={17} /> Explore {category}
+                <ContentIcon size={17} /> Explore {category}
               </PrefetchLink>
               <button
                 className="weekly-save"
-                aria-label={entryFor(hero) ? 'In your library' : 'Add to reading list'}
+                aria-label={
+                  entryFor(hero)
+                    ? 'In your library'
+                    : anime
+                      ? 'Add to watchlist'
+                      : 'Add to reading list'
+                }
                 onClick={() => updateEntry(hero, { status: entryFor(hero)?.status || 'planned' })}
               >
                 {entryFor(hero) ? <Check size={18} /> : <Plus size={18} />}
-                <span>{entryFor(hero) ? 'In your library' : 'Reading list'}</span>
+                <span>
+                  {entryFor(hero) ? 'In your library' : anime ? 'Watchlist' : 'Reading list'}
+                </span>
               </button>
             </div>
           </>
@@ -116,9 +126,11 @@ export default function MangaHero({ items, category, label, categoryControls }) 
       {categoryControls}
       {picks.length > 0 && (
         <div className="weekly-bottom">
-          <span className="weekly-caption">
-            Your next reading obsession <span> / </span> {label}
-          </span>
+          {!anime && (
+            <span className="weekly-caption">
+              Your next reading obsession <span> / </span> {label}
+            </span>
+          )}
           <div className="weekly-controls" aria-label={`Featured ${category} controls`}>
             {picks.length > 1 && !carousel.reduced && (
               <button

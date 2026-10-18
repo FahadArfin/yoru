@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, useParams } from 'react-router-dom';
+import { Link, useParams } from '../collection-router';
 import { ArrowLeft, BookOpen, Play } from 'lucide-react';
 import { isAnime, titleOf } from '../api';
 import { useResource } from '../state';

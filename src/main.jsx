@@ -1,4 +1,4 @@
-import React, { Suspense, lazy, useEffect, useRef } from 'react';
+import React, { Suspense, lazy, useEffect, useRef, useState, useMemo } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
   BrowserRouter,
@@ -10,18 +10,14 @@ import {
   useNavigate,
 } from 'react-router-dom';
 import { ArrowRight, Check, Settings } from 'lucide-react';
-import { AppProvider, useApp } from './state';
+import { AppProvider, useApp, useRawResource } from './state';
 import { AuthModal, Avatar, Loading } from './components';
 import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
-import {
-  NsfwButton,
-  AraAraBrand,
-  AraAraNavigation,
-  AraAraFooter,
-  LegacyNsfwRedirect,
-} from './nsfw';
+import { NsfwButton, AraAraBrand, AraAraNavigation, LegacyNsfwRedirect } from './nsfw';
+import { CollectionContext, useCollection } from './collection-context';
+import { confirmationKey } from './nsfw';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import SpaceLayout from './SpaceLayout';
@@ -56,6 +52,33 @@ function Brand() {
     </Link>
   );
 }
+function CollectionBoundary({ children }) {
+  const { pathname } = useLocation();
+  const active = /^\/ara-ara(?:\/|$)/.test(pathname);
+  const [sessionConfirmed, setSessionConfirmed] = useState(false);
+  useEffect(() => {
+    const update = (event) => setSessionConfirmed(Boolean(event.detail?.confirmed));
+    window.addEventListener('ara-confirmation', update);
+    return () => window.removeEventListener('ara-confirmation', update);
+  }, []);
+  let confirmed = sessionConfirmed;
+  try {
+    confirmed = sessionConfirmed || sessionStorage.getItem(confirmationKey) === '1';
+  } catch {}
+  const result = useRawResource(active && confirmed ? '/api/ara-ara/catalog' : null);
+  const scope = useMemo(
+    () => ({
+      active,
+      confirmed,
+      catalog: result.data,
+      loading: result.loading,
+      error: result.error,
+      refresh: result.refresh,
+    }),
+    [active, confirmed, result.data, result.loading, result.error, result.refresh],
+  );
+  return <CollectionContext.Provider value={scope}>{children}</CollectionContext.Provider>;
+}
 function Shell() {
   useTheme();
   const { user, setAuthOpen, visitors, toast, refreshLibrary } = useApp();
@@ -63,12 +86,13 @@ function Shell() {
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
   const location = useLocation();
-  const isHome = location.pathname === '/';
+  const scope = useCollection();
+  const isHome = location.pathname === '/' || location.pathname === '/ara-ara';
   const isAraAra = /^\/(ara-ara|nsfw)(\/|$)/.test(location.pathname);
   useEffect(() => {
     document.title = isAraAra ? 'Ara Ara · 18+' : 'Yoru · A little more obsessed';
   }, [isAraAra]);
-  const isReader = location.pathname.startsWith('/read/');
+  const isReader = /^\/(ara-ara\/)?read\//.test(location.pathname);
   const hasTopNavigation = !isReader;
   const input = useRef();
   useEffect(() => {
@@ -142,14 +166,22 @@ function Shell() {
             <span className="live-dot" />
             YOUR NEXT OBSESSION STARTS HERE
           </div>
-          {!isAraAra && <GlobalSearch inputRef={input} />}
-          <Link className="online-pill" to="/community">
+          <GlobalSearch
+            key={isAraAra ? 'ara' : 'yoru'}
+            inputRef={input}
+            collection={isAraAra ? scope : null}
+          />
+          <Link className="online-pill" to={isAraAra ? '/ara-ara/community' : '/community'}>
             <span className={`live-dot ${!visitors.connected ? 'muted-dot' : ''}`} />
             <strong>{visitors.connected ? visitors.data?.count || 0 : '—'}</strong>
             <span>online</span>
           </Link>
           {user ? (
-            <Link to="/library" className="header-avatar" aria-label="Your library">
+            <Link
+              to={isAraAra ? '/ara-ara/library' : '/library'}
+              className="header-avatar"
+              aria-label="Your library"
+            >
               <Avatar user={user} />
             </Link>
           ) : (
@@ -159,7 +191,7 @@ function Shell() {
             </button>
           )}
           <Link
-            to="/settings"
+            to={isAraAra ? '/ara-ara/settings' : '/settings'}
             className="icon-button header-settings"
             aria-label="Settings"
             title="Settings"
@@ -175,9 +207,7 @@ function Shell() {
               <Route path="/browse/manga" element={<MangaPage key="manga" />} />
               <Route path="/browse/manhwa" element={<MangaPage key="manhwa" category="manhwa" />} />
               <Route path="/browse/:category" element={<Browse />} />
-              <Route path="/ara-ara" element={<NsfwPage />} />
-              <Route path="/ara-ara/title/:id" element={<NsfwPage />} />
-              <Route path="/ara-ara/:category" element={<NsfwPage />} />
+              <Route path="/ara-ara/*" element={<NsfwPage />} />
               <Route path="/nsfw" element={<LegacyNsfwRedirect />} />
               <Route path="/nsfw/:category" element={<LegacyNsfwRedirect />} />
               <Route path="/title/:id" element={<Title />} />
@@ -208,7 +238,7 @@ function Shell() {
             </Routes>
           </Suspense>
         </main>
-        {isAraAra ? <AraAraFooter /> : <SiteFooter />}
+        <SiteFooter />
       </div>
       <AuthModal />
       {toast && (
@@ -245,7 +275,9 @@ createRoot(document.getElementById('root')).render(
     <ErrorBoundary>
       <BrowserRouter>
         <AppProvider>
-          <Shell />
+          <CollectionBoundary>
+            <Shell />
+          </CollectionBoundary>
         </AppProvider>
       </BrowserRouter>
     </ErrorBoundary>

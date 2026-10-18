@@ -17,9 +17,8 @@ import { localDateKey, shiftDate, weekStart, weekDays, airingLabel } from '../..
 const types = { raw: 'Broadcast', sub: 'English sub', dub: 'English dub' };
 export default function Schedule() {
   const [params, setParams] = useSearchParams();
-  const category = ['manga', 'manhwa'].includes(params.get('category'))
-    ? params.get('category')
-    : 'anime';
+  const requested = params.get('category') || params.get('format');
+  const category = ['manga', 'manhwa'].includes(requested) ? requested : 'anime';
   const picker = (
     <div className="schedule-categories" role="group" aria-label="Schedule category">
       {['anime', 'manga', 'manhwa'].map((value) => (
@@ -28,6 +27,7 @@ export default function Schedule() {
           aria-pressed={category === value}
           onClick={() => {
             const next = new URLSearchParams(params);
+            next.delete('format');
             if (value === 'anime') next.delete('category');
             else next.set('category', value);
             setParams(next);
