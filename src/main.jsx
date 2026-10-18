@@ -16,7 +16,6 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { NsfwMenu } from './nsfw';
-import CategoryNavigation from './CategoryNavigation';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import SpaceLayout from './SpaceLayout';
@@ -59,7 +58,6 @@ function Shell() {
   const location = useLocation();
   const isHome = location.pathname === '/';
   const isReader = location.pathname.startsWith('/read/');
-  const browseCategory = location.pathname.match(/^\/browse\/(manga|manhwa)\/?$/)?.[1];
   const hasTopNavigation = !isReader;
   const input = useRef();
   useEffect(() => {
@@ -99,7 +97,7 @@ function Shell() {
         Skip to content
       </a>
       <div className="app-main">
-        <header className={`topbar${browseCategory ? ' has-category-navigation' : ''}`}>
+        <header className="topbar">
           {hasTopNavigation && (
             <>
               <Brand />
@@ -153,7 +151,6 @@ function Shell() {
           >
             <Settings size={19} />
           </Link>
-          {browseCategory && <CategoryNavigation key={browseCategory} category={browseCategory} />}
         </header>
         <main id="main-content" tabIndex={-1}>
           <Suspense fallback={<Loading />}>
