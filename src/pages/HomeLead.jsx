@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import HomeSidebar from './HomeSidebar';
+import HomeSidebar, { HomeAiringSchedule } from './HomeSidebar';
 import HomeDiscovery from './HomeDiscovery';
 import { Link } from 'react-router-dom';
 import { ArrowRight, Check, ChevronLeft, ChevronRight, Flame, Play, Plus } from 'lucide-react';
@@ -164,10 +164,11 @@ export default function HomeLead({ children }) {
       <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">
           <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
+          <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
           {children}
         </div>
         <div className="home-lower-highlights">
-          <HomeSidebar popular={popular} language={language === 'dub' ? 'dub' : 'sub'} />
+          <HomeSidebar popular={popular} />
         </div>
       </div>
     </>
