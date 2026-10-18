@@ -1,9 +1,10 @@
 import React, { lazy, Suspense, useEffect, useRef, useState } from 'react';
 import HomeLead from './HomeLead';
-import { Link, useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from '../collection-router';
 import { ArrowRight, BookOpen, Play, Sparkles, Swords, Heart, MoonStar } from 'lucide-react';
 import { Loading } from '../components';
 import '../home-category.css';
+import { useCollection } from '../collection-context';
 
 const ReadingHome = lazy(() =>
   import('./MangaPage').then((module) => ({ default: module.MangaLanding })),
@@ -14,9 +15,9 @@ const categories = [
   { value: 'manhwa', label: 'Manhwa', icon: Sparkles },
 ];
 const validCategory = (value) => categories.some((item) => item.value === value);
-function savedCategory() {
+function savedCategory(key) {
   try {
-    const value = localStorage.getItem('yoru:home-category');
+    const value = localStorage.getItem(key);
     return validCategory(value) ? value : 'anime';
   } catch {
     return 'anime';
@@ -96,7 +97,8 @@ function HomeCollection({ category }) {
 
 export default function Home() {
   const [params, setParams] = useSearchParams();
-  const [saved] = useState(savedCategory);
+  const key = useCollection()?.active ? 'ara-ara:home-category' : 'yoru:home-category';
+  const [saved] = useState(() => savedCategory(key));
   const requested = params.get('category');
   const category = validCategory(requested) ? requested : saved;
   const selected = categories.find((item) => item.value === category);
@@ -104,7 +106,7 @@ export default function Home() {
   const restoreFocus = useRef(null);
   useEffect(() => {
     try {
-      localStorage.setItem('yoru:home-category', category);
+      localStorage.setItem(key, category);
     } catch {}
   }, [category]);
   const select = (value) => {

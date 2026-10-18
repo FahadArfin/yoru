@@ -3,7 +3,7 @@ import { HomeAiringSchedule } from './HomeSidebar';
 import HomeDiscovery from './HomeDiscovery';
 import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import LiveComments from './LiveComments';
-import { Link } from 'react-router-dom';
+import { Link } from '../collection-router';
 import {
   ArrowRight,
   Check,
@@ -19,8 +19,10 @@ import { titleOf } from '../api';
 import { useBannerArtwork } from '../useBannerArtwork';
 import { useHeroCarousel } from '../useHeroCarousel';
 import HeroArtwork from '../HeroArtwork';
+import { useCollection } from '../collection-context';
+import MangaHero from './MangaHero';
 
-export default function HomeLead({ children, heroOnly = false, categoryControls }) {
+function AnimeHomeLead({ children, heroOnly = false, categoryControls }) {
   const [language, setLanguage] = useState('sub');
   const home = useResource(`/api/home?language=${language}`);
   const [failedLogo, setFailedLogo] = useState(null);
@@ -104,7 +106,7 @@ export default function HomeLead({ children, heroOnly = false, categoryControls 
               <div className="weekly-meta">
                 <span>{hero.format}</span>
                 {hero.year && <span>{hero.year}</span>}
-                <span className="weekly-airing">Airing now</span>
+                <span className="weekly-airing">{hero.status || 'Airing now'}</span>
                 <span className="weekly-genres">{hero.genres?.slice(0, 2).join(' · ')}</span>
               </div>
               <div className="weekly-actions">
@@ -181,20 +183,47 @@ export default function HomeLead({ children, heroOnly = false, categoryControls 
         )}
       </section>
       {!heroOnly && (
-        <>
-          <div className="home-resume home-width">
-            <PickUpWhereLeftOff />
-          </div>
-          <div className="home-content-layout home-width home-discovery-layout">
-            <div className="home-release-column">
-              <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
-              <LiveComments />
-              <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
-              {children}
-            </div>
-          </div>
-        </>
+        <HomeLeadBody home={home} language={language} setLanguage={setLanguage}>
+          {children}
+        </HomeLeadBody>
       )}
     </>
   );
+}
+
+function HomeLeadBody({ home, language, setLanguage, children }) {
+  return (
+    <>
+      <div className="home-resume home-width">
+        <PickUpWhereLeftOff />
+      </div>
+      <div className="home-content-layout home-width home-discovery-layout">
+        <div className="home-release-column">
+          <HomeDiscovery home={home} language={language} onLanguage={setLanguage} />
+          <LiveComments />
+          <HomeAiringSchedule language={language === 'dub' ? 'dub' : 'sub'} />
+          {children}
+        </div>
+      </div>
+    </>
+  );
+}
+function AraAnimeLead({ children, heroOnly, categoryControls }) {
+  const scope = useCollection();
+  const [language, setLanguage] = useState('sub');
+  const home = useResource(`/api/home?language=${language}`);
+  const items = scope.catalog?.items?.filter((item) => item.category === 'ANIME') || [];
+  return (
+    <>
+      <MangaHero items={items} category="anime" label="Anime" categoryControls={categoryControls} />
+      {!heroOnly && (
+        <HomeLeadBody home={home} language={language} setLanguage={setLanguage}>
+          {children}
+        </HomeLeadBody>
+      )}
+    </>
+  );
+}
+export default function HomeLead(props) {
+  return useCollection()?.active ? <AraAnimeLead {...props} /> : <AnimeHomeLead {...props} />;
 }

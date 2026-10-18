@@ -11,6 +11,7 @@ export function clearAdultConfirmation() {
   try {
     sessionStorage.removeItem(confirmationKey);
   } catch {}
+  window.dispatchEvent(new Event('ara-confirmation'));
 }
 export function NsfwButton() {
   return (
@@ -32,16 +33,13 @@ export function AraAraBrand() {
 export function AraAraNavigation() {
   return (
     <nav className="home-topnav" aria-label="Explore Ara Ara">
-      <NavLink to="/ara-ara" end>
-        Discover
-      </NavLink>
       {nsfwCategories.map(({ id, format }) => (
         <NavLink key={id} to={`/ara-ara/${id}`}>
           {format}
         </NavLink>
       ))}
       <NavLink to="/ara-ara/schedule">Schedule</NavLink>
-      <NavLink to="/ara-ara/community">Community</NavLink>
+      <NavLink to="/ara-ara/community">My Space</NavLink>
       <Link to="/" className="nsfw-menu-trigger" onClick={clearAdultConfirmation}>
         Back to Yoru
       </Link>

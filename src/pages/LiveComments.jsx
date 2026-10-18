@@ -1,20 +1,24 @@
 import React, { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../collection-router';
 import { ArrowRight, ArrowUp, MessageCircle, Pause, Play } from 'lucide-react';
 import { ago, api, isAnime, itemsOf, titleOf } from '../api';
 import { Avatar } from '../components';
 import { useApp } from '../state';
 import '../live-comments.css';
+import { useCollection } from '../collection-context';
 import { commentPreview } from '../../shared/comment-media';
 
 function useCommentFeed() {
+  const scoped = useCollection()?.active;
   const [feed, setFeed] = useState({ data: null, loading: true, error: '' });
   const request = useRef(null);
   const refresh = useCallback(() => {
     if (request.current) return;
     const controller = new AbortController();
     request.current = controller;
-    api('/api/community?type=comment', { signal: controller.signal })
+    api(`/api/community?type=comment${scoped ? '&collection=ara-ara' : ''}`, {
+      signal: controller.signal,
+    })
       .then((data) => {
         if (!controller.signal.aborted) setFeed({ data, loading: false, error: '' });
       })
@@ -25,7 +29,7 @@ function useCommentFeed() {
       .finally(() => {
         if (request.current === controller) request.current = null;
       });
-  }, []);
+  }, [scoped]);
   useEffect(() => {
     refresh();
     return () => {

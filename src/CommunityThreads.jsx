@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from './collection-router';
 import { ArrowRight, BookOpen, MessageCircle, Play } from 'lucide-react';
 import { ago, itemsOf, titleOf } from './api';
 import { useApp, useResource } from './state';

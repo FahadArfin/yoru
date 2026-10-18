@@ -1,9 +1,9 @@
 import React, { useLayoutEffect, useRef } from 'react';
-import { NavLink, Outlet, useLocation } from 'react-router-dom';
+import { NavLink, Outlet, useLocation } from './collection-router';
 import { Library, MessageCircle, Users } from 'lucide-react';
 import './space.css';
 
-export default function SpaceLayout() {
+export default function SpaceLayout({ children }) {
   const hub = useRef(null);
   const { pathname } = useLocation();
   useLayoutEffect(() => {
@@ -41,7 +41,7 @@ export default function SpaceLayout() {
           </NavLink>
         </nav>
       </div>
-      <Outlet />
+      {children || <Outlet />}
     </div>
   );
 }

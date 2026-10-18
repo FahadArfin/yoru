@@ -1,5 +1,5 @@
 import React, { useEffect, useId, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from './collection-router';
 import {
   Check,
   ChevronDown,

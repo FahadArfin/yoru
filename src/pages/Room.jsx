@@ -4,7 +4,7 @@ import RoomInvite from '../RoomInvite';
 import { sourceForUnit } from '../room-source';
 import '../space.css';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams, useLocation } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams, useLocation } from '../collection-router';
 import {
   ArrowLeft,
   ArrowRight,

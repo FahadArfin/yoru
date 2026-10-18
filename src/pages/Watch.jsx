@@ -1,6 +1,6 @@
 import RoomLauncher from '../RoomLauncher';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { Link, useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useParams, useSearchParams } from '../collection-router';
 import {
   ArrowLeft,
   ArrowRight,

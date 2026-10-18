@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from './collection-router';
 import { Search, X, ArrowUpRight, LoaderCircle } from 'lucide-react';
 import { api, titleOf } from './api';
 import CoverImage from './CoverImage';
@@ -11,7 +11,7 @@ const filters = [
   ['manga', 'Manga'],
   ['manhwa', 'Manhwa'],
 ];
-export default function GlobalSearch({ inputRef }) {
+export default function GlobalSearch({ inputRef, collection }) {
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef();
@@ -28,7 +28,7 @@ export default function GlobalSearch({ inputRef }) {
   const key = `${category}:${term.toLowerCase()}`;
   const shown = result.key === key ? result : { items: [], loading: true };
   const expanded = open && term.length >= 2;
-  const allUrl = `/browse/${category}?q=${encodeURIComponent(term)}`;
+  const allUrl = `${collection ? '/ara-ara' : '/browse'}/${category}?q=${encodeURIComponent(term)}`;
   const showSuggestions = () => {
     // Ignore a queued scroll event from bringing the search field into view.
     openedAt.current = { x: window.scrollX, y: window.scrollY };
@@ -73,7 +73,7 @@ export default function GlobalSearch({ inputRef }) {
     };
   }, [expanded]);
   useEffect(() => {
-    if (!expanded) return;
+    if (!expanded || (collection && !collection.confirmed)) return;
     const controller = new AbortController();
     let timer;
     const saved = cached.current.get(key);
@@ -84,12 +84,21 @@ export default function GlobalSearch({ inputRef }) {
     setResult({ key, items: [], loading: true });
     const load = async (attempt = 0) => {
       try {
-        const data = await api(
-          `/api/search/suggestions?${new URLSearchParams({ q: term, category })}`,
-          {
-            signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
-          },
-        );
+        const data = collection
+          ? {
+              items: (collection.catalog?.items || [])
+                .filter(
+                  (item) =>
+                    (category === 'all' || item.category.toLowerCase() === category) &&
+                    [item.title, item.titleRomaji, item.titleJapanese].some((title) =>
+                      title?.toLowerCase().includes(term.toLowerCase()),
+                    ),
+                )
+                .slice(0, 12),
+            }
+          : await api(`/api/search/suggestions?${new URLSearchParams({ q: term, category })}`, {
+              signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+            });
         if (controller.signal.aborted) return;
         setResult({ key, ...data, loading: false, waiting: data.pending && attempt < 5 });
         if (data.pending && attempt < 5) timer = setTimeout(() => load(attempt + 1), 1800);
@@ -107,7 +116,7 @@ export default function GlobalSearch({ inputRef }) {
       controller.abort();
       clearTimeout(timer);
     };
-  }, [key, expanded, retry]);
+  }, [key, expanded, retry, collection?.confirmed, collection?.catalog]);
   useEffect(() => {
     const option = root.current?.querySelector(`#search-option-${active}`);
     const list = root.current?.querySelector('.search-results');
@@ -144,6 +153,7 @@ export default function GlobalSearch({ inputRef }) {
           expanded && active >= 0 && shown.items[active] ? `search-option-${active}` : undefined
         }
         aria-label="Search anime, manga, and manhwa"
+        disabled={Boolean(collection && (!collection.confirmed || !collection.catalog))}
         placeholder="Search your next obsession…"
         onFocus={showSuggestions}
         onClick={showSuggestions}

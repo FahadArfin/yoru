@@ -1,6 +1,7 @@
+import { useCollection } from '../collection-context';
 import RoomLauncher from '../RoomLauncher';
 import React, { useEffect, useRef, useState } from 'react';
-import { Link, useParams, useSearchParams } from 'react-router-dom';
+import { Link, useParams, useSearchParams } from '../collection-router';
 import {
   ArrowLeft,
   ArrowRight,
@@ -31,6 +32,7 @@ const selectedTab = (params) =>
     ? 'discussion'
     : { chapters: 'units', episodes: 'units', reviews: 'reviews' }[params.get('tab')] || 'overview';
 export default function Title() {
+  const brand = useCollection()?.active ? 'Ara Ara' : 'Yoru';
   const { id } = useParams();
   const readingState = useReadingState(id);
   const [params, setParams] = useSearchParams();
@@ -56,9 +58,9 @@ export default function Title() {
     setTab(selectedTab(params));
   }, [id, params.get('unit'), params.get('tab')]);
   useEffect(() => {
-    if (media) document.title = `${titleOf(media)} · Yoru`;
+    if (media) document.title = `${titleOf(media)} · ${brand}`;
     return () => {
-      document.title = 'Yoru · A little more obsessed';
+      document.title = brand === 'Ara Ara' ? 'Ara Ara · 18+' : 'Yoru · A little more obsessed';
     };
   }, [media]);
   if (resource.loading) return <Loading />;

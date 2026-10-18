@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../collection-router';
 import { ArrowRight } from 'lucide-react';
 import { kindOf, titleOf } from '../api';
 import { useResource } from '../state';

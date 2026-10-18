@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link } from '../collection-router';
 import { CalendarDays, ChevronDown, Clock3 } from 'lucide-react';
 import { useResource } from '../state';
 import { airingLabel, localDateKey, shiftDate, weekDays, weekStart } from '../../shared/schedule';

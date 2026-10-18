@@ -1,14 +1,48 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from 'react';
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
 import { connectEvents } from './realtime';
 import useVisitorPresence from './useVisitorPresence';
 import { useResume } from './resume';
 import { setReaderAccount } from './reader/storage';
+import { useCollection } from './collection-context';
+import { collectionRequest, collectionView } from '../shared/collection-view';
 const Context = createContext(null);
 export function useApp() {
-  return useContext(Context);
+  const app = useContext(Context);
+  const scope = useCollection();
+  if (!scope?.active) return app;
+  const ids = new Set((scope.catalog?.items || []).map((item) => item.id));
+  return {
+    ...app,
+    library: app.library.filter((item) => ids.has(item.mediaId)),
+    resumeItems: app.resumeItems.filter((item) => ids.has(item.mediaId)),
+  };
 }
 export function useResource(path, cache = true) {
+  const scope = useCollection();
+  const request = collectionRequest(path, scope?.active);
+  const result = useRawResource(request, cache);
+  const data = useMemo(
+    () => (scope?.active ? collectionView(path, result.data, scope.catalog) : result.data),
+    [path, result.data, scope?.active, scope?.catalog],
+  );
+  return {
+    ...result,
+    data,
+    loading: result.loading || Boolean(path && scope?.active && scope.loading),
+    error: (request ? result.error : '') || (scope?.active ? scope.error : ''),
+    refresh: request ? result.refresh : scope?.refresh || result.refresh,
+  };
+}
+export function useRawResource(path, cache = true) {
   const [loadedPath, setLoadedPath] = useState(path);
   const [data, setData] = useState(() => (path && cache ? peek(path) : null));
   const [error, setError] = useState('');

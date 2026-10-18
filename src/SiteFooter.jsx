@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation } from './collection-router';
 import { ArrowUpRight, BookOpen, Compass, MonitorPlay, Users } from 'lucide-react';
 import { Avatar, Modal } from './components';
 import { useApp } from './state';
 import './site-footer.css';
+import { useCollection } from './collection-context';
 
 const genres = [
   'Action',
@@ -22,13 +23,14 @@ const activities = [
 ];
 export default function SiteFooter() {
   const { visitors } = useApp();
+  const ara = useCollection()?.active;
   const { pathname } = useLocation();
   const { data, connected } = visitors;
   const [open, setOpen] = useState(false);
   const count = (key) => (connected ? Number(data?.[key] || 0).toLocaleString() : '—');
   useEffect(() => setOpen(false), [pathname]);
   return (
-    <footer className="community-footer" aria-label="Yoru footer">
+    <footer className="community-footer" aria-label={ara ? 'Ara Ara footer' : 'Yoru footer'}>
       <button
         className="footer-presence"
         onClick={() => setOpen(true)}
@@ -57,9 +59,10 @@ export default function SiteFooter() {
       </button>
       <div className="footer-main-grid">
         <div className="footer-story">
-          <Link to="/" className="footer-wordmark" aria-label="Yoru home">
-            yoru<span>.</span>
-            <small>夜</small>
+          <Link to="/" className="footer-wordmark" aria-label={ara ? 'Ara Ara home' : 'Yoru home'}>
+            {ara ? 'ara ara' : 'yoru'}
+            <span>.</span>
+            <small>{ara ? '18+' : '夜'}</small>
           </Link>
           <h2>A little more obsessed. Together.</h2>
           <p>
@@ -97,7 +100,9 @@ export default function SiteFooter() {
         </nav>
       </div>
       <div className="footer-fineprint">
-        <span>© {new Date().getFullYear()} Yoru · Made for the stories.</span>
+        <span>
+          © {new Date().getFullYear()} {ara ? 'Ara Ara' : 'Yoru'} · Made for the stories.
+        </span>
         <p>
           Metadata from MyAnimeList via Tenrai and Kitsu. Media belongs to its respective owners.
           Reading sources are credited in the reader; availability depends on the provider.

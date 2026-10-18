@@ -1,5 +1,5 @@
 import React from 'react';
-import { Link, Navigate, useParams, useSearchParams } from 'react-router-dom';
+import { Link, Navigate, useParams, useSearchParams } from '../collection-router';
 import { useResource } from '../state';
 import { ErrorNotice, Loading } from '../components';
 
