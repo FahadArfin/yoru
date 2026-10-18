@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { resumeContract } from '../resume-contract.mjs';
 import { before, after, test } from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -13,6 +14,13 @@ let runtime,
   charlie,
   media = 'mal-anime-52991';
 const streams = [];
+test('resume progress is shared across D1 workers and isolated by account', async () => {
+  let instance = 'a';
+  await resumeContract((...args) => {
+    instance = instance === 'a' ? 'b' : 'a';
+    return request(instance, ...args);
+  }, register);
+});
 test('community threads reuse episode comments and replies across D1 workers', async () => {
   const threadAuthor = await register('ThreadAuthor');
   const endpoint = `/api/comments/${media}`;

@@ -70,7 +70,7 @@ export function ChapterCollection({ media }) {
   );
 }
 export function PickUpWhereLeftOff() {
-  const { library } = useApp();
+  const { library, user, resumeItems } = useApp();
   const [items, setItems] = useState(() => [
     ...readingHistory('MANGA'),
     ...readingHistory('MANHWA'),
@@ -85,7 +85,7 @@ export function PickUpWhereLeftOff() {
       window.removeEventListener('storage', update);
     };
   }, []);
-  const local = items.map((item) => ({
+  const local = (user ? [] : items).map((item) => ({
     ...item,
     page: item.chapters[item.lastChapter].page,
     href: readerLink(
@@ -101,7 +101,7 @@ export function PickUpWhereLeftOff() {
       return (
         (anime || ['MANGA', 'MANHWA'].includes(kindOf(entry.media))) &&
         (anime ? ['watching', 'current'] : ['reading', 'current']).includes(entry.status) &&
-        !items.some((item) => item.mediaId === entry.mediaId)
+        !(user ? [] : items).some((item) => item.mediaId === entry.mediaId)
       );
     })
     .map((entry) => ({
@@ -116,7 +116,29 @@ export function PickUpWhereLeftOff() {
         : `/read/${entry.mediaId}/${entry.progress}`,
     }));
   const updatedAt = (item) => Number(item.updatedAt) || Date.parse(item.updatedAt) || 0;
-  const progress = [...local, ...saved].sort((a, b) => updatedAt(b) - updatedAt(a)).slice(0, 12);
+  const synced = resumeItems.map((item) => ({
+    ...item,
+    href:
+      item.category === 'ANIME'
+        ? `/watch/${item.mediaId}/${Math.max(1, item.number)}${item.language ? `?language=${encodeURIComponent(item.language)}` : ''}`
+        : readerLink(
+            item.mediaId,
+            {
+              id: item.chapterId,
+              number: String(item.number),
+              kind: 'remote',
+              language: item.language,
+            },
+            item.page,
+          ),
+  }));
+  const progress = [
+    ...synced,
+    ...local.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
+    ...saved.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
+  ]
+    .sort((a, b) => updatedAt(b) - updatedAt(a))
+    .slice(0, 12);
   if (!progress.length) return null;
   return (
     <section className="continue-reading" aria-label="Pick up where you left off">
@@ -125,7 +147,6 @@ export function PickUpWhereLeftOff() {
           <span className="eyebrow">RIGHT WHERE YOU LEFT OFF</span>
           <h2>Pick up where you left off</h2>
         </div>
-        <span className="muted">{saved.length ? 'Your saved progress' : 'On this device'}</span>
       </div>
       <div className="continue-reading-rail">
         {progress.map((item) => {

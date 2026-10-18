@@ -86,6 +86,18 @@ export const library = sqliteTable(
   },
   (t) => [primaryKey({ columns: [t.user_id, t.media_id] })],
 );
+export const resumeProgress = sqliteTable(
+  'resume_progress',
+  {
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    media_id: text().notNull(),
+    payload: text().notNull(),
+    updated_at: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.media_id] })],
+);
 export const reviews = sqliteTable(
   'reviews',
   {

@@ -1,6 +1,12 @@
 import { sortChapters } from './model';
 
 const PREFIX = 'yoru:reader:state:';
+let account = '';
+const statePrefix = () => (account ? `yoru:reader:account:${account}:` : PREFIX);
+export function setReaderAccount(id) {
+  account = id || '';
+  window.dispatchEvent(new Event(READER_EVENT));
+}
 export const READER_EVENT = 'yoru-reader-change';
 let database;
 function openDatabase() {
@@ -104,7 +110,7 @@ export async function imageChapter(
 }
 export function getReadingState(id) {
   try {
-    const state = JSON.parse(localStorage.getItem(PREFIX + id));
+    const state = JSON.parse(localStorage.getItem(statePrefix() + id));
     return state && typeof state === 'object' && !Array.isArray(state)
       ? {
           ...state,
@@ -124,7 +130,7 @@ export function saveReadingState(id, patch, chapterId, chapterPatch) {
       [chapterId]: { ...old.chapters[chapterId], ...chapterPatch },
     };
   try {
-    localStorage.setItem(PREFIX + id, JSON.stringify(next));
+    localStorage.setItem(statePrefix() + id, JSON.stringify(next));
   } catch {
     throw new Error('Your browser could not save your reading position. Reading still works.');
   }
@@ -132,12 +138,13 @@ export function saveReadingState(id, patch, chapterId, chapterPatch) {
   return next;
 }
 export function readingHistory(category) {
+  const prefix = statePrefix();
   try {
     return Object.keys(localStorage)
-      .filter((key) => key.startsWith(PREFIX))
+      .filter((key) => key.startsWith(prefix))
       .map((key) => ({
-        mediaId: key.slice(PREFIX.length),
-        ...getReadingState(key.slice(PREFIX.length)),
+        mediaId: key.slice(prefix.length),
+        ...getReadingState(key.slice(prefix.length)),
       }))
       .filter(
         (item) =>

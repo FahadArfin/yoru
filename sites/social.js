@@ -8,6 +8,7 @@ import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from '../server/community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { resumeInput, resumeUpsert } from '../server/resume.js';
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -90,6 +91,36 @@ export async function onlineState(db) {
   return { count: users.length, users };
 }
 export function socialRoutes(app) {
+  app.get('/api/resume', requireAuth, async (c) =>
+    c.json({
+      items: (
+        await c
+          .get('db')
+          .all(
+            'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
+            c.get('user').id,
+          )
+      ).map((row) => JSON.parse(row.payload)),
+    }),
+  );
+  app.put('/api/resume/:mediaId', requireAuth, async (c) => {
+    const id = mediaId(c.req.param('mediaId')),
+      user = c.get('user'),
+      db = c.get('db');
+    const item = resumeInput(await c.req.json(), await getMedia(id), user.id);
+    await db.run(resumeUpsert, user.id, id, JSON.stringify(item), item.updatedAt);
+    return c.json({
+      item: JSON.parse(
+        (
+          await db.get(
+            'SELECT payload FROM resume_progress WHERE user_id=? AND media_id=?',
+            user.id,
+            id,
+          )
+        ).payload,
+      ),
+    });
+  });
   app.get('/api/library', requireAuth, async (c) => {
     const entries = await c
       .get('db')

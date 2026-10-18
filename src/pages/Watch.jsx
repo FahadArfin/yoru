@@ -43,13 +43,13 @@ const readSource = (key) => {
     return null;
   }
 };
-export default function Watch() {
+function WatchSession() {
   const { id, unit: unitParam } = useParams();
   const navigate = useNavigate();
   const unit = Math.max(1, Number(unitParam) || 1);
   const resource = useResource(`/api/media/${id}`);
   const media = resource.data?.media || resource.data;
-  const { entryFor, updateEntry, notify, user } = useApp();
+  const { entryFor, updateEntry, notify, user, resumeItems, saveResume } = useApp();
   const entry = entryFor(id);
   const [sourceOpen, setSourceOpen] = useState(false);
   const [params, setParams] = useSearchParams();
@@ -84,6 +84,7 @@ export default function Watch() {
   const [episodeGroup, setEpisodeGroup] = useState(Math.floor((unit - 1) / 50));
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const endedRef = useRef(false);
+  const positionRef = useRef(0);
   const savePreference = (key, value, setter) => {
     setter(value);
     try {
@@ -95,12 +96,19 @@ export default function Watch() {
   }, [id]);
   useEffect(() => {
     setUnitDraft(unit);
-    setResume(Number(readSource(`yoru:position:${id}:${unit}`)) || 0);
+    const saved = resumeItems.find((item) => item.mediaId === id && item.number === unit);
+    positionRef.current =
+      saved?.position || (!user ? Number(readSource(`yoru:position:${id}:${unit}`)) || 0 : 0);
+    setResume(positionRef.current);
     setPlayerSaved(false);
     setEpisodeGroup(Math.floor((unit - 1) / 50));
     endedRef.current = false;
   }, [id, unit]);
   const anime = isAnime(media);
+  useEffect(() => {
+    if (media?.id === id && anime)
+      saveResume(media, { number: unit, position: positionRef.current, language });
+  }, [media?.id, id, unit, anime, language, saveResume]);
   useEffect(() => {
     if (
       (!anime && !['MANGA', 'MANHWA'].includes(media?.category)) ||
@@ -205,11 +213,8 @@ export default function Watch() {
     if (saved) setPlayerSaved(true);
   };
   const onProgress = (time) => {
-    try {
-      localStorage.setItem(`yoru:position:${id}:${unit}`, JSON.stringify(time));
-    } catch {
-      /* playback continues when device storage is unavailable */
-    }
+    positionRef.current = time;
+    saveResume(media, { number: unit, position: time, language });
   };
   const onEnded = () => {
     if (endedRef.current) return;
@@ -537,4 +542,10 @@ export default function Watch() {
       )}
     </div>
   );
+}
+
+export default function Watch() {
+  const { user, resumeReady } = useApp();
+  if (!resumeReady) return <Loading />;
+  return <WatchSession key={user?.id || 'guest'} />;
 }

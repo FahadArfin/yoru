@@ -21,8 +21,42 @@ import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from './community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { resumeInput, resumeUpsert } from './resume.js';
 
 export const socialRouter = Router();
+socialRouter.get('/resume', requireAuth, (req, res) => {
+  res.json({
+    items: all(
+      'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
+      req.user.id,
+    ).map((row) => JSON.parse(row.payload)),
+  });
+});
+socialRouter.put(
+  '/resume/:mediaId',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const id = mediaId(req.params.mediaId);
+    const item = resumeInput(req.body, await getMedia(id), req.user.id);
+    // Recheck after the catalog lookup, which may outlive a sign-out.
+    if (
+      !get(
+        'SELECT 1 FROM sessions WHERE token_hash=? AND user_id=? AND expires_at>?',
+        req.sessionHash,
+        req.user.id,
+        Date.now(),
+      )
+    )
+      throw apiError(401, 'Your session changed. Sign in again.');
+    run(resumeUpsert, req.user.id, id, JSON.stringify(item), item.updatedAt);
+    res.json({
+      item: JSON.parse(
+        get('SELECT payload FROM resume_progress WHERE user_id=? AND media_id=?', req.user.id, id)
+          .payload,
+      ),
+    });
+  }),
+);
 socialRouter.get(
   '/community/threads',
   asyncRoute(async (req, res) => {

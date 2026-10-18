@@ -2,6 +2,8 @@ import React, { createContext, useCallback, useContext, useEffect, useRef, useSt
 import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
 import { connectEvents } from './realtime';
 import useVisitorPresence from './useVisitorPresence';
+import { useResume } from './resume';
+import { setReaderAccount } from './reader/storage';
 const Context = createContext(null);
 export function useApp() {
   return useContext(Context);
@@ -52,9 +54,11 @@ export function AppProvider({ children }) {
   const [authKnown, setAuthKnown] = useState(false);
   const setUser = useCallback((value) => {
     invalidateScopedApi();
+    setReaderAccount(value?.id);
     setUserState(value);
     setAuthKnown(true);
   }, []);
+  const resume = useResume(user?.id, authKnown);
   const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
   const [config, setConfig] = useState({});
@@ -192,6 +196,7 @@ export function AppProvider({ children }) {
   return (
     <Context.Provider
       value={{
+        ...resume,
         user,
         setUser,
         authLoading,
