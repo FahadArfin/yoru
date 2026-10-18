@@ -282,6 +282,79 @@ test('reader reveals chapter, page and menu controls on upward scroll and preser
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
 });
 
+test('reading a manga page hides both controls and a center tap brings navigation back', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.goto('/read/mal-manga-21/1');
+  await importManifest(page);
+  await openMenu(page);
+  await closeMobileMenu(page);
+  const canvas = page.locator('.reader-canvas');
+  const header = page.locator('.reader-top-header');
+  await canvas.hover();
+  await page.mouse.wheel(0, -180);
+  await expect(header).toBeVisible();
+
+  await canvas.focus();
+  await page.keyboard.press('ArrowLeft');
+  const secondPage = page.getByRole('img', { name: 'Chapter 1, page 2', exact: true });
+  await expect(secondPage).toBeVisible();
+  await expect(header).toBeHidden();
+  await expect(page.getByRole('complementary', { name: 'Reader menu' })).toBeHidden();
+  await secondPage.click();
+  await expect(header).toBeVisible();
+  await expect(secondPage).toBeVisible();
+
+  await openMenu(page);
+  await page.getByRole('button', { name: 'Next page', exact: true }).click();
+  await expect(page.getByRole('img', { name: 'Chapter 1, page 3', exact: true })).toBeVisible();
+  await expect(header).toBeHidden();
+  await expect(page.getByLabel('Page number', { exact: true })).toBeHidden();
+  await expect(canvas).toBeFocused();
+  await page.keyboard.press('Escape');
+  await expect(header).toBeVisible();
+});
+
+test('scrolling manhwa hides the side menu and upward scrolling or a tap restores navigation', async ({
+  page,
+  context,
+  baseURL,
+  isMobile,
+}) => {
+  await setup(page, context, baseURL);
+  // Exercise an actual page-width change as the desktop menu folds away.
+  if (!isMobile) await page.setViewportSize({ width: 1024, height: 768 });
+  await page.goto('/read/mal-manga-121496/1');
+  await importManifest(page);
+  await openMenu(page);
+  await closeMobileMenu(page);
+  const canvas = page.locator('.reader-canvas');
+  const header = page.locator('.reader-top-header');
+  await canvas.hover();
+  await page.mouse.wheel(0, 350);
+  await expect(header).toBeHidden();
+  await expect(page.getByRole('complementary', { name: 'Reader menu' })).toBeHidden();
+  await expect.poll(() => canvas.evaluate((element) => element.scrollTop)).toBeGreaterThan(100);
+  await page.mouse.wheel(0, -100);
+  await expect(header).toBeVisible();
+  await page.mouse.wheel(0, 100);
+  await expect(header).toBeHidden();
+  // A tap on a scrolling page toggles controls without advancing to another page.
+  await canvas
+    .locator('img')
+    .first()
+    .click({ position: { x: 100, y: 600 } });
+  await expect(header).toBeVisible();
+  await canvas
+    .locator('img')
+    .first()
+    .click({ position: { x: 100, y: 600 } });
+  await expect(header).toBeHidden();
+});
+
 test('dismissing an image import prevents a late redirect or chapter save', async ({
   page,
   context,

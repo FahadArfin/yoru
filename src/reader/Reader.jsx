@@ -158,18 +158,28 @@ function ReaderSession({ media, unit }) {
     return () => query.removeEventListener('change', resize);
   }, []);
   useEffect(() => setHeaderVisible(!chapter), [chapter?.id]);
+  const hideControls = useCallback(() => {
+    // Keep keyboard reading available when the focused control is about to disappear.
+    if (
+      root.current?.contains(document.activeElement) &&
+      !root.current.querySelector('.reader-canvas')?.contains(document.activeElement)
+    ) {
+      root.current.querySelector('.reader-canvas')?.focus({ preventScroll: true });
+    }
+    setHeaderVisible(false);
+    setMenuOpen(false);
+  }, []);
+  const toggleControls = useCallback(() => {
+    if (headerVisible || menuOpen) hideControls();
+    else setHeaderVisible(true);
+  }, [headerVisible, menuOpen, hideControls]);
   const scrollDirection = useCallback(
     (direction) => {
-      if (focus) return;
-      if (
-        direction === 'down' &&
-        root.current?.querySelector('.reader-top-header')?.contains(document.activeElement)
-      ) {
-        root.current.querySelector('.reader-canvas')?.focus({ preventScroll: true });
-      }
-      setHeaderVisible(direction === 'up');
+      if (focus || dialogStack.length) return;
+      if (direction === 'down') hideControls();
+      else setHeaderVisible(true);
     },
-    [focus],
+    [focus, hideControls],
   );
   const closeMenu = () => {
     restoreMenuFocus.current = true;
@@ -282,8 +292,11 @@ function ReaderSession({ media, unit }) {
     [page, updatePage],
   );
   const turn = useCallback(
-    (direction) => goPage(pageStep(page, direction, total, preferences.mode)),
-    [page, total, preferences.mode, goPage],
+    (direction) => {
+      hideControls();
+      goPage(pageStep(page, direction, total, preferences.mode));
+    },
+    [page, total, preferences.mode, goPage, hideControls],
   );
   const bookmark = useCallback(() => {
     if (chapter) write({}, chapter.id, { bookmark: currentSaved.bookmark === page ? null : page });
@@ -489,7 +502,7 @@ function ReaderSession({ media, unit }) {
               jump={jump}
               onVisiblePage={visiblePage}
               onTurn={turn}
-              onToggleControls={() => setHeaderVisible((value) => !value)}
+              onToggleControls={toggleControls}
               onScrollDirection={scrollDirection}
             />
           ) : (

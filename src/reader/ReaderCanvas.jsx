@@ -62,9 +62,8 @@ export default function ReaderCanvas({
 }) {
   const container = useRef();
   const scrollPosition = useRef(0);
-  const position = useRef(page);
+  const scrollAnchor = useRef({ page, fraction: 0 });
   const alignedSize = useRef('');
-  position.current = page;
   const paged = ['single', 'double'].includes(preferences.mode);
   const [pages, setPages] = useState([]);
   useEffect(() => {
@@ -72,13 +71,38 @@ export default function ReaderCanvas({
     scrollPosition.current = element.scrollTop;
     const scroll = () => {
       const current = element.scrollTop;
+      if (!paged) {
+        const strip = element.querySelector('.reader-pages');
+        if (
+          `${element.clientWidth}:${element.clientHeight}:${strip.clientWidth}` !==
+          alignedSize.current
+        )
+          return;
+        const top = element.getBoundingClientRect().top;
+        const anchor = [...element.querySelectorAll('[data-page]')].find(
+          (node) => node.getBoundingClientRect().bottom > top,
+        );
+        if (anchor) {
+          const bounds = anchor.getBoundingClientRect();
+          scrollAnchor.current = {
+            page: Number(anchor.dataset.page),
+            fraction: Math.max(0, (top - bounds.top) / bounds.height),
+          };
+        }
+      }
       if (Math.abs(current - scrollPosition.current) > 5)
         onScrollDirection(current < scrollPosition.current ? 'up' : 'down');
       scrollPosition.current = current;
     };
-    // Fit-both pages may have no overflow; an upward wheel gesture still reveals controls.
+    // With scrolling pages, capture the reading position before hiding changes their width.
+    // A wheel gesture at a boundary (or on fit-both pages) still toggles the controls.
     const wheel = (event) => {
-      if (Math.abs(event.deltaY) > 3) onScrollDirection(event.deltaY < 0 ? 'up' : 'down');
+      const atBoundary =
+        event.deltaY < 0
+          ? element.scrollTop <= 0
+          : element.scrollTop + element.clientHeight >= element.scrollHeight - 1;
+      if ((paged || atBoundary) && Math.abs(event.deltaY) > 3)
+        onScrollDirection(event.deltaY < 0 ? 'up' : 'down');
     };
     element.addEventListener('scroll', scroll, { passive: true });
     element.addEventListener('wheel', wheel, { passive: true });
@@ -86,7 +110,7 @@ export default function ReaderCanvas({
       element.removeEventListener('scroll', scroll);
       element.removeEventListener('wheel', wheel);
     };
-  }, [onScrollDirection]);
+  }, [onScrollDirection, paged]);
   // Allocate and release URLs in the same effect: StrictMode can replay its setup.
   useEffect(() => {
     const loaded = chapter.pages.map((item) => ({
@@ -116,6 +140,7 @@ export default function ReaderCanvas({
       });
     // Restoring a page or resizing is not a reader scroll gesture.
     scrollPosition.current = container.current.scrollTop;
+    scrollAnchor.current = { page, fraction: 0 };
   }, [chapter.id, jump, preferences.mode, pages]);
   useLayoutEffect(() => {
     if (paged) return;
@@ -129,13 +154,15 @@ export default function ReaderCanvas({
       if (next === size) return;
       size = next;
       alignedSize.current = next;
-      const target = element.querySelector(`[data-page="${position.current}"]`);
+      const anchor = scrollAnchor.current;
+      const target = element.querySelector(`[data-page="${anchor.page}"]`);
       if (target)
         element.scrollTo({
           top:
             element.scrollTop +
             target.getBoundingClientRect().top -
-            element.getBoundingClientRect().top,
+            element.getBoundingClientRect().top +
+            target.getBoundingClientRect().height * anchor.fraction,
           behavior: 'instant',
         });
       scrollPosition.current = element.scrollTop;
@@ -189,7 +216,10 @@ export default function ReaderCanvas({
     };
   }, [paged, onVisiblePage]);
   const tap = (event) => {
-    if (!paged) return;
+    if (!paged) {
+      onToggleControls();
+      return;
+    }
     const bounds = event.currentTarget.getBoundingClientRect();
     const portion = (event.clientX - bounds.left) / bounds.width;
     if (portion > 0.33 && portion < 0.67) onToggleControls();
