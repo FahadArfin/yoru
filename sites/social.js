@@ -1,3 +1,4 @@
+import { getAraCatalog } from '../server/ara-ara.js';
 import { randomUUID } from 'node:crypto';
 import { getMedia, rememberImportedMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
@@ -339,13 +340,27 @@ export function socialRoutes(app) {
   });
   app.get('/api/community', async (c) => {
     const db = c.get('db');
+    const scopedIds =
+      c.req.query('collection') === 'ara-ara'
+        ? (await getAraCatalog()).items.map((item) => item.id)
+        : null;
+    const filter = scopedIds
+      ? ` WHERE media_id IN (${scopedIds.map(() => '?').join(',') || 'NULL'})`
+      : '';
+    const bindings = scopedIds || [];
     const comments = (
-      await db.all(`${COMMENT_QUERY} ORDER BY comments.created_at DESC LIMIT 20`, '')
+      await db.all(
+        `${COMMENT_QUERY}${filter} ORDER BY comments.created_at DESC LIMIT 20`,
+        '',
+        ...bindings,
+      )
     ).map((x) => ({ ...commentShape(x), kind: 'comment', type: 'comment' }));
     const reviews =
       c.req.query('type') === 'comment'
         ? []
-        : (await db.all(`${REVIEW_QUERY} ORDER BY updated_at DESC LIMIT 20`)).map((x) => ({
+        : (
+            await db.all(`${REVIEW_QUERY}${filter} ORDER BY updated_at DESC LIMIT 20`, ...bindings)
+          ).map((x) => ({
             ...reviewShape(x),
             kind: 'review',
             type: 'review',

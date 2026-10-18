@@ -89,7 +89,7 @@ export function Avatar({ user, size = 'normal' }) {
 export function Badge({ children, tone = '' }) {
   return <span className={`badge ${tone}`}>{children}</span>;
 }
-export function Poster({ media, rank, compact = false }) {
+export function Poster({ media, rank, compact = false, href }) {
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(media);
   return (
@@ -97,7 +97,7 @@ export function Poster({ media, rank, compact = false }) {
       <div className="poster-art">
         <PrefetchLink
           media={media}
-          to={`/title/${media.id}`}
+          to={href || `/title/${media.id}`}
           className="poster-link"
           aria-label={`View ${titleOf(media)}`}
         >
@@ -127,7 +127,7 @@ export function Poster({ media, rank, compact = false }) {
         )}
         {rank && <span className="poster-rank">{String(rank).padStart(2, '0')}</span>}
       </div>
-      <PrefetchLink media={media} className="poster-title" to={`/title/${media.id}`}>
+      <PrefetchLink media={media} className="poster-title" to={href || `/title/${media.id}`}>
         {titleOf(media)}
       </PrefetchLink>
       <div className="poster-meta">

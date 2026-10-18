@@ -1,10 +1,11 @@
 import { useEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-import { ArrowLeft, ArrowUpRight, Library, LockKeyhole, ShieldCheck } from 'lucide-react';
+import { ArrowLeft, ArrowUpRight, LockKeyhole, ShieldCheck } from 'lucide-react';
+import AraContent from './AraContent';
 import { nsfwCategories, confirmationKey } from '../nsfw';
 
 export default function NsfwPage() {
-  const { category } = useParams();
+  const { category, id } = useParams();
   const navigate = useNavigate();
   const heading = useRef(null);
   const [confirmed, setConfirmed] = useState(() => {
@@ -32,7 +33,7 @@ export default function NsfwPage() {
     navigate('/');
   };
 
-  if (category && !selected)
+  if (category && !selected && !['schedule', 'community'].includes(category))
     return (
       <section className="nsfw-page nsfw-gate">
         <h1>Collection not found</h1>
@@ -51,7 +52,10 @@ export default function NsfwPage() {
         <span className="nsfw-eyebrow">ARA ARA · 18+</span>
         <h1 id="nsfw-gate-title">Adults only</h1>
         <p>Welcome to Ara Ara, the separate Yoru space for visitors aged 18 or older.</p>
-        <p className="nsfw-gate-detail">Please confirm your age before continuing.</p>
+        <p className="nsfw-gate-detail">
+          Mature themes, violence and strong language. This collection excludes sexually explicit
+          titles. Please confirm your age before continuing.
+        </p>
         <div className="nsfw-gate-actions">
           <button className="btn btn-primary" onClick={confirm}>
             I’m 18 or older <ArrowUpRight size={16} />
@@ -71,44 +75,13 @@ export default function NsfwPage() {
           <h1 id="nsfw-title" ref={heading} tabIndex={-1}>
             Ara Ara
           </h1>
-          <p>Anime, manga and manhwa. A separate space for adults.</p>
+          <p>Mature stories. Darker worlds. Anime, manga and manhwa, curated for adults.</p>
         </div>
         <button className="nsfw-leave" onClick={leave}>
           <ArrowLeft size={15} /> Leave this section
         </button>
       </header>
-      <nav className="nsfw-collections" aria-label="Choose a collection">
-        {nsfwCategories.map(({ id, label, format, Icon }) => (
-          <Link
-            key={id}
-            to={`/ara-ara/${id}`}
-            className={`nsfw-collection${category === id ? ' selected' : ''}`}
-            aria-current={category === id ? 'page' : undefined}
-            aria-label={label}
-          >
-            <span className="nsfw-collection-top">
-              <Icon size={27} aria-hidden="true" />
-              <span className="nsfw-age-label">18+</span>
-            </span>
-            <span className="nsfw-collection-format">{format}</span>
-            <strong>{label}</strong>
-            <ArrowUpRight className="nsfw-collection-arrow" size={20} aria-hidden="true" />
-          </Link>
-        ))}
-      </nav>
-      <div className="nsfw-catalog-state">
-        <span className="nsfw-catalog-icon" aria-hidden="true">
-          {selected ? <selected.Icon size={25} /> : <Library size={25} />}
-        </span>
-        <span className="nsfw-status" role="status">
-          Catalog not connected
-        </span>
-        <h2>{selected?.label || 'Your collections start here'}</h2>
-        <p>No titles are available in {selected ? 'this collection' : 'these collections'} yet.</p>
-        <Link to="/browse/anime">
-          Explore the main catalog <ArrowUpRight size={14} />
-        </Link>
-      </div>
+      <AraContent key={category || id || 'discover'} category={category} id={id} />
       <p className="nsfw-session-note">
         <ShieldCheck size={14} aria-hidden="true" />
         Confirmation lasts for this tab’s session. Leave this section to reset it.

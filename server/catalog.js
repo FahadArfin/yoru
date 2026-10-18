@@ -1,3 +1,4 @@
+import { getAraCatalog, scopeAraSchedule } from './ara-ara.js';
 import { Router } from 'express';
 import {
   searchCatalog,
@@ -42,6 +43,10 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get(
+  '/ara-ara/catalog',
+  asyncRoute(async (_req, res) => res.json(await getAraCatalog())),
+);
 catalogRouter.get(
   '/media/:id/cast',
   asyncRoute(async (req, res) => {
@@ -288,7 +293,8 @@ catalogRouter.get('/media/:id', async (req, res, next) => {
 });
 catalogRouter.get('/calendar', async (req, res, next) => {
   try {
-    res.json(await getSchedule(req.query, scheduleOptions));
+    const result = await getSchedule(req.query, scheduleOptions);
+    res.json(req.query.collection === 'ara-ara' ? await scopeAraSchedule(result) : result);
   } catch (error) {
     next(error);
   }
@@ -296,6 +302,14 @@ catalogRouter.get('/calendar', async (req, res, next) => {
 catalogRouter.get(
   '/chapter-calendar',
   asyncRoute(async (req, res) => {
-    res.json(await getChapterCalendar(req.query, { ...scheduleOptions, offline: isOffline() }));
+    const result = await getChapterCalendar(req.query, {
+      ...scheduleOptions,
+      offline: isOffline(),
+    });
+    res.json(
+      req.query.collection === 'ara-ara'
+        ? await scopeAraSchedule(result, result.category.toUpperCase())
+        : result,
+    );
   }),
 );
