@@ -1,44 +1,52 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { ArrowRight, BookOpen, MessageCircle, Star, Users } from 'lucide-react';
-import { ago, coverOf, isAnime, itemsOf, safeLink, titleOf } from '../api';
+import { ArrowRight, MessageCircle, Star, Users } from 'lucide-react';
+import { ago, isAnime, itemsOf, safeLink, titleOf } from '../api';
 import { useApp, useResource } from '../state';
 import { Avatar, Badge, Empty, ErrorNotice } from '../components';
 import Chat from '../Chat';
+import CoverImage from '../CoverImage';
+import '../section-pages.css';
 export default function Community() {
   const resource = useResource('/api/community', false);
-  const { online, event, config } = useApp();
+  const { online, event, config, connected } = useApp();
   const [filter, setFilter] = useState('all');
   useEffect(() => {
     if (['comments', 'reviews', 'snapshot'].includes(event?.type)) resource.refresh();
   }, [event]);
   const feed = itemsOf(resource.data).filter((item) => filter === 'all' || item.kind === filter);
   return (
-    <div className="page community-page">
-      <div className="page-heading">
-        <span className="eyebrow">PULL UP A CHAIR</span>
-        <h1>Good stories. Better company.</h1>
-        <p>For the theories you can’t keep to yourself, and the people who get it.</p>
-      </div>
+    <div className="page section-page community-page">
+      <header className="section-page-heading">
+        <div>
+          <span className="section-kicker">
+            <MessageCircle size={13} /> BETWEEN EPISODES & CHAPTERS
+          </span>
+          <h1>Community</h1>
+          <p>Good stories. Better company. Share what you’re watching and reading.</p>
+        </div>
+        <div className="section-heading-note">
+          <span className={`live-dot ${!connected ? 'muted-dot' : ''}`} />{' '}
+          {connected ? `${online.count || 0} online` : 'Connecting to the community'}
+        </div>
+      </header>
       <div className="community-banner">
         <span className="community-banner-icon">
-          <Users size={38} />
+          <Users size={24} />
         </span>
         <div>
-          <h2>Welcome to the common room.</h2>
-          <p>Anime fans. Manga readers. Manhwa obsessives. You’ll fit right in.</p>
+          <h2>A shared story is a better story.</h2>
+          <p>Meet in a room, watch together, or turn the next chapter with a friend.</p>
         </div>
-        <div className="community-online">
-          <span className="live-dot" />
-          <strong>{online.count || 0}</strong>
-          <span>people online</span>
-        </div>
+        <Link className="section-action" to="/rooms">
+          Find a room <ArrowRight size={15} />
+        </Link>
       </div>
       <div className="community-layout">
         <section className="community-feed">
           <div className="section-heading">
-            <h2>In the conversation</h2>
-            <div className="segmented">
+            <h2>Latest conversations</h2>
+            <div className="segmented" role="group" aria-label="Conversation type">
               {[
                 ['all', 'All'],
                 ['comment', 'Discussions'],
@@ -47,6 +55,7 @@ export default function Community() {
                 <button
                   key={key}
                   className={filter === key ? 'active' : ''}
+                  aria-pressed={filter === key}
                   onClick={() => setFilter(key)}
                 >
                   {label}
@@ -54,7 +63,22 @@ export default function Community() {
               ))}
             </div>
           </div>
-          {resource.error && <ErrorNotice message={resource.error} retry={resource.refresh} />}{' '}
+          {resource.error && <ErrorNotice message={resource.error} retry={resource.refresh} />}
+          {resource.loading && !feed.length && (
+            <div className="section-loading" role="status" aria-label="Loading conversations">
+              <span className="sr-only">Loading conversations…</span>
+              {Array.from({ length: 3 }, (_, index) => (
+                <div className="section-skeleton" key={index}>
+                  <span />
+                  <div>
+                    <i />
+                    <i />
+                    <i />
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
           {feed.map((item) => (
             <article className="feed-card" key={item.id}>
               <div className="feed-byline">
@@ -69,7 +93,7 @@ export default function Community() {
                 className="feed-title-link"
                 to={`/title/${item.mediaId}${item.unit ? `?unit=${item.unit}` : item.kind === 'review' ? '?tab=reviews' : ''}`}
               >
-                {item.media && <img src={coverOf(item.media)} alt="" />}
+                {item.media && <CoverImage media={item.media} alt="" />}
                 <div>
                   <span className="eyebrow">
                     {item.unit
@@ -96,10 +120,16 @@ export default function Community() {
               </Link>
             </article>
           ))}
-          {!feed.length && !resource.loading && (
+          {!feed.length && !resource.loading && !resource.error && (
             <Empty
               icon={MessageCircle}
-              title="We’re just getting started."
+              title={
+                filter === 'all'
+                  ? 'Every conversation starts with a story.'
+                  : filter === 'review'
+                    ? 'No reviews here yet.'
+                    : 'No discussions here yet.'
+              }
               action={
                 <Link className="btn btn-primary" to="/browse/all">
                   Find a story to talk about
@@ -107,7 +137,8 @@ export default function Community() {
                 </Link>
               }
             >
-              Watch something wonderful. Read something wild. Come back and tell us about it.
+              Open a title to share a theory, leave a review, or join an episode or chapter
+              discussion.
             </Empty>
           )}
         </section>
@@ -117,7 +148,7 @@ export default function Community() {
             <div className="panel-heading">
               <span className="live-dot" />
               <h3>Here right now</h3>
-              <span>{online.count || 0}</span>
+              <span>{connected ? online.count || 0 : '—'}</span>
             </div>
             {(online.users || []).map((user) => (
               <div className="online-person" key={user.id}>

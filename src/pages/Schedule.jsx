@@ -8,7 +8,9 @@ import {
   RefreshCw,
 } from 'lucide-react';
 import { useResource } from '../state';
-import { Empty, ErrorNotice, Loading } from '../components';
+import { Empty, ErrorNotice } from '../components';
+import CoverImage from '../CoverImage';
+import '../section-pages.css';
 import { localDateKey, shiftDate, weekStart, weekDays, airingLabel } from '../../shared/schedule';
 const types = { raw: 'Broadcast', sub: 'English sub', dub: 'English dub' };
 export default function Schedule() {
@@ -66,7 +68,7 @@ export default function Schedule() {
             )}
             <small>{item.airingAt ? zoneLabel(item.airingAt) : 'Time unconfirmed'}</small>
           </span>
-          <img src={item.cover} alt="" loading="lazy" />
+          <CoverImage media={item} alt="" className="schedule-cover" />
           <div>
             <span className="eyebrow">
               {types[item.airType]}
@@ -100,69 +102,100 @@ export default function Schedule() {
     </div>
   );
   return (
-    <div className="page schedule-page">
-      <div className="page-heading">
-        <span className="eyebrow">SOMETHING TO LOOK FORWARD TO</span>
-        <h1>Your week in anime.</h1>
-        <p>Know what’s airing next, wherever you are.</p>
-      </div>
-      <div className="schedule-toolbar">
-        <div className="schedule-types" role="group" aria-label="Release type">
-          {Object.entries(types).map(([value, label]) => (
-            <button key={value} aria-pressed={value === type} onClick={() => setType(value)}>
-              {label}
+    <div className="page section-page schedule-page">
+      <header className="section-page-heading">
+        <div>
+          <span className="section-kicker">
+            <CalendarDays size={13} /> THE WEEK AHEAD
+          </span>
+          <h1>Airing schedule</h1>
+          <p>Your next episode, on your time. Explore the week in your local timezone.</p>
+        </div>
+        <div className="section-heading-note">
+          <Clock size={14} /> Times adapt to you
+        </div>
+      </header>
+      <section className="schedule-calendar" aria-label="Choose a day and release type">
+        <div className="schedule-toolbar">
+          <div className="schedule-types" role="group" aria-label="Release type">
+            {Object.entries(types).map(([value, label]) => (
+              <button key={value} aria-pressed={value === type} onClick={() => setType(value)}>
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="schedule-zone">
+            <Clock size={15} />
+            <span>{zone.replaceAll('_', ' ')}</span>
+            <small>Your local timezone</small>
+          </div>
+        </div>
+        <div className="schedule-week">
+          <button
+            aria-label="Previous week"
+            disabled={week <= shiftDate(currentWeek, -7)}
+            onClick={() => changeWeek(shiftDate(week, -7))}
+          >
+            <ChevronLeft size={18} />
+          </button>
+          <h2>
+            {dateLabel(week, { month: 'short', day: 'numeric' })} –{' '}
+            {dateLabel(days[6], { month: 'short', day: 'numeric', year: 'numeric' })}
+          </h2>
+          <button
+            aria-label="Next week"
+            disabled={week >= shiftDate(currentWeek, 7)}
+            onClick={() => changeWeek(shiftDate(week, 7))}
+          >
+            <ChevronRight size={18} />
+          </button>
+          <button className="schedule-today" onClick={() => changeWeek(currentWeek)}>
+            Today
+          </button>
+        </div>
+        <div className="schedule-days">
+          {days.map((date) => (
+            <button
+              key={date}
+              className={date === day ? 'active' : ''}
+              aria-pressed={date === day}
+              onClick={() => setDay(date)}
+            >
+              <span>{dateLabel(date, { weekday: 'short' })}</span>
+              <strong>{dateLabel(date, { day: 'numeric' })}</strong>
+              <small>
+                {loading ||
+                error ||
+                !data ||
+                data.state === 'unavailable' ||
+                data.state === 'not-configured'
+                  ? '—'
+                  : date === today
+                    ? 'Today'
+                    : `${all.filter((item) => localDay(item) === date).length} releases`}
+              </small>
             </button>
           ))}
         </div>
-        <div className="schedule-zone">
-          <Clock size={15} />
-          <span>{zone.replaceAll('_', ' ')}</span>
-          <small>Your local timezone</small>
-        </div>
-      </div>
-      <div className="schedule-week">
-        <button
-          aria-label="Previous week"
-          disabled={week <= shiftDate(currentWeek, -7)}
-          onClick={() => changeWeek(shiftDate(week, -7))}
-        >
-          <ChevronLeft size={18} />
-        </button>
-        <h2>
-          {dateLabel(week, { month: 'short', day: 'numeric' })} –{' '}
-          {dateLabel(days[6], { month: 'short', day: 'numeric', year: 'numeric' })}
-        </h2>
-        <button
-          aria-label="Next week"
-          disabled={week >= shiftDate(currentWeek, 7)}
-          onClick={() => changeWeek(shiftDate(week, 7))}
-        >
-          <ChevronRight size={18} />
-        </button>
-        <button className="schedule-today" onClick={() => changeWeek(currentWeek)}>
-          Today
-        </button>
-      </div>
-      <div className="schedule-days">
-        {days.map((date) => (
-          <button
-            key={date}
-            className={date === day ? 'active' : ''}
-            aria-pressed={date === day}
-            onClick={() => setDay(date)}
-          >
-            <span>{dateLabel(date, { weekday: 'short' })}</span>
-            <strong>{dateLabel(date, { day: 'numeric' })}</strong>
-            <small>
-              {date === today
-                ? 'Today'
-                : `${all.filter((item) => localDay(item) === date).length} releases`}
-            </small>
-          </button>
-        ))}
-      </div>
+      </section>
       {loading ? (
-        <Loading />
+        <div
+          className="schedule-loading section-loading"
+          role="status"
+          aria-label="Loading schedule"
+        >
+          <span className="sr-only">Loading your schedule…</span>
+          {Array.from({ length: 6 }, (_, index) => (
+            <div className="section-skeleton" key={index}>
+              <span />
+              <div>
+                <i />
+                <i />
+                <i />
+              </div>
+            </div>
+          ))}
+        </div>
       ) : error ? (
         <ErrorNotice message={error} retry={refresh} />
       ) : (
@@ -189,7 +222,7 @@ export default function Schedule() {
               </button>
             </div>
           )}
-          <div className="schedule-day-heading">
+          <div className="schedule-day-heading" aria-live="polite">
             <h2>{dateLabel(day, { weekday: 'long', month: 'long', day: 'numeric' })}</h2>
             <span>{list.length} releases</span>
           </div>
