@@ -1,56 +1,11 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import {
-  CalendarDays,
-  ChevronDown,
-  Clock3,
-  MessageSquare,
-  Star,
-  TrendingUp,
-  Trophy,
-} from 'lucide-react';
+import { CalendarDays, ChevronDown, Clock3, MessageSquare } from 'lucide-react';
 import { useApp, useResource } from '../state';
-import { ago, bannerOf, coverOf, itemsOf, titleOf } from '../api';
+import { ago, itemsOf } from '../api';
 import { Avatar } from '../components';
 import { airingLabel, localDateKey, weekDays, weekStart } from '../../shared/schedule';
 
-function MediaRow({ media, upcoming = false }) {
-  const body = (
-    <>
-      <img className="rail-backdrop" src={bannerOf(media)} alt="" loading="lazy" />
-      <img className="rail-poster" src={coverOf(media)} alt="" loading="lazy" />
-      <div className="rail-row-copy">
-        <strong>
-          <span className={`rail-status ${upcoming ? 'is-upcoming' : ''}`} />
-          {titleOf(media)}
-        </strong>
-        <span className="rail-meta">
-          {media.format || 'TV'} {media.year && <span>· {media.year}</span>}
-          {media.score > 0 && (
-            <span className="rail-score">
-              <Star size={11} fill="currentColor" />
-              {Number(media.score).toFixed(1)}
-            </span>
-          )}
-        </span>
-        {media.viewers > 0 && (
-          <small>
-            {media.viewers} {media.viewers === 1 ? 'viewer' : 'viewers'}
-          </small>
-        )}
-      </div>
-    </>
-  );
-  return media.id ? (
-    <Link className="rail-media-row" to={`/title/${media.id}`}>
-      {body}
-    </Link>
-  ) : (
-    <a className="rail-media-row" href={media.providerUrl} target="_blank" rel="noreferrer">
-      {body}
-    </a>
-  );
-}
 export function HomeAiringSchedule({ language }) {
   const [now, setNow] = useState(Date.now());
   const today = localDateKey(now);
@@ -191,69 +146,14 @@ export function HomeAiringSchedule({ language }) {
     </section>
   );
 }
-export default function HomeSidebar({ popular = [] }) {
-  const sidebar = useResource('/api/home/sidebar');
+export default function HomeSidebar() {
   const community = useResource('/api/community', false);
   const { event } = useApp();
-  const [expanded, setExpanded] = useState(false);
   useEffect(() => {
     if (['comments', 'reviews', 'snapshot'].includes(event?.type)) community.refresh();
-    if (['library', 'snapshot'].includes(event?.type)) sidebar.refresh();
   }, [event]);
-  useEffect(() => {
-    const timer = setInterval(() => {
-      if (!document.hidden) sidebar.refresh();
-    }, 300000);
-    return () => clearInterval(timer);
-  }, []);
-  const viewed = sidebar.data?.mostViewed || [];
-  const upcoming = sidebar.data?.upcoming || [];
   return (
     <aside className="home-right-rail" aria-label="Anime highlights">
-      <section className="home-rail-panel" aria-label="Most viewed">
-        <div className="rail-heading">
-          <h2>
-            <TrendingUp size={14} /> Most viewed
-          </h2>
-        </div>
-        <p className="rail-note">
-          {viewed.length ? 'By watched Yoru libraries' : 'Popular picks · AnimeSchedule'}
-        </p>
-        {(viewed.length ? viewed : popular).slice(0, 4).map((media) => (
-          <MediaRow key={media.id || media.route} media={media} />
-        ))}
-        {!viewed.length && (
-          <p className="rail-note rail-footnote">
-            {sidebar.error
-              ? 'Viewer rankings are temporarily unavailable.'
-              : 'Viewer rankings appear as members log episodes.'}
-          </p>
-        )}
-      </section>
-      <section className="home-rail-panel" aria-label="Upcoming anime">
-        <div className="rail-heading">
-          <h2>
-            <Trophy size={14} /> Upcoming
-          </h2>
-        </div>
-        {sidebar.data?.stale && <p className="rail-note">Latest saved upcoming titles</p>}
-        {upcoming.slice(0, expanded ? 8 : 5).map((media) => (
-          <MediaRow key={media.id || media.route} media={media} upcoming />
-        ))}
-        {!upcoming.length && (
-          <p className="rail-empty">
-            {sidebar.loading
-              ? 'Loading upcoming anime…'
-              : 'Upcoming titles are temporarily unavailable.'}
-          </p>
-        )}
-        {upcoming.length > 5 && (
-          <button className="rail-more" onClick={() => setExpanded(!expanded)}>
-            {expanded ? 'Show less' : 'Show more'}
-            <ChevronDown size={12} />
-          </button>
-        )}
-      </section>
       <section className="home-rail-panel" aria-label="Community">
         <div className="rail-heading">
           <h2>

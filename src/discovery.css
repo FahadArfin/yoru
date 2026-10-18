@@ -511,8 +511,7 @@
   border-top: 1px solid #ffffff0c;
 }
 .home-lower-highlights .home-right-rail {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  display: block;
   align-items: start;
   padding: 0 0 40px;
 }
