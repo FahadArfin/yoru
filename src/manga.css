@@ -262,13 +262,22 @@
 }
 
 /* Category landing banners use half the height of the full discovery hero. */
+.browse-shell:has(.compact-category-page) {
+  --category-nav-space: 68px;
+}
+.browse-shell:has(.compact-category-page) .topbar {
+  position: absolute;
+  inset: 18px 9% auto;
+  width: auto;
+  margin: 0;
+}
 .compact-category-page .weekly-hero {
-  height: 45svh;
-  min-height: 300px;
+  height: calc(45svh + var(--category-nav-space, 0px));
+  min-height: calc(300px + var(--category-nav-space, 0px));
 }
 .compact-category-page .weekly-hero .weekly-content {
   height: calc(100% - 50px);
-  padding-top: 18px;
+  padding-top: calc(18px + var(--category-nav-space, 0px));
   padding-bottom: 8px;
 }
 .compact-category-page .weekly-content h1:not(.sr-only),
@@ -297,10 +306,27 @@
 .compact-category-page .weekly-bottom {
   bottom: 12px;
 }
+@media (max-width: 1400px) {
+  .browse-shell:has(.compact-category-page) {
+    --category-nav-space: 114px;
+  }
+}
+@media (max-width: 900px) {
+  .browse-shell:has(.compact-category-page) .topbar {
+    left: 16px;
+    right: 16px;
+  }
+}
 @media (max-width: 600px) {
+  .browse-shell:has(.compact-category-page) {
+    --category-nav-space: 120px;
+  }
+  .browse-shell:has(.compact-category-page) .topbar {
+    inset: 12px 12px auto;
+  }
   .compact-category-page .weekly-hero {
-    height: 42.5svh;
-    min-height: 280px;
+    height: calc(42.5svh + var(--category-nav-space, 0px));
+    min-height: calc(280px + var(--category-nav-space, 0px));
   }
   .compact-category-page .weekly-content h1:not(.sr-only),
   .compact-category-page .weekly-content h2 {
