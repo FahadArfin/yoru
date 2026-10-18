@@ -142,7 +142,7 @@ test('explicit homepage category works with unavailable storage and invalid valu
   await expect(page.getByRole('region', { name: 'Just released', exact: true })).toBeVisible();
 });
 
-test('homepage resumes the selected category directly below the banner and browse stays focused on discovery', async ({
+test('homepage resumes anime, manga and manhwa together below every category banner', async ({
   page,
   context,
   baseURL,
@@ -231,7 +231,7 @@ test('homepage resumes the selected category directly below the banner and brows
   ]) {
     await toggle.getByRole('tab', { name: label, exact: true }).click();
     const row = page.getByRole('region', {
-      name: category === 'anime' ? 'Continue watching' : 'Continue reading',
+      name: 'Pick up where you left off',
       exact: true,
     });
     await expect(row).toHaveCount(1);
@@ -250,20 +250,26 @@ test('homepage resumes the selected category directly below the banner and brows
         ? '/watch/mal-anime-1/4'
         : `/read/mal-manga-${id}/7?chapter=saved-chapter-${id}&page=9`,
     );
-    if (category === 'manga')
-      await expect(row.getByRole('link', { name: /Library only manga/ })).toHaveAttribute(
-        'href',
-        '/read/mal-manga-4/5',
-      );
-    if (category === 'manhwa')
-      await expect(row.getByRole('link', { name: /Saved manga|Library only manga/ })).toHaveCount(
-        0,
-      );
+    await expect(row.getByRole('link')).toHaveCount(4);
+    await expect(row.getByRole('link', { name: /Saved anime/ })).toHaveAttribute(
+      'href',
+      '/watch/mal-anime-1/4',
+    );
+    await expect(row.getByRole('link', { name: /Saved manga/ })).toHaveAttribute(
+      'href',
+      '/read/mal-manga-2/7?chapter=saved-chapter-2&page=9',
+    );
+    await expect(row.getByRole('link', { name: /Saved manhwa/ })).toHaveAttribute(
+      'href',
+      '/read/mal-manga-3/7?chapter=saved-chapter-3&page=9',
+    );
+    await expect(row.getByRole('link', { name: /Library only manga/ })).toHaveAttribute(
+      'href',
+      '/read/mal-manga-4/5',
+    );
   }
   for (const category of ['anime', 'manga', 'manhwa']) {
     await page.goto(`/browse/${category}`);
-    await expect(
-      page.getByRole('region', { name: /Continue reading|Continue watching/ }),
-    ).toHaveCount(0);
+    await expect(page.getByRole('region', { name: 'Pick up where you left off' })).toHaveCount(0);
   }
 });

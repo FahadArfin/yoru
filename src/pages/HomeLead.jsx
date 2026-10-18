@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import HomeSidebar, { HomeAiringSchedule } from './HomeSidebar';
 import HomeDiscovery from './HomeDiscovery';
-import ContinueWatching from './ContinueWatching';
+import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import LiveComments from './LiveComments';
 import { Link } from 'react-router-dom';
 import {
@@ -183,7 +183,7 @@ export default function HomeLead({ children }) {
         )}
       </section>
       <div className="home-resume home-width">
-        <ContinueWatching />
+        <PickUpWhereLeftOff />
       </div>
       <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">

@@ -18,7 +18,7 @@ import MangaHero from './MangaHero';
 import MangaDiscovery, { useMangaFeed } from './MangaDiscovery';
 import HomeDiscovery from './HomeDiscovery';
 import LiveComments from './LiveComments';
-import { ContinueReading } from '../reader/ReadingCollection';
+import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import '../manga.css';
 
 function MangaRow({ media }) {
@@ -63,7 +63,7 @@ export function MangaLanding({ category, label, homepage = false, children }) {
       <MangaHero items={picks} category={category} label={label} />
       {homepage && (
         <div className="home-resume home-width">
-          <ContinueReading category={category} />
+          <PickUpWhereLeftOff />
         </div>
       )}
       {!homepage && (

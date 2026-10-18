@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ArrowRight, BookOpen, Plus } from 'lucide-react';
+import { ArrowRight, BookOpen, Play, Plus } from 'lucide-react';
 import { Button, ErrorNotice, Loading } from '../components';
 import { useApp } from '../state';
-import { kindOf, titleOf } from '../api';
+import { isAnime, kindOf, titleOf } from '../api';
 import { useChapters, useReadingState } from './hooks';
 import { readerLink } from './model';
 import { READER_EVENT, readingHistory, saveReadingState } from './storage';
@@ -69,11 +69,14 @@ export function ChapterCollection({ media }) {
     </section>
   );
 }
-export function ContinueReading({ category }) {
+export function PickUpWhereLeftOff() {
   const { library } = useApp();
-  const [items, setItems] = useState(() => readingHistory(category.toUpperCase()));
+  const [items, setItems] = useState(() => [
+    ...readingHistory('MANGA'),
+    ...readingHistory('MANHWA'),
+  ]);
   useEffect(() => {
-    const update = () => setItems(readingHistory(category.toUpperCase()));
+    const update = () => setItems([...readingHistory('MANGA'), ...readingHistory('MANHWA')]);
     update();
     window.addEventListener(READER_EVENT, update);
     window.addEventListener('storage', update);
@@ -81,7 +84,7 @@ export function ContinueReading({ category }) {
       window.removeEventListener(READER_EVENT, update);
       window.removeEventListener('storage', update);
     };
-  }, [category]);
+  }, []);
   const local = items.map((item) => ({
     ...item,
     page: item.chapters[item.lastChapter].page,
@@ -92,46 +95,54 @@ export function ContinueReading({ category }) {
     ),
   }));
   const saved = library
-    .filter(
-      (entry) =>
-        entry.media &&
-        kindOf(entry.media).toLowerCase() === category &&
-        ['reading', 'current'].includes(entry.status) &&
-        entry.progress > 0 &&
-        !items.some((item) => item.mediaId === entry.mediaId),
-    )
-    .slice(0, 3)
+    .filter((entry) => {
+      if (!entry.media || !(entry.progress > 0)) return false;
+      const anime = isAnime(entry.media);
+      return (
+        (anime || ['MANGA', 'MANHWA'].includes(kindOf(entry.media))) &&
+        (anime ? ['watching', 'current'] : ['reading', 'current']).includes(entry.status) &&
+        !items.some((item) => item.mediaId === entry.mediaId)
+      );
+    })
     .map((entry) => ({
       mediaId: entry.mediaId,
       title: titleOf(entry.media),
       cover: entry.media.cover,
+      category: kindOf(entry.media),
       number: entry.progress,
-      href: `/read/${entry.mediaId}/${Math.max(1, entry.progress)}`,
+      updatedAt: entry.updatedAt,
+      href: isAnime(entry.media)
+        ? `/watch/${entry.mediaId}/${Math.max(1, entry.progress)}`
+        : `/read/${entry.mediaId}/${entry.progress}`,
     }));
-  if (!local.length && !saved.length) return null;
+  const updatedAt = (item) => Number(item.updatedAt) || Date.parse(item.updatedAt) || 0;
+  const progress = [...local, ...saved].sort((a, b) => updatedAt(b) - updatedAt(a)).slice(0, 12);
+  if (!progress.length) return null;
   return (
-    <section className="continue-reading" aria-label="Continue reading">
+    <section className="continue-reading" aria-label="Pick up where you left off">
       <div className="section-heading">
         <div>
           <span className="eyebrow">RIGHT WHERE YOU LEFT OFF</span>
-          <h2>Continue reading</h2>
+          <h2>Pick up where you left off</h2>
         </div>
-        <span className="muted">{saved.length ? 'Your reading progress' : 'On this device'}</span>
+        <span className="muted">{saved.length ? 'Your saved progress' : 'On this device'}</span>
       </div>
       <div className="continue-reading-rail">
-        {[...local, ...saved].map((item) => {
+        {progress.map((item) => {
+          const anime = item.category === 'ANIME';
           return (
             <Link key={item.mediaId} to={item.href} className="continue-reading-card">
               <img src={item.cover || '/icon.svg'} alt="" loading="lazy" />
               <div>
                 <strong>{item.title}</strong>
                 <span>
-                  Chapter {item.number}
-                  {item.page ? ` · Page ${item.page}` : ' · Pick it back up'}
+                  {anime ? 'Anime' : item.category === 'MANHWA' ? 'Manhwa' : 'Manga'} ·{' '}
+                  {anime ? 'Episode' : 'Chapter'} {item.number}
+                  {!anime && item.page ? ` · Page ${item.page}` : ''}
                 </span>
                 <small>
-                  <BookOpen size={12} />
-                  Continue the story
+                  {anime ? <Play size={12} /> : <BookOpen size={12} />}
+                  {anime ? 'Continue watching' : 'Continue reading'}
                   <ArrowRight size={12} />
                 </small>
               </div>

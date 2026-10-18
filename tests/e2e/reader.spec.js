@@ -109,11 +109,15 @@ test('native reader preserves page, edition, bookmarks and settings through relo
   await page.goto('/?category=manga');
   await expect(
     page
-      .getByRole('region', { name: 'Continue reading' })
+      .getByRole('region', { name: 'Pick up where you left off' })
       .getByRole('link', { name: /Death Note/ }),
   ).toBeVisible();
   await page.goto('/?category=manhwa');
-  await expect(page.getByRole('region', { name: 'Continue reading' })).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('region', { name: 'Pick up where you left off' })
+      .getByRole('link', { name: /Death Note/ }),
+  ).toBeVisible();
 });
 
 test('manhwa defaults to webtoon and image files stay on the device after reload', async ({
