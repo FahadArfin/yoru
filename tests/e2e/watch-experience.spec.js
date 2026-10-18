@@ -8,6 +8,77 @@ test.beforeEach(async ({ context, baseURL }) => {
   );
 });
 
+test('episode list uses real metadata, handles missing artwork and pages by groups of 50', async ({
+  page,
+}) => {
+  const pages = [];
+  await page.route(`**/api/media/${id}`, async (route) => {
+    const response = await route.fetch();
+    const body = await response.json();
+    (body.media || body).episodes = 123;
+    await route.fulfill({ json: body });
+  });
+  await page.route(`**/api/media/${id}/episodes?*`, (route) => {
+    const pageNumber = Number(new URL(route.request().url()).searchParams.get('page'));
+    pages.push(pageNumber);
+    return route.fulfill({
+      json: {
+        mediaId: id,
+        total: 123,
+        page: pageNumber,
+        partial: false,
+        items:
+          pageNumber === 1
+            ? [
+                {
+                  number: 1,
+                  title: 'A real episode title',
+                  description: 'The journey begins with a difficult choice.',
+                  image: '/icon.svg',
+                  aired: '2026-01-01',
+                },
+                {
+                  number: 2,
+                  title: 'The missing still',
+                  description: '',
+                  image: '/missing-still.jpg',
+                },
+                { number: 51, title: 'A new chapter', description: 'A second adventure.' },
+              ]
+            : [{ number: 101, title: 'Beyond the horizon', description: 'The final stretch.' }],
+      },
+    });
+  });
+  await page.goto(`/watch/${id}/1?language=dub`);
+  const panel = page.getByRole('complementary', { name: 'Episode browser' });
+  await page.locator('iframe').evaluate((frame) => (frame.dataset.playerIdentity = 'retained'));
+  await panel.getByRole('button', { name: 'Episode list', exact: true }).click();
+  const first = panel.getByRole('button', { name: 'Episode 1, now playing', exact: true });
+  await expect(first).toContainText('A real episode title');
+  await expect(first).toContainText('The journey begins with a difficult choice.');
+  await expect(first).toContainText('DUB');
+  await expect(first.locator('.watch-episode-art > img')).toHaveAttribute('src', '/icon.svg');
+  await expect(panel.getByRole('button', { name: 'Episode 2', exact: true })).toContainText(
+    'Series artwork',
+  );
+  await expect(panel.getByRole('button', { name: 'Episode 3', exact: true })).toContainText(
+    'Episode details unavailable',
+  );
+  await panel.getByRole('button', { name: 'Next episode group' }).click();
+  await expect(panel.getByRole('button', { name: 'Episode 51', exact: true })).toContainText(
+    'A new chapter',
+  );
+  await panel.getByRole('button', { name: 'Next episode group' }).click();
+  await expect(panel.getByRole('button', { name: 'Episode 101', exact: true })).toContainText(
+    'Beyond the horizon',
+  );
+  expect(pages).toEqual([1, 2]);
+  await expect(page.locator('iframe')).toHaveAttribute('data-player-identity', 'retained');
+  await panel.getByRole('button', { name: 'Episode 101', exact: true }).click();
+  await expect(page).toHaveURL(/101\?language=dub/);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
 test('watch layout offers saved tiles/list, groups, episode navigation and theater without reloading the player', async ({
   page,
   isMobile,
