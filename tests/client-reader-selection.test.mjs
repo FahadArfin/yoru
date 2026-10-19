@@ -760,6 +760,58 @@ test('a dispatched CAS timeout drops captured queued projections before another 
   }
 });
 
+test('a failed conflict reconciliation cannot permit passive guest projection replay', async () => {
+  const originalFetch = globalThis.fetch;
+  for (const failure of ['http', 'network', 'timeout']) {
+    let posts = 0,
+      reads = 0;
+    let settings = defaults();
+    globalThis.fetch = async (_url, options) => {
+      if (options.method === 'POST') {
+        posts++;
+        if (posts === 1) return Response.json({ error: 'Concurrent choice' }, { status: 409 });
+      } else {
+        reads++;
+        if (reads === 2) {
+          if (failure === 'network') throw new TypeError('Network failed');
+          if (failure === 'timeout') throw new DOMException('Timed out', 'TimeoutError');
+          return Response.json({ error: 'Reconciliation unavailable' }, { status: 503 });
+        }
+      }
+      return Response.json({
+        destination: 'yoru',
+        revision: 4000 + posts,
+        selectionFingerprint: `reconcile-${failure}-${posts}`,
+      });
+    };
+    const controller = createReaderSelection({
+      loadSettings: async () => settings,
+      saveMode: async (_scope, destination, mode) => {
+        settings = { ...settings, modes: { ...settings.modes, [destination]: mode } };
+      },
+      syncGuest: syncGuestReaderContext,
+      readContext: (destination, signal) =>
+        api(`/api/reader/context?destination=${destination}`, { signal }),
+    });
+    try {
+      await controller.select({ scope: 'guest', destination: 'yoru', enabled: true });
+      assert.equal(posts, 1);
+      assert.equal(controller.getSnapshot().ready, false);
+      await controller.refresh();
+      assert.equal(posts, 1, `${failure} reconciliation failure must retain the conflict barrier`);
+      assert.equal(controller.getSnapshot().ready, false);
+      assert.match(controller.getSnapshot().error, /changed/);
+      assert.equal(reads, 3, 'passive refresh may inspect the latest context without POST');
+      await controller.setIntegrationMode('core');
+      assert.equal(posts, 2, 'a fresh explicit choice may recover through fresh GET/CAS');
+      assert.equal(controller.getSnapshot().ready, true);
+    } finally {
+      controller.dispose();
+      globalThis.fetch = originalFetch;
+    }
+  }
+});
+
 test('passive guest refresh after conflict or uncertain timeout reads without replay until an explicit destination action', async () => {
   const originalFetch = globalThis.fetch;
   for (const failure of ['conflict', 'timeout']) {

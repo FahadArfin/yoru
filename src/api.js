@@ -239,10 +239,15 @@ export function syncGuestReaderContext(destination, selection, signal) {
         guestContextEpochs.set(destination, epoch + 1);
         guestContexts.delete(destination);
         // Never replay a captured old projection after another tab changed the cookie context.
-        error.context = await api(path, { signal: mutationSignal });
         error.concurrentChange = true;
         error.message =
           'Reader choices changed in another tab. Refresh to use your current choices.';
+        try {
+          error.context = await api(path, { signal: mutationSignal });
+        } catch {
+          // Reconciliation is best effort; its failure cannot erase the known
+          // conflict or permit a later passive refresh to overwrite that choice.
+        }
       }
       throw error;
     }
