@@ -49,6 +49,28 @@ test('native account views retain private native history and destination labels'
     providerDetails: () => nativeDetails,
     holdProvider: providerGate.holdProvider,
     releaseProvider: providerGate.releaseProvider,
+    async inspectNative(id) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      try {
+        return await createExternalCatalogStore({
+          get: async (s, ...v) => sqlite.prepare(s).get(...v),
+        }).getTitle(id);
+      } finally {
+        sqlite.close();
+      }
+    },
+    async inspectSnapshot(user, id) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      try {
+        return sqlite
+          .prepare(
+            "SELECT * FROM reading_account_snapshots WHERE user_id=? AND media_id=? AND record_kind='resume'",
+          )
+          .get(user, id);
+      } finally {
+        sqlite.close();
+      }
+    },
     async inspectAccountRows(user, id) {
       const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
       try {

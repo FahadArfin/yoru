@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import { createExternalCatalogStore } from '../server/external-catalog-store.js';
 
 export const accountClassification = (rating = 'safe') => ({
   rating,
@@ -58,6 +59,8 @@ export async function extensionAccountContract({
   holdProvider,
   releaseProvider,
   inspectAccountRows,
+  inspectNative,
+  inspectSnapshot,
 }) {
   const alice = await register('NativeAccountAlice'),
     bob = await register('NativeAccountBob');
@@ -250,7 +253,77 @@ export async function extensionAccountContract({
   assert.equal(inventoryNext.body.inventoryComplete, true);
   assert.equal(inventoryNext.body.items.find((item) => item.mediaId === media.id).page, 8);
   await changeInventory([accountSource()]);
+  // A losing older write must retain both the winner's progress and destination snapshot.
+  await request('/api/reader/preferences', {
+    method: 'PATCH',
+    session: alice,
+    body: { owner: alice.user.id, provider: 'MangaDex', destination: 'ara-ara', enabled: true },
+  });
+  const winner = await request(`/api/resume/${media.id}?destination=ara-ara`, {
+    method: 'PUT',
+    session: alice,
+    body: { owner: alice.user.id, page: 8, number: 3, updatedAt: stamp + 200 },
+  });
+  assert.equal(winner.status, 200);
+  const loser = await request(`/api/resume/${media.id}?destination=yoru`, {
+    method: 'PUT',
+    session: alice,
+    body: { owner: alice.user.id, page: 2, number: 3, updatedAt: stamp + 100 },
+  });
+  assert.equal(loser.status, 200);
+  assert.equal(loser.body.item.destination, 'ara-ara');
+  assert.equal(loser.body.item.page, 8);
+  assert.equal(
+    (await inspectSnapshot(alice.user.id, media.id)).destination,
+    'ara-ara',
+    'stale progress cannot relabel the accepted snapshot',
+  );
+  const exportedWinner = await request('/api/library/export', { session: alice });
+  assert.equal(
+    exportedWinner.body.resume.find((item) => item.mediaId === media.id).destination,
+    'ara-ara',
+  );
   if (holdProvider) {
+    for (const kind of ['library', 'resume']) {
+      const raced = await seedNative(accountSource(), `/title/awaiting-source-${kind}`);
+      const held = holdProvider(raced.upstreamRef.upstreamKey);
+      const delayed = request(
+        `/api/${kind === 'media' ? 'reader/media' : kind}/${raced.id}?destination=yoru`,
+        {
+          ...(kind === 'media'
+            ? {}
+            : {
+                method: 'PUT',
+                body:
+                  kind === 'library'
+                    ? { status: 'reading', progress: 5 }
+                    : { owner: alice.user.id, number: 5, page: 8, updatedAt: Date.now() },
+              }),
+          session: alice,
+        },
+      );
+      await Promise.race([
+        held.entered,
+        delayed.then((response) => {
+          throw new Error(
+            `${kind} returned before details gate: ${response.status} ${JSON.stringify(response.body)}`,
+          );
+        }),
+      ]);
+      await seedNative(accountSource('123', 'adult'), `/title/newer-proof-${kind}`);
+      releaseProvider();
+      assert.equal(
+        (await delayed).status,
+        409,
+        `${kind}: stale safe details cannot overwrite newer source proof`,
+      );
+      assert.equal((await inspectNative(raced.id)).sourceRef.classification.rating, 'adult');
+      assert.deepEqual(await inspectAccountRows(alice.user.id, raced.id), {
+        library: 0,
+        resume: 0,
+      });
+      await seedNative(accountSource(), `/title/restored-proof-${kind}`);
+    }
     const waiting = await seedNative(accountSource(), '/title/awaiting-preferences');
     let gate = holdProvider(waiting.upstreamRef.upstreamKey);
     let pending = request(`/api/library/${waiting.id}?destination=yoru`, {
@@ -297,4 +370,37 @@ export async function extensionAccountContract({
       resume: 0,
     });
   }
+}
+
+export async function sourceAuthorityContract(db) {
+  const store = createExternalCatalogStore(db, { now: () => 1000 });
+  const source = accountSource('991', 'adult');
+  const input = {
+    sourceRef: source,
+    upstreamRef: { sourceId: source.id, upstreamKey: '/authority/one', language: 'en' },
+    classification: source.classification,
+    metadata: { title: 'Authority', category: 'MANGA' },
+  };
+  assert.equal(await store.getSourceAuthority(source.id), null);
+  const first = await store.rememberTitle(input, { expectedSource: null });
+  assert.equal(Object.keys(first).includes('sourceAuthority'), false);
+  const initial = first.sourceAuthority;
+  await store.rememberSource(source); // same adult proof, same frozen millisecond
+  const current = await store.getSourceAuthority(source.id);
+  assert.ok(Date.parse(current.version) > Date.parse(initial.version));
+  await assert.rejects(
+    store.rememberTitle({ ...input, sourceRef: accountSource('991') }, { expectedSource: initial }),
+    { status: 409 },
+  );
+  await assert.rejects(store.rememberTitle(input, { expectedSource: null }), { status: 409 });
+  const second = await store.rememberTitle(
+    { ...input, upstreamRef: { ...input.upstreamRef, upstreamKey: '/authority/two' } },
+    { expectedSource: current },
+  );
+  const third = await store.rememberTitle(
+    { ...input, upstreamRef: { ...input.upstreamRef, upstreamKey: '/authority/three' } },
+    { expectedSource: second.sourceAuthority },
+  );
+  assert.ok(Date.parse(third.sourceAuthority.version) > Date.parse(second.sourceAuthority.version));
+  assert.equal((await store.getTitle(first.id)).sourceRef.classification.rating, 'adult');
 }

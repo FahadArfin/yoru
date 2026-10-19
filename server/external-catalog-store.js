@@ -175,7 +175,10 @@ export function createExternalCatalogStore(
       {
         sql: `INSERT INTO reader_sources(id,integration,upstream_source_id,provider_key,language,classification,capabilities,bridge_instance,updated_at)
           VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(id) DO UPDATE SET classification=excluded.classification,
-          capabilities=excluded.capabilities,bridge_instance=excluded.bridge_instance,updated_at=excluded.updated_at
+          capabilities=excluded.capabilities,bridge_instance=excluded.bridge_instance,
+          updated_at=CASE WHEN excluded.updated_at<=reader_sources.updated_at
+          THEN strftime('%Y-%m-%dT%H:%M:%fZ',reader_sources.updated_at,'+0.001 seconds')
+          ELSE excluded.updated_at END
           WHERE integration=excluded.integration AND upstream_source_id IS excluded.upstream_source_id
           AND provider_key=excluded.provider_key AND language=excluded.language`,
         values: [
@@ -196,8 +199,7 @@ export function createExternalCatalogStore(
       ),
     ];
   }
-  async function readSource(id) {
-    const row = await db.get('SELECT * FROM reader_sources WHERE id=?', id);
+  function sourceFromRow(row) {
     return (
       row && {
         id: row.id,
@@ -210,6 +212,15 @@ export function createExternalCatalogStore(
         bridgeInstance: row.bridge_instance,
       }
     );
+  }
+  function authorityFromRow(row) {
+    return row ? { id: row.id, version: row.updated_at, source: sourceFromRow(row) } : null;
+  }
+  async function getSourceAuthority(id) {
+    return authorityFromRow(await db.get('SELECT * FROM reader_sources WHERE id=?', id));
+  }
+  async function readSource(id) {
+    return sourceFromRow(await db.get('SELECT * FROM reader_sources WHERE id=?', id));
   }
   async function getTitle(id) {
     const row = await db.get('SELECT * FROM external_media WHERE id=?', id);
@@ -316,14 +327,35 @@ export function createExternalCatalogStore(
       await atomic(sourceStatements(input));
       return readSource(input.id);
     },
-    async rememberTitle(input) {
+    getSourceAuthority,
+    async rememberTitle(input, options = {}) {
       object(input, 'title');
       const s = sourceRef(input.sourceRef),
         ref = titleRef(input.upstreamRef, s);
       classification(input.classification);
       const metadata = json(object(input.metadata, 'title metadata'), 'title metadata');
       const at = timestamp();
-      await atomic([
+      const guarded = Object.hasOwn(options, 'expectedSource');
+      const expected = options.expectedSource;
+      if (
+        guarded &&
+        expected !== null &&
+        (expected?.id !== s.id || typeof expected.version !== 'string')
+      )
+        throw invalid('source authority');
+      const committed = await atomic([
+        // Omitted means unguarded initialization; explicit null guards absence.
+        // Compare before ANY source/title persistence in this transaction.
+        ...(guarded
+          ? [
+              expected === null
+                ? assertion('NOT EXISTS(SELECT 1 FROM reader_sources WHERE id=?)', [s.id])
+                : assertion('EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND updated_at=?)', [
+                    s.id,
+                    expected.version,
+                  ]),
+            ]
+          : []),
         ...sourceStatements(s),
         {
           sql: `INSERT INTO external_media(id,source_id,upstream_key,language,classification,metadata,created_at,updated_at)
@@ -340,6 +372,7 @@ export function createExternalCatalogStore(
             at,
           ],
         },
+        { sql: 'SELECT * FROM reader_sources WHERE id=?', values: [s.id] },
       ]);
       const row = await db.get(
         'SELECT id FROM external_media WHERE source_id=? AND upstream_key=? AND language=?',
@@ -347,7 +380,12 @@ export function createExternalCatalogStore(
         ref.upstreamKey,
         ref.language,
       );
-      return getTitle(row.id);
+      const result = await getTitle(row.id);
+      // Non-public token comes from THIS committed transaction, never a later read.
+      Object.defineProperty(result, 'sourceAuthority', {
+        value: authorityFromRow(committed.at(-1)[0]),
+      });
+      return result;
     },
     getTitle,
     async rememberEdition(mediaId, input) {

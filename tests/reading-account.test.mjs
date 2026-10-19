@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { contextFixture } from './reader-context-fixture.mjs';
 import { createExternalCatalogStore } from '../server/external-catalog-store.js';
-import { accountSource } from './extension-account-contract.mjs';
+import { accountSource, sourceAuthorityContract } from './extension-account-contract.mjs';
 import { DatabaseSync } from 'node:sqlite';
 import { externalCatalogSchema } from '../server/external-catalog-store.js';
 import { nodeReaderDb } from '../server/reader-db.js';
@@ -586,6 +586,63 @@ test('native source eligibility changed immediately before the atomic account wr
       { status: 409 },
     );
     assert.equal((await f.db.all("SELECT * FROM library WHERE user_id='write-race'")).length, 0);
+  } finally {
+    f.close();
+  }
+});
+
+test('source authority detects same-classification observations at a frozen clock, absent inserts and own-write chains', async () => {
+  const f = contextFixture();
+  try {
+    await sourceAuthorityContract(f.db);
+  } finally {
+    f.close();
+  }
+});
+
+test('default native detail resolver preserves a same-class newer source observation before persistence', async () => {
+  const { resolveMedia } = await import('../server/media-resolver.js');
+  const f = contextFixture();
+  try {
+    const store = createExternalCatalogStore(f.db, { now: () => 1000 });
+    const adult = accountSource('992', 'adult'),
+      safe = accountSource('992');
+    const original = {
+      sourceRef: adult,
+      upstreamRef: { sourceId: adult.id, upstreamKey: '/detail/same-class', language: 'en' },
+      classification: adult.classification,
+      metadata: { title: 'Original', category: 'MANGA' },
+    };
+    const media = await store.rememberTitle(original);
+    await assert.rejects(
+      resolveMedia(
+        media.id,
+        {
+          destination: 'ara-ara',
+          extensionsEnabled: true,
+          overrides: { MangaDex: { 'ara-ara': true } },
+        },
+        {
+          db: f.db,
+          now: () => 1000,
+          bridge: {
+            details: async () => {
+              await store.rememberSource(adult);
+              return {
+                ...original,
+                sourceRef: safe,
+                classification: safe.classification,
+                metadata: { title: 'Stale safe response', category: 'MANGA' },
+              };
+            },
+          },
+        },
+      ),
+      { status: 409 },
+    );
+    const stored = await store.getTitle(media.id);
+    assert.equal(stored.sourceRef.classification.rating, 'adult');
+    assert.equal(stored.title, 'Original');
   } finally {
     f.close();
   }

@@ -380,7 +380,7 @@ export function resumeMetadata(media, context) {
       : {}),
   };
 }
-export function accountSnapshotStatement(context, media, kind = 'library') {
+export function accountSnapshotStatement(context, media, kind = 'library', acceptedResume = null) {
   const snapshot = {};
   for (const key of [
     'id',
@@ -407,7 +407,7 @@ export function accountSnapshotStatement(context, media, kind = 'library') {
   if (Buffer.byteLength(metadata) > 131072)
     throw apiError(413, 'Saved title metadata is too large.');
   return {
-    sql: `INSERT INTO reading_account_snapshots(user_id,media_id,record_kind,destination,metadata,updated_at) VALUES(?,?,?,?,?,?) ON CONFLICT(user_id,media_id,record_kind) DO UPDATE SET destination=excluded.destination,metadata=excluded.metadata,updated_at=excluded.updated_at`,
+    sql: `INSERT INTO reading_account_snapshots(user_id,media_id,record_kind,destination,metadata,updated_at) SELECT ?,?,?,?,?,? ${acceptedResume ? 'WHERE EXISTS (SELECT 1 FROM resume_progress WHERE user_id=? AND media_id=? AND updated_at=? AND payload=?)' : ''} ON CONFLICT(user_id,media_id,record_kind) DO UPDATE SET destination=excluded.destination,metadata=excluded.metadata,updated_at=excluded.updated_at`,
     values: [
       context.userId,
       media.id,
@@ -415,6 +415,9 @@ export function accountSnapshotStatement(context, media, kind = 'library') {
       context.destination,
       metadata,
       new Date().toISOString(),
+      ...(acceptedResume
+        ? [context.userId, media.id, acceptedResume.updatedAt, JSON.stringify(acceptedResume)]
+        : []),
     ],
   };
 }

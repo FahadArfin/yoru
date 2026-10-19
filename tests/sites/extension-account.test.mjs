@@ -6,6 +6,7 @@ import { sitesReaderDb, store } from '../../sites/store.js';
 import { createExternalCatalogStore } from '../../server/external-catalog-store.js';
 import {
   extensionAccountContract,
+  sourceAuthorityContract,
   accountSource,
   accountProviderGate,
 } from '../extension-account-contract.mjs';
@@ -63,12 +64,20 @@ test('native private account contract is identical across two D1 Workers', async
       return { user: response.body.user, cookie: response.headers.get('set-cookie').split(';')[0] };
     };
     const db = sitesReaderDb(store(await runtime.getD1Database('DB', 'a')));
+    await sourceAuthorityContract(db);
     await extensionAccountContract({
       request,
       register,
       providerDetails: () => details,
       holdProvider: providerGate.holdProvider,
       releaseProvider: providerGate.releaseProvider,
+      inspectNative: (id) => createExternalCatalogStore(db).getTitle(id),
+      inspectSnapshot: (user, id) =>
+        db.get(
+          "SELECT * FROM reading_account_snapshots WHERE user_id=? AND media_id=? AND record_kind='resume'",
+          user,
+          id,
+        ),
       async inspectAccountRows(user, id) {
         return {
           library: (

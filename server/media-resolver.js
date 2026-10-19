@@ -16,6 +16,10 @@ export async function resolveMedia(mediaId, context, deps) {
   if (media?.id !== mediaId) throw unavailable();
   assertMediaEligible(media, context);
   if (ref.kind === 'extension-manga' && deps.bridge) {
+    const store = createExternalCatalogStore(deps.db, deps);
+    const expectedSource = await store.getSourceAuthority(media.sourceRef.id);
+    if (!expectedSource) throw unavailable();
+    assertMediaEligible({ ...media, sourceRef: expectedSource.source }, context);
     const refreshed = await deps.bridge.details(media.upstreamRef, context);
     if (
       refreshed?.upstreamRef?.sourceId !== media.upstreamRef.sourceId ||
@@ -24,7 +28,7 @@ export async function resolveMedia(mediaId, context, deps) {
       refreshed.sourceRef?.id !== media.sourceRef.id
     )
       throw unavailable();
-    media = await createExternalCatalogStore(deps.db, deps).rememberTitle(refreshed);
+    media = await store.rememberTitle(refreshed, { expectedSource });
     assertMediaEligible(media, context);
   }
   const result = ref.kind === 'extension-manga' ? publicReadingMedia(media, context) : media;

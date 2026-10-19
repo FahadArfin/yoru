@@ -99,7 +99,7 @@ socialRouter.put(
       context,
       [
         { sql: resumeUpsert, values: [req.user.id, id, JSON.stringify(item), item.updatedAt] },
-        accountSnapshotStatement(context, media, 'resume'),
+        accountSnapshotStatement(context, media, 'resume', item),
       ],
       request.deps,
       { media },

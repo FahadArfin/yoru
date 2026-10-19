@@ -158,7 +158,7 @@ export function socialRoutes(app) {
       context,
       [
         { sql: resumeUpsert, values: [user.id, id, JSON.stringify(item), item.updatedAt] },
-        accountSnapshotStatement(context, media, 'resume'),
+        accountSnapshotStatement(context, media, 'resume', item),
       ],
       request.deps,
       { media },
