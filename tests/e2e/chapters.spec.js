@@ -150,7 +150,10 @@ test('signed-in chapter ratings save and failed feeds have a retry without inven
     },
   });
   expect(account.ok()).toBeTruthy();
-  await page.route('**/api/media/*/chapters/*/rating', async (route) => {
+  await page.route(/\/api\/media\/[^/]+\/chapters\/[^/]+\/rating(?:\?|$)/, async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    expect(params.get('destination')).toBe('yoru');
+    expect(params.get('selectionFingerprint')).toBeTruthy();
     expect(route.request().postDataJSON()).toEqual({ rating: 5 });
     await route.fulfill({ json: { opens: 7, votes: 3, rating: 4.67, myRating: 5 } });
   });

@@ -95,12 +95,19 @@ test('vertical comments auto-scroll and honor reduced motion', async ({ page }) 
   await setup(page);
   await page.goto('/?category=manga');
   const section = page.getByRole('region', { name: 'Live comments', exact: true });
-  await section.scrollIntoViewIfNeeded();
   await expect(section.locator('li')).toHaveCount(7);
+  await section.scrollIntoViewIfNeeded();
+  await expect(section).toBeInViewport();
   await page.mouse.move(0, 0);
   const viewport = section.getByLabel('Recent comments');
   await expect
-    .poll(() => viewport.evaluate((node) => node.scrollTop), { timeout: 10000 })
+    .poll(
+      async () => {
+        await section.scrollIntoViewIfNeeded();
+        return viewport.evaluate((node) => node.scrollTop);
+      },
+      { timeout: 10000 },
+    )
     .toBeGreaterThan(30);
   await page.emulateMedia({ reducedMotion: 'reduce' });
   await expect(section.getByText('Auto-scroll off')).toBeVisible();

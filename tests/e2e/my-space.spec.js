@@ -1,5 +1,6 @@
 import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { readerImage } from '../fixtures/reader-image.mjs';
 
 const anime = 'mal-anime-52991';
 const manhwa = 'mal-manga-121496';
@@ -140,7 +141,83 @@ test('reading rooms preserve an exact edition and language, including bonus chap
 }) => {
   await register(page, baseURL);
   const edition = '00000000-0000-4000-8000-000000000001';
+  const { user } = await (await page.request.get('/api/auth/me')).json();
+  const data = await (await page.request.get(`/api/media/${manhwa}`)).json();
+  const media = data.media || data;
+  let room;
+  const changes = [];
+  const assertContext = (request) => {
+    const params = new URL(request.url()).searchParams;
+    expect(params.get('destination')).toBe('yoru');
+    expect(params.get('selectionFingerprint')).toBeTruthy();
+  };
+  // Browser transport fixture for an already-authorized exact edition. Actual
+  // server ownership/unknown-edition rejection is covered by native-social HTTP contracts.
+  await page.route(/\/api\/rooms(?:\/[^?]*)?(?:\?|$)/, (route) => {
+    const request = route.request();
+    const path = new URL(request.url()).pathname;
+    if (path.endsWith('/chat')) return route.fulfill({ json: { items: [] } });
+    assertContext(request);
+    if (request.method() === 'POST' && path === '/api/rooms') {
+      const created = request.postDataJSON();
+      expect(created.mediaId).toBe(manhwa);
+      expect(created.unit).toBe(4.5);
+      const selected = new URL(created.sourceUrl, baseURL);
+      expect(selected.searchParams.get('chapter')).toBe(edition);
+      expect(selected.searchParams.get('language')).toBe('ja');
+      expect(selected.searchParams.get('source')).toBe('mangadex');
+      room = {
+        ...created,
+        id: 'verified-core-edition-room',
+        media,
+        destination: 'yoru',
+        hostId: user.id,
+        joined: true,
+        members: [user],
+        memberCount: 1,
+        version: 1,
+        paused: true,
+        position: 0,
+      };
+      return route.fulfill({ status: 201, json: { room, invite: 'synthetic-invitation' } });
+    }
+    if (request.method() === 'PATCH') {
+      const patch = request.postDataJSON();
+      changes.push(patch);
+      room = { ...room, ...patch, version: room.version + 1 };
+    }
+    return route.fulfill({ json: { room } });
+  });
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?|$)/, (route) =>
+    route.fulfill({ json: { state: 'ready', sources: [{ id: 'mangadex', name: 'MangaDex' }] } }),
+  );
+  await page.route('**/api/media/*/chapters?*', (route) =>
+    route.fulfill({ json: { items: [], total: 0, state: 'ready' } }),
+  );
+  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?|$)/, (route) => {
+    assertContext(route.request());
+    return route.fulfill({
+      json: {
+        id: edition,
+        kind: 'remote',
+        number: '4.5',
+        language: 'ja',
+        pages: [{ url: `/api/media/${manhwa}/reader/${edition}/page/0` }],
+      },
+    });
+  });
+  await page.route('**/api/media/*/reader/*/page/*', (route) =>
+    route.fulfill({ contentType: 'image/png', body: readerImage() }),
+  );
   await page.goto(`/read/${manhwa}/4.5?source=mangadex&language=ja&chapter=${edition}`);
+  await expect(page.getByRole('img', { name: 'Chapter 4.5, page 1', exact: true })).toBeVisible();
+  const closeReaderMenu = page.getByRole('button', { name: 'Close reader menu', exact: true });
+  if (await closeReaderMenu.isVisible()) await closeReaderMenu.click();
+  const revealControls = page.getByRole('button', {
+    name: 'Show chapter and page controls',
+    exact: true,
+  });
+  if (await revealControls.isVisible()) await revealControls.click();
   await page.getByRole('button', { name: 'Read together', exact: true }).click();
   await expect(page.getByLabel('Starting unit')).toHaveValue('4.5');
   await page.getByRole('button', { name: 'Create room', exact: true }).click();
@@ -158,4 +235,7 @@ test('reading rooms preserve an exact edition and language, including bonus chap
   await page.getByRole('button', { name: 'Go', exact: true }).click();
   await expect(page.getByTestId('room-unit')).toHaveText('0');
   await expect(reader).toHaveAttribute('src', `/read/${manhwa}/0?language=ja&source=mangadex`);
+  expect(changes).toHaveLength(1);
+  expect(changes[0].unit).toBe(0);
+  expect(changes[0].sourceUrl).toBe(`/read/${manhwa}/0?language=ja&source=mangadex`);
 });

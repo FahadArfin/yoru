@@ -98,13 +98,19 @@ test('media input Enter never submits early and an open picker cannot change a p
   const gate = new Promise((resolve) => {
     release = resolve;
   });
-  await page.route(`**/api/comments/${id}`, async (route) => {
-    if (route.request().method() === 'POST') {
-      posts++;
-      await gate;
-    }
-    await route.continue();
-  });
+  await page.route(
+    (url) => url.pathname === `/api/comments/${id}`,
+    async (route) => {
+      if (route.request().method() === 'POST') {
+        const params = new URL(route.request().url()).searchParams;
+        expect(params.get('destination')).toBe('yoru');
+        expect(params.get('selectionFingerprint')).toBeTruthy();
+        posts++;
+        await gate;
+      }
+      await route.continue();
+    },
+  );
   await composer.getByRole('button', { name: 'Add GIF', exact: true }).click();
   await composer.getByLabel('GIF image URL').fill(gif);
   await composer.getByLabel('GIF image URL').press('Enter');

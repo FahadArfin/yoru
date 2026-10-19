@@ -4,11 +4,17 @@ import { readerImage } from '../fixtures/reader-image.mjs';
 const chapterId = '11111111-2222-4333-8444-555555555555';
 const image = readerImage();
 const manifestPath = `/api/media/mal-manga-21/reader/${chapterId}`;
+function readerContext(request) {
+  const params = new URL(request.url()).searchParams;
+  expect(params.get('destination')).toBe('yoru');
+  expect(params.get('integration')).toBe('all');
+  expect(params.get('selectionFingerprint')).toBeTruthy();
+}
 async function fixtures(page, context, baseURL) {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
-  await page.route('**/api/media/*/reading-sources', (route) =>
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?|$)/, (route) =>
     route.fulfill({ json: { state: 'ready', sources: [{ id: 'mangadex', name: 'MangaDex' }] } }),
   );
   await page.route('**/api/media/*/chapters?*', (route) =>
@@ -39,20 +45,24 @@ async function fixtures(page, context, baseURL) {
     route.fulfill({ contentType: 'image/png', body: image }),
   );
   let manifests = 0;
-  await page.route(`**${manifestPath}`, (route) => {
-    manifests++;
-    return route.fulfill({
-      json: {
-        id: chapterId,
-        kind: 'remote',
-        number: '1',
-        language: 'en',
-        title: 'First edition',
-        group: 'Example group',
-        pages: [0, 1, 2].map((n) => ({ url: `${manifestPath}/page/${n}` })),
-      },
-    });
-  });
+  await page.route(
+    (url) => url.pathname === manifestPath,
+    (route) => {
+      readerContext(route.request());
+      manifests++;
+      return route.fulfill({
+        json: {
+          id: chapterId,
+          kind: 'remote',
+          number: '1',
+          language: 'en',
+          title: 'First edition',
+          group: 'Example group',
+          pages: [0, 1, 2].map((n) => ({ url: `${manifestPath}/page/${n}` })),
+        },
+      });
+    },
+  );
   return () => manifests;
 }
 
@@ -166,9 +176,10 @@ test('a failed identity check keeps personal ratings hidden after an external ch
       },
     }),
   );
-  await page.route('**/api/media/*/chapters/*/open', (route) =>
-    route.fulfill({ json: { opens: 7, votes: 2, rating: 4, myRating: 4 } }),
-  );
+  await page.route(/\/api\/media\/[^/]+\/chapters\/[^/]+\/open(?:\?|$)/, (route) => {
+    readerContext(route.request());
+    return route.fulfill({ json: { opens: 7, votes: 2, rating: 4, myRating: 4 } });
+  });
   await page.route('**/external-test', (route) =>
     route.fulfill({ contentType: 'text/html', body: '<p>Publisher</p>' }),
   );
@@ -211,7 +222,7 @@ test('an explicit chapter opens while unrelated source discovery is still waitin
   const paused = new Promise((resolve) => {
     release = resolve;
   });
-  await page.route('**/api/media/*/reading-sources', async (route) => {
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?|$)/, async (route) => {
     await paused;
     await route.fulfill({
       json: { state: 'ready', sources: [{ id: 'mangadex', name: 'MangaDex' }] },
@@ -254,7 +265,8 @@ test('reading prepares five pages ahead and the next chapter after halfway', asy
       },
     }),
   );
-  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+$/, (route) => {
+  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?|$)/, (route) => {
+    readerContext(route.request());
     const path = new URL(route.request().url()).pathname;
     const id = path.split('/').at(-1);
     if (id === next) nextManifests++;
@@ -299,7 +311,7 @@ test('recommendation intent prepares title and chapters once, then reuses them o
   };
   const counts = { title: 0, chapters: 0 };
   await page.route('**/api/catalog?*', (route) => route.fulfill({ json: { items: [media] } }));
-  await page.route('**/api/media/mal-manga-999001', (route) => {
+  await page.route(/\/api\/media\/mal-manga-999001(?:\?|$)/, (route) => {
     counts.title++;
     return route.fulfill({ json: media });
   });
@@ -348,6 +360,14 @@ test('unavailable covers stop retrying and show the local fallback instead of bl
   baseURL,
 }) => {
   await fixtures(page, context, baseURL);
+  let releaseContext;
+  const contextGate = new Promise((resolve) => {
+    releaseContext = resolve;
+  });
+  await page.route(/\/api\/reader\/context(?:\?|$)/, async (route) => {
+    await contextGate;
+    await route.continue();
+  });
   const original = await (await context.request.get('/api/media/mal-manga-21')).json();
   let attempts = 0;
   await page.route('**/api/media/mal-manga-21', (route) =>
@@ -362,9 +382,19 @@ test('unavailable covers stop retrying and show the local fallback instead of bl
     attempts++;
     return route.abort('failed');
   });
-  await page.goto('/title/mal-manga-21');
-  const cover = page.locator('.manga-detail-cover');
-  await expect(cover).toHaveAttribute('src', '/cover-placeholder.svg');
-  await expect.poll(() => cover.evaluate((img) => img.complete && img.naturalWidth > 0)).toBe(true);
-  expect(attempts).toBe(3);
+  try {
+    await page.goto('/title/mal-manga-21');
+    const cover = page.locator('.manga-detail-cover');
+    await expect(cover).toHaveAttribute('src', '/cover-placeholder.svg');
+    await expect
+      .poll(() => cover.evaluate((img) => img.complete && img.naturalWidth > 0))
+      .toBe(true);
+    expect(attempts).toBe(3);
+    releaseContext();
+    await expect(page.locator('.live-chapter-link').first()).toBeVisible();
+    await expect(cover).toHaveAttribute('src', '/cover-placeholder.svg');
+    expect(attempts).toBe(3);
+  } finally {
+    releaseContext();
+  }
 });

@@ -182,10 +182,16 @@ test('homepage resumes anime, manga and manhwa together below every category ban
   baseURL,
 }) => {
   await mockFeeds(page, context, baseURL);
-  await page.route('**/api/auth/me', (route) =>
-    route.fulfill({ json: { user: { id: 'test-reader', name: 'Test reader' } } }),
-  );
-  await page.route('**/api/library', (route) =>
+  const registered = await context.request.post('/api/auth/register', {
+    headers: { Origin: baseURL },
+    data: {
+      name: 'Test reader',
+      email: `resume-${Date.now()}-${Math.random()}@example.test`,
+      password: 'Reader fixture password 2026',
+    },
+  });
+  expect(registered.status()).toBe(201);
+  await page.route(/\/api\/library(?:\?|$)/, (route) =>
     route.fulfill({
       json: {
         items: [
@@ -237,7 +243,7 @@ test('homepage resumes anime, manga and manhwa together below every category ban
       },
     }),
   );
-  await page.route('**/api/resume', (route) =>
+  await page.route(/\/api\/resume(?:\?|$)/, (route) =>
     route.fulfill({
       json: {
         items: [

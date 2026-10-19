@@ -98,7 +98,12 @@ test('reading manga records a reader and never requests an anime player', async 
   let readers = 0,
     players = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/read-view')) readers++;
+    const url = new URL(request.url());
+    if (url.pathname.endsWith('/read-view')) {
+      expect(url.searchParams.get('destination')).toBe('yoru');
+      expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
+      readers++;
+    }
     if (request.url().includes('/sources?')) players++;
   });
   await page.goto('/read/mal-manga-21/1');
