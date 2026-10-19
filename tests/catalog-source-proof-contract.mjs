@@ -11,6 +11,7 @@ import {
   getReaderCatalogs,
 } from '../server/reading-sources.js';
 import { deliveryHold } from './reader-final-delivery-contract.mjs';
+import { ExtensionProviders } from '../services/reader-bridge/extension-providers.mjs';
 
 const context = {
   destination: 'yoru',
@@ -51,6 +52,88 @@ function hold() {
 }
 
 export function catalogSourceProofContract(label, fixture) {
+  for (const operation of ['chapters', 'pages'])
+    for (const restrictive of [false, true])
+      test(`${label}: first ${operation} capability verification ${restrictive ? 'still rejects newer adult authority' : 'accepts provider reference promotion without rewriting authority'}`, async () => {
+        const f = await fixture(),
+          store = createExternalCatalogStore(f.db),
+          gate = deliveryHold(operation);
+        try {
+          const startSource = source();
+          startSource.capabilities[operation] = 'unverified';
+          const bridgeTitle = title(startSource);
+          const media = await store.rememberTitle(bridgeTitle);
+          const provider = new ExtensionProviders();
+          const providerSource = {
+            ref: structuredClone(startSource),
+            raw: { baseUrl: 'https://provider.invalid' },
+            localMangaId: '1',
+          };
+          const edition = provider.edition(
+            {
+              id: '2',
+              mangaId: '1',
+              url: '/first/chapter',
+              name: 'First chapter',
+              chapterNumber: 1,
+              sourceOrder: 0,
+              pageCount: 1,
+            },
+            media.upstreamRef,
+            providerSource,
+          );
+          assert.equal(
+            edition.sourceRef,
+            providerSource.ref,
+            'real provider editions retain the mutable source reference',
+          );
+          const saved = await store.rememberEdition(media.id, edition);
+          const invoke = async () => {
+            await gate.wait();
+            provider.verified(providerSource.ref, operation);
+            assert.equal(edition.sourceRef.capabilities[operation], 'supported');
+            return operation === 'chapters' ? { items: [edition] } : { edition, pages: [0] };
+          };
+          const options = {
+            readerDb: f.db,
+            context,
+            bridge: { details: async () => bridgeTitle, chapters: invoke, reader: invoke },
+          };
+          const pending = (
+            operation === 'chapters'
+              ? getReadingCatalog(media.id, {}, options)
+              : getReaderChapter(media.id, saved.id, options)
+          ).then(
+            (value) => ({ value }),
+            (error) => ({ error }),
+          );
+          await gate.waiting;
+          if (restrictive)
+            await store.rememberSource({
+              ...startSource,
+              classification: inventoryRating('adult'),
+            });
+          const proof = await store.getSourceAuthority(startSource.id);
+          const rows = await f.db.all('SELECT * FROM external_editions');
+          gate.release();
+          const result = await pending;
+          if (restrictive) {
+            assert.equal(result.error?.status, 409);
+            assert.deepEqual(await f.db.all('SELECT * FROM external_editions'), rows);
+          } else {
+            assert.equal(result.error, undefined, result.error?.message);
+            assert.equal(
+              operation === 'chapters' ? result.value.items.length : result.value.pages.length,
+              1,
+            );
+          }
+          assert.deepEqual(await store.getSourceAuthority(startSource.id), proof);
+        } finally {
+          gate.release();
+          await f.close();
+        }
+      });
+
   for (const operation of ['chapters', 'chapter', 'reader'])
     test(`${label}: delayed ${operation} cannot replace source authority or accept stale edition rows`, async () => {
       const f = await fixture(),

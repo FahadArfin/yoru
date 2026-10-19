@@ -409,7 +409,18 @@ export function createExternalCatalogStore(
         json(value.capabilities, 'source capabilities', 16384),
         value.bridgeInstance,
       ];
-      if (JSON.stringify(sourcePolicy(s)) !== JSON.stringify(sourcePolicy(expected)))
+      // First successful provider calls promote their returned capability evidence.
+      // Accept that evidence without using it to replace the canonical authority.
+      const promotedCapabilities = Object.keys(expected.capabilities).every(
+        (key) =>
+          s.capabilities[key] === expected.capabilities[key] ||
+          (expected.capabilities[key] === 'unverified' && s.capabilities[key] === 'supported'),
+      );
+      if (
+        !promotedCapabilities ||
+        JSON.stringify(sourcePolicy({ ...s, capabilities: expected.capabilities })) !==
+          JSON.stringify(sourcePolicy(expected))
+      )
         throw conflict();
       exactText(upstream.upstreamKey, 'canonical edition key');
       const media = await getTitle(mediaId);
