@@ -7,6 +7,7 @@ import { discoverCatalogs } from '../../shared/reader-connection.js';
 import { createSuwayomiClient } from './suwayomi-client.mjs';
 import { ExtensionProviders } from './extension-providers.mjs';
 import { MetadataCache } from './metadata-cache.mjs';
+import { openSourceBindings } from './source-bindings.mjs';
 
 const SW_SOURCE = '2131019126180322627';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -105,7 +106,7 @@ export class Providers {
   } = {}) {
     Object.assign(this, { directory, suwayomiUrl, fetchImpl });
     this.authorization = `Basic ${Buffer.from(`yoru:${password}`).toString('base64')}`;
-    this.images = new ImageCache(join(directory, 'images'));
+    this.images = new ImageCache(join(directory, 'images'), { now });
     this.pending = new Map();
     this.pagePending = new Map();
     this.client =
@@ -114,7 +115,13 @@ export class Providers {
     this.metadata = new MetadataCache(join(directory, 'extension-metadata'), { now });
     this.extensions = new ExtensionProviders({
       client: this.client,
-      bindings,
+      bindings:
+        bindings ||
+        openSourceBindings({
+          directory: join(directory, 'source-bindings'),
+          client: this.client,
+          now,
+        }),
       metadata: this.metadata,
       images: this.images,
       now,

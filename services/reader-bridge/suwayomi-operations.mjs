@@ -4,11 +4,17 @@ const sourceFields =
   'id name displayName lang baseUrl homeUrl contentWarning isNsfw supportsLatest extension { pkgName isInstalled }';
 const titleFields =
   'id sourceId url realUrl title thumbnailUrl description genre author artist status initialized';
+const chapterFields =
+  'id mangaId url realUrl name chapterNumber sourceOrder scanlator uploadDate pageCount';
 export const operations = Object.freeze({
   sources: `query ExtensionSources($first:Int,$after:Cursor) { sources(first:$first,after:$after) { nodes { ${sourceFields} } pageInfo { hasNextPage endCursor } } }`,
   source: `query SourceById($id:LongString!) { source(id:$id) { ${sourceFields} } }`,
   remoteFeed: `mutation RemoteFeed($input:FetchSourceMangaInput!) { fetchSourceManga(input:$input) { hasNextPage mangas { ${titleFields} } } }`,
   details: `mutation RefreshDetails($input:FetchMangaInput!) { fetchManga(input:$input) { manga { ${titleFields} } } }`,
+  bindingTitle: `query BindingTitle($id:Int!) { manga(id:$id) { ${titleFields} } }`,
+  bindingTitles: `query BindingTitles($source:LongString!,$offset:Int!) { mangas(first:100,offset:$offset,filter:{sourceId:{equalTo:$source}}) { nodes { ${titleFields} } pageInfo { hasNextPage } } }`,
+  extensionChapters: `mutation ExtensionChapters($input:FetchMangaAndChaptersInput!) { fetchMangaAndChapters(input:$input) { manga { ${titleFields} } chapters { ${chapterFields} } } }`,
+  extensionPages: `mutation ExtensionPages($input:FetchChapterPagesInput!) { fetchChapterPages(input:$input) { chapter { ${chapterFields} manga { ${titleFields} } } pages } }`,
   CoreSearch:
     'mutation Search($input:FetchSourceMangaInput!) { fetchSourceManga(input:$input) { mangas { id title sourceId url realUrl } } }',
   CoreChapters:

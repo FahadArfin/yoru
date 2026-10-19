@@ -27,10 +27,15 @@ export function bridgeHandler({
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const path = new URL(request.url).pathname;
     const extensionOperation = {
-      '/extensions/catalogs': 'catalogs',
-      '/extensions/browse': 'browse',
-      '/extensions/details': 'details',
-      '/extensions/resolve-link': 'resolveLink',
+      '/extension/catalogs': 'catalogs',
+      '/extension/browse': 'browse',
+      '/extension/details': 'details',
+      '/extension/resolve': 'resolveLink',
+      '/extension/chapters': 'chapters',
+      '/extension/chapter': 'chapter',
+      '/extension/reader': 'reader',
+      '/extension/cover': 'cover',
+      '/extension/page': 'page',
     }[path];
     if (
       (!['/catalogs', '/sources', '/chapters', '/chapter', '/reader', '/page'].includes(path) &&
@@ -55,16 +60,33 @@ export function bridgeHandler({
         priority: path.endsWith('/browse') ? 'discovery' : 'interactive',
       };
       if (extensionOperation) {
-        const { sourceId, mode, query, page, filters, cursor, limit, titleRef, url } = body;
-        const input =
+        const { sourceId, mode, query, page, filters, cursor, limit, titleRef, editionRef, url } =
+          body;
+        const args =
           extensionOperation === 'catalogs'
-            ? { cursor, limit }
+            ? [{ cursor, limit }, context]
             : extensionOperation === 'browse'
-              ? { sourceId, mode, query, page, filters }
-              : extensionOperation === 'details'
-                ? titleRef
-                : { sourceId, url };
-        return Response.json(await provider.extensions[extensionOperation](input, context), {
+              ? [{ sourceId, mode, query, page, filters }, context]
+              : extensionOperation === 'resolveLink'
+                ? [{ sourceId, url }, context]
+                : extensionOperation === 'chapters'
+                  ? [titleRef, filters, context]
+                  : extensionOperation === 'page'
+                    ? [titleRef, editionRef, page, context]
+                    : ['chapter', 'reader'].includes(extensionOperation)
+                      ? [titleRef, editionRef, context]
+                      : [titleRef, context];
+        const result = await provider.extensions[extensionOperation](...args);
+        if (['cover', 'page'].includes(extensionOperation))
+          return new Response(result.body, {
+            headers: {
+              'content-type': result.type,
+              'x-yoru-cache': result.cached ? 'hit' : 'miss',
+              'cache-control': 'private, max-age=300',
+              'x-content-type-options': 'nosniff',
+            },
+          });
+        return Response.json(result, {
           headers: { 'cache-control': 'no-store' },
         });
       }

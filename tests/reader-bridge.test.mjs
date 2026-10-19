@@ -27,7 +27,7 @@ async function localBridge(provider) {
       const request = httpRequest({
         host: '127.0.0.1',
         port: server.address().port,
-        path: '/extensions/browse',
+        path: '/extension/browse',
         method: 'POST',
         headers: { authorization: `Bearer ${key}`, connection: 'close' },
       });

@@ -137,9 +137,9 @@ test('generic bridge routes are disabled by default and pass only fixed adapter 
       body: JSON.stringify(body),
     });
   const provider = { extensions: await adapter() };
-  assert.equal((await bridgeHandler({ key, provider })(request('/extensions/browse'))).status, 404);
+  assert.equal((await bridgeHandler({ key, provider })(request('/extension/browse'))).status, 404);
   const response = await bridgeHandler({ key, provider, extensionsEnabled: true })(
-    request('/extensions/browse', { sourceId: `suwayomi:${sourceId}`, mode: 'popular' }),
+    request('/extension/browse', { sourceId: `suwayomi:${sourceId}`, mode: 'popular' }),
   );
   assert.equal(response.status, 200);
   assert.equal((await response.json()).items[0].upstreamRef.upstreamKey, '/series/new');

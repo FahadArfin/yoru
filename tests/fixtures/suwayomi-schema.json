@@ -2949,6 +2949,434 @@
         }
       ],
       "possibleTypes": null
+    },
+    {
+      "name": "MangaNodeList",
+      "kind": "OBJECT",
+      "fields": [
+        {
+          "name": "edges",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaEdge"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "nodes",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "pageInfo",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "PageInfo",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "totalCount",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MangaFilterInput",
+      "kind": "INPUT_OBJECT",
+      "inputFields": [
+        {
+          "name": "and",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "artist",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "author",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "categoryId",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "chaptersLastFetchedAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "description",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "genre",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "inLibrary",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "BooleanFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "inLibraryAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "initialized",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "BooleanFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lastFetchedAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "not",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MangaFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "or",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "realUrl",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MangaStatusFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "thumbnailUrl",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "url",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "LongFilterInput",
+      "kind": "INPUT_OBJECT",
+      "inputFields": [
+        {
+          "name": "distinctFrom",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "distinctFromAll",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "distinctFromAny",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "equalTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "greaterThan",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "greaterThanOrEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "in",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "isNull",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lessThan",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lessThanOrEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notDistinctFrom",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notEqualToAll",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "notEqualToAny",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "notIn",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        }
+      ]
     }
   ],
   "syntheticExamples": {
