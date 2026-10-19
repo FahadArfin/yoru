@@ -1,6 +1,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import * as model from '../src/reader/model.js';
+import * as requests from '../src/reader/requests.js';
 import {
   chapterList,
   readerChapter,
@@ -27,6 +28,55 @@ const context = {
   expiresAt: Date.now() + 60_000,
 };
 const native = { id: chapterId, mediaId, sourceRef, kind: 'remote', language: 'es', number: '0' };
+
+test('prepared reader continuity requires the observed mode transition and unchanged eligibility', () => {
+  assert.equal(typeof requests.canRetainReaderContext, 'function');
+  const previous = { ...context, modes: { yoru: 'all', 'ara-ara': 'all' } };
+  const next = {
+    ...previous,
+    integrationMode: 'core',
+    modes: { yoru: 'core', 'ara-ara': 'all' },
+    selectionFingerprint: 'new-mode',
+  };
+  const transition = { kind: 'integration', previousContext: previous, requestedMode: 'core' };
+  assert.equal(requests.canRetainReaderContext(previous, next, transition), true);
+  assert.equal(requests.canRetainReaderContext(previous, next), false);
+  assert.equal(
+    requests.canRetainReaderContext(previous, { ...previous, expiresAt: Date.now() + 120000 }),
+    true,
+  );
+  for (const patch of [
+    { owner: 'other' },
+    { scope: null },
+    { destination: 'ara-ara' },
+    { overrides: { MangaDex: { yoru: false } } },
+    { expiresAt: Date.now() - 1 },
+  ])
+    assert.equal(
+      requests.canRetainReaderContext(previous, { ...next, ...patch }, transition),
+      false,
+    );
+  assert.equal(
+    requests.canRetainReaderContext(
+      previous,
+      {
+        ...previous,
+        modes: { yoru: 'all', 'ara-ara': 'extensions' },
+        selectionFingerprint: 'other-mode',
+      },
+      { ...transition, requestedMode: 'all' },
+    ),
+    true,
+  );
+  assert.equal(
+    requests.canRetainReaderContext(previous, {
+      ...previous,
+      selectionFingerprint: 'unexplained-policy-change',
+    }),
+    false,
+  );
+  assert.equal(requests.canRetainReaderContext(previous, null, transition), false);
+});
 
 test('native reader links retain exact source, language, destination, zero, decimals and specials', () => {
   for (const number of ['0', '1.5', 'Extra']) {

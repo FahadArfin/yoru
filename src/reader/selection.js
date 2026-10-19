@@ -12,7 +12,7 @@ export function createReaderSelection({
   readContext,
   now = Date.now,
 }) {
-  let snapshot = { context: null, ready: false, error: '' };
+  let snapshot = { context: null, ready: false, error: '', pendingTransition: null };
   let input = { scope: null, destination: 'yoru', enabled: false };
   let generation = 0;
   let controller;
@@ -22,29 +22,28 @@ export function createReaderSelection({
   const resyncRequired = new Set();
   const expired = (context) =>
     context?.scope === 'guest' && Number.isFinite(context.expiresAt) && context.expiresAt <= now();
-  const getSnapshot = () => (expired(snapshot.context) ? expiredSnapshot : snapshot);
+  const displayContext = () => snapshot.context || snapshot.pendingTransition?.previousContext;
+  const getSnapshot = () => (expired(displayContext()) ? expiredSnapshot : snapshot);
   const emit = (value) => {
     clearTimeout(leaseTimer);
-    snapshot = value;
+    snapshot = { pendingTransition: null, ...value };
     expiredSnapshot = {
       context: null,
       ready: false,
       error: 'Reader choices expired. Refresh to sync your current choices.',
+      pendingTransition: null,
     };
-    if (
-      snapshot.ready &&
-      snapshot.context?.scope === 'guest' &&
-      Number.isFinite(snapshot.context.expiresAt)
-    ) {
+    const displayed = displayContext();
+    if (displayed?.scope === 'guest' && Number.isFinite(displayed.expiresAt)) {
       leaseTimer = setTimeout(
         () => emit(expiredSnapshot),
-        Math.max(1, snapshot.context.expiresAt - now()),
+        Math.max(1, displayed.expiresAt - now()),
       );
       leaseTimer.unref?.();
     }
     for (const listener of listeners) listener();
   };
-  async function select(next = input, force = false) {
+  async function select(next = input, force = false, action) {
     const unchangedOwner =
       input.scope === next.scope &&
       input.destination === next.destination &&
@@ -63,8 +62,33 @@ export function createReaderSelection({
       const settings = scope === null ? selectionProjection({}) : await loadSettings(scope, force);
       if (id !== generation) return;
       const projection = selectionProjection(settings);
-      if (previous && JSON.stringify(selectionProjection(previous)) !== JSON.stringify(projection))
-        emit({ context: null, ready: false, error: '' });
+      if (
+        previous &&
+        JSON.stringify(selectionProjection(previous)) !== JSON.stringify(projection)
+      ) {
+        const renderOnly =
+          scope !== null &&
+          action?.kind === 'integration' &&
+          validDestination(action.destination) &&
+          validIntegrationMode(action.requestedMode) &&
+          projection.modes[action.destination] === action.requestedMode &&
+          JSON.stringify(selectionProjection(previous).overrides) ===
+            JSON.stringify(projection.overrides);
+        emit({
+          context: null,
+          ready: false,
+          error: '',
+          // This can retain permitted pixels only. It never supplies request,
+          // cache, preload or personal-history authority during synchronization.
+          pendingTransition: renderOnly
+            ? {
+                kind: 'integration',
+                previousContext: previous,
+                requestedMode: projection.modes[destination],
+              }
+            : null,
+        });
+      }
       if (scope === 'guest' && resyncRequired.has(destination)) {
         // Revalidation may inspect the latest cookie, but cannot reassert an
         // unchanged local projection after an uncertain or conflicting mutation.
@@ -117,12 +141,12 @@ export function createReaderSelection({
       }
     }
   }
-  const preferencesChanged = (destination) => {
+  const preferencesChanged = (destination, action) => {
     if (input.scope === 'guest') {
       if (destination === null) resyncRequired.clear();
       else resyncRequired.delete(destination);
     }
-    return select(input, true);
+    return select(input, true, action ? { ...action, destination } : undefined);
   };
   return {
     getSnapshot,
@@ -149,9 +173,11 @@ export function createReaderSelection({
         await saveMode(captured.scope, destination, mode);
         // The real preference publisher starts this same action synchronously.
         // Pure/custom setters without that event still get exactly one sync.
-        if (input === captured && generation === beforeSave) await preferencesChanged(destination);
+        if (input === captured && generation === beforeSave)
+          await preferencesChanged(destination, { kind: 'integration', requestedMode: mode });
       } catch (error) {
-        if (input === captured) emit({ ...snapshot, error: error.message });
+        if (input === captured)
+          emit({ ...snapshot, pendingTransition: null, error: error.message });
       }
     },
     dispose() {

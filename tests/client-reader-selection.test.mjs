@@ -887,7 +887,8 @@ test('real preference publish starts one CAS per explicit action and reset clear
     originalStorage = globalThis.localStorage;
   const events = new EventTarget(),
     storage = new Map(),
-    pending = [];
+    pending = [],
+    actions = [];
   globalThis.window = events;
   globalThis.localStorage = {
     getItem: (key) => storage.get(key) ?? null,
@@ -931,8 +932,10 @@ test('real preference publish starts one CAS per explicit action and reset clear
     readContext: (target, signal) => api(`/api/reader/context?destination=${target}`, { signal }),
   });
   const action = (event) => {
-    if (event.detail.scope === 'guest')
-      pending.push(controller.preferencesChanged(event.detail.destination));
+    if (event.detail.scope === 'guest') {
+      actions.push(event.detail);
+      pending.push(controller.preferencesChanged(event.detail.destination, event.detail));
+    }
   };
   events.addEventListener(READER_SELECTION_ACTION_EVENT, action);
   events.addEventListener(CATALOG_PREFERENCES_EVENT, (event) => {
@@ -945,6 +948,12 @@ test('real preference publish starts one CAS per explicit action and reset clear
     await controller.setIntegrationMode('core');
     await Promise.all(pending.splice(0));
     assert.equal(posts, 2, 'setter plus published action must dispatch exactly one CAS');
+    assert.deepEqual(actions[0], {
+      scope: 'guest',
+      destination: 'yoru',
+      kind: 'integration',
+      requestedMode: 'core',
+    });
     assert.equal(controller.getSnapshot().ready, true);
     fail = true;
     await controller.select({ scope: 'guest', destination: 'ara-ara', enabled: true });
@@ -968,5 +977,193 @@ test('real preference publish starts one CAS per explicit action and reset clear
     globalThis.fetch = originalFetch;
     globalThis.window = originalWindow;
     globalThis.localStorage = originalStorage;
+  }
+});
+
+test('an explicit integration transition retains only a render hint while guest CAS has no usable context', async () => {
+  let settings = defaults(),
+    syncing = false;
+  const gate = defer();
+  const controller = createReaderSelection({
+    loadSettings: async () => settings,
+    saveMode: async (_scope, destination, mode) => {
+      settings = { ...settings, modes: { ...settings.modes, [destination]: mode } };
+    },
+    syncGuest: () =>
+      syncing
+        ? gate.promise
+        : Promise.resolve({
+            destination: 'yoru',
+            revision: 1,
+            selectionFingerprint: 'prepared-before',
+            expiresAt: Date.now() + 60000,
+          }),
+  });
+  try {
+    await controller.select({ scope: 'guest', destination: 'yoru', enabled: true });
+    const previous = controller.getSnapshot().context;
+    syncing = true;
+    const pending = controller.setIntegrationMode('core');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    const during = controller.getSnapshot();
+    assert.equal(during.ready, false);
+    assert.equal(during.context, null);
+    assert.deepEqual(during.pendingTransition, {
+      kind: 'integration',
+      previousContext: previous,
+      requestedMode: 'core',
+    });
+    gate.resolve({
+      destination: 'yoru',
+      revision: 2,
+      selectionFingerprint: 'prepared-after',
+      expiresAt: Date.now() + 60000,
+    });
+    await pending;
+    assert.equal(controller.getSnapshot().pendingTransition, null);
+    assert.equal(controller.getSnapshot().context.integrationMode, 'core');
+    assert.equal(controller.getSnapshot().ready, true);
+  } finally {
+    controller.dispose();
+    gate.resolve();
+  }
+});
+
+test('render continuation hints never authorize membership reset unknown destination or owner changes', async () => {
+  for (const change of ['membership', 'reset', 'unknown', 'destination', 'owner', 'unconfirmed']) {
+    let settings = defaults(),
+      syncing = false;
+    const gate = defer();
+    const controller = createReaderSelection({
+      loadSettings: async () => settings,
+      saveMode: async () => {},
+      syncGuest: () =>
+        syncing
+          ? gate.promise
+          : Promise.resolve({
+              destination: 'yoru',
+              revision: 1,
+              selectionFingerprint: 'hint-boundary',
+            }),
+      readContext: () => gate.promise,
+    });
+    try {
+      await controller.select({ scope: 'guest', destination: 'yoru', enabled: true });
+      syncing = true;
+      settings = { ...defaults(), modes: { yoru: 'core', 'ara-ara': 'all' } };
+      if (change === 'membership') settings.overrides = { MangaDex: { yoru: false } };
+      let pending;
+      if (change === 'destination')
+        pending = controller.select({ scope: 'guest', destination: 'ara-ara', enabled: true });
+      else if (change === 'owner')
+        pending = controller.select({ scope: 'account', destination: 'yoru', enabled: true });
+      else if (change === 'unconfirmed')
+        pending = controller.select({ scope: 'guest', destination: 'yoru', enabled: false });
+      else
+        pending = controller.preferencesChanged(
+          change === 'reset' ? null : 'yoru',
+          change === 'membership' ? { kind: 'integration', requestedMode: 'core' } : undefined,
+        );
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert.equal(controller.getSnapshot().pendingTransition, null, change);
+      assert.equal(controller.getSnapshot().ready, false, change);
+      gate.resolve({
+        destination: change === 'destination' ? 'ara-ara' : 'yoru',
+        revision: 2,
+        selectionFingerprint: 'changed',
+      });
+      await pending;
+    } finally {
+      controller.dispose();
+      gate.resolve();
+    }
+  }
+});
+
+test('a trusted integration render hint clears on conflict failure and old guest lease expiry', async () => {
+  for (const reason of ['conflict', 'timeout', 'expiry']) {
+    let settings = defaults(),
+      syncing = false,
+      clock = Date.now();
+    const gate = defer();
+    const controller = createReaderSelection({
+      now: () => clock,
+      loadSettings: async () => settings,
+      saveMode: async (_scope, destination, mode) => {
+        settings = { ...settings, modes: { ...settings.modes, [destination]: mode } };
+      },
+      syncGuest: () =>
+        syncing
+          ? gate.promise.then(() => {
+              throw Object.assign(new Error(reason), { concurrentChange: true });
+            })
+          : Promise.resolve({
+              destination: 'yoru',
+              revision: 1,
+              selectionFingerprint: 'hint-expiry',
+              expiresAt: clock + 60000,
+            }),
+    });
+    try {
+      await controller.select({ scope: 'guest', destination: 'yoru', enabled: true });
+      syncing = true;
+      const pending = controller.setIntegrationMode('core');
+      await new Promise((resolve) => setTimeout(resolve, 0));
+      assert.equal(controller.getSnapshot().pendingTransition?.kind, 'integration');
+      if (reason === 'expiry') {
+        clock += 60001;
+        assert.equal(controller.getSnapshot().pendingTransition, null);
+        assert.equal(controller.getSnapshot().ready, false);
+      }
+      gate.resolve();
+      await pending;
+      assert.equal(controller.getSnapshot().pendingTransition, null);
+      assert.equal(controller.getSnapshot().ready, false);
+    } finally {
+      controller.dispose();
+      gate.resolve();
+    }
+  }
+});
+
+test('a known account mode action in the other destination can retain its current permitted render', async () => {
+  let settings = { ...defaults(), revision: 1 },
+    changing = false;
+  const gate = defer();
+  const controller = createReaderSelection({
+    loadSettings: async () => settings,
+    saveMode: async (_scope, destination, mode) => {
+      settings = { ...settings, revision: 2, modes: { ...settings.modes, [destination]: mode } };
+    },
+    readContext: () =>
+      changing
+        ? gate.promise
+        : Promise.resolve({
+            destination: 'yoru',
+            revision: 1,
+            selectionFingerprint: 'account-before',
+          }),
+  });
+  try {
+    await controller.select({ scope: 'account', destination: 'yoru', enabled: true });
+    const previous = controller.getSnapshot().context;
+    changing = true;
+    const pending = controller.setIntegrationMode('extensions', 'ara-ara');
+    await new Promise((resolve) => setTimeout(resolve, 0));
+    assert.equal(controller.getSnapshot().context, null);
+    assert.equal(controller.getSnapshot().ready, false);
+    assert.deepEqual(controller.getSnapshot().pendingTransition, {
+      kind: 'integration',
+      previousContext: previous,
+      requestedMode: 'all',
+    });
+    gate.resolve({ destination: 'yoru', revision: 2, selectionFingerprint: 'account-after' });
+    await pending;
+    assert.equal(controller.getSnapshot().pendingTransition, null);
+    assert.equal(controller.getSnapshot().ready, true);
+    assert.equal(controller.getSnapshot().context.modes['ara-ara'], 'extensions');
+  } finally {
+    controller.dispose();
+    gate.resolve();
   }
 });

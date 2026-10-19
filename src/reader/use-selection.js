@@ -28,7 +28,7 @@ export function useReaderSelectionState({ scope, destination, enabled }) {
     void controller.select({ scope, destination, enabled });
     const changed = (event) => {
       if (event.detail?.scope === scope)
-        void controller.preferencesChanged(event.detail.destination);
+        void controller.preferencesChanged(event.detail.destination, event.detail);
     };
     const refresh = () => {
       if (!document.hidden) void controller.refresh();
@@ -49,14 +49,20 @@ export function useReaderSelectionState({ scope, destination, enabled }) {
   }, [controller, scope, destination, enabled]);
   const current =
     enabled && snapshot.context?.owner === scope && snapshot.context.destination === destination;
+  const pending = snapshot.pendingTransition;
+  const pendingCurrent =
+    enabled &&
+    pending?.previousContext.owner === scope &&
+    pending.previousContext.destination === destination;
   return useMemo(
     () => ({
       context: current ? snapshot.context : null,
       ready: Boolean(current && snapshot.ready),
       error: snapshot.error,
+      pendingTransition: pendingCurrent ? pending : null,
       setIntegrationMode: controller.setIntegrationMode,
       refresh: controller.refresh,
     }),
-    [controller, current, snapshot],
+    [controller, current, pendingCurrent, snapshot],
   );
 }

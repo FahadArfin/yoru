@@ -11,6 +11,7 @@ import {
 import { useReaderSelection } from '../useCatalogPreferences';
 import { parseEditionReference, parseMediaReference } from '../../shared/media-reference';
 import { readerSourceChoices } from './model';
+import { useReaderContinuity } from './use-resource';
 export { savedReadingSource, rememberReadingSource } from './requests';
 
 export function useReaderChapters(
@@ -24,6 +25,7 @@ export function useReaderChapters(
   const local = useChapters(media.id);
   const selection = useReaderSelection();
   const context = selection?.ready ? selection.context : null;
+  const continuity = useReaderContinuity();
   const contextKey = readerContextKey(context);
   const sourceKey = `${contextKey}:${media.id}`;
   const [sourceState, setSources] = useState({ key: '', data: null });
@@ -68,7 +70,7 @@ export function useReaderChapters(
       ? languageParam
       : sourceRef?.language || 'en';
   const listingKey = `${sourceKey}:${source}:${language}`;
-  const sourceAllowed = readerSourceAllowed(sourceRef || source, context);
+  const sourceAllowed = readerSourceAllowed(sourceRef || source, continuity.displayContext);
   const enabled = !!context && !local.loading && !localSelected && sourceAllowed;
   const groupAllowed =
     !context ||
@@ -154,15 +156,19 @@ export function useReaderChapters(
   }, [enabled, groupAllowed, listingKey, sources?.state, revision]);
 
   const availableChapters = listing.key === listingKey ? listing.items : [];
-  const selected = enabled
-    ? requested ||
-      (!native
-        ? availableChapters.find((c) => c.number === String(unit))?.id || availableChapters[0]?.id
-        : null)
-    : null;
-  const editionKey = `${sourceKey}:${source}:${selected}`;
+  const selected =
+    enabled || (continuity.key && requested && sourceAllowed)
+      ? requested ||
+        (!native
+          ? availableChapters.find((c) => c.number === String(unit))?.id || availableChapters[0]?.id
+          : null)
+      : null;
+  const editionKey = `${continuity.key}:${media.id}:${source}:${selected}`;
   useEffect(() => {
     const controller = new AbortController();
+    if (edition.key === editionKey && edition.item && revision === edition.revision)
+      return () => controller.abort();
+    if (!context && continuity.key) return () => controller.abort();
     setEdition({ item: null, key: editionKey, loading: !!selected, error: '' });
     if (!selected) return () => controller.abort();
     readerChapter(media.id, { id: selected, sourceRef, source }, revision > 0, {
@@ -171,14 +177,14 @@ export function useReaderChapters(
     })
       .then((item) => {
         if (!controller.signal.aborted)
-          setEdition({ item, key: editionKey, loading: false, error: '' });
+          setEdition({ item, key: editionKey, loading: false, error: '', revision });
       })
       .catch((error) => {
         if (!controller.signal.aborted)
           setEdition({ item: null, key: editionKey, loading: false, error: error.message });
       });
     return () => controller.abort();
-  }, [editionKey, revision]);
+  }, [editionKey, revision, !!context]);
   const loaded = !!(selected && edition.key === editionKey && edition.item?.id === selected);
   const items = localSelected
     ? local.items

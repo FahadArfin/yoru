@@ -331,6 +331,7 @@ function ReaderSession({ media, unit, priorMode }) {
   }, [media, chapter?.id, unit, contextKey]);
   const updatePage = useCallback(
     (value, scroll = true) => {
+      if (!context) return;
       const next = Math.max(1, Math.min(total, Math.trunc(Number(value) || 1)));
       setPage(next);
       setParams(
@@ -343,7 +344,7 @@ function ReaderSession({ media, unit, priorMode }) {
       );
       if (scroll) setJump((n) => n + 1);
     },
-    [total, setParams],
+    [total, setParams, !!context],
   );
   const goPage = useCallback((value) => updatePage(value), [updatePage]);
   const visiblePage = useCallback(
@@ -367,7 +368,7 @@ function ReaderSession({ media, unit, priorMode }) {
     setHeaderVisible(true);
   }, []);
   const selectChapter = (next, startPage) => {
-    if (!next) return;
+    if (!next || !context) return;
     if (window.self !== window.top) {
       setError(
         'Use the host chapter control below the shared reader to change chapters for everyone.',
@@ -669,6 +670,7 @@ function ReaderSession({ media, unit, priorMode }) {
             <Loading />
           ) : chapter && loadedChapter === chapter.id ? (
             <ReaderCanvas
+              context={context}
               key={chapter.id}
               chapter={chapter}
               page={page}
@@ -981,9 +983,13 @@ export default function Reader() {
   const { user, resumeReady } = useApp();
   const { id, unit } = useParams();
   const priorMode = useRef('all');
-  const resource = useReaderResource(`/api/media/${id}`);
+  const resource = useReaderResource(`/api/media/${id}`, { retainPrepared: true });
+  const initialized = useRef('');
   const media = resource.data?.media || resource.data;
-  if (resource.loading || !resumeReady) return <Loading />;
+  if (!resource.displayKey || resource.error || !media) initialized.current = '';
+  if (media && resumeReady) initialized.current = resource.displayKey;
+  if ((!media && resource.loading) || (!resumeReady && initialized.current !== resource.displayKey))
+    return <Loading />;
   if ((resource.error || !media) && parseMediaReference(id)?.kind === 'extension-manga')
     return <UnavailableNativeReader id={id} retry={resource.refresh} />;
   if (resource.error || !media)

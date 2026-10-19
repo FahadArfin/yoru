@@ -49,12 +49,12 @@ function accept(scope, data) {
   accounts.set(scope, { settings, at: Date.now() });
   return settings;
 }
-function publish(scope, destination) {
+function publish(scope, destination, action) {
   advance(scope);
   invalidateApi('/api/media/');
   window.dispatchEvent(new CustomEvent(CATALOG_PREFERENCES_EVENT, { detail: scope }));
   window.dispatchEvent(
-    new CustomEvent(READER_SELECTION_ACTION_EVENT, { detail: { scope, destination } }),
+    new CustomEvent(READER_SELECTION_ACTION_EVENT, { detail: { scope, destination, ...action } }),
   );
   return current(scope);
 }
@@ -145,7 +145,7 @@ export async function saveIntegrationMode(scope, destination, mode) {
       }),
     );
   }
-  return publish(scope, destination).modes;
+  return publish(scope, destination, { kind: 'integration', requestedMode: mode }).modes;
 }
 export async function resetCatalogPreferences(scope) {
   if (!scope) throw new Error('Wait for your account to load.');

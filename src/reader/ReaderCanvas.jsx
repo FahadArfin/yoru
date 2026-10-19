@@ -1,10 +1,21 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
 import { warmImage } from '../image-loading';
+import { readerContextKey, readerContextPath } from './requests';
 
-function PageImage({ page, number, chapter, eager, onTap }) {
+function PageImage({ page, number, chapter, eager, onTap, context }) {
   const [status, setStatus] = useState('loading');
   const [attempt, setAttempt] = useState(0);
+  const [preparedUrl, setPreparedUrl] = useState(null);
+  let requestUrl = page.url;
+  if (chapter.kind === 'remote') {
+    try {
+      requestUrl = readerContextPath(page.url, context);
+    } catch {
+      requestUrl = null;
+    }
+  }
+  const url = preparedUrl || requestUrl;
   return (
     <div
       className={`comic-page ${status}`}
@@ -13,16 +24,19 @@ function PageImage({ page, number, chapter, eager, onTap }) {
         page.width && page.height ? { aspectRatio: `${page.width} / ${page.height}` } : undefined
       }
     >
-      {status !== 'error' && (
+      {status !== 'error' && url && (
         <img
           key={attempt}
-          src={page.url}
+          src={url}
           alt={`Chapter ${chapter.number}, page ${number}`}
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'auto'}
           decoding="async"
           referrerPolicy="no-referrer"
-          onLoad={() => setStatus('ready')}
+          onLoad={(event) => {
+            setPreparedUrl(event.currentTarget.src);
+            setStatus('ready');
+          }}
           onError={() => setStatus('error')}
           onClick={onTap}
         />
@@ -39,7 +53,9 @@ function PageImage({ page, number, chapter, eager, onTap }) {
           <p>The image may be unavailable at its source.</p>
           <button
             className="btn btn-secondary"
+            disabled={!requestUrl}
             onClick={() => {
+              setPreparedUrl(null);
               setStatus('loading');
               setAttempt((n) => n + 1);
             }}
@@ -54,6 +70,7 @@ function PageImage({ page, number, chapter, eager, onTap }) {
 }
 export default function ReaderCanvas({
   chapter,
+  context,
   page,
   preferences,
   jump,
@@ -175,20 +192,30 @@ export default function ReaderCanvas({
   }, [paged]);
   useEffect(() => {
     const controller = new AbortController();
+    if (chapter.kind === 'remote' && !context) return () => controller.abort();
     const current = container.current.querySelector(`[data-page="${page}"] img`);
     // Give the page being read first use of the connection, then keep a small rolling buffer.
     const prepare = () =>
       pages
         .slice(page, page + 5)
         .filter((item) => !item.blob)
-        .forEach((item) => warmImage(item.url, controller.signal));
+        .forEach((item) => {
+          try {
+            warmImage(
+              chapter.kind === 'remote' ? readerContextPath(item.url, context) : item.url,
+              controller.signal,
+            );
+          } catch {
+            /* Expired/pending context cannot start another page request. */
+          }
+        });
     if (current?.complete && current.naturalWidth) prepare();
     else current?.addEventListener('load', prepare, { once: true });
     return () => {
       controller.abort();
       current?.removeEventListener('load', prepare);
     };
-  }, [pages, page, paged]);
+  }, [pages, page, paged, readerContextKey(context)]);
   useEffect(() => {
     if (paged) return;
     const element = container.current;
@@ -250,8 +277,9 @@ export default function ReaderCanvas({
       >
         {visible.map(({ item, index }) => (
           <PageImage
-            key={`${index}:${item.url}`}
+            key={`${chapter.id}:${index}`}
             page={item}
+            context={context}
             number={index + 1}
             chapter={chapter}
             eager={paged || Math.abs(index - (page - 1)) <= 1}

@@ -3,6 +3,7 @@ import { canPreload, warmImage } from '../image-loading.js';
 import { catalogEnabled, readingProvider } from '../../shared/catalog-preferences.js';
 import { parseEditionReference, parseMediaReference } from '../../shared/media-reference.js';
 import { readerSourceChoices } from './model.js';
+import { selectionProjection } from '../../shared/catalog-selection.js';
 
 export function savedReadingSource(id) {
   try {
@@ -36,6 +37,33 @@ export const readerContextKey = (context) =>
         context.selectionFingerprint,
       ])
     : '';
+// This permits display continuity only. Request/cache identity still uses the
+// full mode and fingerprint, and pending transitions carry no request context.
+export function canRetainReaderContext(previous, next, transition = null) {
+  try {
+    requireReaderContext(previous);
+    requireReaderContext(next);
+    if (
+      previous.owner !== next.owner ||
+      previous.scope !== next.scope ||
+      previous.destination !== next.destination
+    )
+      return false;
+    if (
+      JSON.stringify(selectionProjection(previous).overrides) !==
+      JSON.stringify(selectionProjection(next).overrides)
+    )
+      return false;
+    return (
+      previous.selectionFingerprint === next.selectionFingerprint ||
+      (transition?.kind === 'integration' &&
+        transition.previousContext?.selectionFingerprint === previous.selectionFingerprint &&
+        transition.requestedMode === next.integrationMode)
+    );
+  } catch {
+    return false;
+  }
+}
 export function readerContextPath(path, context) {
   requireReaderContext(context);
   const url = new URL(path, 'https://yoru.invalid');

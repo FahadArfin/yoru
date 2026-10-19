@@ -152,15 +152,77 @@ test('pinned native edition keeps page when browse mode changes and deliberate s
   await expect(page.getByRole('img', { name: 'Chapter 0, page 2', exact: true })).toBeVisible();
   await menu(page);
   const selector = page.getByRole('combobox', { name: 'Catalog integration', exact: true });
-  const filteredTitle = page.waitForResponse((response) => {
-    const url = new URL(response.url());
-    return (
-      url.pathname === `/api/media/${mediaId}` && url.searchParams.get('integration') === 'core'
-    );
+  const manifestsBefore = calls.filter((url) =>
+    url.pathname.endsWith(`/reader/${chapterId}`),
+  ).length;
+  await page.evaluate(() => {
+    window.modeCanvas = document.querySelector('.reader-canvas');
   });
-  await selector.selectOption('core');
+  let releaseContext, contextStarted;
+  const heldContext = new Promise((resolve) => {
+    releaseContext = resolve;
+  });
+  const contextRequested = new Promise((resolve) => {
+    contextStarted = resolve;
+  });
+  await page.route('**/api/reader/context**', async (route) => {
+    if (route.request().method() !== 'POST') return route.fallback();
+    contextStarted();
+    await heldContext;
+    return route.fallback();
+  });
+  let releaseTitle;
+  const heldTitle = new Promise((resolve) => {
+    releaseTitle = resolve;
+  });
+  await page.route(`**/api/media/${mediaId}?*`, async (route) => {
+    if (new URL(route.request().url()).searchParams.get('integration') !== 'core')
+      return route.fallback();
+    await heldTitle;
+    return route.fulfill({ status: 503, json: { error: 'Mode title revalidation is offline.' } });
+  });
+  const filteredTitle = page.waitForResponse(
+    (response) =>
+      new URL(response.url()).pathname === `/api/media/${mediaId}` &&
+      new URL(response.url()).searchParams.get('integration') === 'core',
+  );
+  const titleRequested = page.waitForRequest(
+    (request) =>
+      new URL(request.url()).pathname === `/api/media/${mediaId}` &&
+      new URL(request.url()).searchParams.get('integration') === 'core',
+  );
+  try {
+    await selector.selectOption('core');
+    await contextRequested;
+    await expect(selector).toBeDisabled();
+    expect(
+      await page.evaluate(() => window.modeCanvas === document.querySelector('.reader-canvas')),
+    ).toBe(true);
+    await expect(page.getByRole('img', { name: 'Chapter 0, page 2', exact: true })).toBeVisible();
+    expect(calls.filter((url) => url.pathname.endsWith(`/reader/${chapterId}`))).toHaveLength(
+      manifestsBefore,
+    );
+    releaseContext();
+    await titleRequested;
+    expect(
+      await page.evaluate(() => window.modeCanvas === document.querySelector('.reader-canvas')),
+    ).toBe(true);
+    await expect(page.getByRole('img', { name: 'Chapter 0, page 2', exact: true })).toBeVisible();
+    expect(calls.filter((url) => url.pathname.endsWith(`/reader/${chapterId}`))).toHaveLength(
+      manifestsBefore,
+    );
+  } finally {
+    releaseContext();
+    releaseTitle();
+  }
   await filteredTitle;
   await expect(page.getByRole('img', { name: 'Chapter 0, page 2', exact: true })).toBeVisible();
+  expect(
+    await page.evaluate(() => window.modeCanvas === document.querySelector('.reader-canvas')),
+  ).toBe(true);
+  expect(calls.filter((url) => url.pathname.endsWith(`/reader/${chapterId}`))).toHaveLength(
+    manifestsBefore,
+  );
   await menu(page);
   await expect(selector).toHaveValue('core');
   await expect(page.getByLabel('Page number', { exact: true })).toHaveValue('2');
@@ -169,6 +231,21 @@ test('pinned native edition keeps page when browse mode changes and deliberate s
   const sources = page.getByLabel('Reading source', { exact: true });
   await expect(sources.locator('option[value="suwayomi:42"]')).toHaveCount(1);
   await expect(sources.locator('option[value="mangadex"]')).toHaveCount(1);
+  const currentRequest = calls.findLast(
+    (url) =>
+      url.pathname.endsWith('/reading-sources') && url.searchParams.get('integration') === 'core',
+  );
+  await page.getByLabel('Page number', { exact: true }).selectOption('3');
+  const nextPageImage = page.getByRole('img', { name: 'Chapter 0, page 3', exact: true });
+  await expect(nextPageImage).toBeVisible();
+  const nextPageUrl = new URL(await nextPageImage.getAttribute('src'), baseURL);
+  expect(nextPageUrl.searchParams.get('integration')).toBe('core');
+  expect(nextPageUrl.searchParams.get('selectionFingerprint')).toBe(
+    currentRequest.searchParams.get('selectionFingerprint'),
+  );
+  // The rolling buffer may already have fetched this exact current-context URL.
+  expect(calls.some((url) => url.href === nextPageUrl.href)).toBe(true);
+  await page.getByLabel('Page number', { exact: true }).selectOption('2');
   await sources.selectOption('mangadex');
   expect(new URL(page.url()).searchParams.get('chapter')).toBe(chapterId);
   await page.getByRole('button', { name: /Read chapter 7.5/ }).click();
@@ -185,6 +262,7 @@ test('pinned native edition keeps page when browse mode changes and deliberate s
     { mediaId, chapterId },
   );
   expect(saved.page).toBe(2);
+  await page.unroute(`**/api/media/${mediaId}?*`);
   await page.goto(link());
   await expect(page.getByRole('img', { name: 'Chapter 0, page 2', exact: true })).toBeVisible();
 });
