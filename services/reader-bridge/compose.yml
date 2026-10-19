@@ -41,6 +41,7 @@ services:
       - '127.0.0.1:4568:3000'
     environment:
       READER_BRIDGE_KEY: ${READER_BRIDGE_KEY:?Set the private bridge key}
+      READER_EXTENSIONS_ENABLED: '${READER_EXTENSIONS_ENABLED:-0}'
       SUWAYOMI_URL: http://suwayomi:4567
       SUWAYOMI_PASSWORD: ${SUWAYOMI_PASSWORD}
       YORU_ORIGIN: https://yoru.fwad101.chatgpt.site
