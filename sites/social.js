@@ -1,4 +1,3 @@
-import { getAraCatalog } from '../server/ara-ara.js';
 import { randomUUID } from 'node:crypto';
 import { getMedia, coreAccountMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
@@ -19,6 +18,8 @@ import { resumeInput, resumeUpsert } from '../server/resume.js';
 import { forumRoutes } from './forum.js';
 import { resolveReaderContext } from '../server/reader-context.js';
 import { createExtensionGateway } from '../server/extension-gateway.js';
+import { socialRequest, socialDatabase } from './native-social.js';
+import { commentReadingPredicate } from '../server/native-social-policy.js';
 import {
   listReadingLibrary,
   listReadingResume,
@@ -80,6 +81,7 @@ const commentShape = (row) => ({
   id: row.id,
   mediaId: row.media_id,
   unit: row.unit,
+  editionId: row.edition_id || null,
   parentId: row.parent_id,
   userId: row.user_id,
   author: author(row),
@@ -270,7 +272,7 @@ export function socialRoutes(app) {
   );
   app.post('/api/reviews/:mediaId', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id,
       id = mediaId(c.req.param('mediaId'));
     const body = text(input.body, { name: 'Review', min: 10, max: 10000 }),
@@ -308,7 +310,7 @@ export function socialRoutes(app) {
     );
   });
   app.delete('/api/reviews/:id', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
       review = await db.get(
         'DELETE FROM reviews WHERE id=? AND user_id=? RETURNING media_id',
         c.req.param('id'),
@@ -324,18 +326,17 @@ export function socialRoutes(app) {
     return c.json({ ok: true });
   });
   app.get('/api/comments/:mediaId', async (c) => {
-    const unit = numeric(Number(c.req.query('unit') || 0), {
-      name: 'Episode or chapter',
-      integer: true,
-    });
+    const { unit, editionId } = c.get('socialAccess').discussion;
     return c.json({
       items: (
         await c
           .get('db')
           .all(
-            `${COMMENT_QUERY} WHERE media_id=? AND unit=? ORDER BY comments.created_at DESC LIMIT 500`,
+            `${COMMENT_QUERY} WHERE media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?) ORDER BY comments.created_at DESC LIMIT 500`,
             c.get('user')?.id || '',
             c.req.param('mediaId'),
+            editionId,
+            editionId,
             unit,
           )
       ).map(commentShape),
@@ -343,22 +344,21 @@ export function socialRoutes(app) {
   });
   app.post('/api/comments/:mediaId', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id,
       id = mediaId(c.req.param('mediaId'));
-    const unit = numeric(Number(input.unit ?? c.req.query('unit') ?? 0), {
-      name: 'Episode or chapter',
-      integer: true,
-    });
+    const { unit, editionId } = c.get('socialAccess').discussion;
     const body = text(input.body ?? input.text, { name: 'Comment', min: 1, max: 5000 }),
       parentId = input.parentId || null;
     const mediaError = commentMediaError(body);
     if (mediaError) throw apiError(400, mediaError);
     if (parentId) {
       let ancestor = await db.get(
-        'SELECT * FROM comments WHERE id=? AND media_id=? AND unit=?',
+        'SELECT * FROM comments WHERE id=? AND media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?)',
         typeof parentId === 'string' ? parentId : '',
         id,
+        editionId,
+        editionId,
         unit,
       );
       if (!ancestor) throw apiError(400, 'Reply to a comment in this discussion.');
@@ -373,17 +373,18 @@ export function socialRoutes(app) {
       commentId = randomUUID();
     await db.batch([
       db.statement(
-        'INSERT INTO comments(id,user_id,media_id,unit,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?)',
+        'INSERT INTO comments(id,user_id,media_id,unit,edition_id,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
         commentId,
         userId,
         id,
         unit,
+        editionId,
         parentId,
         body,
         Number(spoiler),
         now(),
       ),
-      eventStatement(db, 'comments', { mediaId: id, unit }),
+      eventStatement(db, 'comments', { mediaId: id, unit, editionId }),
     ]);
     return c.json(
       {
@@ -396,7 +397,7 @@ export function socialRoutes(app) {
   });
   app.post('/api/comments/:id/vote', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id;
     const value = numeric(input.value, { name: 'Vote', min: -1, max: 1, integer: true });
     const comment = await db.get('SELECT * FROM comments WHERE id=?', c.req.param('id'));
@@ -423,7 +424,7 @@ export function socialRoutes(app) {
     });
   });
   app.delete('/api/comments/:id', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
       row = await db.get(
         'DELETE FROM comments WHERE id=? AND user_id=? RETURNING media_id,unit',
         c.req.param('id'),
@@ -445,44 +446,42 @@ export function socialRoutes(app) {
         offline: isOffline(),
         db: c.get('db'),
         media: getMedia,
+        policy: await socialRequest(c),
       }),
     ),
   );
   app.get('/api/community', async (c) => {
-    const db = c.get('db');
-    const scopedIds =
-      c.req.query('collection') === 'ara-ara'
-        ? (await getAraCatalog()).items.map((item) => item.id)
-        : null;
-    const filter = scopedIds
-      ? ` WHERE media_id IN (${scopedIds.map(() => '?').join(',') || 'NULL'})`
-      : '';
-    const bindings = scopedIds || [];
-    const comments = (
-      await db.all(
-        `${COMMENT_QUERY}${filter} ORDER BY comments.created_at DESC LIMIT 20`,
-        '',
-        ...bindings,
-      )
-    ).map((x) => ({ ...commentShape(x), kind: 'comment', type: 'comment' }));
-    const reviews =
-      c.req.query('type') === 'comment'
-        ? []
-        : (
-            await db.all(`${REVIEW_QUERY}${filter} ORDER BY updated_at DESC LIMIT 20`, ...bindings)
-          ).map((x) => ({
-            ...reviewShape(x),
-            kind: 'review',
-            type: 'review',
-          }));
+    const db = c.get('db'),
+      policy = await socialRequest(c);
+    const page = await policy.select({
+      candidates: `SELECT id AS social_id,media_id,unit,edition_id,created_at AS social_sort,'comment' AS kind FROM comments
+        ${c.req.query('type') === 'comment' ? '' : "UNION ALL SELECT id AS social_id,media_id,0 AS unit,NULL AS edition_id,created_at AS social_sort,'review' AS kind FROM reviews"}`,
+      where: `(a.kind='review' OR ${commentReadingPredicate})`,
+      scope: [c.req.query('type') === 'comment' ? 'comment' : 'all'],
+      limit: 24,
+    });
+    const items = await Promise.all(
+      page.rows.map(async (row) => {
+        const item =
+          row.kind === 'comment'
+            ? commentShape(
+                await db.get(
+                  `${COMMENT_QUERY} WHERE comments.id=?`,
+                  c.get('user')?.id || '',
+                  row.social_id,
+                ),
+              )
+            : reviewShape(await db.get(`${REVIEW_QUERY} WHERE reviews.id=?`, row.social_id));
+        return { ...item, kind: row.kind, type: row.kind, media: page.mediaById.get(row.media_id) };
+      }),
+    );
     return c.json({
-      items: await Promise.all(
-        [...comments, ...reviews]
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-          .slice(0, 24)
-          .map(async (x) => ({ ...x, media: await getMedia(x.mediaId) })),
-      ),
+      items,
       online: await onlineState(db),
+      complete: page.complete,
+      nextCursor: page.nextCursor,
+      nextSourceCursor: page.nextSourceCursor,
+      sourceStates: page.sourceStates,
     });
   });
   app.get('/api/online', async (c) => c.json(await onlineState(c.get('db'))));

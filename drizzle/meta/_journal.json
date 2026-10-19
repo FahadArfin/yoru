@@ -99,6 +99,13 @@
       "when": 1792386011971,
       "tag": "0013_reading_account_snapshots",
       "breakpoints": true
+    },
+    {
+      "idx": 14,
+      "version": "6",
+      "when": 1792387589147,
+      "tag": "0014_native_social_destinations",
+      "breakpoints": true
     }
   ]
 }

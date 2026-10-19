@@ -75,6 +75,7 @@ import {
   getReaderCover,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
+import { socialRequest, socialAccess } from './native-social.js';
 import { requireAuth } from './security.js';
 import { touchVisitor, PRESENCE_COOKIE } from '../server/visitor-presence.js';
 
@@ -299,7 +300,7 @@ app.post('/api/media/:id/chapters/:chapter/open', async (c) => {
     c.req.param('id'),
     c.req.param('chapter'),
     getCookie(c, VIEW_COOKIE),
-    chapterOptions(c),
+    { ...chapterOptions(c), policy: await socialRequest(c) },
   );
   setCookie(c, VIEW_COOKIE, result.visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
   return c.json(result.stats);
@@ -307,14 +308,21 @@ app.post('/api/media/:id/chapters/:chapter/open', async (c) => {
 app.post('/api/media/:id/chapters/:chapter/rating', requireAuth, async (c) => {
   const body = await c.req.json();
   return c.json(
-    await rateChapter(c.req.param('id'), c.req.param('chapter'), body.rating, chapterOptions(c)),
+    await rateChapter(c.req.param('id'), c.req.param('chapter'), body.rating, {
+      ...chapterOptions(c),
+      policy: await socialRequest(c),
+    }),
   );
 });
 app.on('GET', ['/api/manga/discovery', '/api/manhwa/discovery'], async (c) => {
   const manhwa = c.req.path === '/api/manhwa/discovery';
   return c.json(
     c.req.query('mode') === 'trending'
-      ? await (manhwa ? getTrendingManhwa : getTrendingManga)({ db: c.get('db'), media: getMedia })
+      ? await (manhwa ? getTrendingManhwa : getTrendingManga)({
+          db: c.get('db'),
+          media: getMedia,
+          policy: await socialRequest(c),
+        })
       : await getMangaDiscovery(c.req.query(), {
           ...scheduleOptions(c.env),
           category: manhwa ? 'MANHWA' : 'MANGA',
@@ -327,6 +335,7 @@ app.post('/api/media/:id/read-view', async (c) => {
   const visitor = await recordReadView(c.req.param('id'), getCookie(c, VIEW_COOKIE), {
     db: c.get('db'),
     media: getMedia,
+    policy: await socialRequest(c),
   });
   setCookie(c, VIEW_COOKIE, visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
   return c.json({ ok: true });
@@ -410,6 +419,7 @@ app.get('/api/chapter-calendar', async (c) => {
 });
 
 authRoutes(app, { onLogout: reconcileRooms });
+app.use('/api/*', socialAccess);
 socialRoutes(app);
 roomRoutes(app);
 eventRoutes(app);

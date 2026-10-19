@@ -127,6 +127,25 @@ db.exec(externalCatalogSchema);
 db.exec(readerContextSchema);
 db.exec(continuationSchema);
 db.exec(readingAccountSchema);
+for (const [table, column, definition] of [
+  ['comments', 'edition_id', 'TEXT'],
+  ['rooms', 'destination', "TEXT NOT NULL DEFAULT 'yoru'"],
+  ['rooms', 'reader_source_id', 'TEXT'],
+  ['rooms', 'reader_edition_id', 'TEXT'],
+  ['rooms', 'reader_provenance', 'TEXT'],
+]) {
+  if (
+    !db
+      .prepare(`PRAGMA table_info(${table})`)
+      .all()
+      .some((item) => item.name === column)
+  )
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+db.exec(
+  'CREATE INDEX IF NOT EXISTS comments_media_edition ON comments(media_id,edition_id,created_at)',
+);
+db.exec('CREATE INDEX IF NOT EXISTS rooms_destination_open ON rooms(destination,closed_at)');
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);

@@ -47,6 +47,7 @@ import {
   getReaderCover,
 } from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
+import { socialRequest } from './native-social-request.js';
 import { getPopularAnime } from './home-discovery.js';
 import {
   getTrendingAnime,
@@ -264,7 +265,7 @@ catalogRouter.post(
       req.params.id,
       req.params.chapter,
       cookie(req, VIEW_COOKIE),
-      chapterOptions(req),
+      { ...chapterOptions(req), policy: await socialRequest(req, res) },
     );
     res.cookie(VIEW_COOKIE, result.visitor, {
       httpOnly: true,
@@ -281,7 +282,10 @@ catalogRouter.post(
   requireAuth,
   asyncRoute(async (req, res) => {
     res.json(
-      await rateChapter(req.params.id, req.params.chapter, req.body?.rating, chapterOptions(req)),
+      await rateChapter(req.params.id, req.params.chapter, req.body?.rating, {
+        ...chapterOptions(req),
+        policy: await socialRequest(req, res),
+      }),
     );
   }),
 );
@@ -293,6 +297,7 @@ catalogRouter.get(['/manga/discovery', '/manhwa/discovery'], async (req, res, ne
         ? await (manhwa ? getTrendingManhwa : getTrendingManga)({
             db: { all, run },
             media: getMedia,
+            policy: await socialRequest(req, res),
           })
         : await getMangaDiscovery(req.query, {
             ...scheduleOptions,
@@ -310,6 +315,7 @@ catalogRouter.post('/media/:id/read-view', async (req, res, next) => {
     const visitor = await recordReadView(req.params.id, cookie(req, VIEW_COOKIE), {
       db: { all, run },
       media: getMedia,
+      policy: await socialRequest(req, res),
     });
     res.cookie(VIEW_COOKIE, visitor, {
       httpOnly: true,

@@ -244,12 +244,16 @@ export const comments = sqliteTable(
       .references(() => users.id, { onDelete: 'cascade' }),
     media_id: text().notNull(),
     unit: integer().notNull().default(0),
+    edition_id: text(),
     parent_id: text().references((): any => comments.id, { onDelete: 'cascade' }),
     body: text().notNull(),
     spoiler: integer().notNull().default(0),
     created_at: text().notNull(),
   },
-  (t) => [index('comments_media_unit').on(t.media_id, t.unit, t.created_at)],
+  (t) => [
+    index('comments_media_unit').on(t.media_id, t.unit, t.created_at),
+    index('comments_media_edition').on(t.media_id, t.edition_id, t.created_at),
+  ],
 );
 export const votes = sqliteTable(
   'comment_votes',
@@ -285,6 +289,10 @@ export const rooms = sqliteTable(
     position: real().notNull().default(0),
     source_url: text().notNull().default(''),
     source_kind: text().notNull().default('external'),
+    destination: text().notNull().default('yoru'),
+    reader_source_id: text(),
+    reader_edition_id: text(),
+    reader_provenance: text(),
     version: integer().notNull().default(1),
     state_updated_at: text().notNull(),
     created_at: text().notNull(),
@@ -292,6 +300,7 @@ export const rooms = sqliteTable(
   },
   (t) => [
     index('rooms_host_open').on(t.host_id, t.closed_at),
+    index('rooms_destination_open').on(t.destination, t.closed_at),
     check('room_type', sql`${t.type} IN ('watch','read')`),
     check('room_visibility', sql`${t.visibility} IN ('public','private')`),
   ],
