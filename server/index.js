@@ -13,6 +13,7 @@ import { createImportRouter } from './import.js';
 import { createMalRouter, malEnabled } from './mal.js';
 import { createFavoritesRouter } from './favorites.js';
 import { forumRouter } from './forum-routes.js';
+import { readerErrorMiddleware } from './reader-errors.js';
 
 export const app = express();
 if (process.env.TRUST_PROXY !== undefined) {
@@ -130,6 +131,7 @@ if (existsSync(dist)) {
     res.sendFile(join(dist, 'index.html'));
   });
 }
+app.use(readerErrorMiddleware);
 app.use((error, _req, res, _next) => {
   if (res.headersSent) return res.end();
   const status = error.status || (error.type === 'entity.too.large' ? 413 : 500);

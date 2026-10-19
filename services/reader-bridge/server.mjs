@@ -90,7 +90,7 @@ export function bridgeHandler({
           headers: { 'cache-control': 'no-store' },
         });
       }
-      const { media, source, filters, chapterId, page } = body;
+      const { media, source, filters, chapterId, page, coreSources } = body;
       if (path === '/catalogs') {
         return Response.json(await provider.catalogs(), {
           headers: { 'cache-control': 'no-store' },
@@ -115,7 +115,7 @@ export function bridgeHandler({
       }
       const result =
         path === '/sources'
-          ? await provider.sources(media)
+          ? await provider.sources(media, coreSources)
           : path === '/chapters'
             ? await provider.chapters(media, source, filters)
             : {

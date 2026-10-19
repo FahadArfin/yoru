@@ -18,6 +18,7 @@ import {
 } from '../server/reader-context.js';
 import { resolveMedia } from '../server/media-resolver.js';
 import { createExtensionGateway } from '../server/extension-gateway.js';
+import { readerErrorResponse } from '../server/reader-errors.js';
 import {
   authRoutes,
   sessionMiddleware,
@@ -433,6 +434,8 @@ app.all('*', async (c) => {
   return asset;
 });
 app.onError((error, c) => {
+  const readerError = readerErrorResponse(error);
+  if (readerError) return c.json(readerError.body, readerError.status, readerError.headers);
   const status = error.status || (error instanceof SyntaxError ? 400 : 500);
   if (status >= 500 && !error.expose) console.error('[yoru]', error.message);
   return c.json(

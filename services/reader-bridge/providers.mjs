@@ -209,9 +209,19 @@ export class Providers {
       return null;
     });
   }
-  async sources(media) {
-    const sources = [{ id: 'mangadex', name: 'MangaDex', languages: [], native: true }];
+  async sources(media, coreSources = ['mangadex', 'weebcentral']) {
+    if (
+      !Array.isArray(coreSources) ||
+      coreSources.length > 2 ||
+      new Set(coreSources).size !== coreSources.length ||
+      coreSources.some((id) => !['mangadex', 'weebcentral'].includes(id))
+    )
+      throw error(400, 'Invalid core reading source selection.');
+    const sources = coreSources.includes('mangadex')
+      ? [{ id: 'mangadex', name: 'MangaDex', languages: [], native: true }]
+      : [];
     let unavailable = false;
+    if (!coreSources.includes('weebcentral')) return { sources, unavailable };
     try {
       const match = await this.swMatch(media);
       if (match)

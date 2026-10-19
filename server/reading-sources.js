@@ -268,10 +268,14 @@ export async function getReadingSources(id, options) {
     ],
     state: 'external-only',
   };
+  const coreSources = allowedSources([{ id: 'mangadex' }, { id: 'weebcentral' }], options).map(
+    (s) => s.id,
+  );
+  if (!coreSources.length) return { ...fallback, state: 'ready' };
   if (!options.bridgeKey) return fallback;
   if (!(await readerBridge(options))) return { ...fallback, state: 'offline' };
   try {
-    const data = await call(id, '/sources', {}, options);
+    const data = await call(id, '/sources', { coreSources }, options);
     return {
       sources: [
         ...allowedSources(

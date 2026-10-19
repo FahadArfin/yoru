@@ -1,5 +1,6 @@
 import { apiError } from './validation.js';
 import { readerBridge } from './reading-sources.js';
+import { readerUpstreamError } from './reader-errors.js';
 const invalid = () => {
   throw apiError(400, 'Invalid reading reference.');
 };
@@ -70,11 +71,14 @@ export function createExtensionGateway(options) {
         redirect: 'manual',
         signal: context.signal ? AbortSignal.any([context.signal, timeout]) : timeout,
       });
-      if (!response.ok)
-        throw apiError(
-          [400, 404, 409, 422, 429].includes(response.status) ? response.status : 503,
-          'This reading source is temporarily unavailable.',
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => {});
+        throw readerUpstreamError(
+          response.status,
+          response.headers.get('retry-after'),
+          (options.now || Date.now)(),
         );
+      }
       if (['cover', 'page'].includes(operation)) {
         const type = response.headers.get('content-type')?.split(';')[0];
         if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'].includes(type))
