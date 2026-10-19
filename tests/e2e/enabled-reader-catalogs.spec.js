@@ -39,6 +39,95 @@ const core = {
   availableIntegrations: [],
 };
 
+for (const mode of ['extensions', 'all']) {
+  test(`native search failure remains retryable with core success in ${mode} mode`, async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await fixture({ context, page, baseURL });
+    let calls = 0;
+    let fail = true;
+    await page.route('**/api/reader/suggestions?*', (route) => {
+      calls++;
+      return fail
+        ? route.fulfill({ status: 503, json: { error: 'Native catalog unavailable' } })
+        : route.fulfill({ json: { items: [safe] } });
+    });
+    await page.goto('/browse/manga?q=native');
+    await page
+      .getByRole('combobox', { name: 'Catalog integration', exact: true })
+      .first()
+      .selectOption(mode);
+    const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
+    await search.fill('native');
+    await expect(page.locator('.search-status')).toContainText('Search is temporarily limited');
+    await expect(page.getByRole('button', { name: 'Retry search', exact: true })).toBeVisible();
+    await expect(page.getByRole('option').filter({ hasText: core.title })).toHaveCount(
+      mode === 'all' ? 1 : 0,
+    );
+    await expect(page.locator('.search-status')).not.toContainText('No titles found');
+    const failedCalls = calls;
+    await search.press('Escape');
+    await search.click();
+    await expect.poll(() => calls).toBeGreaterThan(failedCalls);
+    await expect(page.getByRole('button', { name: 'Retry search', exact: true })).toBeVisible();
+    fail = false;
+    await page.getByRole('button', { name: 'Retry search', exact: true }).click();
+    await expect(page.getByRole('option').filter({ hasText: safe.title })).toBeVisible();
+    await expect(page.getByRole('option').filter({ hasText: core.title })).toHaveCount(
+      mode === 'all' ? 1 : 0,
+    );
+    await expect(page.getByRole('button', { name: 'Retry search', exact: true })).toHaveCount(0);
+  });
+}
+
+test('exact mapped core recommendations remain visible in extensions mode', async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await fixture({ context, page, baseURL });
+  const mapped = {
+    ...core,
+    title: 'Mapped native fantasy',
+    genres: ['Fantasy'],
+    cover: '/icon.svg?mapped',
+    readingChoices: [
+      {
+        mediaId: core.id,
+        integration: 'core',
+        sourceRef: { id: 'mangadex', integration: 'core', providerKey: 'MangaDex' },
+      },
+      { mediaId: french.id, integration: 'suwayomi', sourceRef: french.sourceRef },
+    ],
+    availableIntegrations: ['core', 'suwayomi'],
+  };
+  await page.route('**/api/reader/discovery?*', (route) =>
+    route.fulfill({
+      json: {
+        items: [mapped],
+        hasMore: false,
+        sourceStates: [],
+        selectionFingerprint: new URL(route.request().url()).searchParams.get(
+          'selectionFingerprint',
+        ),
+      },
+    }),
+  );
+  await page.goto('/browse/manga?q=native');
+  await page
+    .getByRole('combobox', { name: 'Catalog integration', exact: true })
+    .first()
+    .selectOption('extensions');
+  await page.getByRole('link', { name: `View ${safe.title}`, exact: true }).click();
+  await expect(
+    page
+      .getByRole('region', { name: 'Recommendations', exact: true })
+      .getByRole('link', { name: mapped.title, exact: true }),
+  ).toHaveAttribute('href', `/title/${core.id}`);
+});
+
 // These fixtures exercise the real browser consumer and both serving runtimes.
 // Native backend persistence/eligibility is separately proven by extension-account contracts.
 async function fixture({ context, page, baseURL }) {

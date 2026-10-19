@@ -2,6 +2,36 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { recommendationGenre, recommendationQuery, relatedTitles } from '../src/recommendations.js';
 import { accountSource, accountClassification } from './extension-account-contract.mjs';
+import { visibleReadingItems } from '../src/reader/feed.js';
+
+test('mapped core recommendations retain exact native choices in extensions mode', () => {
+  const anchor = { id: 'mal-manga-1', category: 'MANGA', genres: ['Fantasy'] };
+  const sourceRef = accountSource();
+  const mapped = {
+    ...anchor,
+    id: 'mal-manga-21',
+    cover: '/mapped.jpg',
+    readingChoices: [
+      {
+        mediaId: 'mal-manga-21',
+        integration: 'core',
+        sourceRef: { id: 'mangadex', providerKey: 'MangaDex', integration: 'core' },
+      },
+      { mediaId: 'ext-manga-' + 'b'.repeat(32), integration: 'suwayomi', sourceRef },
+    ],
+    availableIntegrations: ['core', 'suwayomi'],
+  };
+  const context = { destination: 'yoru', integrationMode: 'extensions' };
+  const visible = visibleReadingItems([mapped], { context });
+  assert.deepEqual(visible, [mapped]);
+  const result = relatedTitles(anchor, visible, context);
+  assert.deepEqual(result, [mapped]);
+  assert.equal(result[0], mapped);
+  assert.deepEqual(
+    relatedTitles(anchor, [mapped], { ...context, overrides: { MangaDex: { yoru: false } } }),
+    [],
+  );
+});
 test('recommendations apply current integration selection while anime remains independent', () => {
   const media = { id: 'mal-manga-1', category: 'MANGA', genres: ['Fantasy'] };
   const core = { ...media, id: 'mal-manga-2', cover: '/core.jpg' };

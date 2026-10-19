@@ -123,6 +123,9 @@ export default function GlobalSearch({ inputRef, collection }) {
           core.status === 'fulfilled' ? core.value : { items: [], providerUnavailable: true };
         const data = {
           ...coreData,
+          providerUnavailable: Boolean(
+            coreData.providerUnavailable || native.status === 'rejected',
+          ),
           items: readingSuggestions(
             [
               ...(coreData.items || []),
@@ -251,7 +254,11 @@ export default function GlobalSearch({ inputRef, collection }) {
               </button>
             ))}
           </div>
-          {(!shown.items.length || shown.loading || shown.waiting) && (
+          {(!shown.items.length ||
+            shown.loading ||
+            shown.waiting ||
+            shown.error ||
+            shown.providerUnavailable) && (
             <div className="search-status" role="status">
               {shown.loading ? (
                 <>

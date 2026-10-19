@@ -65,8 +65,21 @@ export function relatedTitles(
       try {
         const context = { destination, overrides, integrationMode, extensionsEnabled: true };
         assertMediaEligible(item, context);
-        if (item.sourceRef) assertSourceEligible(item.sourceRef, context, { discovery: true });
-        else if (kindOf(item) !== 'ANIME' && integrationMode === 'extensions') return false;
+        const sources = [
+          item.sourceRef,
+          ...(item.readingChoices || []).map((choice) => choice.sourceRef),
+        ].filter(Boolean);
+        if (sources.length) {
+          const eligible = sources.some((source) => {
+            try {
+              assertSourceEligible(source, context, { discovery: true });
+              return true;
+            } catch {
+              return false;
+            }
+          });
+          if (!eligible) return false;
+        } else if (kindOf(item) !== 'ANIME' && integrationMode === 'extensions') return false;
       } catch {
         return false;
       }
