@@ -1,56 +1,11 @@
 import { apiError } from './validation.js';
 import { parseMediaReference, parseEditionReference } from '../shared/media-reference.js';
-import { catalogEnabled, readingProvider } from '../shared/catalog-preferences.js';
-import { isAraMedia } from '../shared/ara-ara.js';
+import { readingProvider } from '../shared/catalog-preferences.js';
+import { assertMediaEligible, assertSourceEligible } from '../shared/reading-eligibility.js';
+export { assertMediaEligible, assertSourceEligible } from '../shared/reading-eligibility.js';
 import { createExternalCatalogStore } from './external-catalog-store.js';
 
 const unavailable = () => apiError(404, 'This title is unavailable.');
-export function assertMediaEligible(media, context) {
-  if (!media || !context || !['yoru', 'ara-ara'].includes(context.destination)) throw unavailable();
-  const native = parseMediaReference(media.id)?.kind === 'extension-manga';
-  if (native) {
-    const source = media.sourceRef;
-    if (
-      !context.extensionsEnabled ||
-      source?.integration !== 'suwayomi' ||
-      !catalogEnabled(source.providerKey, context.destination, context.overrides)
-    )
-      throw unavailable();
-    if (context.destination === 'yoru') {
-      const rating = media.classification;
-      const independent = [
-        'title.contentRating',
-        'manga.contentRating',
-        'title.contentWarning',
-        'manga.contentWarning',
-      ].includes(rating?.provenance?.sourceField);
-      if (
-        media.isAdult ||
-        rating?.rating !== 'safe' ||
-        (!independent && source.classification?.rating !== 'safe')
-      )
-        throw unavailable();
-    }
-  } else {
-    if (media.isAdult || (context.destination === 'ara-ara' && !isAraMedia(media)))
-      throw unavailable();
-  }
-  return media;
-}
-export function assertSourceEligible(source, context, { discovery = false } = {}) {
-  const integration = source?.integration || 'core';
-  const provider = source?.providerKey || readingProvider(source?.id);
-  if (
-    !provider ||
-    !catalogEnabled(provider, context.destination, context.overrides) ||
-    (integration === 'suwayomi' && !context.extensionsEnabled) ||
-    (discovery &&
-      context.integrationMode !== 'all' &&
-      context.integrationMode !== (integration === 'suwayomi' ? 'extensions' : 'core'))
-  )
-    throw unavailable();
-  return source;
-}
 export async function resolveMedia(mediaId, context, deps) {
   const ref = parseMediaReference(mediaId);
   if (!ref) throw apiError(400, 'Invalid media ID.');

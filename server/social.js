@@ -15,29 +15,76 @@ import {
   requireAuth,
   text,
 } from './auth.js';
-import { getMedia } from './catalog.js';
+import { getMedia, coreAccountMedia } from './catalog.js';
 import { touchVisitor, PRESENCE_COOKIE } from './visitor-presence.js';
 import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from './community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
 import { resumeInput, resumeUpsert } from './resume.js';
+import { nodeReaderDb } from './reader-db.js';
+import { resolveReaderContext, nodeReaderSignal } from './reader-context.js';
+import { createExtensionGateway } from './extension-gateway.js';
+import {
+  listReadingLibrary,
+  listReadingResume,
+  resolveAccountMedia,
+  accountAtomic,
+  accountSnapshotStatement,
+  resumeMetadata,
+  exportReadingAccount,
+} from './reading-account.js';
+
+const accountDb = nodeReaderDb({ all, get, run, transaction });
+async function accountRequest(req, res) {
+  const context = await resolveReaderContext(req.query, {
+    db: accountDb,
+    userId: req.user.id,
+    sessionHash: req.sessionHash,
+    extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+    signal: nodeReaderSignal(req, res),
+  });
+  return {
+    context,
+    deps: {
+      db: accountDb,
+      coreMedia: getMedia,
+      coreAccountMedia,
+      bridge: createExtensionGateway({
+        ...scheduleOptions,
+        bridgeUrl: process.env.READER_BRIDGE_URL,
+        bridgeKey: process.env.READER_BRIDGE_KEY,
+        extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+      }),
+    },
+  };
+}
 
 export const socialRouter = Router();
-socialRouter.get('/resume', requireAuth, (req, res) => {
-  res.json({
-    items: all(
-      'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
-      req.user.id,
-    ).map((row) => JSON.parse(row.payload)),
-  });
-});
+socialRouter.get(
+  '/resume',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await listReadingResume(context, req.query, deps));
+  }),
+);
 socialRouter.put(
   '/resume/:mediaId',
   requireAuth,
   asyncRoute(async (req, res) => {
     const id = mediaId(req.params.mediaId);
-    const item = resumeInput(req.body, await getMedia(id), req.user.id);
+    const request = await accountRequest(req, res);
+    const { context, media } = await resolveAccountMedia(
+      id,
+      req.body.chapterId,
+      request.context,
+      request.deps,
+    );
+    const item = {
+      ...resumeInput(req.body, media, req.user.id),
+      ...resumeMetadata(media, context),
+    };
     // Recheck after the catalog lookup, which may outlive a sign-out.
     if (
       !get(
@@ -48,7 +95,15 @@ socialRouter.put(
       )
     )
       throw apiError(401, 'Your session changed. Sign in again.');
-    run(resumeUpsert, req.user.id, id, JSON.stringify(item), item.updatedAt);
+    await accountAtomic(
+      context,
+      [
+        { sql: resumeUpsert, values: [req.user.id, id, JSON.stringify(item), item.updatedAt] },
+        accountSnapshotStatement(context, media, 'resume'),
+      ],
+      request.deps,
+      { media },
+    );
     res.json({
       item: JSON.parse(
         get('SELECT payload FROM resume_progress WHERE user_id=? AND media_id=?', req.user.id, id)
@@ -320,25 +375,19 @@ export function safeSourceUrl(value) {
 }
 
 socialRouter.get(
+  '/library/export',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await exportReadingAccount(context, deps));
+  }),
+);
+socialRouter.get(
   '/library',
   requireAuth,
   asyncRoute(async (req, res) => {
-    const entries = all(
-      'SELECT * FROM library WHERE user_id=? ORDER BY updated_at DESC LIMIT 5000',
-      req.user.id,
-    );
-    const items = await Promise.all(
-      entries.map(async (entry) => ({
-        mediaId: entry.media_id,
-        media: await getMedia(entry.media_id),
-        favorite: Boolean(entry.favorite),
-        status: entry.status,
-        progress: entry.progress,
-        score: entry.score,
-        updatedAt: entry.updated_at,
-      })),
-    );
-    res.json({ items });
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await listReadingLibrary(context, req.query, deps));
   }),
 );
 socialRouter.put(
@@ -346,8 +395,8 @@ socialRouter.put(
   requireAuth,
   asyncRoute(async (req, res) => {
     const id = mediaId(req.params.mediaId);
-    const media = await getMedia(id);
-    if (!media) throw apiError(404, 'This title could not be found.');
+    const request = await accountRequest(req, res);
+    const { context, media } = await resolveAccountMedia(id, null, request.context, request.deps);
     // Read mutable user state after metadata loading so parallel partial updates merge.
     const existing = get('SELECT * FROM library WHERE user_id=? AND media_id=?', req.user.id, id);
     const favorite =
@@ -367,15 +416,17 @@ socialRouter.put(
           ? null
           : numeric(req.body.score, { name: 'Score', min: 0, max: 10 });
     const updatedAt = now();
-    run(
-      'INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET favorite=excluded.favorite,status=excluded.status,progress=excluded.progress,score=excluded.score,updated_at=excluded.updated_at',
-      req.user.id,
-      id,
-      Number(favorite),
-      status,
-      progress,
-      score,
-      updatedAt,
+    await accountAtomic(
+      context,
+      [
+        {
+          sql: 'INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET favorite=excluded.favorite,status=excluded.status,progress=excluded.progress,score=excluded.score,updated_at=excluded.updated_at',
+          values: [req.user.id, id, Number(favorite), status, progress, score, updatedAt],
+        },
+        accountSnapshotStatement(context, media),
+      ],
+      request.deps,
+      { media },
     );
     broadcast('library', { userId: req.user.id, mediaId: id });
     res.json({ item: { mediaId: id, media, favorite, status, progress, score, updatedAt } });

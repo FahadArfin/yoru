@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, coverOf, kindOf, titleOf } from './api';
+import { visibleAccountHistory } from '../shared/reading-account-view.js';
+import { saveReadingState } from './reader/storage';
 
 const key = (owner) => `yoru:resume:${owner || 'guest'}`;
 function read(owner) {
@@ -22,19 +24,46 @@ function merge(items, updates) {
   for (const item of updates)
     if (!map.has(item.mediaId) || item.updatedAt >= map.get(item.mediaId).updatedAt)
       map.set(item.mediaId, item);
-  return [...map.values()].sort((a, b) => b.updatedAt - a.updatedAt).slice(0, 100);
+  return [...map.values()].sort((a, b) => b.updatedAt - a.updatedAt);
 }
 
-export function useResume(owner, authKnown) {
+export function useResume(
+  owner,
+  authKnown,
+  { context, ready = true, viewKey = '', currentSources = [] } = {},
+) {
+  const destination = context?.destination || 'yoru';
+  const projectVisible = (state) =>
+    visibleAccountHistory(state.items, context, {
+      currentSources,
+      authoritativeIds: owner ? state.authorized : undefined,
+    });
   const [snapshot, setSnapshot] = useState({ owner: undefined, items: [], ready: false });
   const session = useRef(null);
   useEffect(() => {
-    if (!authKnown) return;
-    const state = { owner, ...read(owner), active: true, busy: false, timer: null };
+    if (!authKnown || !ready) return;
+    const state = {
+      owner,
+      destination,
+      viewKey,
+      ...read(owner),
+      authorized: new Set(),
+      loaded: !owner,
+      active: true,
+      busy: false,
+      timer: null,
+    };
     session.current = state;
     const publish = () => {
       persist(owner, { items: state.items, pending: state.pending });
-      if (state.active) setSnapshot({ owner, items: state.items, ready: true });
+      if (state.active)
+        setSnapshot({
+          owner,
+          destination,
+          viewKey,
+          items: projectVisible(state),
+          ready: state.loaded,
+        });
     };
     const flush = async () => {
       if (!owner || !state.active || state.busy) return;
@@ -42,16 +71,22 @@ export function useResume(owner, authKnown) {
       try {
         for (const item of Object.values(state.pending)) {
           if (!state.active) break;
-          const result = await api(`/api/resume/${encodeURIComponent(item.mediaId)}`, {
-            method: 'PUT',
-            body: JSON.stringify({ ...item, owner }),
-            keepalive: true,
-            signal: AbortSignal.timeout(15000),
-          });
+          if ((item.destination || 'yoru') !== destination) continue;
+          const result = await api(
+            `/api/resume/${encodeURIComponent(item.mediaId)}?destination=${encodeURIComponent(destination)}`,
+            {
+              method: 'PUT',
+              body: JSON.stringify({ ...item, owner }),
+              keepalive: true,
+              signal: AbortSignal.timeout(15000),
+            },
+          );
           if (!state.active) break;
+          if ((item.destination || 'yoru') !== destination) continue;
           if (state.pending[item.mediaId]?.updatedAt === item.updatedAt)
             delete state.pending[item.mediaId];
           state.items = merge(state.items, [result.item]);
+          state.authorized.add(result.item.mediaId);
           publish();
         }
       } catch {
@@ -68,8 +103,11 @@ export function useResume(owner, authKnown) {
       }
       await flush();
       try {
-        const result = await api('/api/resume', { signal: AbortSignal.timeout(15000) });
+        const result = await api(`/api/resume?destination=${encodeURIComponent(destination)}`, {
+          signal: AbortSignal.timeout(15000),
+        });
         if (!state.active) return;
+        state.authorized = new Set((result.items || []).map((item) => item.mediaId));
         state.items = merge(state.items, [
           ...(result.items || []),
           ...Object.values(state.pending),
@@ -77,6 +115,7 @@ export function useResume(owner, authKnown) {
       } catch {
         /* The account-scoped cache remains available offline. */
       }
+      state.loaded = true;
       if (state.active) publish();
     };
     const visible = () => {
@@ -98,13 +137,26 @@ export function useResume(owner, authKnown) {
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [owner, authKnown]);
+  }, [owner, authKnown, destination, viewKey, ready]);
   const saveResume = useCallback(
     (media, patch) => {
       const state = session.current;
-      if (!state?.active || state.owner !== owner || !authKnown) return;
+      if (
+        !state?.active ||
+        state.owner !== owner ||
+        state.destination !== destination ||
+        state.viewKey !== viewKey ||
+        !authKnown ||
+        !ready
+      )
+        return;
       const item = {
         mediaId: media.id,
+        destination,
+        mediaSnapshot: media,
+        sourceRef: media.sourceRef,
+        classification: media.classification,
+        provenance: media.provenance,
         title: titleOf(media),
         cover: coverOf(media),
         category: kindOf(media),
@@ -115,17 +167,39 @@ export function useResume(owner, authKnown) {
         ),
       };
       state.items = merge(state.items, [item]);
+      try {
+        if (media.category !== 'ANIME')
+          saveReadingState(media.id, { mediaSnapshot: media, destination });
+      } catch {}
       if (owner) state.pending[item.mediaId] = item;
       persist(owner, { items: state.items, pending: state.pending });
-      setSnapshot({ owner, items: state.items, ready: true });
+      setSnapshot({
+        owner,
+        destination,
+        viewKey,
+        items: projectVisible(state),
+        ready: state.loaded,
+      });
       clearTimeout(state.timer);
       state.timer = setTimeout(state.flush, 500);
     },
-    [owner, authKnown],
+    [owner, authKnown, destination, viewKey, ready],
   );
   return {
-    resumeItems: snapshot.owner === owner ? snapshot.items : [],
-    resumeReady: authKnown && snapshot.owner === owner && snapshot.ready,
+    resumeItems:
+      ready &&
+      snapshot.owner === owner &&
+      snapshot.destination === destination &&
+      snapshot.viewKey === viewKey
+        ? snapshot.items
+        : [],
+    resumeReady:
+      ready &&
+      authKnown &&
+      snapshot.owner === owner &&
+      snapshot.destination === destination &&
+      snapshot.viewKey === viewKey &&
+      snapshot.ready,
     saveResume,
   };
 }

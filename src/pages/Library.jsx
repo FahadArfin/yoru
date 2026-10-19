@@ -11,7 +11,7 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { coverOf, isAnime, kindOf, send, titleOf } from '../api';
+import { api, coverOf, isAnime, kindOf, send, titleOf } from '../api';
 import { useApp } from '../state';
 import { Button, Empty, ErrorNotice, Modal } from '../components';
 import FavoritesImport from '../FavoritesImport';
@@ -40,29 +40,20 @@ export default function Library() {
       notify(e.message, 'error');
     }
   };
-  const exportList = () => {
-    const url = URL.createObjectURL(
-      new Blob(
-        [
-          JSON.stringify(
-            {
-              application: 'Yoru',
-              version: 1,
-              exportedAt: new Date().toISOString(),
-              items: library,
-            },
-            null,
-            2,
-          ),
-        ],
-        { type: 'application/json' },
-      ),
-    );
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'yoru-library.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const exportList = async () => {
+    try {
+      const exported = await api('/api/library/export');
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'yoru-library.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      notify(error.message, 'error');
+    }
   };
   return (
     <div className="page">

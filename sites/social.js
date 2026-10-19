@@ -1,15 +1,58 @@
 import { getAraCatalog } from '../server/ara-ara.js';
 import { randomUUID } from 'node:crypto';
-import { getMedia, rememberImportedMedia } from '../server/catalog-core.js';
+import { getMedia, coreAccountMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
 import { requireAuth, publicUser } from './security.js';
-import { now, eventStatement, changes, liveSession, sessionValues } from './store.js';
+import {
+  now,
+  eventStatement,
+  changes,
+  liveSession,
+  sessionValues,
+  sitesReaderDb,
+} from './store.js';
 import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from '../server/community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
 import { resumeInput, resumeUpsert } from '../server/resume.js';
 import { forumRoutes } from './forum.js';
+import { resolveReaderContext } from '../server/reader-context.js';
+import { createExtensionGateway } from '../server/extension-gateway.js';
+import {
+  listReadingLibrary,
+  listReadingResume,
+  resolveAccountMedia,
+  accountAtomic,
+  accountSnapshotStatement,
+  resumeMetadata,
+  exportReadingAccount,
+} from '../server/reading-account.js';
+
+async function accountRequest(c) {
+  const db = sitesReaderDb(c.get('db'));
+  const context = await resolveReaderContext(c.req.query(), {
+    db,
+    userId: c.get('user').id,
+    sessionHash: c.get('sessionHash'),
+    extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+    signal: c.req.raw.signal,
+  });
+  return {
+    context,
+    deps: {
+      db,
+      coreMedia: getMedia,
+      coreAccountMedia,
+      bridge: createExtensionGateway({
+        ...scheduleOptions(c.env),
+        bridgeUrl: c.env.READER_BRIDGE_URL,
+        bridgeKey: c.env.READER_BRIDGE_KEY,
+        extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+      }),
+    },
+  };
+}
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -93,24 +136,33 @@ export async function onlineState(db) {
 }
 export function socialRoutes(app) {
   forumRoutes(app);
-  app.get('/api/resume', requireAuth, async (c) =>
-    c.json({
-      items: (
-        await c
-          .get('db')
-          .all(
-            'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
-            c.get('user').id,
-          )
-      ).map((row) => JSON.parse(row.payload)),
-    }),
-  );
+  app.get('/api/resume', requireAuth, async (c) => {
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await listReadingResume(context, c.req.query(), deps));
+  });
   app.put('/api/resume/:mediaId', requireAuth, async (c) => {
     const id = mediaId(c.req.param('mediaId')),
       user = c.get('user'),
       db = c.get('db');
-    const item = resumeInput(await c.req.json(), await getMedia(id), user.id);
-    await db.run(resumeUpsert, user.id, id, JSON.stringify(item), item.updatedAt);
+    const input = await c.req.json(),
+      request = await accountRequest(c);
+    const { context, media } = await resolveAccountMedia(
+      id,
+      input.chapterId,
+      request.context,
+      request.deps,
+    );
+    const item = { ...resumeInput(input, media, user.id), ...resumeMetadata(media, context) };
+    await accountAtomic(
+      context,
+      [
+        { sql: resumeUpsert, values: [user.id, id, JSON.stringify(item), item.updatedAt] },
+        accountSnapshotStatement(context, media, 'resume'),
+      ],
+      request.deps,
+      { media },
+    );
     return c.json({
       item: JSON.parse(
         (
@@ -123,27 +175,23 @@ export function socialRoutes(app) {
       ),
     });
   });
+  app.get('/api/library/export', requireAuth, async (c) => {
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await exportReadingAccount(context, deps));
+  });
   app.get('/api/library', requireAuth, async (c) => {
-    const entries = await c
-      .get('db')
-      .all(
-        'SELECT library.*,imported_media.metadata FROM library LEFT JOIN imported_media ON imported_media.media_id=library.media_id WHERE user_id=? ORDER BY updated_at DESC LIMIT 5000',
-        c.get('user').id,
-      );
-    rememberImportedMedia(entries.filter((x) => x.metadata).map((x) => JSON.parse(x.metadata)));
-    return c.json({
-      items: await Promise.all(
-        entries.map(async (row) => libraryShape(row, await getMedia(row.media_id))),
-      ),
-    });
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await listReadingLibrary(context, c.req.query(), deps));
   });
   app.put('/api/library/:mediaId', requireAuth, async (c) => {
     const id = mediaId(c.req.param('mediaId')),
       input = await c.req.json(),
       db = c.get('db'),
       user = c.get('user');
-    const media = await getMedia(id);
-    if (!media) throw apiError(404, 'This title could not be found.');
+    const request = await accountRequest(c);
+    const { context, media } = await resolveAccountMedia(id, null, request.context, request.deps);
     if (
       input.status !== undefined &&
       !['planned', 'watching', 'reading', 'completed', 'paused', 'dropped'].includes(input.status)
@@ -156,31 +204,47 @@ export function socialRoutes(app) {
       input.score === undefined || input.score === null
         ? null
         : numeric(input.score, { name: 'Score', max: 10 });
-    const result = await db.batch([
-      db.statement(
-        `INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) SELECT ?,?,?,?,?,?,? WHERE ${liveSession}
+    const result = await accountAtomic(
+      context,
+      [
+        {
+          sql: `INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) SELECT ?,?,?,?,?,?,? WHERE ${liveSession}
         ON CONFLICT(user_id,media_id) DO UPDATE SET
         favorite=CASE WHEN ? THEN excluded.favorite ELSE library.favorite END,
         status=CASE WHEN ? THEN excluded.status ELSE library.status END,
         progress=CASE WHEN ? THEN excluded.progress ELSE library.progress END,
         score=CASE WHEN ? THEN excluded.score ELSE library.score END,updated_at=excluded.updated_at RETURNING *`,
-        user.id,
-        id,
-        favorite,
-        input.status || 'planned',
-        progress,
-        score,
-        now(),
-        ...sessionValues(c),
-        Number(input.favorite !== undefined),
-        Number(input.status !== undefined),
-        Number(input.progress !== undefined),
-        Number(input.score !== undefined),
-      ),
-      eventStatement(db, 'library', { userId: user.id, mediaId: id }, { userId: user.id }),
-    ]);
-    if (!result[0].results.length) throw apiError(401, 'Your session changed. Sign in again.');
-    return c.json({ item: libraryShape(result[0].results[0], media) });
+          values: [
+            user.id,
+            id,
+            favorite,
+            input.status || 'planned',
+            progress,
+            score,
+            now(),
+            ...sessionValues(c),
+            Number(input.favorite !== undefined),
+            Number(input.status !== undefined),
+            Number(input.progress !== undefined),
+            Number(input.score !== undefined),
+          ],
+        },
+        accountSnapshotStatement(context, media),
+        {
+          sql: 'INSERT INTO event_log(event,payload,room_id,user_id,created_at) VALUES(?,?,NULL,?,?)',
+          values: [
+            'library',
+            JSON.stringify({ userId: user.id, mediaId: id }),
+            user.id,
+            Date.now(),
+          ],
+        },
+      ],
+      request.deps,
+      { media },
+    );
+    if (!result[0].length) throw apiError(401, 'Your session changed. Sign in again.');
+    return c.json({ item: libraryShape(result[0][0], media) });
   });
   app.delete('/api/library/:mediaId', requireAuth, async (c) => {
     const db = c.get('db'),

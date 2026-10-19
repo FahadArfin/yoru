@@ -8,6 +8,7 @@ import { catalogPreferenceSchema } from './catalog-preferences.js';
 import { externalCatalogSchema } from './external-catalog-store.js';
 import { readerContextSchema } from './reader-context.js';
 import { continuationSchema } from './reader-continuation.js';
+import { readingAccountSchema } from './reading-account.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -125,6 +126,7 @@ db.exec(catalogPreferenceSchema);
 db.exec(externalCatalogSchema);
 db.exec(readerContextSchema);
 db.exec(continuationSchema);
+db.exec(readingAccountSchema);
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);

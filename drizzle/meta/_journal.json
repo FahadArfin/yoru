@@ -92,6 +92,13 @@
       "when": 1792384083592,
       "tag": "0012_reader_continuations",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "6",
+      "when": 1792386011971,
+      "tag": "0013_reading_account_snapshots",
+      "breakpoints": true
     }
   ]
 }

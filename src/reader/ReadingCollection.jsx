@@ -11,7 +11,8 @@ import ChapterList from './ChapterList';
 import ReaderImport from './ReaderImport';
 import LiveChapters from './LiveChapters';
 import './reader.css';
-import { useCollection } from '../collection-context';
+import { visibleAccountHistory } from '../../shared/reading-account-view.js';
+import { CATALOG_PREFERENCES_EVENT } from './catalog-preferences';
 
 export function ChapterCollection({ media }) {
   const data = useChapters(media.id);
@@ -71,22 +72,28 @@ export function ChapterCollection({ media }) {
   );
 }
 export function PickUpWhereLeftOff() {
-  const scope = useCollection();
-  const { library, user, resumeItems } = useApp();
-  const [items, setItems] = useState(() => [
-    ...readingHistory('MANGA'),
-    ...readingHistory('MANHWA'),
-  ]);
+  const { library, user, resumeItems, readingContext, currentReaderSources } = useApp();
+  const [storedItems, setItems] = useState([]);
+  const items = visibleAccountHistory(storedItems, readingContext, {
+    currentSources: currentReaderSources,
+    limit: 24,
+  });
   useEffect(() => {
-    const update = () => setItems([...readingHistory('MANGA'), ...readingHistory('MANHWA')]);
+    const update = () =>
+      setItems([
+        ...readingHistory('MANGA', readingContext, { currentSources: currentReaderSources }),
+        ...readingHistory('MANHWA', readingContext, { currentSources: currentReaderSources }),
+      ]);
     update();
     window.addEventListener(READER_EVENT, update);
     window.addEventListener('storage', update);
+    window.addEventListener(CATALOG_PREFERENCES_EVENT, update);
     return () => {
       window.removeEventListener(READER_EVENT, update);
       window.removeEventListener('storage', update);
+      window.removeEventListener(CATALOG_PREFERENCES_EVENT, update);
     };
-  }, []);
+  }, [readingContext, currentReaderSources]);
   const local = (user ? [] : items).map((item) => ({
     ...item,
     page: item.chapters[item.lastChapter].page,
@@ -139,9 +146,6 @@ export function PickUpWhereLeftOff() {
     ...local.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
     ...saved.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
   ]
-    .filter(
-      (item) => !scope?.active || scope.catalog?.items.some((media) => media.id === item.mediaId),
-    )
     .sort((a, b) => updatedAt(b) - updatedAt(a))
     .slice(0, 12);
   if (!progress.length) return null;

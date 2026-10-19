@@ -9,6 +9,7 @@ import {
   saveSearch,
   loadMedia,
   saveMedia,
+  loadAccountMedia,
 } from './catalog-storage.js';
 import { titleRelevance, rankSearch, searchText } from './search-ranking.js';
 const TTL = 6 * 60 * 60 * 1000;
@@ -477,6 +478,36 @@ export async function getMedia(id) {
   } catch {
     return null;
   }
+}
+
+// Account selectors must not fan out to title providers. This bounded projection
+// reads existing metadata only; the caller applies the shared destination policy.
+export async function coreAccountMedia(ids, imported = []) {
+  if (!Array.isArray(ids) || ids.length > 5000)
+    throw new Error('Account metadata batch too large.');
+  const wanted = [...new Set(ids.filter((id) => parseMediaId(id)))];
+  const wantedSet = new Set(wanted);
+  const stored = await loadAccountMedia(wanted);
+  const byId = new Map(wanted.map((id) => [id, cache.get(id)]));
+  for (const media of stored)
+    if (
+      wantedSet.has(media?.id) &&
+      parseMediaId(media.id) &&
+      typeof media.title === 'string' &&
+      media.title
+    )
+      byId.set(media.id, media);
+  // The existing MAL import parser supplies these snapshots, preserving its
+  // established fallback representation without treating an unknown ID as safe.
+  rememberImportedMedia(
+    [...imported, ...stored.filter((item) => item?.mediaId)].filter((item) =>
+      wantedSet.has(item.mediaId),
+    ),
+  );
+  for (const id of wanted) if (!byId.get(id)) byId.set(id, cache.get(id));
+  return [...byId.values()].filter(
+    (media) => media && wantedSet.has(media.id) && typeof media.title === 'string' && media.title,
+  );
 }
 
 export function rememberImportedMedia(entries) {

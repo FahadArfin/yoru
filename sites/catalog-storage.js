@@ -46,6 +46,20 @@ export async function loadMedia(id) {
   return row ? JSON.parse(row.payload) : null;
 }
 
+export async function loadAccountMedia(ids) {
+  if (!ids.length) return [];
+  if (ids.length > 5000) throw new Error('Account metadata batch too large.');
+  const result = await requests
+    .getStore()
+    .env.DB.prepare(
+      `SELECT payload FROM catalog_media WHERE id IN (SELECT value FROM json_each(?))
+       UNION ALL SELECT metadata AS payload FROM imported_media WHERE media_id IN (SELECT value FROM json_each(?))`,
+    )
+    .bind(JSON.stringify(ids), JSON.stringify(ids))
+    .all();
+  return result.results.map((row) => JSON.parse(row.payload));
+}
+
 export async function saveMedia(item) {
   if (!item || item.imported || item.isAdult) return;
   await requests

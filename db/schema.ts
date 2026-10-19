@@ -434,6 +434,25 @@ export const readerSettings = sqliteTable('reader_settings', {
   revision: integer().notNull().default(0),
 });
 
+export const readingAccountSnapshots = sqliteTable(
+  'reading_account_snapshots',
+  {
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    media_id: text().notNull(),
+    record_kind: text().notNull(),
+    destination: text().notNull(),
+    metadata: text().notNull(),
+    updated_at: text().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.user_id, t.media_id, t.record_kind] }),
+    check('reading_account_kind', sql`${t.record_kind} IN ('library','resume')`),
+    check('reading_account_destination', sql`${t.destination} IN ('yoru','ara-ara')`),
+  ],
+);
+
 export const readerGuestContexts = sqliteTable(
   'reader_guest_contexts',
   {

@@ -1,4 +1,5 @@
 import { sortChapters } from './model';
+import { visibleAccountHistory } from '../../shared/reading-account-view.js';
 
 const PREFIX = 'yoru:reader:state:';
 let account = '';
@@ -137,10 +138,10 @@ export function saveReadingState(id, patch, chapterId, chapterPatch) {
   window.dispatchEvent(new Event(READER_EVENT));
   return next;
 }
-export function readingHistory(category) {
+export function readingHistory(category, context, options = {}) {
   const prefix = statePrefix();
   try {
-    return Object.keys(localStorage)
+    const stored = Object.keys(localStorage)
       .filter((key) => key.startsWith(prefix))
       .map((key) => ({
         mediaId: key.slice(prefix.length),
@@ -150,8 +151,8 @@ export function readingHistory(category) {
         (item) =>
           item.category === category && item.lastChapter && item.chapters[item.lastChapter]?.page,
       )
-      .sort((a, b) => b.updatedAt - a.updatedAt)
-      .slice(0, 12);
+      .sort((a, b) => b.updatedAt - a.updatedAt);
+    return visibleAccountHistory(stored, context, { ...options, limit: options.limit ?? 12 });
   } catch {
     return [];
   }

@@ -147,7 +147,7 @@ const assertion = (sql, values) => ({
 /** @param {import('../shared/reading-contracts.js').ReaderDb} db */
 export function createExternalCatalogStore(
   db,
-  { now = Date.now, uuid = () => crypto.randomUUID() } = {},
+  { now = Date.now, uuid = () => crypto.randomUUID(), coreAccountMedia } = {},
 ) {
   const timestamp = () => new Date(now()).toISOString();
   const mint = (prefix) => {
@@ -280,12 +280,35 @@ export function createExternalCatalogStore(
         }
       );
     }
-    if (
-      parseMediaReference(id)?.kind === 'manga' &&
-      ((await db.get('SELECT 1 FROM catalog_media WHERE id=?', id)) ||
-        (await db.get('SELECT 1 FROM imported_media WHERE media_id=?', id)))
-    )
-      return { kind: 'media', sourceId: null, canonical: null };
+    if (parseMediaReference(id)?.kind === 'manga') {
+      if (coreAccountMedia) {
+        const known = await coreAccountMedia([id]);
+        if (
+          known.some(
+            (media) =>
+              media?.id === id &&
+              typeof media.title === 'string' &&
+              media.title &&
+              ['MANGA', 'MANHWA'].includes(media.category),
+          )
+        )
+          return { kind: 'media', sourceId: null, canonical: null };
+      }
+      // Sites owns SQL catalog/import metadata; Node owns its verified cache.
+      // Absence of either optional SQL cache is unknown, never prefix-only proof.
+      for (const [table, column] of [
+        ['catalog_media', 'id'],
+        ['imported_media', 'media_id'],
+      ]) {
+        try {
+          if (await db.get(`SELECT 1 FROM ${table} WHERE ${column}=?`, id))
+            return { kind: 'media', sourceId: null, canonical: null };
+        } catch (error) {
+          if (!/no such table: (?:catalog_media|imported_media)\b/i.test(error.message))
+            throw error;
+        }
+      }
+    }
     return null;
   }
   return {

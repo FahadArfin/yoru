@@ -7,6 +7,138 @@ import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join, resolve } from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { createServer } from 'node:http';
+import {
+  extensionAccountContract,
+  accountSource,
+  accountProviderGate,
+} from './extension-account-contract.mjs';
+import { createExternalCatalogStore } from '../server/external-catalog-store.js';
+import { nodeReaderDb } from '../server/reader-db.js';
+
+let nativeInventory = [accountSource()];
+let nativeTitles = new Map();
+let nativeDetails = 0;
+const providerGate = accountProviderGate();
+const nativeBridge = createServer(async (req, res) => {
+  let body = '';
+  for await (const chunk of req) body += chunk;
+  const data = JSON.parse(body || '{}');
+  res.setHeader('content-type', 'application/json');
+  if (req.url === '/extension/catalogs') {
+    const offset = Number(data.cursor || 0),
+      limit = data.limit || 100;
+    return res.end(
+      JSON.stringify({
+        sources: nativeInventory.slice(offset, offset + limit),
+        nextCursor: offset + limit < nativeInventory.length ? String(offset + limit) : null,
+      }),
+    );
+  }
+  if (req.url === '/extension/details') nativeDetails++;
+  await providerGate.wait(data.titleRef?.upstreamKey);
+  const title = nativeTitles.get(data.titleRef?.upstreamKey);
+  if (title) return res.end(JSON.stringify(title));
+  res.statusCode = 404;
+  res.end('{}');
+});
+test('native account views retain private native history and destination labels', async () =>
+  extensionAccountContract({
+    request,
+    register,
+    providerDetails: () => nativeDetails,
+    holdProvider: providerGate.holdProvider,
+    releaseProvider: providerGate.releaseProvider,
+    async inspectAccountRows(user, id) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      try {
+        return {
+          library: sqlite
+            .prepare('SELECT COUNT(*) n FROM library WHERE user_id=? AND media_id=?')
+            .get(user, id).n,
+          resume: sqlite
+            .prepare('SELECT COUNT(*) n FROM resume_progress WHERE user_id=? AND media_id=?')
+            .get(user, id).n,
+        };
+      } finally {
+        sqlite.close();
+      }
+    },
+    async seedEdition(media, key) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      const db = nodeReaderDb({
+        get: (s, ...v) => sqlite.prepare(s).get(...v),
+        all: (s, ...v) => sqlite.prepare(s).all(...v),
+        run: (s, ...v) => sqlite.prepare(s).run(...v),
+        transaction: (fn) => {
+          sqlite.exec('BEGIN');
+          try {
+            const result = fn();
+            sqlite.exec('COMMIT');
+            return result;
+          } catch (error) {
+            sqlite.exec('ROLLBACK');
+            throw error;
+          }
+        },
+      });
+      try {
+        return await createExternalCatalogStore(db).rememberEdition(media.id, {
+          sourceRef: media.sourceRef,
+          upstreamRef: { title: media.upstreamRef, upstreamKey: key },
+          metadata: { number: '3', pages: 100 },
+        });
+      } finally {
+        sqlite.close();
+      }
+    },
+    async seedNative(sourceRef, key) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      const db = nodeReaderDb({
+        get: (s, ...v) => sqlite.prepare(s).get(...v),
+        all: (s, ...v) => sqlite.prepare(s).all(...v),
+        run: (s, ...v) => sqlite.prepare(s).run(...v),
+        transaction: (fn) => {
+          sqlite.exec('BEGIN');
+          try {
+            const result = fn();
+            sqlite.exec('COMMIT');
+            return result;
+          } catch (e) {
+            sqlite.exec('ROLLBACK');
+            throw e;
+          }
+        },
+      });
+      const title = {
+        sourceRef,
+        upstreamRef: { sourceId: sourceRef.id, upstreamKey: key, language: 'en' },
+        classification: sourceRef.classification,
+        metadata: { title: 'Native account title', category: 'MANGA' },
+      };
+      nativeTitles.set(key, title);
+      try {
+        return await createExternalCatalogStore(db).rememberTitle(title);
+      } finally {
+        sqlite.close();
+      }
+    },
+    async inspectStored(user, id) {
+      const sqlite = new DatabaseSync(join(directory, 'test.sqlite'));
+      try {
+        return JSON.parse(
+          sqlite
+            .prepare('SELECT payload FROM resume_progress WHERE user_id=? AND media_id=?')
+            .get(user, id).payload,
+        );
+      } finally {
+        sqlite.close();
+      }
+    },
+    async changeInventory(sources) {
+      nativeInventory = sources;
+    },
+  }));
 
 const directory = mkdtempSync(join(tmpdir(), 'yoru-api-'));
 let child;
@@ -26,6 +158,8 @@ test('forums persist topics and replies, enforce ownership and separate collecti
 
 async function start() {
   output = '';
+  if (!nativeBridge.listening)
+    await new Promise((done) => nativeBridge.listen(0, '127.0.0.1', done));
   child = spawn(process.execPath, ['server/index.js'], {
     cwd: process.cwd(),
     env: {
@@ -38,6 +172,9 @@ async function start() {
       YORU_DB_PATH: join(directory, 'test.sqlite'),
       APP_ORIGIN: '',
       COOKIE_SECURE: 'false',
+      READER_EXTENSIONS_ENABLED: '1',
+      READER_BRIDGE_URL: `http://127.0.0.1:${nativeBridge.address().port}`,
+      READER_BRIDGE_KEY: 'fixture-account-key-more-than-32-characters',
       DISCORD_CLIENT_ID: '',
       DISCORD_CLIENT_SECRET: '',
       DISCORD_REDIRECT_URI: '',
@@ -214,6 +351,7 @@ after(async () => {
   for (const item of streams) item.controller.abort();
   await Promise.allSettled(streams.map((item) => item.reading));
   await stop();
+  await new Promise((done) => nativeBridge.close(done));
   const target = resolve(directory);
   assert.ok(target.startsWith(resolve(tmpdir())) && target.includes('yoru-api-'));
   rmSync(target, { recursive: true, force: true });
