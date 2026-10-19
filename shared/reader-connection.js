@@ -126,9 +126,7 @@ export async function discoverCatalogs(server, options = {}) {
           (s) =>
             /^[1-9]\d{0,23}$/.test(s.id) &&
             typeof s.name === 'string' &&
-            s.name.trim() &&
-            s.isNsfw === false &&
-            (legacy || s.contentWarning === 'SAFE'),
+            s.name.trim(),
         )
         .map((s) => [
           String(s.id),
@@ -173,8 +171,7 @@ export async function browseCatalog(server, source, query = '', offset = 0, opti
         (m) =>
           String(m.sourceId) === source &&
           typeof m.title === 'string' &&
-          Array.isArray(m.genre) &&
-          !m.genre.some((g) => /\b(?:hentai|pornographic|explicit sex)\b/i.test(g)),
+          Array.isArray(m.genre),
       )
       .slice(0, 20)
       .map((m) => ({ id: String(m.id), title: m.title.slice(0, 300), sourceId: source })),
