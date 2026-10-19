@@ -2,6 +2,7 @@ import { navigatePrimary } from './navigation';
 import { test as base, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
+import { accountSource, accountClassification } from '../extension-account-contract.mjs';
 
 const FRIEREN = 'mal-anime-52991';
 const SOLO_LEVELING_MANHWA = 'mal-manga-121496';
@@ -32,6 +33,33 @@ function account() {
     email: `reader-${suffix}@example.test`,
     password: 'Yoru test password 2026',
   };
+}
+
+async function toolRegistry(page) {
+  await page.addInitScript(() => {
+    window.__yoruTestTools = {};
+    Object.defineProperty(document, 'modelContext', {
+      configurable: true,
+      value: {
+        registerTool(tool, options = {}) {
+          window.__yoruTestTools[tool.name] = tool;
+          options.signal?.addEventListener('abort', () => {
+            delete window.__yoruTestTools[tool.name];
+          });
+        },
+      },
+    });
+  });
+}
+async function toolsReady(page) {
+  await expect
+    .poll(() =>
+      page.evaluate(async () => {
+        const tool = window.__yoruTestTools?.yoru_get_page_state;
+        return tool ? !(await tool.execute({})).isError : false;
+      }),
+    )
+    .toBe(true);
 }
 
 test('catalog retries saved results immediately and enables live pagination', async ({ page }) => {
@@ -103,7 +131,9 @@ test('live startup retries configuration and reconciles a library changed before
     timeout: 10000,
   });
   await expect(page.getByLabel('Progress', { exact: true })).toHaveValue('7');
-  expect(configRequests).toBeGreaterThanOrEqual(2);
+  // Account initialization can already observe the changed row. Configuration
+  // recovery has its own retry timer, so verify that behavior independently.
+  await expect.poll(() => configRequests).toBeGreaterThanOrEqual(2);
   const config = await (await page.request.get('/api/config')).json();
   if (config.realtime.transport === 'poll') {
     // A logout in another tab clears the shared cookie without changing this page's React state.
@@ -392,6 +422,7 @@ test('WebMCP tools register, search, and honor the active account session', asyn
   });
   await page.goto('/');
   await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
+  await toolsReady(page);
   const catalog = await page.evaluate(() =>
     window.__yoruTestTools.yoru_search_catalog.execute({ query: 'Frieren', category: 'ANIME' }),
   );
@@ -405,6 +436,7 @@ test('WebMCP tools register, search, and honor the active account session', asyn
   await registerApi(page.request, baseURL);
   await page.reload();
   await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
+  await toolsReady(page);
   const saved = await page.evaluate(
     (mediaId) =>
       window.__yoruTestTools.yoru_update_library.execute({
@@ -532,6 +564,141 @@ test('optional discovery adds alternatives without replacing the active player',
   );
 });
 
+test('general page tools handle native reading references but anime tools reject them', async ({
+  page,
+  baseURL,
+}) => {
+  await registerApi(page.request, baseURL);
+  await toolRegistry(page);
+  const native = {
+    id: 'ext-manga-' + 'a'.repeat(32),
+    title: 'Synthetic native tool edition',
+    category: 'MANGA',
+    sourceRef: accountSource(),
+    classification: accountClassification(),
+    upstreamRef: { sourceId: 'suwayomi:123', upstreamKey: '/tools/native', language: 'en' },
+    provenance: { sourceField: 'synthetic browser fixture' },
+    malId: null,
+    idMal: null,
+    cover: '/icon.svg',
+  };
+  const calls = [];
+  let saved = null;
+  // These synthetic responses prove page-tool wiring. Real Node/D1 ownership
+  // and adult-source rejection are covered by webmcp-http-contract.mjs.
+  await page.route('**/api/reader/browse?*', (route) => {
+    calls.push(new URL(route.request().url()));
+    return route.fulfill({
+      json: {
+        items: [native],
+        sourceStates: [],
+        total: null,
+        totalIsEstimate: true,
+        nextCursor: null,
+        hasMore: false,
+      },
+    });
+  });
+  await page.route(new RegExp('/api/media/' + native.id + '(?:\\?|$)'), (route) => {
+    calls.push(new URL(route.request().url()));
+    return route.fulfill({ json: native });
+  });
+  await page.route(/\/api\/library(?:\/ext-manga-[a-f0-9]+)?(?:\?|$)/, (route) => {
+    calls.push(new URL(route.request().url()));
+    if (route.request().method() === 'PUT') {
+      saved = { mediaId: native.id, media: native, ...route.request().postDataJSON() };
+      return route.fulfill({ json: { item: saved } });
+    }
+    return route.fulfill({ json: { items: saved ? [saved] : [] } });
+  });
+  await page.goto('/');
+  await toolsReady(page);
+  const execute = (name, args) =>
+    page.evaluate(
+      async ({ name, args }) => {
+        const value = await window.__yoruTestTools[name].execute(args);
+        return { isError: !!value.isError, body: JSON.parse(value.content[0].text) };
+      },
+      { name, args },
+    );
+  const search = await execute('yoru_search_catalog', { query: 'native', category: 'MANGA' });
+  expect(search.isError).toBe(false);
+  expect(search.body.items.map((x) => x.id)).toContain(native.id);
+  const title = await execute('yoru_get_title', { mediaId: native.id });
+  expect(title.isError).toBe(false);
+  expect(title.body).toMatchObject({
+    id: native.id,
+    malId: null,
+    destination: 'yoru',
+    sourceRef: { id: 'suwayomi:123', integration: 'suwayomi' },
+  });
+  expect(
+    (
+      await execute('yoru_update_library', {
+        mediaId: native.id,
+        favorite: true,
+        status: 'reading',
+      })
+    ).isError,
+  ).toBe(false);
+  expect((await execute('yoru_get_library', {})).body.items).toEqual(
+    expect.arrayContaining([expect.objectContaining({ mediaId: native.id, favorite: true })]),
+  );
+  const before = calls.length;
+  for (const name of ['yoru_get_sources', 'yoru_open_episode'])
+    expect((await execute(name, { mediaId: native.id })).isError).toBe(true);
+  expect(calls.length).toBe(before);
+  for (const url of calls) {
+    expect(url.searchParams.get('destination')).toBe('yoru');
+    if (url.pathname.startsWith('/api/media/') || url.pathname === '/api/reader/browse')
+      expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
+  }
+});
+
+test('tool arguments cannot cross destination or account ownership', async ({ page, baseURL }) => {
+  await registerApi(page.request, baseURL);
+  await toolRegistry(page);
+  await page.goto('/');
+  await toolsReady(page);
+  const nativeId = 'ext-manga-' + 'b'.repeat(32);
+  let writes = 0;
+  page.on('request', (request) => {
+    if (request.method() === 'PUT' && request.url().includes('/api/library/')) writes++;
+  });
+  for (const injected of [
+    { owner: 'another-account' },
+    { userId: 'another-account' },
+    { destination: 'ara-ara' },
+  ]) {
+    const result = await page.evaluate(
+      ({ mediaId, injected }) =>
+        window.__yoruTestTools.yoru_update_library.execute({
+          mediaId,
+          favorite: true,
+          ...injected,
+        }),
+      { mediaId: nativeId, injected },
+    );
+    expect(result.isError).toBe(true);
+  }
+  expect(writes).toBe(0);
+  // An unowned/unresolved opaque identity is unavailable through the real API.
+  // The shared HTTP contract also seeds adult records and proves the same 404.
+  const unavailable = await page.evaluate(
+    (mediaId) => window.__yoruTestTools.yoru_get_title.execute({ mediaId }),
+    nativeId,
+  );
+  expect(unavailable.isError).toBe(true);
+  expect(JSON.parse(unavailable.content[0].text).id).toBeUndefined();
+  await page.goto('/ara-ara');
+  await expect(page.getByRole('heading', { name: 'Adults only' })).toBeVisible();
+  const gated = await page.evaluate(
+    (mediaId) => window.__yoruTestTools.yoru_get_title.execute({ mediaId }),
+    nativeId,
+  );
+  expect(gated.isError).toBe(true);
+});
+
 test('legacy WebMCP survives strict lifecycle cleanup and reports registration failures', async ({
   page,
 }) => {
@@ -553,6 +720,7 @@ test('legacy WebMCP survives strict lifecycle cleanup and reports registration f
   });
   await page.goto('/settings');
   await expect.poll(() => page.evaluate(() => Object.keys(window.__yoruTestTools).length)).toBe(10);
+  await toolsReady(page);
   const result = await page.evaluate(() =>
     window.__yoruTestTools.yoru_search_catalog.execute({ query: 'Frieren' }),
   );

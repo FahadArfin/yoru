@@ -28,14 +28,18 @@ switches and **Reset to site defaults**. Signed-in choices are stored per accoun
 in SQLite or D1 and refresh on focus and every 30 seconds; guest choices remain in
 the browser. Legacy browser choices are retained as guest overrides. Changes apply
 to supported chapter source pickers, chapter lists, reader links and preloading.
-Placement does not install extensions, import titles into the metadata catalog,
-enable unsupported chapter adapters, or change Ara Ara's age gate/content rules.
+Placement does not install extensions or prove upstream availability. Both sections
+default to **All sources** (`all`); **MangaDex + Weeb Central** (`core`) retains the
+dedicated adapters, and **Suwayomi extensions** (`extensions`) selects the generic
+catalogs. Global reset restores memberships and both modes. Ara retains its
+confirmation gate, and Yoru retains per-title non-explicit eligibility.
 
 The title page and reader both offer source choices. Translations default to English; the reader's Chapters panel can request another available language or all languages. Local imports remain a separate “On this device” choice. An explicit remote selection never falls back to unrelated imported pages during an outage. Partial source discovery is visible and has a retry button.
 
 - MangaDex uses its official API, credited chapter editions and its image service through the bridge.
 - Weeb Central uses the installed Suwayomi extension `eu.kanade.tachiyomi.extension.en.weebcentral` from the configured Keiyoushi store. The current installation was verified with version 1.6.25. Extensions are third-party code; review updates before installing them. Automatic extension updates and challenge-solving services are disabled.
 - MALSync supplies exact MAL-to-source links. Matching also checks the source's returned URL and manga ID. Similar names alone are insufficient. Chapter ownership is checked again before images or chapter activity writes.
+- Generic `suwayomi:<decimal-source-id>` catalogs coexist with the dedicated paths, including generic MangaDex and Weeb Central. The retained installed preflight lists 176 external source/language entries across 21 providers; these are declarations, not 176 verified readers. A provider-native title has a stable stored `ext-manga-*` identity, with exact `ext-chapter-*` editions, even without a MAL match. Local numeric bindings are checked against canonical ownership and the bridge instance after a reindex/restore.
 - Official publisher redirects stay external. The reader does not retrieve their pages, bypass payment, or defeat access challenges. An extension's availability is not a grant of redistribution permission; source terms and removals still apply.
 
 The three persistent volumes are:
@@ -48,16 +52,28 @@ The three persistent volumes are:
 
 Images are fetched only when requested by a reader. No whole-catalog download or chapter pre-download job runs. Cleanup runs on cache writes and every 15 minutes while the host is running, including after startup. Metadata and database size are separate from the approximately 2 GiB image budget. Browser image caching lasts five minutes. Cached images do not guarantee offline reading: the current source identity and page manifest must still be valid. Source removals are rechecked as the short metadata/page-list caches expire. To immediately retire a source, stop the bridge, remove its selection in the adapter, and clear the dedicated caches before restarting; preserve `suwayomi-data` unless intentionally resetting all source identities.
 
+Generic metadata caches have age/byte bounds and retain explicit stale state. Permanent canonical title/edition identities and account preferences are not eviction candidates. Aggregate discovery permits at most four source-page operations, two concurrent provider operations and 12 seconds; generic and dedicated Weeb calls share one serialized Suwayomi queue with a pending-work cap. The bridge retains its 12-active-request cap, 500-page chapter limit and image MIME/byte validation. Cursors expire after 30 minutes, with a 2 KiB request and 1 MiB continuation-state bound. Destination, current membership and canonical ownership are checked before same-origin image bytes, including cache hits.
+
 ## Temporary public connection
 
 The bridge uses a [Cloudflare Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/). Its random HTTPS address registers with Yoru every 45 seconds using the shared secret. Sites forgets the address after three minutes without renewal. A recreated tunnel registers its replacement automatically, so a PC or container restart does not require a new frontend publication. The cloudflared image supplies its trusted CA bundle; TLS validation remains enabled.
 
 Quick Tunnels are intended for testing, have no uptime guarantee and a 200 in-flight-request limit. This is the temporary PC pilot requested by the owner. Move to a named tunnel or a secured HTTPS endpoint for the permanent server. The bridge permits 12 concurrent operations; transient failures show a retry/source choice rather than a fabricated chapter list.
 
+Sleep, network loss, Docker shutdown, registration expiry and provider outages can make reading unavailable even when the website still loads. Last-good metadata is labeled stale and does not imply that pages can be read offline. Unsupported, empty, unavailable, authentication-required, access-challenged and rate-limited states remain distinct; respect retry guidance and do not bypass upstream restrictions.
+
+## Generic release and recovery
+
+Generic operations require `READER_EXTENSIONS_ENABLED=1` separately in the app and bridge. Defaults remain disabled, and core adapters remain available with the generic flag off. Compose must persistently forward the flag to **bridge**; an `--env-file` supplies interpolation values and does not automatically inject arbitrary variables into a container. The Task 14 release owner must add/verify `READER_EXTENSIONS_ENABLED: '${READER_EXTENSIONS_ENABLED:-0}'` under the bridge service before enabling it. This documented wiring requirement is not proof that the current running image has it.
+
+Publish a compatible generic-disabled Sites baseline retaining all destination/account/social filters before admitting Ara-native production records. Version 106 is not a safe app rollback target after such records exist. Recovery disables generic discovery/reading while retaining additive migrations, canonical identities, account records and destination filters. Preserve the prior bridge image and the exact validated new image, plus the compatible disabled Sites version. Recreate only the bridge with `up --detach --build --no-deps bridge`; preserve Suwayomi and every volume. `Restart` does not rebuild an image.
+
+Record the exact source SHA, archive hash, image IDs, environment revision, deployment/version and actual bounded core/generic reading results in the [acceptance record](qa/enabled-reader-catalogs-acceptance.md). A fixture test, installed-source inventory or image build does not prove a working real provider or a deployed release. Keep private endpoints, credentials, environment files and raw provider material out of those records.
+
 ## Move to the personal server
 
 1. Stop this Compose project before taking a consistent backup of its three named volumes. Keep the private environment file with that backup using secure storage.
-2. Install Docker on the server, check out the same Yoru revision, and restore the volumes with the same names and UID/GID 1000 ownership. Keeping `suwayomi-data` is essential: native chapter links include Suwayomi's database IDs.
+2. Install Docker on the server, check out the same Yoru revision, and restore the volumes with the same names and UID/GID 1000 ownership. Keep `suwayomi-data`, bridge binding/identity records and additive app identity/account tables. Existing dedicated Weeb chapter IDs retain their legacy local integers; new generic public IDs retain canonical ownership and must revalidate local bindings after a restore.
 3. Run `docker compose --env-file /private/path/reader.env -f services/reader-bridge/compose.yml up -d --build`. The pinned images and existing extension are reused. Keep both published ports on loopback.
 4. Verify source lists, manga and manhwa pages, cache reuse and a container restart. Run only one active host registering with the existing key. Switch to a named tunnel/private HTTPS bridge for ongoing use; `READER_BRIDGE_URL` can pin a trusted server endpoint in Sites instead of using temporary registration.
 

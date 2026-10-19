@@ -1,11 +1,17 @@
-import { api, titleOf } from './api';
+import { api, readerRequest, titleOf } from './api';
 import { animeRequest } from '../shared/anime-sources';
+import { mediaReferenceSchema } from '../shared/media-reference';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
 import { getWatchPage, setWebMCPStatus } from './webmcp-state';
 
 const mediaIdSchema = {
-  type: 'string',
-  pattern: '^mal-(anime|manga)-[1-9][0-9]{0,8}$',
+  ...mediaReferenceSchema,
   description: 'Yoru media ID returned by catalog search.',
+};
+const animeIdSchema = {
+  type: 'string',
+  pattern: '^mal-anime-[1-9][0-9]{0,8}$(?![\\s\\S])',
+  description: 'MyAnimeList anime ID returned by catalog search.',
 };
 const episodeSchema = {
   type: 'integer',
@@ -52,13 +58,56 @@ async function waitFor(predicate, signal) {
   signal.throwIfAborted();
 }
 
-export function setupWebMCP(navigate, { refreshLibrary } = {}) {
+export function setupWebMCP(navigate, { refreshLibrary, getReaderSelection } = {}) {
   const context = document.modelContext || navigator.modelContext;
   if (!context?.registerTool) {
     setWebMCPStatus({ supported: false, pending: false, registered: 0, failed: 0 });
     return () => {};
   }
   const lifecycle = new AbortController();
+  const selectionKey = (value) =>
+    JSON.stringify([
+      value.owner,
+      value.scope,
+      value.destination,
+      value.integrationMode,
+      value.selectionFingerprint,
+      value.expiresAt,
+    ]);
+  const currentSelection = () => {
+    const selected = getReaderSelection?.();
+    if (!selected?.ready || !selected.context?.selectionFingerprint)
+      throw new Error('Wait for the current reader selection and destination confirmation.');
+    if (Number.isFinite(selected.context.expiresAt) && selected.context.expiresAt <= Date.now())
+      throw new Error('Reader choices expired. Refresh to sync your current choices.');
+    return selected.context;
+  };
+  const assertCurrent = (selected) => {
+    if (selectionKey(currentSelection()) !== selectionKey(selected))
+      throw new Error('Reader selection changed. Retry in the current section.');
+  };
+  const read = async (path, signal, options = {}) => {
+    const selected = currentSelection();
+    const value = await readerRequest(path, { ...selected, ...options, signal });
+    assertCurrent(selected);
+    return value;
+  };
+  const write = async (path, body, signal) => {
+    const selected = currentSelection();
+    if (selected.scope === null) throw new Error('Wait for the current account session.');
+    const params = new URLSearchParams({
+      destination: selected.destination,
+      integration: selected.integrationMode,
+      selectionFingerprint: selected.selectionFingerprint,
+    });
+    const value = await api(path + '?' + params, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+      signal,
+    });
+    assertCurrent(selected);
+    return value;
+  };
   const names = new Set();
   const pending = [];
   let failed = 0;
@@ -88,7 +137,11 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
                   : lifecycle.signal;
                 signal.throwIfAborted();
                 validate(args, properties, required);
-                return result(await execute(args, signal));
+                const selected = currentSelection();
+                const value = await execute(args, signal);
+                signal.throwIfAborted();
+                assertCurrent(selected);
+                return result(value);
               } catch (error) {
                 return {
                   ...result({
@@ -115,15 +168,66 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
   };
   register(
     'yoru_search_catalog',
-    'Search anime, manga and manhwa metadata. Returns media IDs for other Yoru tools.',
+    'Search eligible anime, manga, manhwa and enabled native reading catalogs in the current section. Returns exact media IDs and provider metadata; availability is not reading proof.',
     {
       query: { type: 'string', maxLength: 200 },
       category: { type: 'string', enum: ['ALL', 'ANIME', 'MANGA', 'MANHWA'] },
+      cursor: {
+        type: 'string',
+        maxLength: 2048,
+        description: 'Opaque nextCursor from the same query and current selection. At most 2 KiB.',
+      },
+      sourceId: {
+        type: 'string',
+        pattern: '^(?:mangadex|weebcentral|suwayomi:-?[1-9][0-9]{0,18})$(?![\\s\\S])',
+      },
+      language: { type: 'string', maxLength: 64, pattern: '^[^\\x00-\\x1f\\x7f]+$(?![\\s\\S])' },
     },
     [],
     true,
-    ({ query = '', category = 'ALL' }, signal) =>
-      api('/api/catalog?' + new URLSearchParams({ search: query, category }), { signal }),
+    async ({ query = '', category = 'ALL', cursor, sourceId, language }, signal) => {
+      const selected = currentSelection();
+      if (
+        sourceId !== undefined &&
+        !['mangadex', 'weebcentral'].includes(sourceId) &&
+        !(sourceId.startsWith('suwayomi:') && decimalSourceId(sourceId.slice(9)))
+      )
+        throw new Error('Choose an exact catalog source ID.');
+      if (cursor && new TextEncoder().encode(cursor).byteLength > 2048)
+        throw new Error('Reading cursor exceeds 2 KiB. Start a fresh search.');
+      if (
+        category === 'ANIME' &&
+        (cursor !== undefined || sourceId !== undefined || language !== undefined)
+      )
+        throw new Error('Reading source, language and cursor filters require a reading category.');
+      if (category === 'ANIME')
+        return read('/api/catalog?' + new URLSearchParams({ search: query, category }), signal);
+      const params = new URLSearchParams({ q: query, mode: query ? 'search' : 'popular' });
+      if (cursor !== undefined) params.set('cursor', cursor);
+      if (sourceId !== undefined) params.set('source', sourceId);
+      if (language !== undefined) params.set('language', language);
+      const reading = await read('/api/reader/browse?' + params, signal);
+      if (category !== 'ALL')
+        return {
+          ...reading,
+          destination: selected.destination,
+          items: reading.items.filter((item) => item.category === category),
+        };
+      const anime =
+        cursor || sourceId || language
+          ? { items: [] }
+          : await read(
+              '/api/catalog?' + new URLSearchParams({ search: query, category: 'ANIME' }),
+              signal,
+            );
+      return {
+        ...reading,
+        destination: selected.destination,
+        items: [...anime.items, ...reading.items],
+        total: null,
+        totalIsEstimate: true,
+      };
+    },
   );
   register(
     'yoru_get_title',
@@ -131,7 +235,13 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     { mediaId: mediaIdSchema },
     ['mediaId'],
     true,
-    ({ mediaId }, signal) => api('/api/media/' + mediaId, { signal }),
+    async ({ mediaId }, signal) => {
+      const selected = currentSelection();
+      return {
+        ...(await read('/api/media/' + mediaId, signal)),
+        destination: selected.destination,
+      };
+    },
   );
   register(
     'yoru_get_library',
@@ -139,7 +249,7 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     {},
     [],
     true,
-    (_, signal) => api('/api/library', { signal }),
+    (_, signal) => read('/api/library', signal, { force: true, ttl: 0 }),
   );
   register(
     'yoru_update_library',
@@ -158,11 +268,7 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     async ({ mediaId, ...patch }, signal) => {
       if (!Object.keys(patch).length)
         throw new Error('Specify a status, progress or favorite change.');
-      const saved = await api('/api/library/' + mediaId, {
-        method: 'PUT',
-        body: JSON.stringify(patch),
-        signal,
-      });
+      const saved = await write('/api/library/' + mediaId, patch, signal);
       await refreshLibrary?.();
       return saved;
     },
@@ -173,7 +279,7 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     {},
     [],
     true,
-    (_, signal) => api('/api/rooms', { signal }),
+    (_, signal) => read('/api/rooms', signal, { force: true, ttl: 0 }),
   );
   register(
     'yoru_open_title',
@@ -182,28 +288,39 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     ['mediaId'],
     false,
     async ({ mediaId }, signal) => {
-      const media = await api('/api/media/' + mediaId, { signal });
+      const selected = currentSelection();
+      const media = await read('/api/media/' + mediaId, signal);
       signal.throwIfAborted();
-      navigate('/title/' + mediaId);
+      const path = (selected.destination === 'ara-ara' ? '/ara-ara' : '') + '/title/' + mediaId;
+      navigate(path);
       await waitFor(
         () =>
-          location.pathname === '/title/' + mediaId &&
-          document.title === titleOf(media) + ' · Yoru',
+          location.pathname === path &&
+          document.title ===
+            titleOf(media) + (selected.destination === 'ara-ara' ? ' · Ara Ara' : ' · Yoru'),
         signal,
       );
-      return { opened: true, mediaId };
+      assertCurrent(selected);
+      return {
+        opened: true,
+        mediaId,
+        destination: selected.destination,
+        sourceRef: media.sourceRef,
+        provenance: media.provenance,
+      };
     },
   );
   const sourceProperties = {
-    mediaId: mediaIdSchema,
+    mediaId: animeIdSchema,
     episode: episodeSchema,
     language: languageSchema,
   };
   const sources = ({ mediaId, episode = 1, language = 'sub' }, signal) => {
     animeRequest(mediaId, episode, language);
-    return api('/api/media/' + mediaId + '/sources?' + new URLSearchParams({ episode, language }), {
+    return read(
+      '/api/media/' + mediaId + '/sources?' + new URLSearchParams({ episode, language }),
       signal,
-    });
+    );
   };
   register(
     'yoru_get_sources',
@@ -226,8 +343,10 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
         : resolved.items[0];
       if (!source) throw new Error('Source not found. Call yoru_get_sources for current choices.');
       signal.throwIfAborted();
+      const selected = currentSelection();
       navigate(
-        '/watch/' +
+        (selected.destination === 'ara-ara' ? '/ara-ara' : '') +
+          '/watch/' +
           resolved.mediaId +
           '/' +
           resolved.episode +
@@ -259,11 +378,17 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     {},
     [],
     true,
-    async (_, signal) => ({
-      path: location.pathname,
-      ...getWatchPage(),
-      user: (await api('/api/auth/me', { signal })).user,
-    }),
+    async (_, signal) => {
+      const selected = currentSelection();
+      const user = (await read('/api/auth/me', signal, { force: true, ttl: 0 })).user;
+      return {
+        path: location.pathname,
+        ...getWatchPage(),
+        destination: selected.destination,
+        integrationMode: selected.integrationMode,
+        user,
+      };
+    },
   );
   register(
     'yoru_select_source',
@@ -272,6 +397,7 @@ export function setupWebMCP(navigate, { refreshLibrary } = {}) {
     ['sourceId'],
     false,
     async ({ sourceId }, signal) => {
+      currentSelection();
       const page = getWatchPage();
       if (!page || page.category !== 'ANIME') throw new Error('Open an anime episode first.');
       const source = page.sources.find((x) => x.id === sourceId);
