@@ -425,6 +425,15 @@ export const readerCatalogPreferences = sqliteTable(
   (t) => [primaryKey({ columns: [t.user_id, t.provider, t.destination] })],
 );
 
+export const readerSettings = sqliteTable('reader_settings', {
+  user_id: text()
+    .primaryKey()
+    .notNull()
+    .references(() => users.id, { onDelete: 'cascade' }),
+  modes: text().notNull().default('{"yoru":"all","ara-ara":"all"}'),
+  revision: integer().notNull().default(0),
+});
+
 export const chapterOpens = sqliteTable(
   'chapter_opens',
   {

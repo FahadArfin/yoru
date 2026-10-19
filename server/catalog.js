@@ -2,7 +2,7 @@ import { getAraCatalog, scopeAraSchedule } from './ara-ara.js';
 import { Router } from 'express';
 import {
   getCatalogPreferences,
-  changeCatalogPreference,
+  changeReaderPreference,
   resetCatalogPreferences,
 } from './catalog-preferences.js';
 import {
@@ -23,7 +23,8 @@ import { getSchedule } from './schedule-core.js';
 import { getChapterCalendar } from './chapter-calendar.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
-import { all, run } from './db.js';
+import { all, run, get, transaction } from './db.js';
+import { nodeReaderDb } from './reader-db.js';
 import { cookie, asyncRoute, requireAuth } from './auth.js';
 import {
   getReadingCatalog,
@@ -49,26 +50,39 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+const preferenceDb = nodeReaderDb({ all, run, get, transaction });
 catalogRouter.get(
   '/reader/preferences',
   asyncRoute(async (req, res) => {
     res
       .set('Cache-Control', 'no-store')
-      .json(await getCatalogPreferences({ db: { all, run }, userId: req.user?.id }));
+      .json(await getCatalogPreferences({ db: preferenceDb, userId: req.user?.id }));
   }),
 );
 catalogRouter.patch(
   '/reader/preferences',
   requireAuth,
   asyncRoute(async (req, res) => {
-    res.json(await changeCatalogPreference(req.body, { db: { all, run }, userId: req.user.id }));
+    res.json(
+      await changeReaderPreference(req.body, {
+        db: preferenceDb,
+        userId: req.user.id,
+        sessionHash: req.sessionHash,
+      }),
+    );
   }),
 );
 catalogRouter.delete(
   '/reader/preferences',
   requireAuth,
   asyncRoute(async (req, res) => {
-    res.json(await resetCatalogPreferences(req.body, { db: { all, run }, userId: req.user.id }));
+    res.json(
+      await resetCatalogPreferences(req.body, {
+        db: preferenceDb,
+        userId: req.user.id,
+        sessionHash: req.sessionHash,
+      }),
+    );
   }),
 );
 catalogRouter.get(

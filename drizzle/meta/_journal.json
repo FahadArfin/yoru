@@ -71,6 +71,13 @@
       "when": 1792382289494,
       "tag": "0009_external_reader_identities",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "6",
+      "when": 1792382888937,
+      "tag": "0010_reader_settings",
+      "breakpoints": true
     }
   ]
 }

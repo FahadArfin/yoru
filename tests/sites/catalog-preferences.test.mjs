@@ -2,6 +2,36 @@ import assert from 'node:assert/strict';
 import { createHash } from 'node:crypto';
 import { test } from 'node:test';
 import { createRuntime, migrate, sql } from './harness.mjs';
+import { readerSettingsContract } from '../reader-settings-contract.mjs';
+import { sitesReaderDb, store } from '../../sites/store.js';
+
+readerSettingsContract('D1', async () => {
+  const runtime = await createRuntime();
+  try {
+    await migrate(runtime);
+    const db = sitesReaderDb(store(await runtime.getD1Database('DB', 'a')));
+    for (const id of ['one', 'two'])
+      await db.run(
+        'INSERT INTO users(id,name,email,password_hash,created_at) VALUES(?,?,?,?,?)',
+        id,
+        id,
+        `${id}@test.invalid`,
+        'unused',
+        '2026-10-19',
+      );
+    await db.run(
+      'INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)',
+      'one-session',
+      'one',
+      Date.now() + 60000,
+      Date.now(),
+    );
+    return { db, close: () => runtime.dispose() };
+  } catch (error) {
+    await runtime.dispose();
+    throw error;
+  }
+});
 
 test('catalog overrides sync across Workers, isolate accounts, reject stale sessions and reset to defaults', async () => {
   const runtime = await createRuntime();
@@ -39,6 +69,8 @@ test('catalog overrides sync across Workers, isolate accounts, reject stale sess
     const defaults = await (await request('a', '')).json();
     assert.equal(defaults.defaults.NineHentai.yoru, false);
     assert.equal(defaults.defaults.NineHentai['ara-ara'], true);
+    assert.deepEqual(defaults.modes, { yoru: 'all', 'ara-ara': 'all' });
+    assert.equal(defaults.revision, 0);
     assert.equal((await request('a', '', 'PATCH', {})).status, 401);
     const body = { owner: 'one', provider: 'MangaDex', destination: 'yoru', enabled: false };
     assert.equal((await request('a', 'one', 'PATCH', body)).status, 200);
@@ -47,8 +79,26 @@ test('catalog overrides sync across Workers, isolate accounts, reject stale sess
     });
     assert.deepEqual((await (await request('b', 'two')).json()).overrides, {});
     assert.equal((await request('b', 'two', 'PATCH', body)).status, 409);
+    const modeBody = { owner: 'one', operation: 'mode', destination: 'yoru', mode: 'core' };
+    assert.equal((await request('a', 'one', 'PATCH', modeBody)).status, 200);
+    assert.deepEqual((await (await request('b', 'one')).json()).modes, {
+      yoru: 'core',
+      'ara-ara': 'all',
+    });
+    assert.equal(
+      (await request('a', 'one', 'PATCH', { ...modeBody, mode: 'invalid' })).status,
+      400,
+    );
+    assert.equal(
+      (await request('a', 'one', 'PATCH', { ...modeBody, operation: 'unknown' })).status,
+      400,
+    );
+    assert.equal((await request('b', 'two', 'PATCH', modeBody)).status, 409);
     assert.equal((await request('b', 'one', 'DELETE', { owner: 'one' })).status, 200);
     assert.deepEqual((await (await request('a', 'one')).json()).overrides, {});
+    const reset = await (await request('a', 'one')).json();
+    assert.deepEqual(reset.modes, { yoru: 'all', 'ara-ara': 'all' });
+    assert.equal(reset.revision, 3);
     await sql(runtime, [['DELETE FROM sessions WHERE user_id=?', 'one']]);
     assert.equal((await request('b', 'one', 'PATCH', body)).status, 401);
   } finally {

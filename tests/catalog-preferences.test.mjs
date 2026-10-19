@@ -1,6 +1,37 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
+import { nodeReaderDb } from '../server/reader-db.js';
+import { readerSettingsContract } from './reader-settings-contract.mjs';
+
+function database(sql) {
+  return nodeReaderDb({
+    get: (q, ...v) => sql.prepare(q).get(...v),
+    all: (q, ...v) => sql.prepare(q).all(...v),
+    run: (q, ...v) => sql.prepare(q).run(...v),
+    transaction(callback) {
+      sql.exec('BEGIN IMMEDIATE');
+      try {
+        const result = callback();
+        sql.exec('COMMIT');
+        return result;
+      } catch (error) {
+        sql.exec('ROLLBACK');
+        throw error;
+      }
+    },
+  });
+}
+
+readerSettingsContract('SQLite', async () => {
+  const { catalogPreferenceSchema } = await import('../server/catalog-preferences.js');
+  const sql = new DatabaseSync(':memory:');
+  sql.exec(
+    "PRAGMA foreign_keys=ON; CREATE TABLE users(id TEXT PRIMARY KEY); INSERT INTO users VALUES ('one'),('two'); CREATE TABLE sessions(token_hash TEXT PRIMARY KEY,user_id TEXT,expires_at INTEGER); INSERT INTO sessions VALUES ('one-session','one',9999999999999);",
+  );
+  sql.exec(catalogPreferenceSchema);
+  return { db: database(sql), close: () => sql.close() };
+});
 
 test('provider defaults apply across languages and personal choices override only their destination', async () => {
   const { catalogEnabled, filterReadingSources } = await import('../shared/catalog-preferences.js');
@@ -34,10 +65,7 @@ test('account writes cannot select another owner and independent provider change
   const sql = new DatabaseSync(':memory:');
   sql.exec("CREATE TABLE users(id TEXT PRIMARY KEY); INSERT INTO users VALUES ('one'),('two');");
   sql.exec(catalogPreferenceSchema);
-  const db = {
-    all: (q, ...v) => sql.prepare(q).all(...v),
-    run: (q, ...v) => sql.prepare(q).run(...v),
-  };
+  const db = database(sql);
   const one = { db, userId: 'one' },
     two = { db, userId: 'two' };
   await assert.rejects(

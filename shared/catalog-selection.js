@@ -2,6 +2,8 @@ const DESTINATIONS = ['yoru', 'ara-ara'];
 const MODES = ['all', 'core', 'extensions'];
 const FORBIDDEN = ['__proto__', 'constructor', 'prototype'];
 const MAX_BYTES = 16 * 1024;
+export const validIntegrationMode = (value) => MODES.includes(value);
+export const validDestination = (value) => DESTINATIONS.includes(value);
 
 /** @returns {import('./reading-contracts.js').IntegrationMode} */
 export function normalizeIntegrationMode(value) {

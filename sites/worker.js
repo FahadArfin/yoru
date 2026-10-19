@@ -2,12 +2,12 @@ import { getAraCatalog, scopeAraSchedule } from '../server/ara-ara.js';
 import { Hono } from 'hono';
 import {
   getCatalogPreferences,
-  changeCatalogPreference,
+  changeReaderPreference,
   resetCatalogPreferences,
 } from '../server/catalog-preferences.js';
 import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
-import { store } from './store.js';
+import { store, sitesReaderDb } from './store.js';
 import {
   authRoutes,
   sessionMiddleware,
@@ -187,21 +187,25 @@ app.get('/api/reader/catalogs', async (c) => {
   return c.json(await getReaderCatalogs(chapterOptions(c)));
 });
 app.get('/api/reader/preferences', async (c) =>
-  c.json(await getCatalogPreferences({ db: c.get('db'), userId: c.get('user')?.id })),
+  c.json(
+    await getCatalogPreferences({ db: sitesReaderDb(c.get('db')), userId: c.get('user')?.id }),
+  ),
 );
 app.patch('/api/reader/preferences', requireAuth, async (c) =>
   c.json(
-    await changeCatalogPreference(await c.req.json(), {
-      db: c.get('db'),
+    await changeReaderPreference(await c.req.json(), {
+      db: sitesReaderDb(c.get('db')),
       userId: c.get('user').id,
+      sessionHash: c.get('sessionHash'),
     }),
   ),
 );
 app.delete('/api/reader/preferences', requireAuth, async (c) =>
   c.json(
     await resetCatalogPreferences(await c.req.json(), {
-      db: c.get('db'),
+      db: sitesReaderDb(c.get('db')),
       userId: c.get('user').id,
+      sessionHash: c.get('sessionHash'),
     }),
   ),
 );
