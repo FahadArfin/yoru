@@ -20,6 +20,17 @@ Suwayomi's authenticated API and bundled administration WebUI bind to `127.0.0.1
 
 ## Sources and caching
 
+Reader catalog placement starts with the shared Yoru/Ara Ara defaults in
+`shared/catalog-preferences.js`, captured from the owner's provider selections.
+Membership is keyed by provider name and covers all its language editions. Unknown
+new providers start disabled in both lists. Settings offers independent personal
+switches and **Reset to site defaults**. Signed-in choices are stored per account
+in SQLite or D1 and refresh on focus and every 30 seconds; guest choices remain in
+the browser. Legacy browser choices are retained as guest overrides. Changes apply
+to supported chapter source pickers, chapter lists, reader links and preloading.
+Placement does not install extensions, import titles into the metadata catalog,
+enable unsupported chapter adapters, or change Ara Ara's age gate/content rules.
+
 The title page and reader both offer source choices. Translations default to English; the reader's Chapters panel can request another available language or all languages. Local imports remain a separate “On this device” choice. An explicit remote selection never falls back to unrelated imported pages during an outage. Partial source discovery is visible and has a retry button.
 
 - MangaDex uses its official API, credited chapter editions and its image service through the bridge.

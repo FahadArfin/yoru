@@ -1,4 +1,63 @@
 import { test, expect } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+
+test('account catalog choices follow a fresh browser while guest choices remain separate', async ({
+  page,
+  context,
+  browser,
+  baseURL,
+}) => {
+  const sources = [{ id: '1', name: 'Weeb Central', language: 'en' }];
+  await page.route('**/api/reader/catalogs', (route) => route.fulfill({ json: { sources } }));
+  const credentials = {
+    name: 'Catalog reader',
+    email: `${randomUUID()}@example.test`,
+    password: 'Catalog sync testing 2026',
+  };
+  expect(
+    (
+      await context.request.post('/api/auth/register', {
+        headers: { Origin: baseURL },
+        data: credentials,
+      })
+    ).status(),
+  ).toBe(201);
+  await page.goto('/settings');
+  const toggle = page.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true });
+  await expect(toggle).toHaveAttribute('aria-checked', 'true');
+  await toggle.click();
+  await expect(toggle).toHaveAttribute('aria-checked', 'false');
+  const second = await browser.newContext({ baseURL });
+  try {
+    await second.route('**/api/reader/catalogs', (route) => route.fulfill({ json: { sources } }));
+    expect(
+      (
+        await second.request.post('/api/auth/login', {
+          headers: { Origin: baseURL },
+          data: credentials,
+        })
+      ).status(),
+    ).toBe(200);
+    const fresh = await second.newPage();
+    await fresh.goto('/settings');
+    await expect(
+      fresh.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }),
+    ).toHaveAttribute('aria-checked', 'false');
+    await fresh.getByRole('button', { name: 'Reset to site defaults' }).click();
+    await expect(
+      fresh.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }),
+    ).toHaveAttribute('aria-checked', 'true');
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await expect(toggle).toHaveAttribute('aria-checked', 'true');
+    await second.request.post('/api/auth/logout', { headers: { Origin: baseURL }, data: {} });
+    await fresh.reload();
+    await expect(
+      fresh.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }),
+    ).toHaveAttribute('aria-checked', 'true');
+  } finally {
+    await second.close();
+  }
+});
 
 test.beforeEach(async ({ context, page, baseURL }) => {
   await context.route('**/*', (route) =>
@@ -116,8 +175,11 @@ test('Yoru and Ara Ara list switches are independent and retain existing browser
   );
   expect(preferences.url).toBe('https://reader.example');
   expect(preferences.enabled['https://reader.example']['9']).toBe(false);
-  expect(preferences.enabled.yoru['2']).toBe(true);
-  expect(preferences.araEnabled.yoru['2']).toBe(false);
+  const overrides = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('yoru:catalog-overrides:guest:v1')),
+  );
+  expect(overrides.Cubari.yoru).toBe(true);
+  expect(overrides.Cubari['ara-ara']).toBe(false);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await card.screenshot({ path: testInfo.outputPath('catalog-destinations.png') });
   await page.goto('/ara-ara/settings');
@@ -194,9 +256,9 @@ test('custom server validates addresses, remembers toggles and browses only enab
   await card.getByLabel('Server username').fill('reader');
   await card.getByLabel('Server password').fill('not-persisted');
   await card.getByRole('button', { name: 'Connect', exact: true }).click();
-  await expect(card.getByRole('status')).toContainText('1 supported catalog');
+  await expect(card.getByRole('status')).toContainText('2 supported catalogs');
   await expect(card.getByLabel('Suwayomi server address')).toHaveValue('https://reader.example');
-  await expect(card.getByText('Excluded', { exact: true })).toHaveCount(0);
+  await expect(card.getByText('Excluded', { exact: true })).toBeVisible();
   const toggle = card.getByRole('switch', { name: 'Sample Catalog catalog' });
   await toggle.click();
   await expect(card.getByRole('button', { name: 'Browse Sample Catalog' })).toBeDisabled();

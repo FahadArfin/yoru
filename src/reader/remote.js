@@ -1,6 +1,9 @@
 import { useEffect, useState } from 'react';
 import { useChapters } from './hooks';
 import { chapterList, readerChapter, readingSources, savedReadingSource } from './requests';
+import useCatalogPreferences from '../useCatalogPreferences';
+import { useCollection } from '../collection-context';
+import { catalogEnabled, readingProvider } from '../../shared/catalog-preferences';
 export { savedReadingSource, rememberReadingSource } from './requests';
 
 export function useReaderChapters(
@@ -12,6 +15,8 @@ export function useReaderChapters(
   scope = null,
 ) {
   const local = useChapters(media.id);
+  const preferences = useCatalogPreferences();
+  const collection = !!useCollection()?.active;
   const [sources, setSources] = useState(null);
   const [listing, setListing] = useState({ items: [], key: '', loading: false, error: '' });
   const [edition, setEdition] = useState({ item: null, key: '', loading: false, error: '' });
@@ -27,7 +32,9 @@ export function useReaderChapters(
         ? 'mangadex'
         : sourceParam ||
           (sources?.sources.some((s) => s.id === savedReadingSource(media.id)) ||
-          (sources?.partial && savedReadingSource(media.id) === 'weebcentral')
+          (sources?.partial &&
+            savedReadingSource(media.id) === 'weebcentral' &&
+            catalogEnabled('Weeb Central', collection ? 'ara-ara' : 'yoru', preferences.overrides))
             ? savedReadingSource(media.id)
             : sources?.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex');
   const language =
@@ -38,9 +45,10 @@ export function useReaderChapters(
         : 'en';
   const listingKey = `${media.id}:${source}:${language}`;
   useEffect(() => {
+    if (!preferences.ready) return;
     const controller = new AbortController();
     setSources(null);
-    readingSources(media.id, revision > 0)
+    readingSources(media.id, revision > 0, scope)
       .then((result) => {
         if (!controller.signal.aborted) setSources(result);
       })
@@ -48,11 +56,21 @@ export function useReaderChapters(
         if (!controller.signal.aborted) setSources({ sources: [], state: 'offline' });
       });
     return () => controller.abort();
-  }, [media.id, revision]);
+  }, [media.id, revision, scope, preferences.ready, preferences.revision, collection]);
   const explicitChapter = /^(?:[a-f0-9-]{36}|sw-weebcentral-\d+-\d+)$/i.test(requested || '');
+  const sourceAllowed = catalogEnabled(
+    readingProvider(source),
+    collection ? 'ara-ara' : 'yoru',
+    preferences.overrides,
+  );
   // An exact edition can be verified by the reader endpoint without waiting for other providers.
   const enabled =
-    !local.loading && !localSelected && (explicitChapter || sources?.state === 'ready');
+    !local.loading &&
+    !localSelected &&
+    preferences.ready &&
+    sourceAllowed &&
+    !sources?.disabled &&
+    (explicitChapter || sources?.state === 'ready');
   useEffect(() => {
     const controller = new AbortController();
     setListing((old) => ({
@@ -114,7 +132,7 @@ export function useReaderChapters(
     const controller = new AbortController();
     setEdition({ item: null, key: editionKey, loading: !!selected, error: '' });
     if (!selected) return () => controller.abort();
-    readerChapter(media.id, selected, revision > 0)
+    readerChapter(media.id, selected, revision > 0, scope)
       .then((item) => {
         if (!controller.signal.aborted)
           setEdition({ item, key: editionKey, loading: false, error: '' });
@@ -124,7 +142,7 @@ export function useReaderChapters(
           setEdition({ item: null, key: editionKey, loading: false, error: e.message });
       });
     return () => controller.abort();
-  }, [selected, media.id, source, revision]);
+  }, [selected, media.id, source, revision, scope, preferences.revision]);
   let items = localSelected ? local.items : [];
   const loaded = !!(
     selected &&
@@ -146,7 +164,12 @@ export function useReaderChapters(
     items,
     sources: [
       ...(sources?.sources || []),
-      ...(!localSelected && source && sources && !sources.sources.some((s) => s.id === source)
+      ...(!localSelected &&
+      sourceAllowed &&
+      source &&
+      sources &&
+      !sources.disabled &&
+      !sources.sources.some((s) => s.id === source)
         ? [
             {
               id: source,
@@ -173,9 +196,13 @@ export function useReaderChapters(
       local.error ||
       (enabled
         ? listing.error || edition.error
-        : !localSelected && sources?.state === 'offline'
-          ? 'The reading server is offline. Try again shortly.'
-          : ''),
+        : !localSelected && sources?.disabled
+          ? 'No chapter sources are enabled for this section. Change Reader catalogs in Settings.'
+          : !localSelected && !sourceAllowed
+            ? 'This chapter source is disabled for this section. Choose another source or change Reader catalogs in Settings.'
+            : !localSelected && sources?.state === 'offline'
+              ? 'The reading server is offline. Try again shortly.'
+              : ''),
     refresh: () => {
       local.refresh();
       setRevision((n) => n + 1);

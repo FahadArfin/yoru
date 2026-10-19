@@ -331,6 +331,19 @@ export const limits = sqliteTable(
   (t) => [index('rate_limits_expiry').on(t.expires_at)],
 );
 
+export const readerCatalogPreferences = sqliteTable(
+  'reader_catalog_preferences',
+  {
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    provider: text().notNull(),
+    destination: text().notNull(),
+    enabled: integer().notNull(),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.provider, t.destination] })],
+);
+
 export const chapterOpens = sqliteTable(
   'chapter_opens',
   {

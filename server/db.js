@@ -4,6 +4,7 @@ import { dirname, resolve } from 'node:path';
 import { presenceSchema } from './visitor-presence.js';
 import { resumeSchema } from './resume.js';
 import { forumSchema } from './forum.js';
+import { catalogPreferenceSchema } from './catalog-preferences.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -117,6 +118,7 @@ if (
 )
   db.exec('ALTER TABLE library ADD COLUMN score REAL');
 
+db.exec(catalogPreferenceSchema);
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);

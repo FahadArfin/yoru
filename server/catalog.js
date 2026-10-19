@@ -1,6 +1,11 @@
 import { getAraCatalog, scopeAraSchedule } from './ara-ara.js';
 import { Router } from 'express';
 import {
+  getCatalogPreferences,
+  changeCatalogPreference,
+  resetCatalogPreferences,
+} from './catalog-preferences.js';
+import {
   searchCatalog,
   searchSuggestions,
   getMedia,
@@ -44,6 +49,28 @@ import { seed, isOffline } from './catalog-storage.js';
 export * from './catalog-core.js';
 
 export const catalogRouter = Router();
+catalogRouter.get(
+  '/reader/preferences',
+  asyncRoute(async (req, res) => {
+    res
+      .set('Cache-Control', 'no-store')
+      .json(await getCatalogPreferences({ db: { all, run }, userId: req.user?.id }));
+  }),
+);
+catalogRouter.patch(
+  '/reader/preferences',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    res.json(await changeCatalogPreference(req.body, { db: { all, run }, userId: req.user.id }));
+  }),
+);
+catalogRouter.delete(
+  '/reader/preferences',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    res.json(await resetCatalogPreferences(req.body, { db: { all, run }, userId: req.user.id }));
+  }),
+);
 catalogRouter.get(
   '/ara-ara/catalog',
   asyncRoute(async (_req, res) => res.json(await getAraCatalog())),

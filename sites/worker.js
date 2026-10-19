@@ -1,5 +1,10 @@
 import { getAraCatalog, scopeAraSchedule } from '../server/ara-ara.js';
 import { Hono } from 'hono';
+import {
+  getCatalogPreferences,
+  changeCatalogPreference,
+  resetCatalogPreferences,
+} from '../server/catalog-preferences.js';
 import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
 import { store } from './store.js';
@@ -181,6 +186,25 @@ app.get('/api/reader/catalogs', async (c) => {
   c.header('Cache-Control', 'no-store');
   return c.json(await getReaderCatalogs(chapterOptions(c)));
 });
+app.get('/api/reader/preferences', async (c) =>
+  c.json(await getCatalogPreferences({ db: c.get('db'), userId: c.get('user')?.id })),
+);
+app.patch('/api/reader/preferences', requireAuth, async (c) =>
+  c.json(
+    await changeCatalogPreference(await c.req.json(), {
+      db: c.get('db'),
+      userId: c.get('user').id,
+    }),
+  ),
+);
+app.delete('/api/reader/preferences', requireAuth, async (c) =>
+  c.json(
+    await resetCatalogPreferences(await c.req.json(), {
+      db: c.get('db'),
+      userId: c.get('user').id,
+    }),
+  ),
+);
 app.get('/api/media/:id/reader/:chapter', async (c) =>
   c.json(await getReaderChapter(c.req.param('id'), c.req.param('chapter'), chapterOptions(c))),
 );

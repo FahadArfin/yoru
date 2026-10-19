@@ -32,7 +32,8 @@ export async function warmTitle(media, scope, signal) {
             .forEach((item) => warmImage(coverCandidates(item)[0], signal));
       }),
       (async () => {
-        const result = await readingSources(title.id);
+        const result = await readingSources(title.id, false, scope);
+        if (!result.sources.length) return;
         if (signal?.aborted || !canPreload()) return;
         const preferred = savedReadingSource(title.id);
         const source = result.sources.some((s) => s.id === preferred)
@@ -69,7 +70,7 @@ export default function PrefetchLink({
     const job = media
       ? warmTitle(media, user?.id || 'guest', controller.signal)
       : typeof to === 'string'
-        ? warmReaderLink(to, controller.signal)
+        ? warmReaderLink(to, controller.signal, 2, user?.id || 'guest')
         : Promise.resolve();
     job.finally(() => {
       if (pending.current === controller) pending.current = null;

@@ -74,6 +74,52 @@ async function menu(page) {
   return page.getByRole('dialog', { name: 'Reader menu', exact: true });
 }
 
+test('site catalog defaults drive chapter sources and guest overrides reset', async ({
+  page,
+  context,
+  baseURL,
+}, testInfo) => {
+  await setup(page, context, baseURL);
+  await page.route('**/api/reader/catalogs', (route) =>
+    route.fulfill({
+      json: {
+        sources: [
+          { id: '1', name: 'MangaDex', language: 'en' },
+          { id: '2', name: 'Weeb Central', language: 'en' },
+          { id: '3', name: 'NineHentai', language: 'en' },
+          { id: '4', name: 'Aunt Manhwa', language: 'en' },
+        ],
+      },
+    }),
+  );
+  await page.goto('/settings');
+  const card = page.locator('.reader-connection');
+  await expect(
+    card.getByRole('switch', { name: 'NineHentai in Yoru', exact: true }),
+  ).toHaveAttribute('aria-checked', 'false');
+  await expect(
+    card.getByRole('switch', { name: 'NineHentai in Ara Ara', exact: true }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await expect(
+    card.getByRole('switch', { name: 'Aunt Manhwa in Ara Ara', exact: true }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await card.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }).click();
+  await expect(
+    card.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }),
+  ).toHaveAttribute('aria-checked', 'false');
+  await page.goto('/title/mal-manga-21');
+  await expect(page.getByRole('link', { name: /MangaDex edition/ }).first()).toBeVisible();
+  await expect(page.getByRole('link', { name: /Suwayomi edition/ })).toHaveCount(0);
+  await page.goto('/settings');
+  await card.getByRole('button', { name: 'Reset to site defaults' }).click();
+  await expect(
+    card.getByRole('switch', { name: 'Weeb Central in Yoru', exact: true }),
+  ).toHaveAttribute('aria-checked', 'true');
+  await card.screenshot({ path: testInfo.outputPath('catalog-shared-defaults.png') });
+  await page.goto('/title/mal-manga-21');
+  await expect(page.getByRole('link', { name: /Suwayomi edition/ }).first()).toBeVisible();
+});
+
 test('live sources open native pages and switching clears the old edition while the new one loads', async ({
   page,
   context,
@@ -210,6 +256,40 @@ test('chapter directory reports partial source discovery and can retry it', asyn
   await catalog.getByRole('button', { name: 'Retry sources', exact: true }).click();
   await expect(catalog.getByLabel('Chapter source')).toHaveValue('weebcentral');
   await expect(catalog.getByRole('button', { name: 'Retry sources', exact: true })).toHaveCount(0);
+});
+
+test('a disabled saved source stays disabled during an outage and a direct link offers an enabled alternative', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  await page.addInitScript(() => {
+    localStorage.setItem(
+      'yoru:catalog-overrides:guest:v1',
+      JSON.stringify({ 'Weeb Central': { yoru: false } }),
+    );
+    localStorage.setItem('yoru:reading-source:mal-manga-21', 'weebcentral');
+  });
+  await page.route('**/api/media/*/reading-sources', (route) =>
+    route.fulfill({
+      json: { state: 'ready', partial: true, sources: [{ id: 'mangadex', name: 'MangaDex' }] },
+    }),
+  );
+  await page.goto('/title/mal-manga-21');
+  await expect(page.getByRole('link', { name: /MangaDex edition/ }).first()).toBeVisible();
+  await expect(page.getByRole('option', { name: /Weeb Central/ })).toHaveCount(0);
+  await page.goto(`/read/mal-manga-21/1?chapter=${sw}`);
+  await expect(
+    page.getByText(
+      'This chapter source is disabled for this section. Choose another source or change Reader catalogs in Settings.',
+      { exact: true },
+    ),
+  ).toBeVisible();
+  await expect(page.locator('.reader-canvas')).toHaveCount(0);
+  const controls = await menu(page);
+  await controls.getByLabel('Reading source', { exact: true }).selectOption('mangadex');
+  await expect(page.locator('.reader-canvas')).toBeVisible();
 });
 
 test('live manhwa opens vertically and an offline server preserves access to local imports', async ({

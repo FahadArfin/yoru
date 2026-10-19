@@ -31,9 +31,14 @@ import ReaderSettings from './ReaderSettings';
 import ReaderMenu, { ReaderPagePicker } from './ReaderMenu';
 import './reader.css';
 import './reader-layout.css';
+import useCatalogPreferences from '../useCatalogPreferences';
+import { useCollection } from '../collection-context';
+import { catalogDefaults, catalogEnabled } from '../../shared/catalog-preferences';
 
 function ReadingSources({ media, close }) {
   const { notify } = useApp();
+  const preferences = useCatalogPreferences();
+  const destination = useCollection()?.active ? 'ara-ara' : 'yoru';
   const [url, setUrl] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(`yoru:source:${media.id}`))?.url || '';
@@ -43,7 +48,11 @@ function ReadingSources({ media, close }) {
   });
   const [error, setError] = useState('');
   const sources = (media.externalLinks || []).filter(
-    (item) => item.type === 'reading' && safeLink(item.url),
+    (item) =>
+      item.type === 'reading' &&
+      safeLink(item.url) &&
+      (!Object.hasOwn(catalogDefaults, item.label) ||
+        catalogEnabled(item.label, destination, preferences.overrides)),
   );
   return (
     <Modal title="Reading sources" close={close}>
@@ -59,14 +68,16 @@ function ReadingSources({ media, close }) {
             <ExternalLink size={16} />
           </a>
         ))}
-        <a
-          href={`https://mangadex.org/titles?q=${encodeURIComponent(titleOf(media))}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Search on MangaDex
-          <ExternalLink size={16} />
-        </a>
+        {catalogEnabled('MangaDex', destination, preferences.overrides) && (
+          <a
+            href={`https://mangadex.org/titles?q=${encodeURIComponent(titleOf(media))}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Search on MangaDex
+            <ExternalLink size={16} />
+          </a>
+        )}
       </div>
       <form
         className="form-stack"
@@ -361,14 +372,20 @@ function ReaderSession({ media, unit }) {
     if (!halfway || !nextEdition) return;
     const controller = new AbortController();
     const timer = setTimeout(
-      () => warmReaderLink(readerLink(media.id, nextEdition), controller.signal, 3),
+      () =>
+        warmReaderLink(
+          readerLink(media.id, nextEdition),
+          controller.signal,
+          3,
+          authLoading || !authKnown ? null : user?.id || 'guest',
+        ),
       400,
     );
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [media.id, chapter?.id, nextEdition?.id, halfway]);
+  }, [media.id, chapter?.id, nextEdition?.id, halfway, user?.id, authLoading, authKnown]);
   useEffect(() => {
     const onKey = (event) => {
       if (
@@ -444,6 +461,11 @@ function ReaderSession({ media, unit }) {
           setParams({ source: e.target.value });
         }}
       >
+        {!chapters.sources.some((source) => source.id === chapters.source) && (
+          <option value={chapters.source} disabled>
+            Choose an enabled source
+          </option>
+        )}
         {chapters.sources.map((source) => (
           <option key={source.id} value={source.id}>
             {source.name}

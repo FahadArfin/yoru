@@ -122,12 +122,7 @@ export async function discoverCatalogs(server, options = {}) {
   const sources = [
     ...new Map(
       nodes
-        .filter(
-          (s) =>
-            /^[1-9]\d{0,23}$/.test(s.id) &&
-            typeof s.name === 'string' &&
-            s.name.trim(),
-        )
+        .filter((s) => /^[1-9]\d{0,23}$/.test(s.id) && typeof s.name === 'string' && s.name.trim())
         .map((s) => [
           String(s.id),
           {
@@ -169,9 +164,7 @@ export async function browseCatalog(server, source, query = '', offset = 0, opti
     items: data.mangas.nodes
       .filter(
         (m) =>
-          String(m.sourceId) === source &&
-          typeof m.title === 'string' &&
-          Array.isArray(m.genre),
+          String(m.sourceId) === source && typeof m.title === 'string' && Array.isArray(m.genre),
       )
       .slice(0, 20)
       .map((m) => ({ id: String(m.id), title: m.title.slice(0, 300), sourceId: source })),

@@ -17,11 +17,16 @@ import { recordChapterView } from '../watch-views';
 import ChapterDirectory, { languageLabel } from './ChapterDirectory';
 import { savedReadingSource, rememberReadingSource } from './remote';
 import { chapterList, chapterListPath, readingSources } from './requests';
+import useCatalogPreferences from '../useCatalogPreferences';
+import { useCollection } from '../collection-context';
+import { catalogEnabled } from '../../shared/catalog-preferences';
 
 const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
 
 export default function LiveChapters({ media }) {
   const { user, authLoading, authKnown, setAuthOpen, notify } = useApp();
+  const preferences = useCatalogPreferences();
+  const collection = !!useCollection()?.active;
   const [language, setLanguage] = useState('en');
   const [source, setSource] = useState(
     () =>
@@ -35,29 +40,47 @@ export default function LiveChapters({ media }) {
   const [sourceIssue, setSourceIssue] = useState('');
   const [sourceRevision, setSourceRevision] = useState(0);
   useEffect(() => {
+    if (!preferences.ready) return;
     const controller = new AbortController();
-    readingSources(media.id, sourceRevision > 0)
+    readingSources(media.id, sourceRevision > 0, preferences.scope)
       .then((result) => {
         if (controller.signal.aborted) return;
         const unavailable = result.partial || result.state === 'offline';
         setSourceIssue(unavailable ? 'Some reading sources are temporarily unavailable.' : '');
         const preferred = savedReadingSource(media.id);
         const choices = [...result.sources];
-        if (unavailable && preferred === 'weebcentral' && !choices.some((s) => s.id === preferred))
+        if (
+          catalogEnabled('Weeb Central', collection ? 'ara-ara' : 'yoru', preferences.overrides) &&
+          !result.disabled &&
+          unavailable &&
+          preferred === 'weebcentral' &&
+          !choices.some((s) => s.id === preferred)
+        )
           choices.push({ id: preferred, name: 'Weeb Central (unavailable)' });
         setSources(choices);
         setSource(
           choices.some((s) => s.id === preferred)
             ? preferred
-            : result.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex',
+            : result.sources.find((s) => s.id === 'weebcentral')?.id || result.sources[0]?.id || '',
         );
+        if (result.disabled)
+          setSourceIssue(
+            'No chapter sources are enabled for this section. Change Reader catalogs in Settings.',
+          );
       })
       .catch(() => {
         if (!controller.signal.aborted)
           setSourceIssue('Some reading sources are temporarily unavailable.');
       });
     return () => controller.abort();
-  }, [media.id, sourceRevision]);
+  }, [
+    media.id,
+    sourceRevision,
+    preferences.scope,
+    preferences.ready,
+    preferences.revision,
+    collection,
+  ]);
   const [group, setGroup] = useState('all');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
@@ -98,16 +121,15 @@ export default function LiveChapters({ media }) {
   useEffect(() => {
     const token = ++generation.current;
     const abort = new AbortController();
-    const existing = peek(
-      chapterListPath(media.id, { source, language, group, q: query, sort }),
-      scope,
-      30000,
-    );
+    const existing =
+      preferences.ready && source
+        ? peek(chapterListPath(media.id, { source, language, group, q: query, sort }), scope, 30000)
+        : null;
     setLoading(!existing);
     setMore(false);
     setError('');
     setData(existing || null);
-    if (authLoading)
+    if (authLoading || !preferences.ready)
       return () => {
         abort.abort();
         generation.current++;
@@ -129,7 +151,20 @@ export default function LiveChapters({ media }) {
       abort.abort();
       generation.current++;
     };
-  }, [media.id, source, language, group, query, sort, revision, scope, authLoading]);
+  }, [
+    media.id,
+    source,
+    language,
+    group,
+    query,
+    sort,
+    revision,
+    scope,
+    authLoading,
+    preferences.ready,
+    preferences.revision,
+    collection,
+  ]);
   useEffect(() => {
     setRating(null);
     setRatingError('');

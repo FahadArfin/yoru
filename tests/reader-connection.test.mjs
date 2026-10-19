@@ -28,7 +28,7 @@ test('legacy classification is used only when that field is unsupported, never a
   assert.equal(calls, 2);
   assert.deepEqual(
     result.sources.map((s) => s.id),
-    ['1'],
+    ['1', '2'],
   );
   calls = 0;
   await assert.rejects(
@@ -102,7 +102,7 @@ test('connection accepts server and GraphQL addresses without changing the host 
   }
 });
 
-test('discovery validates the response and excludes adult, mixed and unknown classifications', async () => {
+test('discovery lists installed online catalogs of every classification and excludes local files', async () => {
   const { discoverCatalogs } = await import('../shared/reader-connection.js');
   const sources = [
     { id: '1', name: 'Safe catalog', lang: 'en', isNsfw: false, contentWarning: 'SAFE' },
@@ -121,9 +121,9 @@ test('discovery validates the response and excludes adult, mixed and unknown cla
   });
   assert.deepEqual(
     result.sources.map((x) => x.id),
-    ['1'],
+    ['1', '2', '3', '4'],
   );
-  assert.equal(result.excluded, 4);
+  assert.equal(result.excluded, 1);
   await assert.rejects(
     discoverCatalogs('https://reader.example', {
       fetchImpl: async () => Response.json({ hello: true }),
@@ -138,7 +138,7 @@ test('discovery validates the response and excludes adult, mixed and unknown cla
   );
 });
 
-test('catalog browsing revalidates the selected source and never accepts a disabled or unknown source', async () => {
+test('catalog browsing revalidates the selected source and rejects titles from another source', async () => {
   const { browseCatalog } = await import('../shared/reader-connection.js');
   const sources = [
     { id: '1', name: 'Safe catalog', lang: 'en', isNsfw: false, contentWarning: 'SAFE' },
@@ -164,7 +164,7 @@ test('catalog browsing revalidates the selected source and never accepts a disab
   const result = await browseCatalog('https://reader.example', '1', '', 0, { fetchImpl });
   assert.deepEqual(
     result.items.map((x) => x.title),
-    ['A story'],
+    ['A story', 'Excluded title'],
   );
   await assert.rejects(
     browseCatalog('https://reader.example', '2', '', 0, { fetchImpl }),

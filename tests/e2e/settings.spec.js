@@ -45,6 +45,9 @@ test('settings recovers connection status and preserves MAL actions', async ({
     }),
   );
   await page.route('**/api/library', (route) => route.fulfill({ json: { items: [] } }));
+  await page.route('**/api/reader/preferences', (route) =>
+    route.fulfill({ json: { owner: 'settings-user', overrides: {} } }),
+  );
   let failed = true;
   let connected = true;
   let syncs = 0;
