@@ -1,6 +1,7 @@
 import { Response } from 'miniflare';
 import { extensionCatalogContract, catalogProvider } from '../extension-catalog-contract.mjs';
 import { createRuntime, migrate, sql } from './harness.mjs';
+import { sitesReaderDb, store } from '../../sites/store.js';
 extensionCatalogContract('Shared D1 alternating Workers', async () => {
   const provider = catalogProvider();
   const runtime = await createRuntime({
@@ -27,6 +28,7 @@ extensionCatalogContract('Shared D1 alternating Workers', async () => {
     return response;
   };
   return {
+    readerDb: sitesReaderDb(store(await runtime.getD1Database('DB', 'a'))),
     provider,
     request,
     async guest(selection) {

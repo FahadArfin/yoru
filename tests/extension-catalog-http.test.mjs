@@ -3,6 +3,7 @@ import { mkdtemp, rm, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { extensionCatalogContract, catalogProvider } from './extension-catalog-contract.mjs';
+import { nodeReaderDb } from '../server/reader-db.js';
 extensionCatalogContract('Node disposable SQLite', async () => {
   const directory = await mkdtemp(join(tmpdir(), 'yoru-catalog-http-'));
   process.env.DATA_DIR = directory;
@@ -43,6 +44,7 @@ extensionCatalogContract('Node disposable SQLite', async () => {
     return response;
   };
   return {
+    readerDb: nodeReaderDb(await import('../server/db.js')),
     provider,
     request,
     async guest(selection) {

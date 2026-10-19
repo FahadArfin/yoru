@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { finalDeliveryContract } from './reader-final-delivery-contract.mjs';
 
 export const inventoryRating = (rating = 'safe') => ({
   rating,
@@ -29,6 +30,7 @@ export function catalogProvider() {
     rating: 'safe',
     mode: 'ready',
     calls: [],
+    hold: null,
     sources: Array.from({ length: 601 }, (_, i) => inventorySource(i + 1)),
   };
   const respond = async (request, ResponseClass = Response) => {
@@ -68,11 +70,27 @@ export function catalogProvider() {
       classification: inventoryRating(state.rating),
       metadata: { title: 'Cached fixture', cover: 'https://private.invalid/image' },
     };
+    const edition = {
+      sourceRef: s,
+      upstreamRef: { title: title.upstreamRef, upstreamKey: '/chapter/1' },
+      metadata: { number: '1', pageCount: 1, title: 'Fresh chapter' },
+    };
+    if (state.hold?.operation === url.pathname) await state.hold.wait();
+    if (url.pathname === '/extension/chapters')
+      return ResponseClass.json({
+        items: [
+          edition,
+          { ...edition, upstreamRef: { ...edition.upstreamRef, upstreamKey: '/chapter/2' } },
+        ],
+        hasMore: false,
+      });
+    if (url.pathname === '/extension/chapter') return ResponseClass.json(edition);
+    if (url.pathname === '/extension/reader') return ResponseClass.json({ edition, pages: [0] });
     if (url.pathname === '/extension/browse')
       return ResponseClass.json({ items: [title], nextPage: 2, hasMore: true });
     if (url.pathname === '/extension/details' || url.pathname === '/extension/resolve')
       return ResponseClass.json(title);
-    if (url.pathname === '/extension/cover')
+    if (['/extension/cover', '/extension/page'].includes(url.pathname))
       return new ResponseClass(new Uint8Array([137, 80, 78, 71]), {
         headers: { 'content-type': 'image/png' },
       });
@@ -124,6 +142,7 @@ export function extensionCatalogContract(label, fixture) {
         (await f.request(`/api/reader/media/${media.id}/cover?destination=yoru`)).status,
         200,
       );
+      await finalDeliveryContract(f, media);
       const before = f.provider.state.calls.length;
       response = await f.request('/api/reader/suggestions?integration=extensions&q=Cached');
       assert.equal(response.status, 200);

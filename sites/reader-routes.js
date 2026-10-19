@@ -7,6 +7,7 @@ import {
   READER_CONTEXT_SECONDS,
 } from '../server/reader-context.js';
 import { restartRequired } from '../server/reader-continuation.js';
+import { assertReadingDelivery } from '../server/reading-sources.js';
 
 export function registerSitesReaderRoutes(app, { contextOptions, chapterOptions, coreSearch }) {
   const handler = (action) => async (c) => {
@@ -32,6 +33,12 @@ export function registerSitesReaderRoutes(app, { contextOptions, chapterOptions,
       const result = await executeReaderRoute(action, input, context, deps, options);
       const current = await resolveReaderContext(input, contextOptions(c, guestId));
       if (current.selectionFingerprint !== context.selectionFingerprint) throw restartRequired();
+      if (action === 'cover')
+        await assertReadingDelivery(input.id, null, {
+          ...options,
+          context: current,
+          refreshContext: undefined,
+        });
       c.header('Cache-Control', 'no-store');
       if (action === 'cover')
         return new Response(result.body, {

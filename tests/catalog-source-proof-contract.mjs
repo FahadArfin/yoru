@@ -4,6 +4,13 @@ import { inventorySource, inventoryRating } from './extension-catalog-contract.m
 import { createExternalCatalogStore } from '../server/external-catalog-store.js';
 import { getReadingDiscovery } from '../server/catalog-aggregation.js';
 import { executeReaderRoute } from '../server/reader-routes.js';
+import {
+  getReadingCatalog,
+  getReadingChapter,
+  getReaderChapter,
+  getReaderCatalogs,
+} from '../server/reading-sources.js';
+import { deliveryHold } from './reader-final-delivery-contract.mjs';
 
 const context = {
   destination: 'yoru',
@@ -44,6 +51,211 @@ function hold() {
 }
 
 export function catalogSourceProofContract(label, fixture) {
+  for (const operation of ['chapters', 'chapter', 'reader'])
+    test(`${label}: delayed ${operation} cannot replace source authority or accept stale edition rows`, async () => {
+      const f = await fixture(),
+        store = createExternalCatalogStore(f.db),
+        gate = deliveryHold(operation);
+      try {
+        const bridgeTitle = title(source());
+        const media = await store.rememberTitle(bridgeTitle);
+        const bridgeEdition = {
+          sourceRef: source(),
+          upstreamRef: { title: media.upstreamRef, upstreamKey: '/chapter' },
+          metadata: { title: 'Original', number: '1', pages: 1 },
+        };
+        const edition = await store.rememberEdition(media.id, bridgeEdition);
+        const options = {
+          readerDb: f.db,
+          context,
+          bridge: {
+            details: async () => bridgeTitle,
+            [operation]: async () => {
+              await gate.wait();
+              const fresh = {
+                ...bridgeEdition,
+                metadata: { ...bridgeEdition.metadata, title: 'Stale update' },
+              };
+              return operation === 'chapters'
+                ? { items: [fresh] }
+                : operation === 'reader'
+                  ? { edition: fresh, pages: [0] }
+                  : fresh;
+            },
+          },
+        };
+        const pending = (
+          operation === 'chapters'
+            ? getReadingCatalog(media.id, {}, options)
+            : operation === 'chapter'
+              ? getReadingChapter(media.id, edition.id, options)
+              : getReaderChapter(media.id, edition.id, options)
+        ).then(
+          (value) => ({ value }),
+          (error) => ({ error }),
+        );
+        await gate.waiting;
+        const before = await f.db.all('SELECT * FROM external_editions');
+        await store.rememberSource(source('adult'));
+        const proof = await store.getSourceAuthority(source().id);
+        gate.release();
+        const result = await pending;
+        assert.ok(result.error, 'stale edition response must fail');
+        assert.deepEqual(await store.getSourceAuthority(source().id), proof);
+        assert.deepEqual(await f.db.all('SELECT * FROM external_editions'), before);
+      } finally {
+        gate.release();
+        await f.close();
+      }
+    });
+
+  test(`${label}: edition batches and concurrent healthy chapter requests retain source authority`, async () => {
+    const f = await fixture(),
+      store = createExternalCatalogStore(f.db);
+    try {
+      const media = await store.rememberTitle(title(source()));
+      const input = {
+        sourceRef: source(),
+        upstreamRef: { title: media.upstreamRef, upstreamKey: '/healthy/1' },
+        metadata: { number: '1', pageCount: 1 },
+      };
+      const before = await store.getSourceAuthority(source().id);
+      await Promise.all([
+        store.rememberEdition(media.id, input),
+        store.rememberEdition(media.id, {
+          ...input,
+          upstreamRef: { ...input.upstreamRef, upstreamKey: '/healthy/2' },
+        }),
+      ]);
+      assert.deepEqual(
+        await store.getSourceAuthority(source().id),
+        before,
+        'edition writes do not claim a fresh source observation',
+      );
+      assert.equal((await f.db.all('SELECT * FROM external_editions')).length, 2);
+    } finally {
+      await f.close();
+    }
+  });
+
+  test(`${label}: chapter batch never adopts concurrent adult proof between its own edition writes`, async () => {
+    const f = await fixture(),
+      store = createExternalCatalogStore(f.db);
+    let intervened = false;
+    try {
+      const bridgeTitle = title(source());
+      const media = await store.rememberTitle(bridgeTitle);
+      const db = {
+        ...f.db,
+        async atomic(statements, ...args) {
+          const result = await f.db.atomic(statements, ...args);
+          if (
+            !intervened &&
+            statements.some((s) => s.sql.includes('INSERT INTO external_editions'))
+          ) {
+            intervened = true;
+            await store.rememberSource(source('adult'));
+          }
+          return result;
+        },
+      };
+      await assert.rejects(
+        getReadingCatalog(
+          media.id,
+          {},
+          {
+            readerDb: db,
+            context,
+            bridge: {
+              details: async () => bridgeTitle,
+              chapters: async () => ({
+                items: [1, 2].map((n) => ({
+                  sourceRef: source(),
+                  upstreamRef: { title: media.upstreamRef, upstreamKey: `/batch/${n}` },
+                  metadata: { number: String(n) },
+                })),
+              }),
+            },
+          },
+        ),
+        { status: 409 },
+      );
+      assert.equal(intervened, true);
+      assert.equal((await f.db.all('SELECT * FROM external_editions')).length, 1);
+      assert.equal(
+        (await store.getSourceAuthority(source().id)).source.classification.rating,
+        'adult',
+      );
+    } finally {
+      await f.close();
+    }
+  });
+
+  test(`${label}: held healthy manifest accepts concurrent same-policy refresh without overwriting it`, async () => {
+    const f = await fixture(),
+      store = createExternalCatalogStore(f.db),
+      gate = deliveryHold('reader');
+    try {
+      const bridgeTitle = title(source());
+      const media = await store.rememberTitle(bridgeTitle);
+      const input = {
+        sourceRef: source(),
+        upstreamRef: { title: media.upstreamRef, upstreamKey: '/healthy' },
+        metadata: { number: '1', pageCount: 1 },
+      };
+      const edition = await store.rememberEdition(media.id, input);
+      const pending = getReaderChapter(media.id, edition.id, {
+        readerDb: f.db,
+        context,
+        bridge: {
+          details: async () => bridgeTitle,
+          reader: async () => {
+            await gate.wait();
+            return { edition: input, pages: [0] };
+          },
+        },
+      });
+      await gate.waiting;
+      const fresh = source();
+      fresh.classification.provenance.checkedAt = '2026-10-19T12:00:00Z';
+      await store.rememberSource(fresh);
+      const proof = await store.getSourceAuthority(source().id);
+      gate.release();
+      assert.equal((await pending).pages.length, 1);
+      assert.deepEqual(await store.getSourceAuthority(source().id), proof);
+    } finally {
+      gate.release();
+      await f.close();
+    }
+  });
+
+  test(`${label}: legacy Settings accepts only canonical signed64 source strings`, async () => {
+    const valid = ['1', '-1', '9223372036854775807', '-9223372036854775808'];
+    const invalid = [
+      '0',
+      '-0',
+      '01',
+      '-01',
+      '+1',
+      '9223372036854775808',
+      '-9223372036854775809',
+      '1e2',
+      ' 1',
+      123,
+    ];
+    const result = await getReaderCatalogs({
+      bridgeKey: 'fixture-key-longer-than-32-characters',
+      bridgeUrl: 'https://fixture.trycloudflare.com',
+      fetchImpl: async () =>
+        Response.json({
+          sources: [...valid, ...invalid].map((id) => ({ id, name: 'Fixture', language: 'en' })),
+        }),
+    });
+    assert.deepEqual(
+      result.sources.map((s) => s.id),
+      valid,
+    );
+  });
   for (const path of ['aggregate', 'resolve-link']) {
     for (const initial of ['absent', 'safe', 'adult'])
       test(`${label}: ${path} cannot replace concurrent adult source proof after ${initial} request-start authority`, async () => {

@@ -45,6 +45,7 @@ import {
   getReaderPage,
   registerReaderBridge,
   getReaderCover,
+  assertReadingDelivery,
 } from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
 import { socialRequest } from './native-social-request.js';
@@ -168,6 +169,8 @@ const chapterOptions = (req) => ({
   sessionHash: req.sessionHash,
   readerDb: preferenceDb,
   context: req.readerContext,
+  refreshContext: () =>
+    resolveReaderContext(req.query, contextOptions(req, req.readerContext?.guestId)),
 });
 catalogRouter.use(
   '/media/:id',
@@ -181,6 +184,7 @@ catalogRouter.get(
   '/media/:id/cover',
   asyncRoute(async (req, res) => {
     const image = await getReaderCover(req.params.id, chapterOptions(req));
+    await assertReadingDelivery(req.params.id, null, chapterOptions(req));
     res
       .set({
         'content-type': image.type,
@@ -212,15 +216,19 @@ catalogRouter.post(
 );
 catalogRouter.get(
   '/media/:id/reading-sources',
-  asyncRoute(async (req, res) =>
-    res.json(await getReadingSources(req.params.id, chapterOptions(req))),
-  ),
+  asyncRoute(async (req, res) => {
+    const result = await getReadingSources(req.params.id, chapterOptions(req));
+    await assertReadingDelivery(req.params.id, null, chapterOptions(req));
+    res.json(result);
+  }),
 );
 catalogRouter.get(
   '/media/:id/reader/:chapter',
-  asyncRoute(async (req, res) =>
-    res.json(await getReaderChapter(req.params.id, req.params.chapter, chapterOptions(req))),
-  ),
+  asyncRoute(async (req, res) => {
+    const result = await getReaderChapter(req.params.id, req.params.chapter, chapterOptions(req));
+    await assertReadingDelivery(req.params.id, req.params.chapter, chapterOptions(req));
+    res.json(result);
+  }),
 );
 catalogRouter.get(
   '/media/:id/reader/:chapter/page/:page',
@@ -231,6 +239,7 @@ catalogRouter.get(
       req.params.page,
       chapterOptions(req),
     );
+    await assertReadingDelivery(req.params.id, req.params.chapter, chapterOptions(req));
     res
       .set({
         'content-type': page.type,
@@ -252,6 +261,7 @@ catalogRouter.get(
       result.items.map((item) => item.id),
       options.userId,
     );
+    await assertReadingDelivery(req.params.id, null, options);
     res.json({
       ...result,
       items: result.items.map((item) => ({ ...item, stats: stats[item.id] })),

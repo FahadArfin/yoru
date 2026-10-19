@@ -368,7 +368,12 @@ test('chapter and manifest responses revalidate a newly changed source classific
       () => getReadingCatalog(media.id, {}, options),
     ]) {
       await store.rememberSource(source);
-      await assert.rejects(operation, { status: 404 });
+      // A chapter response cannot replace the request-start source policy.
+      await assert.rejects(operation, { status: 409 });
+      assert.equal(
+        (await store.getSourceAuthority(source.id)).source.classification.rating,
+        'safe',
+      );
     }
   } finally {
     f.close();

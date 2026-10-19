@@ -73,6 +73,7 @@ import {
   getReaderPage,
   registerReaderBridge,
   getReaderCover,
+  assertReadingDelivery,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
 import { socialRequest, socialAccess } from './native-social.js';
@@ -196,6 +197,8 @@ const chapterOptions = (c) => ({
   sessionHash: c.get('sessionHash'),
   readerDb: sitesReaderDb(c.get('db')),
   context: c.get('readerContext'),
+  refreshContext: () =>
+    resolveReaderContext(c.req.query(), contextOptions(c, c.get('readerContext')?.guestId)),
 });
 for (const method of ['get', 'post'])
   app[method]('/api/reader/context', async (c) => {
@@ -217,6 +220,7 @@ for (const method of ['get', 'post'])
   });
 app.get('/api/media/:id/cover', async (c) => {
   const image = await getReaderCover(c.req.param('id'), chapterOptions(c));
+  await assertReadingDelivery(c.req.param('id'), null, chapterOptions(c));
   return new Response(image.body, {
     headers: {
       'content-type': image.type,
@@ -235,9 +239,11 @@ app.post('/api/reader-bridge/register', async (c) =>
     ),
   ),
 );
-app.get('/api/media/:id/reading-sources', async (c) =>
-  c.json(await getReadingSources(c.req.param('id'), chapterOptions(c))),
-);
+app.get('/api/media/:id/reading-sources', async (c) => {
+  const result = await getReadingSources(c.req.param('id'), chapterOptions(c));
+  await assertReadingDelivery(c.req.param('id'), null, chapterOptions(c));
+  return c.json(result);
+});
 registerSitesReaderRoutes(app, { contextOptions, chapterOptions, coreSearch: searchCatalog });
 app.get('/api/reader/preferences', async (c) =>
   c.json(
@@ -262,9 +268,15 @@ app.delete('/api/reader/preferences', requireAuth, async (c) =>
     }),
   ),
 );
-app.get('/api/media/:id/reader/:chapter', async (c) =>
-  c.json(await getReaderChapter(c.req.param('id'), c.req.param('chapter'), chapterOptions(c))),
-);
+app.get('/api/media/:id/reader/:chapter', async (c) => {
+  const result = await getReaderChapter(
+    c.req.param('id'),
+    c.req.param('chapter'),
+    chapterOptions(c),
+  );
+  await assertReadingDelivery(c.req.param('id'), c.req.param('chapter'), chapterOptions(c));
+  return c.json(result);
+});
 app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
   const page = await getReaderPage(
     c.req.param('id'),
@@ -272,6 +284,7 @@ app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
     c.req.param('page'),
     chapterOptions(c),
   );
+  await assertReadingDelivery(c.req.param('id'), c.req.param('chapter'), chapterOptions(c));
   return new Response(page.body, {
     headers: {
       'content-type': page.type,
@@ -290,6 +303,7 @@ app.get('/api/media/:id/chapters', async (c) => {
     result.items.map((item) => item.id),
     options.userId,
   );
+  await assertReadingDelivery(c.req.param('id'), null, options);
   return c.json({
     ...result,
     items: result.items.map((item) => ({ ...item, stats: stats[item.id] })),

@@ -393,11 +393,24 @@ export function createExternalCatalogStore(
       return result;
     },
     getTitle,
-    async rememberEdition(mediaId, input) {
+    async rememberEdition(mediaId, input, { expectedSource = input?.sourceRef } = {}) {
       object(input, 'edition');
       const s = sourceRef(input.sourceRef),
         upstream = object(input.upstreamRef, 'canonical edition reference');
       const ref = titleRef(upstream.title, s);
+      const expected = sourceRef(expectedSource);
+      const sourcePolicy = (value) => [
+        value.id,
+        value.integration,
+        value.upstreamSourceId,
+        value.providerKey,
+        value.language,
+        value.classification.rating,
+        json(value.capabilities, 'source capabilities', 16384),
+        value.bridgeInstance,
+      ];
+      if (JSON.stringify(sourcePolicy(s)) !== JSON.stringify(sourcePolicy(expected)))
+        throw conflict();
       exactText(upstream.upstreamKey, 'canonical edition key');
       const media = await getTitle(mediaId);
       if (
@@ -409,7 +422,15 @@ export function createExternalCatalogStore(
         throw conflict();
       const at = timestamp();
       await atomic([
-        ...sourceStatements(s),
+        // Editions are not fresh source observations. Compare request-start policy
+        // before writing, without rewriting authority or conflicting with another
+        // healthy observation that only advances its provenance timestamp.
+        assertion(
+          `EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND integration=? AND upstream_source_id IS ?
+          AND provider_key=? AND language=? AND json_extract(classification,'$.rating')=?
+          AND capabilities=? AND bridge_instance IS ?)`,
+          sourcePolicy(expected),
+        ),
         assertion(
           'EXISTS(SELECT 1 FROM external_media WHERE id=? AND source_id=? AND upstream_key=? AND language=?)',
           [mediaId, s.id, ref.upstreamKey, ref.language],

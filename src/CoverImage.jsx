@@ -90,11 +90,6 @@ export default function CoverImage({ media, ...props }) {
   const candidates = allowed
     ? coverCandidates(media, selection?.ready ? selection.context : null)
     : [];
-  return (
-    <Cover
-      key={`${selection?.context?.owner}:${candidates.join('|')}`}
-      candidates={candidates}
-      {...props}
-    />
-  );
+  const owner = /^ext-manga-[a-f0-9]{32}$/.test(media?.id) ? selection?.context?.owner : '';
+  return <Cover key={`${owner}:${candidates.join('|')}`} candidates={candidates} {...props} />;
 }

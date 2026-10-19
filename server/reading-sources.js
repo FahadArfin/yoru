@@ -5,6 +5,8 @@ import { parseMediaReference, parseEditionReference } from '../shared/media-refe
 import { resolveMedia, resolveReadingEdition, assertSourceEligible } from './media-resolver.js';
 import { createExternalCatalogStore } from './external-catalog-store.js';
 import { createExtensionGateway } from './extension-gateway.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
+import { restartRequired } from './reader-continuation.js';
 
 const defaultContext = {
   destination: 'yoru',
@@ -34,6 +36,24 @@ async function storedEligible(id, options) {
     db: deps(options).db,
     coreMedia: options.media,
   });
+}
+export async function assertReadingDelivery(id, chapterId, options) {
+  const initial = readingContext(options);
+  const current = options.refreshContext ? await options.refreshContext() : initial;
+  if (
+    current.selectionFingerprint !== initial.selectionFingerprint ||
+    current.userId !== initial.userId ||
+    current.sessionHash !== initial.sessionHash ||
+    current.guestId !== initial.guestId
+  )
+    throw restartRequired();
+  const currentOptions = { ...options, context: current };
+  if (chapterId && parseEditionReference(chapterId)?.kind === 'extension')
+    await resolveReadingEdition(id, chapterId, current, {
+      db: deps(options).db,
+      coreMedia: options.media,
+    });
+  else await storedEligible(id, currentOptions);
 }
 async function nativeMedia(id, options) {
   return resolveMedia(id, readingContext(options), deps(options));
@@ -155,9 +175,9 @@ export async function getReaderCatalogs(options) {
     if (!Array.isArray(data.sources)) throw new Error('Invalid response');
     return {
       sources: data.sources
-        .filter((s) => /^[1-9]\d{0,23}$/.test(s.id) && typeof s.name === 'string')
+        .filter((s) => decimalSourceId(s.id) && typeof s.name === 'string')
         .map((s) => ({
-          id: String(s.id),
+          id: s.id,
           name: s.name.slice(0, 100),
           language: String(s.language || '').slice(0, 20),
         })),
@@ -312,8 +332,14 @@ export async function getReadingCatalog(id, params, options) {
     const store = createExternalCatalogStore(deps(options).db);
     const items = [];
     for (const item of result.items)
-      items.push(publicEdition(id, await store.rememberEdition(id, item), options));
-    await storedEligible(id, options);
+      items.push(
+        publicEdition(
+          id,
+          await store.rememberEdition(id, item, { expectedSource: media.sourceRef }),
+          options,
+        ),
+      );
+    await assertReadingDelivery(id, null, options);
     return {
       items,
       nextPage: result.nextPage,
@@ -353,10 +379,12 @@ export async function getReadingChapter(id, chapterId, options) {
     );
     const publicChapter = publicEdition(
       id,
-      await createExternalCatalogStore(deps(options).db).rememberEdition(id, result),
+      await createExternalCatalogStore(deps(options).db).rememberEdition(id, result, {
+        expectedSource: selected.sourceRef,
+      }),
       options,
     );
-    await storedEligible(id, options);
+    await assertReadingDelivery(id, chapterId, options);
     return publicChapter;
   }
   if (!CHAPTER.test(chapterId || '')) throw apiError(400, 'Invalid chapter ID.');
@@ -381,8 +409,10 @@ export async function getReaderChapter(id, chapterId, options) {
       operationContext(options),
     );
     exactEdition(result.edition, selected);
-    await createExternalCatalogStore(deps(options).db).rememberEdition(id, result.edition);
-    await storedEligible(id, options);
+    await createExternalCatalogStore(deps(options).db).rememberEdition(id, result.edition, {
+      expectedSource: selected.sourceRef,
+    });
+    await assertReadingDelivery(id, chapterId, options);
     if (
       !Array.isArray(result.pages) ||
       !result.pages.length ||
@@ -417,12 +447,14 @@ export async function getReaderPage(id, chapterId, page, options) {
     if (!/^\d{1,3}$/.test(String(page)) || Number(page) >= 500)
       throw apiError(400, 'Invalid page.');
     const selected = await nativeEdition(id, chapterId, options);
-    return deps(options).bridge.page(
+    const result = await deps(options).bridge.page(
       selected.upstreamRef.title,
       selected.upstreamRef,
       Number(page),
       operationContext(options),
     );
+    await assertReadingDelivery(id, chapterId, options);
+    return result;
   }
   if (!CHAPTER.test(chapterId || '') || !/^\d{1,3}$/.test(String(page)) || Number(page) >= 500)
     throw apiError(400, 'Invalid page.');
@@ -431,5 +463,7 @@ export async function getReaderPage(id, chapterId, page, options) {
 export async function getReaderCover(id, options) {
   if (!native(id)) throw apiError(404, 'This cover is unavailable.');
   const media = await nativeMedia(id, options);
-  return deps(options).bridge.cover(media.upstreamRef, operationContext(options));
+  const result = await deps(options).bridge.cover(media.upstreamRef, operationContext(options));
+  await assertReadingDelivery(id, null, options);
+  return result;
 }

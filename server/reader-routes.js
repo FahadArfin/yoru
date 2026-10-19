@@ -12,7 +12,7 @@ import {
   publicReadingMedia,
   resolveMedia,
 } from './media-resolver.js';
-import { getReaderCatalogs, getReaderCover } from './reading-sources.js';
+import { getReaderCatalogs, getReaderCover, assertReadingDelivery } from './reading-sources.js';
 import { createExtensionGateway } from './extension-gateway.js';
 import {
   resolveReaderContext,
@@ -149,6 +149,12 @@ export function registerNodeReaderRoutes(
         const result = await executeReaderRoute(action, input, context, deps, options);
         const current = await resolveReaderContext(input, contextOptions(req, guestId));
         if (current.selectionFingerprint !== context.selectionFingerprint) throw restartRequired();
+        if (action === 'cover')
+          await assertReadingDelivery(input.id, null, {
+            ...options,
+            context: current,
+            refreshContext: undefined,
+          });
         res.set('Cache-Control', 'no-store');
         if (action === 'cover')
           return res
