@@ -1,5 +1,6 @@
 import { apiError } from './validation.js';
 import { parseMediaReference } from '../shared/media-reference.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
 
 // Permanent identity records are deliberately separate from catalog/image caches.
 export const externalCatalogSchema = `
@@ -88,7 +89,11 @@ export function validateReaderSource(value) {
   object(value, 'source');
   exactText(value.id, 'source ID', 128);
   if (value.integration === 'suwayomi') {
-    if (!/^suwayomi:[1-9]\d{0,24}$/.test(value.id) || value.upstreamSourceId !== value.id.slice(9))
+    if (
+      !value.id.startsWith('suwayomi:') ||
+      !decimalSourceId(value.id.slice(9)) ||
+      value.upstreamSourceId !== value.id.slice(9)
+    )
       throw invalid('source ID');
   } else if (value.integration !== 'core' || !['mangadex', 'weebcentral'].includes(value.id))
     throw invalid('source integration');

@@ -54,4 +54,5 @@ export function registerSitesReaderRoutes(app, { contextOptions, chapterOptions,
   app.post('/api/reader/resolve-link', handler('resolve-link'));
   app.get('/api/reader/media/:id', handler('media'));
   app.get('/api/reader/media/:id/cover', handler('cover'));
+  app.get('/api/reader/media/:id/alternatives', handler('alternatives'));
 }

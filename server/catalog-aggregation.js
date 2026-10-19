@@ -4,6 +4,7 @@ import { createContinuationStore, restartRequired } from './reader-continuation.
 import { refreshReaderSources, INVENTORY_FRESH_MS } from './reader-source-inventory.js';
 import { apiError } from './validation.js';
 import { withinReaderDeadline } from './reader-operation.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
 
 function selection(input, context) {
   const integration = input.integration || context.integrationMode;
@@ -16,7 +17,12 @@ function selection(input, context) {
   const limit = input.limit == null ? 24 : Number(input.limit);
   if (!Number.isInteger(limit) || limit < 1 || limit > 100)
     throw apiError(400, 'Invalid reading page size.');
-  if (input.source && !/^(?:mangadex|weebcentral|suwayomi:[1-9]\d{0,24})$/.test(input.source))
+  if (
+    input.source !== undefined &&
+    (typeof input.source !== 'string' ||
+      (!['mangadex', 'weebcentral'].includes(input.source) &&
+        (!input.source.startsWith('suwayomi:') || !decimalSourceId(input.source.slice(9)))))
+  )
     throw apiError(400, 'Invalid reading source.');
   return {
     integration,

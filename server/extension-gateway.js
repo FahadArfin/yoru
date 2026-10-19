@@ -1,11 +1,13 @@
 import { apiError } from './validation.js';
 import { readerBridge } from './reading-sources.js';
 import { readerUpstreamError } from './reader-errors.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
 const invalid = () => {
   throw apiError(400, 'Invalid reading reference.');
 };
 function source(id) {
-  if (typeof id !== 'string' || !/^suwayomi:[1-9]\d{0,24}$/.test(id)) invalid();
+  if (typeof id !== 'string' || !id.startsWith('suwayomi:') || !decimalSourceId(id.slice(9)))
+    invalid();
   return id;
 }
 function text(value, max = 2048) {

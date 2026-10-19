@@ -22,6 +22,9 @@ import {
   nodeReaderSignal,
 } from './reader-context.js';
 import { apiError } from './validation.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
+import { getReaderAlternatives } from './reader-alternatives.js';
+import { coreAccountMedia } from './catalog-core.js';
 
 export function readerRouteDeps(options) {
   return {
@@ -29,6 +32,7 @@ export function readerRouteDeps(options) {
     db: options.readerDb,
     coreMedia: options.media,
     coreSearch: options.coreSearch,
+    coreAccountMedia: options.coreAccountMedia || coreAccountMedia,
     bridge:
       options.bridge ||
       createExtensionGateway({ ...options, extensionsEnabled: options.context?.extensionsEnabled }),
@@ -88,7 +92,11 @@ export async function executeReaderRoute(action, input, context, deps, options) 
   if (action === 'suggestions') return getReadingSuggestions(input, context, deps);
   if (action === 'resolve-link') {
     const sourceId = input.source || input.sourceId;
-    if (typeof sourceId !== 'string' || !/^suwayomi:[1-9]\d{0,24}$/.test(sourceId))
+    if (
+      typeof sourceId !== 'string' ||
+      !sourceId.startsWith('suwayomi:') ||
+      !decimalSourceId(sourceId.slice(9))
+    )
       throw apiError(400, 'Invalid reading source.');
     // The adapter's resolve operation fetches the exact installed source again;
     // no local Suwayomi integer is accepted as canonical ownership.
@@ -110,6 +118,7 @@ export async function executeReaderRoute(action, input, context, deps, options) 
     assertMediaEligible(media, context);
     return publicReadingMedia(media, context);
   }
+  if (action === 'alternatives') return getReaderAlternatives(input, context, deps);
   if (action === 'media') return resolveMedia(input.id, context, deps);
   if (action === 'cover') return getReaderCover(input.id, options);
   throw apiError(404, 'Reading route unavailable.');
@@ -164,4 +173,5 @@ export function registerNodeReaderRoutes(
   router.post('/reader/resolve-link', handler('resolve-link'));
   router.get('/reader/media/:id', handler('media'));
   router.get('/reader/media/:id/cover', handler('cover'));
+  router.get('/reader/media/:id/alternatives', handler('alternatives'));
 }
