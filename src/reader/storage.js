@@ -1,4 +1,5 @@
 import { sortChapters } from './model';
+import { parseMediaReference } from '../../shared/media-reference.js';
 import { visibleAccountHistory } from '../../shared/reading-account-view.js';
 
 const PREFIX = 'yoru:reader:state:';
@@ -155,5 +156,22 @@ export function readingHistory(category, context, options = {}) {
     return visibleAccountHistory(stored, context, { ...options, limit: options.limit ?? 12 });
   } catch {
     return [];
+  }
+}
+// Presence only: this never returns metadata or authorizes an unknown snapshot.
+export function hasStoredNativeReadingHistory() {
+  try {
+    const prefix = statePrefix();
+    return Object.keys(localStorage).some((key) => {
+      if (
+        !key.startsWith(prefix) ||
+        parseMediaReference(key.slice(prefix.length))?.kind !== 'extension-manga'
+      )
+        return false;
+      const item = getReadingState(key.slice(prefix.length));
+      return !!(item.lastChapter && item.chapters[item.lastChapter]?.page);
+    });
+  } catch {
+    return false;
   }
 }

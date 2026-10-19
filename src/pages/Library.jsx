@@ -16,7 +16,17 @@ import { useApp } from '../state';
 import { Button, Empty, ErrorNotice, Modal } from '../components';
 import FavoritesImport from '../FavoritesImport';
 export default function Library() {
-  const { user, library, setAuthOpen, requireUser, updateEntry, refreshLibrary, notify } = useApp();
+  const {
+    user,
+    library,
+    libraryPage,
+    loadMoreLibrary,
+    setAuthOpen,
+    requireUser,
+    updateEntry,
+    refreshLibrary,
+    notify,
+  } = useApp();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
   const [importOpen, setImportOpen] = useState(false);
@@ -99,6 +109,18 @@ export default function Library() {
         </Empty>
       ) : (
         <>
+          {(libraryPage.incomplete || libraryPage.loading) && (
+            <div role="status">
+              <p>
+                {libraryPage.error
+                  ? 'Saved stories could not be verified.'
+                  : 'Some saved stories have not been checked yet.'}
+              </p>
+              <Button disabled={libraryPage.loading} onClick={loadMoreLibrary}>
+                {libraryPage.error ? 'Retry saved stories' : 'Load more saved stories'}
+              </Button>
+            </div>
+          )}
           <div className="library-stats">
             <div>
               <Bookmark size={19} />

@@ -7,9 +7,10 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
+import { api, cachedApi, invalidateScopedApi, peek, send } from './api';
 import { connectEvents } from './realtime';
 import useVisitorPresence from './useVisitorPresence';
+import { accountPageUrl, createAccountPager } from './account-pages.js';
 import { useResume } from './resume';
 import { setReaderAccount } from './reader/storage';
 import { useCollection } from './collection-context';
@@ -131,36 +132,48 @@ export function AppProvider({ children }) {
   const [sourceInventory, setSourceInventory] = useState({ key: null, sources: [] });
   const [inventoryRefresh, setInventoryRefresh] = useState(0);
   const viewKey = `${accountScope}:${destination}:${preferenceVersion}:${readerPolicy?.settings?.revision ?? 0}:${contentAllowed}`;
+  const guestInventoryPager = useRef(null);
+  const loadMoreReaderSources = useCallback(() => guestInventoryPager.current?.loadMore(), []);
   useEffect(() => {
     if (!policyReady || user) return;
-    let active = true;
-    const controller = new AbortController();
-    (async () => {
-      const sources = [];
-      let cursor = null;
-      const deadline = Date.now() + 12000;
-      for (let i = 0; i < 4 && Date.now() < deadline; i++) {
-        const result = await api(
-          `/api/reader/catalogs?destination=${destination}&limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
-          {
-            signal: AbortSignal.any([
-              controller.signal,
-              AbortSignal.timeout(Math.max(1, deadline - Date.now())),
-            ]),
-          },
-        );
-        if (!active) return;
-        sources.push(...(result.sources || []));
-        cursor = result.nextCursor;
-        if (!cursor) break;
-      }
-      if (active) setSourceInventory({ key: viewKey, sources, observedAt: Date.now() });
-    })().catch(() => {
-      if (active) setSourceInventory({ key: viewKey, sources: [], observedAt: Date.now() });
+    const pager = createAccountPager({
+      request: async (task, signal) => {
+        const sources = [];
+        let cursor = task.cursor || null;
+        const deadline = Date.now() + 12000;
+        for (let i = 0; i < 4 && Date.now() < deadline; i++) {
+          const result = await api(
+            `/api/reader/catalogs?destination=${destination}&limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
+            {
+              signal: AbortSignal.any([
+                signal,
+                AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+              ]),
+            },
+          );
+          sources.push(...(result.sources || []));
+          cursor = result.nextCursor;
+          if (!cursor) break;
+        }
+        return {
+          items: sources.map((source) => ({ mediaId: source.id, source })),
+          nextCursor: cursor,
+          recordsComplete: !cursor,
+        };
+      },
+      publish: (page) =>
+        setSourceInventory((previous) => ({
+          ...page,
+          key: viewKey,
+          sources: page.items.map((item) => item.source),
+          observedAt: Math.max(Date.now(), (previous.observedAt || 0) + 1),
+        })),
     });
+    guestInventoryPager.current = pager;
+    void pager.refresh();
     return () => {
-      active = false;
-      controller.abort();
+      pager.stop();
+      if (guestInventoryPager.current === pager) guestInventoryPager.current = null;
     };
   }, [policyReady, user, viewKey, destination, inventoryRefresh]);
   useEffect(() => {
@@ -200,14 +213,14 @@ export function AppProvider({ children }) {
   const [config, setConfig] = useState({});
   const [librarySnapshot, setLibrarySnapshot] = useState({ key: null, items: [] });
   const library = policyReady && librarySnapshot.key === viewKey ? librarySnapshot.items : [];
-  const setLibrary = (items) => setLibrarySnapshot({ key: viewKey, items });
+  const libraryPage = policyReady && librarySnapshot.key === viewKey ? librarySnapshot : {};
+  const libraryPager = useRef(null);
   const [online, setOnline] = useState({ count: 0, users: [] });
   const [connected, setConnected] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
   const [event, setEvent] = useState(null);
   const activeUser = useRef(null);
-  const libraryRequest = useRef(0);
   const activeView = useRef(viewKey);
   activeView.current = viewKey;
   activeUser.current = user?.id;
@@ -216,31 +229,29 @@ export function AppProvider({ children }) {
     setToast({ text, type });
     toastTimer.current = setTimeout(() => setToast(null), 4500);
   }, []);
-  const refreshLibrary = useCallback(async () => {
-    const requestId = ++libraryRequest.current;
-    const requestedUser = activeUser.current;
-    const requestedView = viewKey;
-    if (!requestedUser || !policyReady) {
-      setLibrary([]);
+  const refreshLibrary = useCallback(() => libraryPager.current?.refresh(), []);
+  const loadMoreLibrary = useCallback(() => libraryPager.current?.loadMore(), []);
+  useEffect(() => {
+    if (!user || !policyReady) {
+      setLibrarySnapshot({ key: viewKey, items: [] });
       return;
     }
-    try {
-      const data = await api(`/api/library?destination=${destination}`);
-      if (
-        activeUser.current === requestedUser &&
-        activeView.current === requestedView &&
-        libraryRequest.current === requestId
-      )
-        setLibrary(itemsOf(data));
-    } catch {
-      if (
-        activeUser.current === requestedUser &&
-        activeView.current === requestedView &&
-        libraryRequest.current === requestId
-      )
-        setLibrary([]);
-    }
-  }, [viewKey, policyReady, destination]);
+    const requestedUser = user.id,
+      requestedView = viewKey;
+    const pager = createAccountPager({
+      request: (task, signal) => api(accountPageUrl('/api/library', destination, task), { signal }),
+      publish: (page) => {
+        if (activeUser.current === requestedUser && activeView.current === requestedView)
+          setLibrarySnapshot({ ...page, key: requestedView });
+      },
+    });
+    libraryPager.current = pager;
+    void pager.refresh();
+    return () => {
+      pager.stop();
+      if (libraryPager.current === pager) libraryPager.current = null;
+    };
+  }, [user?.id, viewKey, policyReady, destination]);
   useEffect(() => {
     api('/api/auth/me')
       .then((data) => setUser(data.user))
@@ -264,10 +275,6 @@ export function AppProvider({ children }) {
       controller.abort();
     };
   }, []);
-  useEffect(() => {
-    if (user) refreshLibrary();
-    else setLibrary([]);
-  }, [user, refreshLibrary]);
   useEffect(() => {
     if (!user || !policyReady) return;
     const refresh = () => {
@@ -373,8 +380,13 @@ export function AppProvider({ children }) {
         setAuthOpen,
         config,
         library,
+        libraryPage,
+        loadMoreLibrary,
         readingContext: policyReady ? readingContext : null,
         currentReaderSources: currentSources,
+        readerInventoryPage:
+          !user && policyReady && sourceInventory.key === viewKey ? sourceInventory : {},
+        loadMoreReaderSources,
         refreshLibrary,
         entryFor,
         updateEntry,

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { api, coverOf, kindOf, titleOf } from './api';
+import { parseMediaReference } from '../shared/media-reference.js';
 import { visibleAccountHistory } from '../shared/reading-account-view.js';
+import { accountPageUrl, createAccountPager } from './account-pages.js';
 import { saveReadingState } from './reader/storage';
 
 const key = (owner) => `yoru:resume:${owner || 'guest'}`;
@@ -37,6 +39,7 @@ export function useResume(
     visibleAccountHistory(state.items, context, {
       currentSources,
       authoritativeIds: owner ? state.authorized : undefined,
+      limit: Math.max(100, state.page?.items.length || 0),
     });
   const [snapshot, setSnapshot] = useState({ owner: undefined, items: [], ready: false });
   const session = useRef(null);
@@ -63,6 +66,10 @@ export function useResume(
           viewKey,
           items: projectVisible(state),
           ready: state.loaded,
+          page: state.page,
+          hasStoredNativeHistory: state.items.some(
+            (item) => parseMediaReference(item.mediaId)?.kind === 'extension-manga',
+          ),
         });
     };
     const flush = async () => {
@@ -86,7 +93,6 @@ export function useResume(
           if (state.pending[item.mediaId]?.updatedAt === item.updatedAt)
             delete state.pending[item.mediaId];
           state.items = merge(state.items, [result.item]);
-          state.authorized.add(result.item.mediaId);
           publish();
         }
       } catch {
@@ -96,27 +102,24 @@ export function useResume(
       }
     };
     state.flush = flush;
+    const pager = createAccountPager({
+      request: (task, signal) => api(accountPageUrl('/api/resume', destination, task), { signal }),
+      publish: (page) => {
+        state.authorized = new Set(page.items.map((item) => item.mediaId));
+        state.items = merge(state.items, [...page.items, ...Object.values(state.pending)]);
+        state.loaded = page.ready;
+        state.page = page;
+        publish();
+      },
+    });
+    state.loadMore = () => pager.loadMore();
     const refresh = async () => {
       if (!owner) {
         publish();
         return;
       }
       await flush();
-      try {
-        const result = await api(`/api/resume?destination=${encodeURIComponent(destination)}`, {
-          signal: AbortSignal.timeout(15000),
-        });
-        if (!state.active) return;
-        state.authorized = new Set((result.items || []).map((item) => item.mediaId));
-        state.items = merge(state.items, [
-          ...(result.items || []),
-          ...Object.values(state.pending),
-        ]);
-      } catch {
-        /* The account-scoped cache remains available offline. */
-      }
-      state.loaded = true;
-      if (state.active) publish();
+      if (state.active) await pager.refresh();
     };
     const visible = () => {
       if (!document.hidden) void refresh();
@@ -130,6 +133,7 @@ export function useResume(
     document.addEventListener('visibilitychange', visible);
     return () => {
       state.active = false;
+      pager.stop();
       clearTimeout(state.timer);
       clearInterval(interval);
       window.removeEventListener('online', refresh);
@@ -179,13 +183,38 @@ export function useResume(
         viewKey,
         items: projectVisible(state),
         ready: state.loaded,
+        page: state.page,
+        hasStoredNativeHistory: state.items.some(
+          (item) => parseMediaReference(item.mediaId)?.kind === 'extension-manga',
+        ),
       });
       clearTimeout(state.timer);
       state.timer = setTimeout(state.flush, 500);
     },
     [owner, authKnown, destination, viewKey, ready],
   );
+  const current =
+    ready &&
+    authKnown &&
+    snapshot.owner === owner &&
+    snapshot.destination === destination &&
+    snapshot.viewKey === viewKey;
+  const loadMoreResume = useCallback(() => {
+    const state = session.current;
+    if (
+      state?.active &&
+      state.owner === owner &&
+      state.destination === destination &&
+      state.viewKey === viewKey &&
+      ready &&
+      authKnown
+    )
+      return state.loadMore?.();
+  }, [owner, destination, viewKey, ready, authKnown]);
   return {
+    resumePage: current ? snapshot.page || {} : {},
+    resumeHasStoredNativeHistory: current && snapshot.hasStoredNativeHistory,
+    loadMoreResume,
     resumeItems:
       ready &&
       snapshot.owner === owner &&
