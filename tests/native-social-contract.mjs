@@ -40,6 +40,10 @@ export function socialProvider() {
       return inventoryCalls;
     },
     async respond(path, input) {
+      if (path === '/__test/social-hydration') {
+        await this.beforeHydration?.();
+        return { ok: true };
+      }
       if (path === '/extension/catalogs') {
         inventoryCalls++;
         return { sources, nextCursor: null };
@@ -69,6 +73,71 @@ export async function nativeSocialContract({
   const safe = await seedNative(provider.sources[0], '/social/safe');
   const adult = await seedNative(provider.sources[1], '/social/adult');
   const other = await seedNative(provider.sources[1], '/social/other');
+  // Hold the real post-selection equivalence hydration at a fixture-only I/O
+  // barrier. Neither a late title classification nor a late source proof may
+  // survive the final response guard in either HTTP runtime.
+  await db.run(
+    "INSERT INTO comments(id,user_id,media_id,unit,body,created_at) VALUES('hydration',?,?,0,'Hydration proof','2026-10-19T01:00:00Z')",
+    alice.user.id,
+    safe.id,
+  );
+  for (const change of ['none', 'title', 'source']) {
+    let arrived, release;
+    const entered = new Promise((resolve) => {
+      arrived = resolve;
+    });
+    const held = new Promise((resolve) => {
+      release = resolve;
+    });
+    provider.beforeHydration = async () => {
+      arrived();
+      await held;
+    };
+    const response = request('/api/community/threads?category=manga', { session: alice });
+    await Promise.race([
+      entered,
+      new Promise((_, reject) => {
+        const timer = setTimeout(() => reject(new Error('Hydration barrier not reached')), 5000);
+        timer.unref?.();
+      }),
+    ]);
+    if (change === 'title')
+      await db.run(
+        "UPDATE external_media SET classification=json_set(classification,'$.rating','adult') WHERE id=?",
+        safe.id,
+      );
+    if (change === 'source')
+      await db.run(
+        "UPDATE reader_sources SET classification=json_set(classification,'$.rating','adult'),updated_at=? WHERE id=?",
+        new Date().toISOString(),
+        safe.sourceRef.id,
+      );
+    release();
+    const delivered = await response;
+    provider.beforeHydration = null;
+    if (change === 'none') {
+      assert.equal(delivered.status, 200, JSON.stringify(delivered.body));
+      assert.ok(delivered.body.items.some((item) => item.mediaId === safe.id));
+    } else {
+      assert.ok(
+        [404, 409].includes(delivered.status),
+        `Late ${change} hydration must reject metadata: ${delivered.status}`,
+      );
+      assert.ok(!JSON.stringify(delivered.body).includes(safe.id));
+    }
+    await db.run(
+      'UPDATE external_media SET classification=? WHERE id=?',
+      JSON.stringify(safe.classification),
+      safe.id,
+    );
+    await db.run(
+      'UPDATE reader_sources SET classification=?,updated_at=? WHERE id=?',
+      JSON.stringify(provider.sources[0].classification),
+      new Date(Date.now() - 1000).toISOString(),
+      safe.sourceRef.id,
+    );
+  }
+  await db.run("DELETE FROM comments WHERE id='hydration'");
   const edition = await seedEdition(adult, '/social/chapter', '1');
   const wrong = await seedEdition(other, '/social/wrong', '1');
   const post = (path, body, session = alice) => request(path, { method: 'POST', body, session });

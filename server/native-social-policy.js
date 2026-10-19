@@ -299,6 +299,9 @@ export async function createSocialPolicy(context, deps, params = {}) {
         values: [input, JSON.stringify(projected.eligible)],
       },
     ]);
+    const proofById = new Map(projected.eligible.map((proof) => [proof.id, proof]));
+    for (const row of accepted) proofs.set(row.media_id, proofById.get(row.media_id));
+    await atomic([]);
     return new Map(accepted.map((row) => [row.media_id, projected.mediaById.get(row.media_id)]));
   }
   async function room(row, { direct = false } = {}) {
@@ -331,6 +334,7 @@ export async function createSocialPolicy(context, deps, params = {}) {
         sourceId: edition.source_id,
       });
     }
+    await atomic([]);
     return item;
   }
   async function edition(mediaId, editionId, { unit, sourceId } = {}) {
@@ -539,9 +543,15 @@ export async function createSocialPolicy(context, deps, params = {}) {
     const rows = verified.slice(0, limit),
       moreRows = verified.length > limit || !exhausted;
     const nextAfter = verified.length > limit ? rowCursor(rows.at(-1)) : after;
-    return {
+    // Pin only metadata exposed by this page, not lookahead/candidate rows.
+    const returnedMedia = new Map();
+    for (const row of rows) {
+      proofs.set(row.media_id, eligible.get(row.media_id));
+      returnedMedia.set(row.media_id, mediaById.get(row.media_id));
+    }
+    const result = {
       rows,
-      mediaById,
+      mediaById: returnedMedia,
       ...(await status()),
       hasMore: moreRows || !inventory.complete,
       complete: !moreRows && inventory.complete === true,
@@ -550,6 +560,8 @@ export async function createSocialPolicy(context, deps, params = {}) {
           ? await continuations.start(context, { kind: 'social-scan', key, after: nextAfter })
           : null,
     };
+    await atomic([]);
+    return result;
   }
   await current();
   return {

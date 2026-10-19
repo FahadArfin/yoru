@@ -173,16 +173,38 @@ export async function getCommunityThreads(input, options) {
   }
   if (options.policy) {
     const store = createExternalCatalogStore(options.policy.deps.db, options.policy.deps);
-    for (const thread of [...threads.values()]) {
-      if (!thread.editionId && thread.unit !== 0) continue;
+    const originals = [...threads.values()].filter(
+      (thread) => thread.editionId || thread.unit === 0,
+    );
+    const aliases = new Map(
+      originals.map((thread) => [
+        `${thread.editionId ? 'edition' : 'title'}:${thread.editionId || thread.mediaId}`,
+        thread.id,
+      ]),
+    );
+    const parents = new Map(originals.map((thread) => [thread.id, thread.id]));
+    const representative = (id) => {
+      let root = id;
+      while (parents.get(root) !== root) root = parents.get(root);
+      while (id !== root) {
+        const next = parents.get(id);
+        parents.set(id, root);
+        id = next;
+      }
+      return threads.get(root);
+    };
+    // Keep aliases for every loaded exact reference even after its presentation
+    // merges. This closes verified A-B-C chains without following remote nodes.
+    for (const thread of originals) {
       const reference = thread.editionId || thread.mediaId;
       for (const mapping of await store.getEquivalences(reference)) {
-        const otherId = mapping.leftId === reference ? mapping.rightId : mapping.leftId;
-        const other = thread.editionId
-          ? [...threads.values()].find((item) => item.editionId === otherId)
-          : threads.get(`${otherId}:0`);
-        if (!other || other === thread || !threads.has(thread.id)) continue;
-        const [keep, remove] = [thread, other].sort((a, b) => a.id.localeCompare(b.id));
+        const otherRef = mapping.leftId === reference ? mapping.rightId : mapping.leftId;
+        const otherId = aliases.get(`${thread.editionId ? 'edition' : 'title'}:${otherRef}`);
+        if (!otherId) continue;
+        const own = representative(thread.id),
+          other = representative(otherId);
+        if (own === other) continue;
+        const [keep, remove] = [own, other].sort((a, b) => a.id.localeCompare(b.id));
         keep.discussions = [
           ...(keep.discussions || [
             { mediaId: keep.mediaId, unit: keep.unit, editionId: keep.editionId },
@@ -190,13 +212,18 @@ export async function getCommunityThreads(input, options) {
           ...(remove.discussions || [
             { mediaId: remove.mediaId, unit: remove.unit, editionId: remove.editionId },
           ]),
-        ];
+        ].sort((a, b) => discussionKey(a).localeCompare(discussionKey(b)));
         keep.comments += remove.comments;
         if (remove.latest > keep.latest) keep.latest = remove.latest;
+        parents.set(remove.id, keep.id);
         threads.delete(remove.id);
       }
     }
+    // Equivalence and count hydration above may await storage after selection.
+    // Revalidate every returned title proof before either runtime serializes it.
+    await options.policy.atomic([]);
   }
+
   return {
     category,
     releaseState,

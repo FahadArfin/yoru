@@ -25,27 +25,32 @@ test('Node native social destinations, exact chapters, rooms and activity', asyn
     res.end(JSON.stringify(result || {}));
   });
   await new Promise((done) => bridge.listen(0, '127.0.0.1', done));
-  const child = spawn(process.execPath, ['server/index.js'], {
-    cwd: process.cwd(),
-    env: {
-      ...process.env,
-      PORT: '0',
-      HOST: '127.0.0.1',
-      NODE_ENV: 'test',
-      CATALOG_OFFLINE: '1',
-      DATA_DIR: directory,
-      YORU_DB_PATH: join(directory, 'test.sqlite'),
-      APP_ORIGIN: '',
-      COOKIE_SECURE: 'false',
-      READER_EXTENSIONS_ENABLED: '1',
-      READER_BRIDGE_URL: `http://127.0.0.1:${bridge.address().port}`,
-      READER_BRIDGE_KEY: 'fixture-native-social-key-more-than-32-characters',
-      DISCORD_CLIENT_ID: '',
-      DISCORD_CLIENT_SECRET: '',
-      DISCORD_REDIRECT_URI: '',
+  const child = spawn(
+    process.execPath,
+    ['--import', './tests/native-social-hydration-register.mjs', 'server/index.js'],
+    {
+      cwd: process.cwd(),
+      env: {
+        ...process.env,
+        PORT: '0',
+        HOST: '127.0.0.1',
+        NODE_ENV: 'test',
+        CATALOG_OFFLINE: '1',
+        DATA_DIR: directory,
+        YORU_DB_PATH: join(directory, 'test.sqlite'),
+        APP_ORIGIN: '',
+        COOKIE_SECURE: 'false',
+        READER_EXTENSIONS_ENABLED: '1',
+        READER_BRIDGE_URL: `http://127.0.0.1:${bridge.address().port}`,
+        SOCIAL_HYDRATION_BARRIER: `http://127.0.0.1:${bridge.address().port}/__test/social-hydration`,
+        READER_BRIDGE_KEY: 'fixture-native-social-key-more-than-32-characters',
+        DISCORD_CLIENT_ID: '',
+        DISCORD_CLIENT_SECRET: '',
+        DISCORD_REDIRECT_URI: '',
+      },
+      stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
     },
-    stdio: ['ignore', 'pipe', 'pipe', 'ipc'],
-  });
+  );
   let output = '',
     base,
     sqlite;

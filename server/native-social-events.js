@@ -50,6 +50,6 @@ export async function readSocialEvents({
       break;
     }
   }
-  await policy.current();
+  await policy.atomic([]);
   return { events, cursor, complete };
 }

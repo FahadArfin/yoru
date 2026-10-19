@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { Response } from 'miniflare';
-import { createRuntime, migrate } from './harness.mjs';
+import { Miniflare, Response } from 'miniflare';
+import { runtimeOptions, migrate } from './harness.mjs';
+import { socialHydrationRuntimeOptions } from './native-social-hydration.mjs';
 import { sitesReaderDb, store } from '../../sites/store.js';
 import {
   nativeSocialContract,
@@ -13,17 +14,25 @@ import {
 test('native social policy and exact chapter contracts across two D1 Workers', async () => {
   const provider = socialProvider();
   let instance = 0;
-  const runtime = await createRuntime({
-    bindings: {
-      READER_EXTENSIONS_ENABLED: '1',
-      READER_BRIDGE_URL: 'https://native-social.trycloudflare.com',
-      READER_BRIDGE_KEY: 'fixture-native-social-key-more-than-32-characters',
-    },
-    provider: async (request) => {
-      const value = await provider.respond(new URL(request.url).pathname, await request.json());
-      return value ? Response.json(value) : new Response('{}', { status: 404 });
-    },
-  });
+  const runtime = new Miniflare(
+    socialHydrationRuntimeOptions(
+      runtimeOptions({
+        bindings: {
+          READER_EXTENSIONS_ENABLED: '1',
+          READER_BRIDGE_URL: 'https://native-social.trycloudflare.com',
+          READER_BRIDGE_KEY: 'fixture-native-social-key-more-than-32-characters',
+        },
+        provider: async (request) => {
+          const value = await provider.respond(
+            new URL(request.url).pathname,
+            await request.json().catch(() => ({})),
+          );
+          return value ? Response.json(value) : new Response('{}', { status: 404 });
+        },
+      }),
+    ),
+  );
+  await runtime.ready;
   try {
     await migrate(runtime);
     const db = sitesReaderDb(store(await runtime.getD1Database('DB', 'a')));

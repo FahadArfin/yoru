@@ -194,7 +194,7 @@ function emit(connection, event, data) {
         if (!accepted.has(data.mediaId)) return;
         if (data.media) data = { ...data, media: accepted.get(data.mediaId) };
       }
-      await policy.current();
+      await policy.atomic([]);
       if (
         !sessionAlive(connection) ||
         (connection.roomId && !activeMember(connection.roomId, connection.user?.id))

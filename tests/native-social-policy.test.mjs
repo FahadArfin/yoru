@@ -398,3 +398,44 @@ test('social writes recheck current title classification atomically after author
   );
   assert.equal((await f.db.get('SELECT COUNT(*) AS n FROM mutation_fixture')).n, 0);
 });
+for (const method of ['select', 'mediaBatch']) {
+  test(`${method} retains returned title proof through final hydration guard`, async (t) => {
+    const f = contextFixture();
+    t.after(f.close);
+    const source = accountSource(),
+      store = createExternalCatalogStore(f.db);
+    const media = await store.rememberTitle({
+      sourceRef: source,
+      upstreamRef: { sourceId: source.id, upstreamKey: '/late-proof', language: 'en' },
+      classification: source.classification,
+      metadata: { title: 'Late proof', category: 'MANGA' },
+    });
+    const policy = await createSocialPolicy(
+      { destination: 'yoru', extensionsEnabled: true, overrides: {}, revision: 0 },
+      {
+        db: f.db,
+        coreAccountMedia: async () => [],
+        refreshSources: async () => ({
+          currentSources: [source],
+          complete: true,
+          sourceStates: [],
+        }),
+      },
+    );
+    if (method === 'mediaBatch') assert.ok((await policy.mediaBatch([media.id])).has(media.id));
+    else {
+      const page = await policy.select({
+        candidates:
+          'SELECT id AS media_id,id AS social_id,updated_at AS social_sort FROM external_media',
+        limit: 1,
+      });
+      assert.equal(page.rows[0].media_id, media.id);
+    }
+    await policy.atomic([]);
+    await f.db.run(
+      "UPDATE external_media SET classification=json_set(classification,'$.rating','adult') WHERE id=?",
+      media.id,
+    );
+    await assert.rejects(policy.atomic([]), { status: 404 });
+  });
+}

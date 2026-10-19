@@ -259,3 +259,76 @@ test('provider outages preserve existing conversations', async (t) => {
   assert.equal(result.items[0].unit, 10);
   assert.equal(result.items[0].comments, 1);
 });
+for (const chapter of [false, true]) {
+  test(`transitive exact ${chapter ? 'edition' : 'title'} mappings retain all discussion aliases`, async (t) => {
+    const f = contextFixture();
+    t.after(f.close);
+    await f.db.run(
+      "INSERT INTO users(id,name,email,password_hash,created_at) VALUES('chain','Chain','chain@fixture','x','now')",
+    );
+    const source = accountSource(),
+      store = createExternalCatalogStore(f.db),
+      originals = [];
+    for (let i = 0; i < 3; i++) {
+      const upstreamRef = { sourceId: source.id, upstreamKey: `/chain/${i}`, language: 'en' };
+      const media = await store.rememberTitle({
+        sourceRef: source,
+        upstreamRef,
+        classification: source.classification,
+        metadata: { title: 'Same title', category: 'MANGA' },
+      });
+      const edition = chapter
+        ? await store.rememberEdition(media.id, {
+            sourceRef: source,
+            upstreamRef: { title: upstreamRef, upstreamKey: '/chapter/0' },
+            metadata: { number: '0' },
+          })
+        : null;
+      originals.push({ mediaId: media.id, unit: 0, editionId: edition?.id || null });
+      await f.db.run(
+        'INSERT INTO comments(id,user_id,media_id,unit,edition_id,body,created_at) VALUES(?,?,?,?,?,?,?)',
+        `chain-${i}`,
+        'chain',
+        media.id,
+        0,
+        edition?.id || null,
+        'Original',
+        '2026-10-18T01:00:00Z',
+      );
+    }
+    originals.sort((a, b) =>
+      `${a.mediaId}:${a.editionId || 0}`.localeCompare(`${b.mediaId}:${b.editionId || 0}`),
+    );
+    for (let i = 0; i < 2; i++)
+      await store.addEquivalence(
+        originals[i].editionId || originals[i].mediaId,
+        originals[i + 1].editionId || originals[i + 1].mediaId,
+        { kind: 'trusted-mapping', reference: 'verified-chain' },
+      );
+    const policy = await createSocialPolicy(
+      { destination: 'yoru', extensionsEnabled: true, overrides: {}, revision: 0 },
+      {
+        db: f.db,
+        coreAccountMedia: async () => [],
+        refreshSources: async () => ({
+          currentSources: [source],
+          complete: true,
+          sourceStates: [],
+        }),
+      },
+    );
+    const options = {
+      db: f.db,
+      policy,
+      chapters: async () => ({ items: [], state: 'ready' }),
+      now,
+    };
+    for (let repeat = 0; repeat < 2; repeat++) {
+      const result = await getCommunityThreads({ category: 'manga' }, options);
+      assert.equal(result.items.length, 1);
+      assert.equal(result.items[0].comments, 3);
+      assert.deepEqual(result.items[0].discussions, originals);
+      assert.equal((await f.db.get('SELECT COUNT(*) AS n FROM comments')).n, 3);
+    }
+  });
+}

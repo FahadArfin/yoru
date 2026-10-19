@@ -86,7 +86,7 @@ export function eventRoutes(app) {
         )))
     )
       throw apiError(403, 'Join this room to take part.');
-    await policy.current();
+    await policy.atomic([]);
     return c.json({
       viewerId: user?.id || null,
       cursor: page.complete ? Math.max(page.cursor, newest.sequence) : page.cursor,
@@ -231,7 +231,7 @@ export function eventRoutes(app) {
           break;
         }
         for (const event of page.events) {
-          await delivery.current();
+          await delivery.atomic([]);
           if (roomId) await delivery.room(await checkedRoom(db, roomId));
           await stream.writeSSE({
             id: String(event.id),
