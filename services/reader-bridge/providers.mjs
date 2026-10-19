@@ -4,6 +4,9 @@ import { join } from 'node:path';
 import { getChapterCatalog, getCatalogChapter } from '../../server/chapter-catalog.js';
 import { ImageCache, pruneSuwayomiCache } from './cache.mjs';
 import { discoverCatalogs } from '../../shared/reader-connection.js';
+import { createSuwayomiClient } from './suwayomi-client.mjs';
+import { ExtensionProviders } from './extension-providers.mjs';
+import { MetadataCache } from './metadata-cache.mjs';
 
 const SW_SOURCE = '2131019126180322627';
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -86,6 +89,7 @@ export class Providers {
       discoverCatalogs(this.suwayomiUrl, {
         authorization: this.authorization,
         fetchImpl: this.fetchImpl,
+        client: this.client,
       }),
     );
   }
@@ -94,13 +98,28 @@ export class Providers {
     suwayomiUrl = 'http://suwayomi:4567',
     password,
     fetchImpl = fetch,
+    client,
+    bindings,
+    now = Date.now,
+    bridgeInstance = null,
   } = {}) {
     Object.assign(this, { directory, suwayomiUrl, fetchImpl });
     this.authorization = `Basic ${Buffer.from(`yoru:${password}`).toString('base64')}`;
     this.images = new ImageCache(join(directory, 'images'));
     this.pending = new Map();
     this.pagePending = new Map();
-    this.swQueue = Promise.resolve();
+    this.client =
+      client ||
+      createSuwayomiClient({ url: suwayomiUrl, authorization: this.authorization, fetchImpl, now });
+    this.metadata = new MetadataCache(join(directory, 'extension-metadata'), { now });
+    this.extensions = new ExtensionProviders({
+      client: this.client,
+      bindings,
+      metadata: this.metadata,
+      images: this.images,
+      now,
+      bridgeInstance,
+    });
   }
   async load(key) {
     try {
@@ -142,22 +161,8 @@ export class Providers {
       cacheScope: this,
     };
   }
-  async gql(query, variables = {}) {
-    const run = async () => {
-      const response = await this.fetchImpl(`${this.suwayomiUrl}/api/graphql`, {
-        method: 'POST',
-        headers: { authorization: this.authorization, 'content-type': 'application/json' },
-        body: JSON.stringify({ query, variables }),
-        signal: AbortSignal.timeout(25000),
-        redirect: 'error',
-      });
-      const result = JSON.parse(await boundedBytes(response));
-      if (result.errors?.length) throw error(503, 'This source could not refresh its chapters.');
-      return result.data;
-    };
-    const pending = this.swQueue.then(run, run);
-    this.swQueue = pending.catch(() => {});
-    return pending;
+  async gql(operation, variables = {}, context = {}) {
+    return this.client.execute(operation, variables, context);
   }
   async swMatch(media) {
     return this.cached(`sw-match:${media.id}`, 6 * 3600000, async () => {
@@ -173,7 +178,6 @@ export class Providers {
       const matches = mappedSources(media, JSON.parse(await boundedBytes(response)));
       if (matches.length !== 1) return null;
       const candidate = matches[0];
-      const query = `mutation Search($input: FetchSourceMangaInput!) { fetchSourceManga(input:$input) { mangas { id title sourceId url realUrl } } }`;
       for (const title of [
         ...new Set(
           [candidate.title, media.titleEnglish, media.titleRomaji].filter(
@@ -181,7 +185,7 @@ export class Providers {
           ),
         ),
       ].slice(0, 3)) {
-        const result = await this.gql(query, {
+        const result = await this.gql('CoreSearch', {
           input: { source: SW_SOURCE, type: 'SEARCH', page: 1, query: title },
         });
         const verified = result.fetchSourceManga.mangas.filter(
@@ -213,10 +217,7 @@ export class Providers {
     const match = await this.swMatch(media);
     if (!match) throw error(404, 'No verified match on this source.');
     return this.cached(`sw-chapters:${media.id}:${match.mangaId}`, 15 * 60000, async () => {
-      const result = await this.gql(
-        `mutation Chapters($id:Int!) { fetchMangaAndChapters(input:{id:$id,fetchManga:true,fetchChapters:true}) { manga { id sourceId realUrl } chapters { id mangaId name chapterNumber scanlator sourceOrder uploadDate pageCount } } }`,
-        { id: match.mangaId },
-      );
+      const result = await this.gql('CoreChapters', { id: match.mangaId });
       const feed = result.fetchMangaAndChapters;
       if (
         feed.manga.id !== match.mangaId ||
@@ -340,10 +341,7 @@ export class Providers {
         );
       }
       const parts = id.match(SW_CHAPTER);
-      const result = await this.gql(
-        `mutation Pages($chapterId:Int!) { fetchChapterPages(input:{chapterId:$chapterId}) { chapter { id pageCount } pages } }`,
-        { chapterId: Number(parts[2]) },
-      );
+      const result = await this.gql('CorePages', { chapterId: Number(parts[2]) });
       const data = result.fetchChapterPages;
       if (
         data.chapter.id !== Number(parts[2]) ||
@@ -373,20 +371,22 @@ export class Providers {
     const pending = (async () => {
       const sw = SW_CHAPTER.test(id);
       const started = Date.now();
-      const response = await this.fetchImpl(
-        sw ? `${this.suwayomiUrl}${urls[index]}` : urls[index],
-        {
-          headers: sw
-            ? { authorization: this.authorization }
-            : { 'User-Agent': 'YoruReader/1.0 (https://yoru.fwad101.chatgpt.site)' },
-          redirect: 'error',
-          signal: AbortSignal.timeout(30000),
-        },
-      );
-      const type = response.headers.get('content-type')?.split(';')[0];
+      const sourceImage = sw ? await this.client.fetchImage(urls[index]) : null;
+      const response = sw
+        ? null
+        : await this.fetchImpl(urls[index], {
+            headers: sw
+              ? { authorization: this.authorization }
+              : { 'User-Agent': 'YoruReader/1.0 (https://yoru.fwad101.chatgpt.site)' },
+            redirect: 'error',
+            signal: AbortSignal.timeout(30000),
+          });
+      const type = sourceImage?.type || response.headers.get('content-type')?.split(';')[0];
       if (!['image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'].includes(type))
         throw error(502, 'The source did not return an image.');
-      const body = await boundedBytes(response, 20 * 1024 ** 2);
+      const body = sourceImage
+        ? Buffer.from(sourceImage.body)
+        : await boundedBytes(response, 20 * 1024 ** 2);
       await this.images.put(key, body, type);
       if (!sw && new URL(urls[index]).hostname.endsWith('.mangadex.network')) {
         await this.fetchImpl('https://api.mangadex.network/report', {

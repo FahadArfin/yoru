@@ -12,7 +12,11 @@ export function tunnelAddress(output) {
   if (!output.includes('Your quick Tunnel has been created')) return '';
   return output.match(/\|\s+(https:\/\/[a-z0-9-]+\.trycloudflare\.com)\s+\|/)?.[1] || '';
 }
-export function bridgeHandler({ key, provider }) {
+export function bridgeHandler({
+  key,
+  provider,
+  extensionsEnabled = process.env.READER_EXTENSIONS_ENABLED === '1',
+}) {
   let active = 0;
   return async (request) => {
     if (
@@ -22,8 +26,15 @@ export function bridgeHandler({ key, provider }) {
     )
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const path = new URL(request.url).pathname;
+    const extensionOperation = {
+      '/extensions/catalogs': 'catalogs',
+      '/extensions/browse': 'browse',
+      '/extensions/details': 'details',
+      '/extensions/resolve-link': 'resolveLink',
+    }[path];
     if (
-      !['/catalogs', '/sources', '/chapters', '/chapter', '/reader', '/page'].includes(path) ||
+      (!['/catalogs', '/sources', '/chapters', '/chapter', '/reader', '/page'].includes(path) &&
+        !(extensionsEnabled && extensionOperation)) ||
       request.method !== 'POST'
     )
       return Response.json({ error: 'Not found' }, { status: 404 });
@@ -37,7 +48,27 @@ export function bridgeHandler({ key, provider }) {
       const text = await request.text();
       if (text.length > 16000)
         return Response.json({ error: 'Request too large' }, { status: 413 });
-      const { media, source, filters, chapterId, page } = JSON.parse(text);
+      const body = JSON.parse(text);
+      const context = {
+        signal: request.signal,
+        deadlineAt: Date.now() + 12000,
+        priority: path.endsWith('/browse') ? 'discovery' : 'interactive',
+      };
+      if (extensionOperation) {
+        const { sourceId, mode, query, page, filters, cursor, limit, titleRef, url } = body;
+        const input =
+          extensionOperation === 'catalogs'
+            ? { cursor, limit }
+            : extensionOperation === 'browse'
+              ? { sourceId, mode, query, page, filters }
+              : extensionOperation === 'details'
+                ? titleRef
+                : { sourceId, url };
+        return Response.json(await provider.extensions[extensionOperation](input, context), {
+          headers: { 'cache-control': 'no-store' },
+        });
+      }
+      const { media, source, filters, chapterId, page } = body;
       if (path === '/catalogs') {
         return Response.json(await provider.catalogs(), {
           headers: { 'cache-control': 'no-store' },
@@ -79,7 +110,7 @@ export function bridgeHandler({ key, provider }) {
       const status = Number.isInteger(e.status) ? e.status : 503;
       return Response.json(
         { error: e.status ? e.message : 'The reading source is temporarily unavailable.' },
-        { status },
+        { status, ...(e.retryAfter ? { headers: { 'retry-after': e.retryAfter } } : {}) },
       );
     } finally {
       active--;

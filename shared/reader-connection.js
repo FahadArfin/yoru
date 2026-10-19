@@ -1,4 +1,10 @@
 // Fixed, read-only operations shared by the browser and the private reader bridge.
+import {
+  operations,
+  decimalSourceId,
+  classification,
+  capabilities,
+} from '../services/reader-bridge/suwayomi-operations.mjs';
 export function normalizeServerUrl(value) {
   const text = String(value || '').trim();
   if (!text) throw new Error('Enter a Suwayomi server address.');
@@ -30,7 +36,14 @@ export function normalizeServerUrl(value) {
   return `${url.origin}${url.pathname.replace(/\/+$/, '').replace(/\/api\/graphql$/, '')}`;
 }
 
-async function request(server, query, variables, options) {
+async function request(server, operation, variables, options) {
+  if (options.client)
+    return options.client.execute(operation, variables, {
+      signal: options.signal,
+      deadlineAt: options.deadlineAt,
+      priority: options.priority,
+    });
+  const query = operations[operation];
   const timeout = AbortSignal.timeout(15000);
   const signal = options.signal ? AbortSignal.any([timeout, options.signal]) : timeout;
   let response;
@@ -54,9 +67,29 @@ async function request(server, query, variables, options) {
         : 'Cannot reach this server. Check its address, HTTPS and browser access (CORS).',
     );
   }
-  if ([401, 403].includes(response.status))
-    throw new Error('This server requires sign-in. Check your server credentials.');
-  if (!response.ok) throw new Error('The server is unavailable. Try again shortly.');
+  if (!response.ok) {
+    const raw = response.headers.get('retry-after');
+    const retryAfter = raw && raw.length <= 100 ? raw : null;
+    const now = options.now?.() ?? Date.now();
+    const at =
+      retryAfter == null
+        ? NaN
+        : /^\d+$/.test(retryAfter)
+          ? now + Number(retryAfter) * 1000
+          : Date.parse(retryAfter);
+    throw Object.assign(
+      new Error(
+        [401, 403].includes(response.status)
+          ? 'This server requires sign-in. Check your server credentials.'
+          : 'The server is unavailable. Try again shortly.',
+      ),
+      {
+        status: response.status,
+        retryAfter,
+        retryAt: Number.isFinite(at) && Math.abs(at) <= 8.64e15 ? new Date(at).toISOString() : null,
+      },
+    );
+  }
   if (!response.body || Number(response.headers.get('content-length')) > 1024 ** 2)
     throw new Error('The server response is too large or empty.');
   const reader = response.body.getReader();
@@ -100,21 +133,11 @@ export async function discoverCatalogs(server, options = {}) {
   let data,
     legacy = false;
   try {
-    data = await request(
-      server,
-      'query YoruSources { sources { nodes { id name lang isNsfw contentWarning } } }',
-      {},
-      options,
-    );
+    data = await request(server, 'connectionSources', {}, options);
   } catch (error) {
     if (!error.legacy) throw error;
     legacy = true;
-    data = await request(
-      server,
-      'query YoruSources { sources { nodes { id name lang isNsfw } } }',
-      {},
-      options,
-    );
+    data = await request(server, 'connectionLegacySources', {}, options);
   }
   if (!Array.isArray(data?.sources?.nodes))
     throw new Error('This address is not a compatible Suwayomi server.');
@@ -122,18 +145,20 @@ export async function discoverCatalogs(server, options = {}) {
   const sources = [
     ...new Map(
       nodes
-        .filter((s) => /^[1-9]\d{0,23}$/.test(s.id) && typeof s.name === 'string' && s.name.trim())
+        .filter((s) => decimalSourceId(s.id) && typeof s.name === 'string' && s.name.trim())
         .map((s) => [
           String(s.id),
           {
             id: String(s.id),
             name: s.name.slice(0, 100),
             language: String(s.lang || '').slice(0, 20),
+            classification: classification(s, options.now?.() ?? Date.now()),
+            capabilities: capabilities(s),
           },
         ]),
     ).values(),
   ];
-  return { sources, excluded: nodes.length - sources.length };
+  return { sources, excluded: nodes.length - sources.length, indexedOnly: true };
 }
 
 export async function browseCatalog(server, source, query = '', offset = 0, options = {}) {
@@ -148,16 +173,7 @@ export async function browseCatalog(server, source, query = '', offset = 0, opti
     offset > 10000
   )
     throw new Error('Invalid catalog search.');
-  const data = await request(
-    server,
-    `query YoruCatalog($source: LongString!, $query: String!, $offset: Int!) {
-    mangas(first: 20, offset: $offset, filter: {sourceId: {equalTo: $source}, title: {includesInsensitive: $query}}) {
-      nodes { id sourceId title genre } pageInfo { hasNextPage }
-    }
-  }`,
-    { source, query, offset },
-    options,
-  );
+  const data = await request(server, 'indexedCatalog', { source, query, offset }, options);
   if (!Array.isArray(data?.mangas?.nodes))
     throw new Error('The server returned an incompatible catalog.');
   return {
@@ -169,5 +185,6 @@ export async function browseCatalog(server, source, query = '', offset = 0, opti
       .slice(0, 20)
       .map((m) => ({ id: String(m.id), title: m.title.slice(0, 300), sourceId: source })),
     hasNextPage: data.mangas.pageInfo?.hasNextPage === true,
+    indexedOnly: true,
   };
 }
