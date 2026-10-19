@@ -41,7 +41,7 @@ test('provider and language filters combine, survive refresh and clear without l
   await expect(list).toContainText('Cubari');
   await expect(list).toContainText('Webcomics');
   await expect(card.getByText('4 of 4 catalogs')).toBeVisible();
-  const cubari = card.getByRole('switch', { name: 'Cubari in this list' });
+  const cubari = card.getByRole('switch', { name: 'Cubari in Yoru', exact: true });
   await cubari.click();
   await expect(cubari).toHaveAttribute('aria-checked', 'false');
   await card.getByLabel('Catalog status').selectOption('on');
@@ -55,6 +55,78 @@ test('provider and language filters combine, survive refresh and clear without l
   await expect(cubari).toHaveAttribute('aria-checked', 'true');
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await card.screenshot({ path: testInfo.outputPath('catalog-filters.png') });
+});
+
+test('Yoru and Ara Ara list switches are independent and retain existing browser choices', async ({
+  page,
+}, testInfo) => {
+  await page.addInitScript(() => {
+    if (!localStorage.getItem('yoru:reader-catalogs:v1')) {
+      localStorage.setItem(
+        'yoru:reader-catalogs:v1',
+        JSON.stringify({
+          url: 'https://reader.example',
+          enabled: {
+            yoru: { 1: false, 2: false, 3: true },
+            'https://reader.example': { 9: false },
+          },
+        }),
+      );
+    }
+  });
+  await page.route('**/api/reader/catalogs', (route) =>
+    route.fulfill({
+      json: {
+        sources: [
+          { id: '1', name: 'Cubari', language: 'en' },
+          { id: '2', name: 'Cubari', language: 'all' },
+          { id: '3', name: 'Webcomics', language: 'en' },
+        ],
+      },
+    }),
+  );
+  await page.goto('/settings');
+  const card = page.locator('.reader-connection');
+  const yoru = card.getByRole('switch', { name: 'Cubari in Yoru', exact: true });
+  const ara = card.getByRole('switch', { name: 'Cubari in Ara Ara', exact: true });
+  await expect(yoru).toHaveAttribute('aria-checked', 'false');
+  await expect(ara).toHaveAttribute('aria-checked', 'false');
+  await ara.click();
+  await expect(yoru).toHaveAttribute('aria-checked', 'false');
+  await expect(ara).toHaveAttribute('aria-checked', 'true');
+  await card.getByLabel('Source list').selectOption('ara-ara');
+  await card.getByLabel('Catalog status').selectOption('on');
+  await expect(card.getByText('2 of 3 catalogs')).toBeVisible();
+  await expect(card.getByRole('region', { name: 'Supported reader catalogs' })).not.toContainText(
+    'Webcomics',
+  );
+  await card.getByLabel('Source list').selectOption('yoru');
+  await expect(card.getByRole('region', { name: 'Supported reader catalogs' })).not.toContainText(
+    'Cubari',
+  );
+  await card.getByRole('button', { name: 'Clear filters' }).click();
+  await yoru.click();
+  await page.reload();
+  await expect(yoru).toHaveAttribute('aria-checked', 'true');
+  await expect(ara).toHaveAttribute('aria-checked', 'true');
+  await ara.click();
+  await expect(yoru).toHaveAttribute('aria-checked', 'true');
+  const preferences = await page.evaluate(() =>
+    JSON.parse(localStorage.getItem('yoru:reader-catalogs:v1')),
+  );
+  expect(preferences.url).toBe('https://reader.example');
+  expect(preferences.enabled['https://reader.example']['9']).toBe(false);
+  expect(preferences.enabled.yoru['2']).toBe(true);
+  expect(preferences.araEnabled.yoru['2']).toBe(false);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await card.screenshot({ path: testInfo.outputPath('catalog-destinations.png') });
+  await page.goto('/ara-ara/settings');
+  await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  await expect(card.getByLabel('Source list')).toHaveValue('ara-ara');
+  await card.getByLabel('Catalog status').selectOption('on');
+  await expect(card.getByText('No catalogs match your filters.')).toBeVisible();
+  await card.getByLabel('Source list').selectOption('yoru');
+  await expect(card.getByText('3 of 3 catalogs')).toBeVisible();
 });
 
 test('default server needs no address and reports connection failure with retry', async ({

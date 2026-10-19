@@ -69,6 +69,24 @@
   border-color: var(--section-accent);
   background: rgb(var(--chrome-soft) / 0.12);
 }
+.reader-placement-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.settings-page .reader-placement-switches .btn {
+  padding: 8px 10px;
+  gap: 6px;
+}
+.reader-placement-state {
+  font-size: 10px;
+  opacity: 0.7;
+}
+.reader-connection .reader-list-filter {
+  grid-template-columns: auto minmax(0, 160px);
+  align-items: center;
+  justify-content: space-between;
+}
 .reader-connection .setting-row {
   flex-wrap: wrap;
 }

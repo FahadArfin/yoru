@@ -1,6 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { Link } from './collection-router';
+import { useCollection } from './collection-context';
 import { discoverCatalogs, browseCatalog, normalizeServerUrl } from '../shared/reader-connection';
 
 const KEY = 'yoru:reader-catalogs:v1';
@@ -22,6 +23,7 @@ function saved() {
   }
 }
 export default function ReaderConnection() {
+  const collectionActive = !!useCollection()?.active;
   const [mode, setMode] = useState('yoru');
   const [url, setUrl] = useState(() => saved().url || '');
   const [username, setUsername] = useState('');
@@ -29,6 +31,8 @@ export default function ReaderConnection() {
   const [connection, setConnection] = useState(null);
   const [sources, setSources] = useState([]);
   const [enabled, setEnabled] = useState({});
+  const [araEnabled, setAraEnabled] = useState({});
+  const [sourceList, setSourceList] = useState(collectionActive ? 'ara-ara' : 'yoru');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [storageError, setStorageError] = useState('');
@@ -47,12 +51,13 @@ export default function ReaderConnection() {
   const languages = [...new Set(sources.map((source) => source.language))].sort((a, b) =>
     languageName(a).localeCompare(languageName(b)),
   );
+  const listEnabled = mode === 'yoru' && sourceList === 'ara-ara' ? araEnabled : enabled;
   const filteredSources = sources.filter(
     (source) =>
       source.name.toLocaleLowerCase().includes(providerQuery.trim().toLocaleLowerCase()) &&
       (!language || source.language === language) &&
       (catalogStatus === 'all' ||
-        (catalogStatus === 'on' ? enabled[source.id] : !enabled[source.id])),
+        (catalogStatus === 'on' ? listEnabled[source.id] : !listEnabled[source.id])),
   );
   const providers = Array.from(
     filteredSources.reduce((groups, source) => {
@@ -75,14 +80,16 @@ export default function ReaderConnection() {
     setBusy(false);
     setError('');
   };
-  const persist = (address, values) => {
+  const persist = (address, values, araValues) => {
     try {
       const data = saved();
       localStorage.setItem(
         KEY,
         JSON.stringify({
+          ...data,
           url: address === 'yoru' ? data.url : address,
           enabled: { ...data.enabled, [address]: values },
+          ...(araValues ? { araEnabled: { ...data.araEnabled, [address]: araValues } } : {}),
         }),
       );
       setStorageError('');
@@ -118,6 +125,11 @@ export default function ReaderConnection() {
       );
       setSources(data.sources);
       setEnabled(values);
+      setAraEnabled(
+        Object.fromEntries(
+          data.sources.map((s) => [s.id, saved().araEnabled?.[address]?.[s.id] === true]),
+        ),
+      );
       setConnection({ address, authorization });
       if (kind !== 'yoru') {
         setUrl(address);
@@ -133,6 +145,9 @@ export default function ReaderConnection() {
     connect('yoru');
     return cancel;
   }, []);
+  useEffect(() => {
+    setSourceList(collectionActive ? 'ara-ara' : 'yoru');
+  }, [collectionActive]);
   const toggle = (id) => {
     const values = { ...enabled, [id]: !enabled[id] };
     setEnabled(values);
@@ -145,14 +160,21 @@ export default function ReaderConnection() {
       setError('');
     }
   };
-  const providerEnabled = (name) =>
-    sources.filter((source) => source.name === name).every((source) => enabled[source.id]);
-  const toggleProvider = (name) => {
-    const next = !providerEnabled(name);
-    const values = { ...enabled };
+  const providerEnabled = (name, destination) =>
+    sources
+      .filter((source) => source.name === name)
+      .every((source) => (destination === 'ara-ara' ? araEnabled : enabled)[source.id]);
+  const toggleProvider = (name, destination) => {
+    const next = !providerEnabled(name, destination);
+    const values = { ...(destination === 'ara-ara' ? araEnabled : enabled) };
     for (const source of sources) if (source.name === name) values[source.id] = next;
-    setEnabled(values);
-    persist(connection.address, values);
+    if (destination === 'ara-ara') {
+      setAraEnabled(values);
+      persist(connection.address, enabled, values);
+    } else {
+      setEnabled(values);
+      persist(connection.address, values, araEnabled);
+    }
   };
   const browse = async (id, start = 0, search = query) => {
     if (!enabled[id] || !connection || mode !== 'custom') return;
@@ -341,6 +363,15 @@ export default function ReaderConnection() {
               </select>
             </label>
           </div>
+          {mode === 'yoru' && (
+            <label className="reader-list-filter">
+              Source list
+              <select value={sourceList} onChange={(event) => setSourceList(event.target.value)}>
+                <option value="yoru">Yoru</option>
+                <option value="ara-ara">Ara Ara</option>
+              </select>
+            </label>
+          )}
           <div className="reader-filter-summary">
             <p aria-live="polite">
               {filteredSources.length} of {sources.length} catalogs
@@ -370,16 +401,28 @@ export default function ReaderConnection() {
                             <span key={language}>{language}</span>
                           ))}
                       </span>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={providerEnabled(name)}
-                        aria-label={`${name} in this list`}
-                        className="btn btn-subtle"
-                        onClick={() => toggleProvider(name)}
+                      <div
+                        className="reader-placement-switches"
+                        role="group"
+                        aria-label={`${name} list preferences`}
                       >
-                        {providerEnabled(name) ? 'On' : 'Off'}
-                      </button>
+                        {['yoru', 'ara-ara'].map((destination) => (
+                          <button
+                            key={destination}
+                            type="button"
+                            role="switch"
+                            aria-checked={providerEnabled(name, destination)}
+                            aria-label={`${name} in ${destination === 'yoru' ? 'Yoru' : 'Ara Ara'}`}
+                            className="btn btn-subtle"
+                            onClick={() => toggleProvider(name, destination)}
+                          >
+                            <span>{destination === 'yoru' ? 'Yoru' : 'Ara Ara'}</span>
+                            <span className="reader-placement-state">
+                              {providerEnabled(name, destination) ? 'On' : 'Off'}
+                            </span>
+                          </button>
+                        ))}
+                      </div>
                     </div>
                   </div>
                 ))
@@ -428,9 +471,10 @@ export default function ReaderConnection() {
       )}
       {mode === 'yoru' && connection && (
         <p className="small">
-          Switches apply to every language for that provider in this list, on this browser only. Use
-          the Enabled or Disabled filter to view your choices. They don’t change chapter playback,
-          Yoru’s main catalog, or installed extensions.
+          Choose Yoru, Ara Ara, both, or neither for each provider. Switches apply to all its
+          languages and are saved in this browser. Select a Source list, then Enabled or Disabled to
+          view its choices. These preferences only organize this Settings list; they don’t import
+          titles, change chapter playback, or install extensions.
         </p>
       )}
       {selection && (
