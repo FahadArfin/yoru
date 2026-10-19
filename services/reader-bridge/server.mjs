@@ -118,16 +118,16 @@ export function bridgeHandler({
   };
 }
 
-async function start() {
-  const key = process.env.READER_BRIDGE_KEY;
-  if (!key || key.length < 32) throw new Error('Configure READER_BRIDGE_KEY before starting.');
-  const provider = new Providers({
-    directory: process.env.CACHE_DIR || '/data',
-    suwayomiUrl: process.env.SUWAYOMI_URL,
-    password: process.env.SUWAYOMI_PASSWORD,
-  });
-  const handler = bridgeHandler({ key, provider });
-  const server = createServer(async (req, res) => {
+export function createBridgeServer(options) {
+  const handler = bridgeHandler(options);
+  return createServer(async (req, res) => {
+    const controller = new AbortController();
+    const abort = () => controller.abort();
+    const disconnected = () => {
+      if (!res.writableFinished) abort();
+    };
+    req.once('aborted', abort);
+    res.once('close', disconnected);
     const chunks = [];
     let length = 0;
     try {
@@ -144,16 +144,36 @@ async function start() {
         new Request(`http://bridge${req.url}`, {
           method: req.method,
           headers: req.headers,
+          signal: controller.signal,
           ...(!['GET', 'HEAD'].includes(req.method) ? { body: Buffer.concat(chunks) } : {}),
         }),
       );
+      if (controller.signal.aborted || res.destroyed) return;
+      const body = Buffer.from(await response.arrayBuffer());
+      if (controller.signal.aborted || res.destroyed) return;
       res.writeHead(response.status, Object.fromEntries(response.headers));
-      res.end(Buffer.from(await response.arrayBuffer()));
+      res.end(body);
     } catch {
-      res.writeHead(503);
-      res.end();
+      if (!res.destroyed) {
+        res.writeHead(503);
+        res.end();
+      }
+    } finally {
+      req.removeListener('aborted', abort);
+      res.removeListener('close', disconnected);
     }
   });
+}
+
+async function start() {
+  const key = process.env.READER_BRIDGE_KEY;
+  if (!key || key.length < 32) throw new Error('Configure READER_BRIDGE_KEY before starting.');
+  const provider = new Providers({
+    directory: process.env.CACHE_DIR || '/data',
+    suwayomiUrl: process.env.SUWAYOMI_URL,
+    password: process.env.SUWAYOMI_PASSWORD,
+  });
+  const server = createBridgeServer({ key, provider });
   server.requestTimeout = 45000;
   server.listen(3000, '0.0.0.0', () => console.log('Yoru reader bridge listening.'));
   const cleanImages = () => provider.images.prune().catch(() => {});
