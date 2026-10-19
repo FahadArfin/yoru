@@ -7,6 +7,7 @@ import { collectionPath, useCollection } from './collection-context';
 import { canPreload, coverCandidates, warmImage } from './image-loading';
 import { recommendationQuery, relatedTitles } from './recommendations';
 import { chapterList, readingSources, savedReadingSource, warmReaderLink } from './reader/requests';
+import { collectionRequest } from '../shared/collection-view';
 
 let active = 0;
 export async function warmTitle(media, scope, signal, context) {
@@ -15,7 +16,13 @@ export async function warmTitle(media, scope, signal, context) {
     return;
   active++;
   try {
-    const data = await readerRequest(`/api/media/${media.id}`, { ...context, signal });
+    const path = `/api/media/${media.id}`;
+    const metadataPath = collectionRequest(path, context.destination === 'ara-ara');
+    const data = /^ext-manga-[a-f0-9]{32}$/.test(media.id)
+      ? await readerRequest(path, { ...context, signal })
+      : metadataPath
+        ? await cachedApi(metadataPath, false, { signal })
+        : media;
     const title = data.media || data;
     if (signal?.aborted || !canPreload()) return;
     warmImage(coverCandidates(title, context)[0], signal);
