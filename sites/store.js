@@ -46,6 +46,22 @@ export function store(binding) {
   };
   return db;
 }
+
+/** @returns {import('../shared/reading-contracts.js').ReaderDb} */
+export function sitesReaderDb(db) {
+  return {
+    get: async (sql, ...values) => (await db.get(sql, ...values)) ?? null,
+    all: async (sql, ...values) => db.all(sql, ...values),
+    run: async (sql, ...values) => db.run(sql, ...values),
+    atomic: async (statements, guard) => {
+      const target = guard ? db.guard(guard.sessionHash, guard.userId) : db;
+      const results = await target.batch(
+        statements.map(({ sql, values = [] }) => db.statement(sql, ...values)),
+      );
+      return results.map((result) => result.results || []);
+    },
+  };
+}
 export const liveSession =
   'EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND user_id=? AND expires_at>?)';
 export const sessionValues = (c) => [c.get('sessionHash'), c.get('user').id, Date.now()];

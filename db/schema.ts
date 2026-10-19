@@ -21,6 +21,87 @@ export const catalogMedia = sqliteTable('catalog_media', {
   fetched_at: integer().notNull(),
 });
 
+export const readerSources = sqliteTable(
+  'reader_sources',
+  {
+    id: text().primaryKey().notNull(),
+    integration: text().notNull(),
+    upstream_source_id: text(),
+    provider_key: text().notNull(),
+    language: text().notNull(),
+    classification: text().notNull(),
+    capabilities: text().notNull(),
+    bridge_instance: text(),
+    updated_at: text().notNull(),
+  },
+  (t) => [uniqueIndex('reader_sources_upstream').on(t.integration, t.upstream_source_id)],
+);
+export const externalMedia = sqliteTable(
+  'external_media',
+  {
+    id: text().primaryKey().notNull(),
+    source_id: text()
+      .notNull()
+      .references(() => readerSources.id),
+    upstream_key: text().notNull(),
+    language: text().notNull(),
+    classification: text().notNull(),
+    metadata: text().notNull(),
+    created_at: text().notNull(),
+    updated_at: text().notNull(),
+  },
+  (t) => [uniqueIndex('external_media_canonical').on(t.source_id, t.upstream_key, t.language)],
+);
+export const externalEditions = sqliteTable(
+  'external_editions',
+  {
+    id: text().primaryKey().notNull(),
+    media_id: text()
+      .notNull()
+      .references(() => externalMedia.id),
+    upstream_key: text().notNull(),
+    metadata: text().notNull(),
+    created_at: text().notNull(),
+    updated_at: text().notNull(),
+  },
+  (t) => [uniqueIndex('external_editions_canonical').on(t.media_id, t.upstream_key)],
+);
+export const readerLocalBindings = sqliteTable(
+  'reader_local_bindings',
+  {
+    reference_id: text().primaryKey().notNull(),
+    source_id: text()
+      .notNull()
+      .references(() => readerSources.id),
+    media_id: text().references(() => externalMedia.id),
+    edition_id: text().references(() => externalEditions.id),
+    kind: text().notNull(),
+    bridge_instance: text().notNull(),
+    local_id: text().notNull(),
+    verified_at: text().notNull(),
+  },
+  (t) => [
+    uniqueIndex('reader_bindings_local').on(t.bridge_instance, t.kind, t.local_id),
+    check(
+      'reader_binding_owner',
+      sql`(${t.kind}='media' AND ${t.media_id} IS NOT NULL AND ${t.media_id}=${t.reference_id} AND ${t.edition_id} IS NULL) OR (${t.kind}='edition' AND ${t.edition_id} IS NOT NULL AND ${t.edition_id}=${t.reference_id} AND ${t.media_id} IS NULL)`,
+    ),
+  ],
+);
+export const readerEquivalences = sqliteTable(
+  'reader_equivalences',
+  {
+    left_id: text().notNull(),
+    right_id: text().notNull(),
+    evidence: text().notNull(),
+    created_at: text().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.left_id, t.right_id] }),
+    check('reader_equivalence_order', sql`${t.left_id}<${t.right_id}`),
+  ],
+);
+
 export const users = sqliteTable('users', {
   id: text().primaryKey(),
   name: text().notNull(),

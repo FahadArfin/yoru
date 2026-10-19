@@ -64,6 +64,13 @@
       "when": 1792377564733,
       "tag": "0008_reader_catalog_preferences",
       "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "6",
+      "when": 1792382289494,
+      "tag": "0009_external_reader_identities",
+      "breakpoints": true
     }
   ]
 }
