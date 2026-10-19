@@ -73,6 +73,22 @@ export function readerAlternativesHttpContract(label, createFixture) {
       );
       assert.ok(!JSON.stringify(result).includes(original.id));
       assert.ok(f.provider.calls.every((c) => c.path === '/extension/catalogs'));
+      f.provider.sources = [
+        targetSource,
+        ...Array.from({ length: 400 }, (_, i) =>
+          alternativeSource(String(i + 10), 'Unknown provider'),
+        ),
+      ];
+      response = await f.request(path);
+      result = await response.json();
+      assert.equal(result.choices[0].mediaId, target.id);
+      assert.equal(result.incomplete, true);
+      response = await f.request(`${path}&cursor=${result.nextCursor}`);
+      assert.equal(response.status, 200);
+      result = await response.json();
+      assert.deepEqual(result.choices, []);
+      assert.equal(result.incomplete, false);
+      assert.equal(result.nextCursor, null);
       const adult = await add(alternativeSource('3', 'MangaDex', 'adult'), '/ADULT');
       const unavailable = [];
       for (const id of [adult.id, `ext-manga-${'f'.repeat(32)}`, 'bad']) {
@@ -117,6 +133,16 @@ export function readerAlternativesHttpContract(label, createFixture) {
         originalSource,
         { ...targetSource, classification: { ...targetSource.classification, rating: 'mixed' } },
       ];
+      response = await f.request(path);
+      assert.equal(response.status, 404);
+      assert.deepEqual(await response.json(), unavailable[0]);
+      await f.db.run(
+        'UPDATE reader_sources SET classification=?,updated_at=? WHERE id=?',
+        JSON.stringify({ ...targetSource.classification, rating: 'adult' }),
+        '2000-01-01T00:00:00.000Z',
+        targetSource.id,
+      );
+      f.provider.sources = [originalSource, targetSource];
       response = await f.request(path);
       assert.equal(response.status, 404);
       assert.deepEqual(await response.json(), unavailable[0]);

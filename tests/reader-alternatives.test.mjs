@@ -1,6 +1,80 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { alternativeFixture, alternativeSource } from './reader-alternatives-fixture.mjs';
+test('restrictive canonical candidate source proof predating the request wins over safe inventory', async () => {
+  const f = alternativeFixture();
+  try {
+    const original = await f.native(f.originalSource, '/SECRET_ORIGINAL'),
+      target = await f.native(f.targetSource, '/TARGET');
+    await f.map(original, target);
+    await f.db.run(
+      'UPDATE reader_sources SET classification=?,updated_at=? WHERE id=?',
+      JSON.stringify({ ...f.targetSource.classification, rating: 'adult' }),
+      '2000-01-01T00:00:00.000Z',
+      f.targetSource.id,
+    );
+    await assert.rejects(get({ id: original.id }, f.context, f.deps), { status: 404 });
+    await f.db.run(
+      'UPDATE external_media SET classification=? WHERE id=?',
+      JSON.stringify({
+        ...f.targetSource.classification,
+        provenance: {
+          ...f.targetSource.classification.provenance,
+          sourceField: 'title.contentRating',
+        },
+      }),
+      target.id,
+    );
+    const independent = await get({ id: original.id }, f.context, f.deps);
+    assert.equal(independent.choices[0].mediaId, target.id);
+  } finally {
+    f.close();
+  }
+});
+test('an inventory continuation that already emitted a choice can finish with an empty complete page', async () => {
+  const f = alternativeFixture();
+  try {
+    const original = await f.native(f.originalSource, '/SECRET_ORIGINAL'),
+      target = await f.native(f.targetSource, '/TARGET');
+    await f.map(original, target);
+    f.state.sources = [
+      f.targetSource,
+      ...Array.from({ length: 400 }, (_, i) =>
+        alternativeSource(String(i + 10), 'Unknown provider'),
+      ),
+    ];
+    const first = await get({ id: original.id }, f.context, f.deps);
+    assert.equal(first.choices[0].mediaId, target.id);
+    assert.equal(first.incomplete, true);
+    const last = await get({ id: original.id, cursor: first.nextCursor }, f.context, f.deps);
+    assert.deepEqual(last.choices, []);
+    assert.equal(last.incomplete, false);
+    assert.equal(last.nextCursor, null);
+  } finally {
+    f.close();
+  }
+});
+test('a mapping continuation that already emitted choices can finish with an empty complete page', async () => {
+  const f = alternativeFixture();
+  try {
+    const original = await f.native(f.originalSource, '/SECRET_ORIGINAL');
+    for (let i = 0; i < 101; i++) {
+      const core = await f.seedCore(`mal-manga-${10000 + i}`);
+      await f.map(original, core);
+      if (i === 100) core.isAdult = true;
+    }
+    const context = { ...f.context, integrationMode: 'core' };
+    const first = await get({ id: original.id }, context, f.deps);
+    assert.equal(first.choices.length, 100);
+    assert.equal(first.incomplete, true);
+    const last = await get({ id: original.id, cursor: first.nextCursor }, context, f.deps);
+    assert.deepEqual(last.choices, []);
+    assert.equal(last.incomplete, false);
+    assert.equal(last.nextCursor, null);
+  } finally {
+    f.close();
+  }
+});
 test('earlier unknown core proof cannot become silently complete on a later mapping window', async () => {
   const f = alternativeFixture();
   try {
@@ -30,6 +104,28 @@ test('earlier unknown core proof cannot become silently complete on a later mapp
     assert.equal(retry.incomplete, true);
     const complete = await get({ id: original.id, cursor: retry.nextCursor }, context, f.deps);
     assert.equal(complete.incomplete, false);
+  } finally {
+    f.close();
+  }
+});
+test('an explicit full proof retry resets the previous scan emitted flag', async () => {
+  const f = alternativeFixture();
+  try {
+    const original = await f.native(f.originalSource, '/SECRET_ORIGINAL'),
+      known = await f.seedCore('mal-manga-21'),
+      missing = await f.seedCore('mal-manga-22');
+    await f.map(original, known);
+    await f.map(original, missing);
+    f.core.delete(missing.id);
+    const context = { ...f.context, integrationMode: 'core' };
+    const first = await get({ id: original.id }, context, f.deps);
+    assert.equal(first.choices.length, 1);
+    assert.equal(first.incomplete, true);
+    known.isAdult = true;
+    f.core.set(missing.id, { ...missing, isAdult: true });
+    await assert.rejects(get({ id: original.id, cursor: first.nextCursor }, context, f.deps), {
+      status: 404,
+    });
   } finally {
     f.close();
   }

@@ -133,12 +133,14 @@ export async function getReaderAlternatives(input, context, deps) {
         afterId: null,
         sourceCursor: null,
         pendingCore: false,
+        emitted: false,
       };
   if (
     state.kind !== 'reader-alternatives' ||
     state.version !== 1 ||
     state.mediaId !== id ||
     typeof state.pendingCore !== 'boolean' ||
+    typeof state.emitted !== 'boolean' ||
     (state.afterId !== null && !parseMediaReference(state.afterId)) ||
     (state.sourceCursor !== null &&
       (typeof state.sourceCursor !== 'string' || Buffer.byteLength(state.sourceCursor) > 2048))
@@ -224,13 +226,27 @@ export async function getReaderAlternatives(input, context, deps) {
     maxItems: WINDOW + 1,
     sourceCheckSince: startedAt,
   });
-  const choices = new Map();
+  const choices = new Map(),
+    canonicalById = new Map(rows.map((row) => [row.media_id, row]));
   for (const media of projected.mediaById.values()) {
     const sources = media.sourceRef
       ? [media.sourceRef]
       : ['mangadex', 'weebcentral'].map((value) => coreSource(value, context, now()));
     for (const source of sources) {
       try {
+        // Canonical source restrictions apply even when observed before this
+        // request. Fresh SAFE inventory cannot erase that independent proof.
+        if (media.sourceRef)
+          assertMediaEligible(
+            {
+              ...media,
+              sourceRef: {
+                ...source,
+                classification: JSON.parse(canonicalById.get(media.id).source_version),
+              },
+            },
+            context,
+          );
         assertSourceEligible(source, context, { discovery: true });
       } catch {
         continue;
@@ -247,7 +263,7 @@ export async function getReaderAlternatives(input, context, deps) {
   }
   const pendingCore = state.pendingCore || unknownCore;
   const incomplete = !inventory.complete || hasMore || pendingCore;
-  if (!choices.size && !incomplete) throw unavailable();
+  if (!choices.size && !incomplete && !state.emitted) throw unavailable();
   let nextCursor = null;
   if (incomplete) {
     // Inventory continuation preserves this exact mapping window. A finished
@@ -264,6 +280,10 @@ export async function getReaderAlternatives(input, context, deps) {
             : state.afterId,
       sourceCursor: !inventory.complete ? inventory.nextCursor : null,
       pendingCore: (!inventory.complete || hasMore) && pendingCore,
+      // A full proof retry starts a new scan; ordinary source/mapping pages
+      // retain only whether this scan has already emitted an eligible choice.
+      emitted:
+        !(!hasMore && inventory.complete && pendingCore) && (state.emitted || choices.size > 0),
     };
     nextCursor = input.cursor
       ? await continuation.advance(input.cursor, next)
