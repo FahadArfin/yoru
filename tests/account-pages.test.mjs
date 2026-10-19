@@ -68,3 +68,57 @@ test('account client aborts replaced or exited scopes and cannot publish a stale
   await pager.loadMore();
   assert.equal(snapshots.length, count);
 });
+
+test('settled account readiness survives deferred background refresh and failure while initial scopes still wait', async () => {
+  let finish, fail;
+  const snapshots = [];
+  const pager = createAccountPager({
+    publish: (page) => snapshots.push(page),
+    request: () =>
+      new Promise((resolve, reject) => {
+        finish = resolve;
+        fail = reject;
+      }),
+  });
+  const initial = pager.refresh();
+  assert.equal(snapshots.at(-1).ready, false, 'initial synchronization remains a mount gate');
+  finish({ items: [{ mediaId: 'known' }] });
+  await initial;
+  const refresh = pager.refresh();
+  assert.equal(snapshots.at(-1).loading, true);
+  assert.equal(
+    snapshots.at(-1).ready,
+    true,
+    'background refresh must not unmount settled consumers',
+  );
+  assert.deepEqual(
+    snapshots.at(-1).items,
+    [],
+    'current authorization still clears during revalidation',
+  );
+  finish({ items: [{ mediaId: 'known' }] });
+  await refresh;
+  const failed = pager.refresh();
+  fail(new Error('Unavailable'));
+  await failed;
+  assert.equal(snapshots.at(-1).ready, true);
+  assert.equal(snapshots.at(-1).error, true);
+  assert.deepEqual(snapshots.at(-1).items, []);
+  pager.stop();
+  const replacement = createAccountPager({
+    publish: (page) => snapshots.push(page),
+    request: () =>
+      new Promise((resolve) => {
+        finish = resolve;
+      }),
+  });
+  const next = replacement.refresh();
+  assert.equal(
+    snapshots.at(-1).ready,
+    false,
+    'replacement owner/destination uses a fresh initial gate',
+  );
+  replacement.stop();
+  finish({ items: [{ mediaId: 'other' }] });
+  await next;
+});

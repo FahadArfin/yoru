@@ -33,7 +33,9 @@ export function createAccountPager({ request, publish }) {
       blocked = false;
       pages = 0;
     }
-    emit({ loading: true, error: false, ...(reset ? { ready: false, incomplete: false } : {}) });
+    // Readiness belongs to this controller's initialized scope. Revalidation
+    // clears authorization above, while leaving mounted consumers initialized.
+    emit({ loading: true, error: false, ...(reset ? { incomplete: false } : {}) });
     try {
       const result = await request(
         task,

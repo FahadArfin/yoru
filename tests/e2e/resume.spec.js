@@ -200,3 +200,158 @@ test('interrupted progress saves survive reload and sync on reconnect', async ({
   });
   await expect.poll(remotePage).toBe(3);
 });
+
+test('active video and Watch state survive deferred background resume refresh and failure', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(context, baseURL);
+  const registered = await context.request.post('/api/auth/register', {
+    headers: { Origin: baseURL },
+    data: {
+      name: 'Refresh viewer',
+      email: `${randomUUID()}@example.test`,
+      password: 'Account refresh testing 2026',
+    },
+  });
+  expect(registered.status()).toBe(201);
+  const user = (await registered.json()).user;
+  const item = {
+    mediaId: anime,
+    title: 'Initial full history proof',
+    category: 'ANIME',
+    destination: 'yoru',
+    number: 3,
+    position: 1,
+    updatedAt: Date.now(),
+  };
+  await context.addInitScript(
+    ({ user, item }) =>
+      localStorage.setItem(
+        `yoru:resume:${user.id}`,
+        JSON.stringify({ items: [item], pending: { [item.mediaId]: item } }),
+      ),
+    { user, item },
+  );
+  const gate = () => {
+    let enter, release;
+    return {
+      entered: new Promise((resolve) => {
+        enter = resolve;
+      }),
+      released: new Promise((resolve) => {
+        release = resolve;
+      }),
+      enter: () => enter(),
+      release: () => release(),
+      status: 200,
+    };
+  };
+  let held = gate(),
+    puts = 0;
+  const gates = [held];
+  await context.route(/\/api\/library(?:\?|$)/, (route) => route.fulfill({ json: { items: [] } }));
+  await context.route(`**/api/resume/${anime}*`, (route) => {
+    puts++;
+    return route.fulfill({ json: { item: route.request().postDataJSON() } });
+  });
+  await context.route(/\/api\/resume(?:\?|$)/, async (route) => {
+    const requestGate = held;
+    requestGate.enter();
+    await requestGate.released;
+    await route.fulfill({
+      status: requestGate.status,
+      json: requestGate.status === 200 ? { items: [item] } : { error: 'Unavailable' },
+    });
+  });
+  const settleRender = () =>
+    page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+  const samePlayer = () =>
+    page.evaluate(
+      () =>
+        document.querySelector('video') === window.refreshTestVideo &&
+        window.refreshTestVideo?.isConnected,
+    );
+  try {
+    await page.goto(`/watch/${anime}/3`);
+    await held.entered;
+    expect(puts).toBeGreaterThan(0);
+    await expect(page.locator('video')).toHaveCount(0); // PUT cannot settle initial GET readiness.
+    held.release();
+    const video = page.locator('video');
+    await expect.poll(() => video.evaluate((v) => v.readyState)).toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Theater', exact: true }).click();
+    await video.evaluate(async (v) => {
+      window.refreshTestVideo = v;
+      v.muted = true;
+      v.loop = true;
+      v.volume = 0.37;
+      v.playbackRate = 0.25;
+      v.currentTime = 1;
+      await v.play();
+    });
+    held = gate();
+    gates.push(held);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await held.entered;
+    await settleRender();
+    expect(await samePlayer(), 'pending background GET retains the exact active video node').toBe(
+      true,
+    );
+    const received = page.waitForResponse(
+      (response) =>
+        new URL(response.url()).pathname === '/api/resume' && response.request().method() === 'GET',
+    );
+    held.release();
+    await received;
+    await settleRender();
+    expect(await samePlayer()).toBe(true);
+    await expect(page.getByRole('button', { name: 'Theater', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThanOrEqual(1);
+    expect(await video.evaluate((v) => ({ paused: v.paused, volume: v.volume }))).toEqual({
+      paused: false,
+      volume: 0.37,
+    });
+    held = gate();
+    held.status = 500;
+    gates.push(held);
+    await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+    await held.entered;
+    await settleRender();
+    expect(await samePlayer()).toBe(true);
+    const failed = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/resume' && response.status() === 500,
+    );
+    held.release();
+    await failed;
+    await settleRender();
+    expect(await samePlayer(), 'failed background GET must not destroy active playback').toBe(true);
+    await expect(page.getByRole('button', { name: 'Theater', exact: true })).toHaveAttribute(
+      'aria-pressed',
+      'true',
+    );
+    expect(await video.evaluate((v) => v.paused)).toBe(false);
+    await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThanOrEqual(1);
+    await page.goto('/');
+    const rail = page.getByRole('region', { name: 'Pick up where you left off' });
+    await expect(rail).toContainText('Reading history could not be verified.');
+    await expect(rail.locator('.continue-reading-card')).toHaveCount(0);
+    expect(
+      await page.evaluate(
+        (owner) =>
+          JSON.parse(localStorage.getItem(`yoru:resume:${owner}`)).items.some(
+            (item) => item.mediaId === 'mal-anime-52991',
+          ),
+        user.id,
+      ),
+    ).toBe(true);
+  } finally {
+    for (const requestGate of gates) requestGate.release();
+  }
+});
