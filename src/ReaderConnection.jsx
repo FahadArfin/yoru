@@ -26,6 +26,13 @@ export default function ReaderConnection() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
   const [offset, setOffset] = useState(0);
+  const providers = Array.from(
+    sources.reduce((groups, source) => {
+      if (!groups.has(source.name)) groups.set(source.name, new Set());
+      groups.get(source.name).add(source.language || 'unspecified');
+      return groups;
+    }, new Map()),
+  ).sort(([a], [b]) => a.localeCompare(b));
   const pending = useRef(null);
   const cancel = () => {
     pending.current?.abort();
@@ -249,45 +256,69 @@ export default function ReaderConnection() {
       </div>
       {error && <p role="alert">{error}</p>}
       {storageError && <p role="alert">{storageError}</p>}
-      {connection && !sources.length && (
-        <p>
-          Local files, mixed-content and adult catalogs are excluded. You can connect another server
-          with a supported catalog.
+      {connection && (
+        <p className="reader-catalog-note">
+          Only supported non-explicit sources appear here, not every installed extension. Local
+          files, mixed-content, adult and unclassified sources are excluded. Each language counts as
+          a separate catalog. New installations can take up to a minute to appear.
         </p>
       )}
-      {sources.map((source) => (
-        <div className="setting-row" key={source.id}>
-          <div>
-            <strong>{source.name}</strong>
-            <span>{source.language}</span>
-          </div>
-          {mode === 'custom' && (
-            <div className="reader-catalog-actions">
-              <button
-                type="button"
-                role="switch"
-                aria-checked={!!enabled[source.id]}
-                aria-label={`${source.name} catalog`}
-                className="btn btn-subtle"
-                onClick={() => toggle(source.id)}
-              >
-                {enabled[source.id] ? 'On' : 'Off'}
-              </button>
-              <button
-                type="button"
-                className="btn btn-subtle"
-                disabled={!enabled[source.id] || busy}
-                onClick={() => {
-                  setQuery('');
-                  browse(source.id, 0, '');
-                }}
-              >
-                Browse {source.name}
-              </button>
-            </div>
-          )}
+      {sources.length > 0 && (
+        <div
+          className="reader-catalog-list"
+          role="region"
+          aria-label="Supported reader catalogs"
+          tabIndex={0}
+        >
+          {mode === 'yoru'
+            ? providers.map(([name, languages]) => (
+                <div className="reader-catalog-row" key={name}>
+                  <strong>{name}</strong>
+                  <span className="reader-catalog-languages" aria-label={`${name} languages`}>
+                    {Array.from(languages)
+                      .sort()
+                      .map((language) => (
+                        <span key={language}>{language}</span>
+                      ))}
+                  </span>
+                </div>
+              ))
+            : sources.map((source) => (
+                <div className="reader-catalog-row" key={source.id}>
+                  <div className="reader-catalog-identity">
+                    <strong>{source.name}</strong>
+                    <span>{source.language}</span>
+                  </div>
+                  {mode === 'custom' && (
+                    <div className="reader-catalog-actions">
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={!!enabled[source.id]}
+                        aria-label={`${source.name} catalog`}
+                        className="btn btn-subtle"
+                        onClick={() => toggle(source.id)}
+                      >
+                        {enabled[source.id] ? 'On' : 'Off'}
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-subtle"
+                        aria-label={`Browse ${source.name}`}
+                        disabled={!enabled[source.id] || busy}
+                        onClick={() => {
+                          setQuery('');
+                          browse(source.id, 0, '');
+                        }}
+                      >
+                        Browse
+                      </button>
+                    </div>
+                  )}
+                </div>
+              ))}
         </div>
-      ))}
+      )}
       {mode === 'custom' && connection && sources.length > 0 && (
         <p className="small">
           Switches control browsing here on this device. They don’t install or uninstall extensions,

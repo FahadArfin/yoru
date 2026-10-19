@@ -40,6 +40,55 @@
 .reader-connection .setting-row {
   flex-wrap: wrap;
 }
+.reader-catalog-list {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--section-line);
+  border-radius: 8px;
+  padding-inline: 12px;
+}
+.reader-catalog-list:focus-visible {
+  outline: 2px solid var(--section-accent);
+  outline-offset: 3px;
+}
+.reader-catalog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-height: 42px;
+  padding-block: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.reader-catalog-row + .reader-catalog-row {
+  border-top: 1px solid var(--section-line);
+}
+.reader-catalog-identity,
+.reader-catalog-languages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+}
+.reader-catalog-languages span {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgb(var(--chrome-soft) / 0.06);
+}
+.reader-catalog-languages,
+.reader-catalog-identity > span {
+  color: var(--section-muted);
+  font-size: 10px;
+}
+.settings-page .settings-card > p.reader-catalog-note {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
 .reader-connection .btn {
   min-height: 44px !important;
 }
