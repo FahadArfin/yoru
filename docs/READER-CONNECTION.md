@@ -2,6 +2,8 @@
 
 Settings → Reader catalogs checks Yoru's existing reader server automatically. No server address is required for that check. It lists installed online sources classified as safe; local files, mixed-content sources, adult sources and unknown classifications are excluded. Older Suwayomi versions use the explicit `isNsfw: false` flag only when their schema lacks `contentWarning`.
 
+Search providers by name, choose a language, and use All / Enabled / Disabled to filter the compact list. These filters combine, survive a connection refresh, and can be cleared together. On Yoru's server, a provider switch applies to all its language entries and saves a preference in this browser only. It does not change chapter playback, install/uninstall extensions, or enable excluded catalogs. New providers start enabled. Custom servers retain individual per-language switches.
+
 “Use another server” connects directly from your browser to your own Suwayomi server. Paste its base URL or `/api/graphql` address and choose Connect. A bare hostname is treated as HTTPS. The server must allow browser access from Yoru's origin (CORS), and an HTTPS website may block an HTTP server. Optional Basic authentication credentials remain in memory and are never saved or sent to Yoru's backend. Session-login authentication is not supported by this connector.
 
 The URL is saved only after successful discovery. Invalid addresses, extension repository/index links, failed authentication, incompatible responses and unreachable hosts show an error. A saved custom address is never contacted automatically on a subsequent visit; choose Connect again.

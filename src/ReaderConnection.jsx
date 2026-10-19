@@ -4,6 +4,16 @@ import { Link } from './collection-router';
 import { discoverCatalogs, browseCatalog, normalizeServerUrl } from '../shared/reader-connection';
 
 const KEY = 'yoru:reader-catalogs:v1';
+const languageName = (code) => {
+  if (code === 'all') return 'Multilingual';
+  if (code === 'other') return 'Other';
+  if (!code) return 'Unspecified';
+  try {
+    return new Intl.DisplayNames(['en'], { type: 'language' }).of(code) || code;
+  } catch {
+    return code;
+  }
+};
 function saved() {
   try {
     return JSON.parse(localStorage.getItem(KEY)) || {};
@@ -26,8 +36,26 @@ export default function ReaderConnection() {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState(null);
   const [offset, setOffset] = useState(0);
+  const [providerQuery, setProviderQuery] = useState('');
+  const [language, setLanguage] = useState('');
+  const [catalogStatus, setCatalogStatus] = useState('all');
+  const clearFilters = () => {
+    setProviderQuery('');
+    setLanguage('');
+    setCatalogStatus('all');
+  };
+  const languages = [...new Set(sources.map((source) => source.language))].sort((a, b) =>
+    languageName(a).localeCompare(languageName(b)),
+  );
+  const filteredSources = sources.filter(
+    (source) =>
+      source.name.toLocaleLowerCase().includes(providerQuery.trim().toLocaleLowerCase()) &&
+      (!language || source.language === language) &&
+      (catalogStatus === 'all' ||
+        (catalogStatus === 'on' ? enabled[source.id] : !enabled[source.id])),
+  );
   const providers = Array.from(
-    sources.reduce((groups, source) => {
+    filteredSources.reduce((groups, source) => {
       if (!groups.has(source.name)) groups.set(source.name, new Set());
       groups.get(source.name).add(source.language || 'unspecified');
       return groups;
@@ -52,7 +80,10 @@ export default function ReaderConnection() {
       const data = saved();
       localStorage.setItem(
         KEY,
-        JSON.stringify({ url: address, enabled: { ...data.enabled, [address]: values } }),
+        JSON.stringify({
+          url: address === 'yoru' ? data.url : address,
+          enabled: { ...data.enabled, [address]: values },
+        }),
       );
       setStorageError('');
     } catch {
@@ -114,6 +145,15 @@ export default function ReaderConnection() {
       setError('');
     }
   };
+  const providerEnabled = (name) =>
+    sources.filter((source) => source.name === name).every((source) => enabled[source.id]);
+  const toggleProvider = (name) => {
+    const next = !providerEnabled(name);
+    const values = { ...enabled };
+    for (const source of sources) if (source.name === name) values[source.id] = next;
+    setEnabled(values);
+    persist(connection.address, values);
+  };
   const browse = async (id, start = 0, search = query) => {
     if (!enabled[id] || !connection || mode !== 'custom') return;
     cancel();
@@ -157,6 +197,7 @@ export default function ReaderConnection() {
           className="btn btn-subtle"
           aria-pressed={mode === 'yoru'}
           onClick={() => {
+            clearFilters();
             setMode('yoru');
             setPassword('');
             connect('yoru');
@@ -169,6 +210,7 @@ export default function ReaderConnection() {
           className="btn btn-subtle"
           aria-pressed={mode === 'custom'}
           onClick={() => {
+            clearFilters();
             reset();
             setMode('custom');
           }}
@@ -264,60 +306,119 @@ export default function ReaderConnection() {
         </p>
       )}
       {sources.length > 0 && (
-        <div
-          className="reader-catalog-list"
-          role="region"
-          aria-label="Supported reader catalogs"
-          tabIndex={0}
-        >
-          {mode === 'yoru'
-            ? providers.map(([name, languages]) => (
-                <div className="reader-catalog-row" key={name}>
-                  <strong>{name}</strong>
-                  <span className="reader-catalog-languages" aria-label={`${name} languages`}>
-                    {Array.from(languages)
-                      .sort()
-                      .map((language) => (
-                        <span key={language}>{language}</span>
-                      ))}
-                  </span>
-                </div>
-              ))
-            : sources.map((source) => (
-                <div className="reader-catalog-row" key={source.id}>
-                  <div className="reader-catalog-identity">
-                    <strong>{source.name}</strong>
-                    <span>{source.language}</span>
-                  </div>
-                  {mode === 'custom' && (
-                    <div className="reader-catalog-actions">
+        <>
+          <div className="reader-catalog-filters">
+            <label className="reader-provider-search">
+              Filter providers
+              <input
+                type="search"
+                placeholder="Search providers…"
+                value={providerQuery}
+                onChange={(event) => setProviderQuery(event.target.value)}
+                maxLength={100}
+              />
+            </label>
+            <label>
+              Catalog language
+              <select value={language} onChange={(event) => setLanguage(event.target.value)}>
+                <option value="">All languages</option>
+                {languages.filter(Boolean).map((code) => (
+                  <option value={code} key={code}>
+                    {languageName(code)}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              Catalog status
+              <select
+                value={catalogStatus}
+                onChange={(event) => setCatalogStatus(event.target.value)}
+              >
+                <option value="all">All</option>
+                <option value="on">Enabled</option>
+                <option value="off">Disabled</option>
+              </select>
+            </label>
+          </div>
+          <div className="reader-filter-summary">
+            <p aria-live="polite">
+              {filteredSources.length} of {sources.length} catalogs
+            </p>
+            {(providerQuery || language || catalogStatus !== 'all') && (
+              <button type="button" className="btn btn-subtle" onClick={clearFilters}>
+                Clear filters
+              </button>
+            )}
+          </div>
+          <div
+            className="reader-catalog-list"
+            role="region"
+            aria-label="Supported reader catalogs"
+            tabIndex={0}
+          >
+            {!filteredSources.length && <p>No catalogs match your filters.</p>}
+            {mode === 'yoru'
+              ? providers.map(([name, languages]) => (
+                  <div className="reader-catalog-row" key={name}>
+                    <strong>{name}</strong>
+                    <div className="reader-provider-controls">
+                      <span className="reader-catalog-languages" aria-label={`${name} languages`}>
+                        {Array.from(languages)
+                          .sort()
+                          .map((language) => (
+                            <span key={language}>{language}</span>
+                          ))}
+                      </span>
                       <button
                         type="button"
                         role="switch"
-                        aria-checked={!!enabled[source.id]}
-                        aria-label={`${source.name} catalog`}
+                        aria-checked={providerEnabled(name)}
+                        aria-label={`${name} in this list`}
                         className="btn btn-subtle"
-                        onClick={() => toggle(source.id)}
+                        onClick={() => toggleProvider(name)}
                       >
-                        {enabled[source.id] ? 'On' : 'Off'}
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-subtle"
-                        aria-label={`Browse ${source.name}`}
-                        disabled={!enabled[source.id] || busy}
-                        onClick={() => {
-                          setQuery('');
-                          browse(source.id, 0, '');
-                        }}
-                      >
-                        Browse
+                        {providerEnabled(name) ? 'On' : 'Off'}
                       </button>
                     </div>
-                  )}
-                </div>
-              ))}
-        </div>
+                  </div>
+                ))
+              : filteredSources.map((source) => (
+                  <div className="reader-catalog-row" key={source.id}>
+                    <div className="reader-catalog-identity">
+                      <strong>{source.name}</strong>
+                      <span>{source.language}</span>
+                    </div>
+                    {mode === 'custom' && (
+                      <div className="reader-catalog-actions">
+                        <button
+                          type="button"
+                          role="switch"
+                          aria-checked={!!enabled[source.id]}
+                          aria-label={`${source.name} catalog`}
+                          className="btn btn-subtle"
+                          onClick={() => toggle(source.id)}
+                        >
+                          {enabled[source.id] ? 'On' : 'Off'}
+                        </button>
+                        <button
+                          type="button"
+                          className="btn btn-subtle"
+                          aria-label={`Browse ${source.name}`}
+                          disabled={!enabled[source.id] || busy}
+                          onClick={() => {
+                            setQuery('');
+                            browse(source.id, 0, '');
+                          }}
+                        >
+                          Browse
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                ))}
+          </div>
+        </>
       )}
       {mode === 'custom' && connection && sources.length > 0 && (
         <p className="small">
@@ -327,8 +428,9 @@ export default function ReaderConnection() {
       )}
       {mode === 'yoru' && connection && (
         <p className="small">
-          Yoru manages its chapter providers automatically. This connection check does not expose
-          the server’s private library.
+          Switches apply to every language for that provider in this list, on this browser only. Use
+          the Enabled or Disabled filter to view your choices. They don’t change chapter playback,
+          Yoru’s main catalog, or installed extensions.
         </p>
       )}
       {selection && (

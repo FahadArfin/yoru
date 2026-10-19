@@ -10,6 +10,53 @@ test.beforeEach(async ({ context, page, baseURL }) => {
   await page.route('**/api/reader/catalogs', (route) => route.fulfill({ json: { sources: [] } }));
 });
 
+test('provider and language filters combine, survive refresh and clear without losing catalogs', async ({
+  page,
+}, testInfo) => {
+  await page.route('**/api/reader/catalogs', (route) =>
+    route.fulfill({
+      json: {
+        sources: [
+          { id: '1', name: 'Cubari', language: 'en' },
+          { id: '2', name: 'Cubari', language: 'all' },
+          { id: '3', name: 'Webcomics', language: 'en' },
+          { id: '4', name: 'Webcomics', language: 'fr' },
+        ],
+      },
+    }),
+  );
+  await page.goto('/settings');
+  const card = page.locator('.reader-connection');
+  const list = card.getByRole('region', { name: 'Supported reader catalogs' });
+  await card.getByLabel('Filter providers').fill('  WEB  ');
+  await card.getByLabel('Catalog language').selectOption('fr');
+  await expect(list).toContainText('Webcomics');
+  await expect(list).not.toContainText('Cubari');
+  await expect(card.getByText('1 of 4 catalogs')).toBeVisible();
+  await card.getByRole('button', { name: 'Refresh connection' }).click();
+  await expect(card.getByText('1 of 4 catalogs')).toBeVisible();
+  await card.getByLabel('Catalog language').selectOption('all');
+  await expect(card.getByText('No catalogs match your filters.')).toBeVisible();
+  await card.getByRole('button', { name: 'Clear filters' }).click();
+  await expect(list).toContainText('Cubari');
+  await expect(list).toContainText('Webcomics');
+  await expect(card.getByText('4 of 4 catalogs')).toBeVisible();
+  const cubari = card.getByRole('switch', { name: 'Cubari in this list' });
+  await cubari.click();
+  await expect(cubari).toHaveAttribute('aria-checked', 'false');
+  await card.getByLabel('Catalog status').selectOption('on');
+  await expect(list).not.toContainText('Cubari');
+  await card.getByLabel('Catalog status').selectOption('off');
+  await expect(list).toContainText('Cubari');
+  await expect(list).not.toContainText('Webcomics');
+  await page.reload();
+  await expect(cubari).toHaveAttribute('aria-checked', 'false');
+  await cubari.click();
+  await expect(cubari).toHaveAttribute('aria-checked', 'true');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await card.screenshot({ path: testInfo.outputPath('catalog-filters.png') });
+});
+
 test('default server needs no address and reports connection failure with retry', async ({
   page,
 }) => {
