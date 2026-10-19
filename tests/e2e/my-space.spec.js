@@ -151,6 +151,14 @@ test('reading rooms preserve an exact edition and language, including bonus chap
     expect(params.get('destination')).toBe('yoru');
     expect(params.get('selectionFingerprint')).toBeTruthy();
   };
+  await page.route('**/api/poll?**', (route) => {
+    if (new URL(route.request().url()).searchParams.get('roomId') !== 'verified-core-edition-room')
+      return route.fallback();
+    assertContext(route.request());
+    return route.fulfill({
+      json: { viewerId: user.id, online: { count: 1, users: [user] }, room, events: [], cursor: 0 },
+    });
+  });
   // Browser transport fixture for an already-authorized exact edition. Actual
   // server ownership/unknown-edition rejection is covered by native-social HTTP contracts.
   await page.route(/\/api\/rooms(?:\/[^?]*)?(?:\?|$)/, (route) => {
@@ -179,7 +187,10 @@ test('reading rooms preserve an exact edition and language, including bonus chap
         paused: true,
         position: 0,
       };
-      return route.fulfill({ status: 201, json: { room, invite: 'synthetic-invitation' } });
+      return route.fulfill({
+        status: 201,
+        json: { room, inviteUrl: '/rooms/verified-core-edition-room?invite=synthetic-invitation' },
+      });
     }
     if (request.method() === 'PATCH') {
       const patch = request.postDataJSON();
@@ -234,8 +245,8 @@ test('reading rooms preserve an exact edition and language, including bonus chap
   await page.getByLabel('Room unit', { exact: true }).fill('0');
   await page.getByRole('button', { name: 'Go', exact: true }).click();
   await expect(page.getByTestId('room-unit')).toHaveText('0');
-  await expect(reader).toHaveAttribute('src', `/read/${manhwa}/0?language=ja&source=mangadex`);
+  await expect(reader).toHaveAttribute('src', `/read/${manhwa}/0?source=mangadex&language=ja`);
   expect(changes).toHaveLength(1);
   expect(changes[0].unit).toBe(0);
-  expect(changes[0].sourceUrl).toBe(`/read/${manhwa}/0?language=ja&source=mangadex`);
+  expect(changes[0].sourceUrl).toBe(`/read/${manhwa}/0?source=mangadex&language=ja`);
 });
