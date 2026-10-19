@@ -15,6 +15,8 @@ import { isAnime, titleOf } from '../api';
 import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
 import '../discovery.css';
+import { useReaderSelection } from '../useCatalogPreferences';
+import ReaderCatalog from '../reader/ReaderCatalog';
 
 const tabs = [
   { value: 'new', label: 'New series', icon: Sparkles },
@@ -28,9 +30,13 @@ const periods = [
 ];
 
 export function useMangaFeed(mode, period = 'all', category = 'manga') {
+  const selection = useReaderSelection();
+  const coreAllowed =
+    category === 'anime' ||
+    (selection?.ready && selection.context.integrationMode !== 'extensions');
   const animeNew = category === 'anime' && mode === 'new';
   const resource = useResource(
-    !mode
+    !mode || !coreAllowed
       ? null
       : animeNew
         ? '/api/catalog?category=ANIME&sort=newest&page=1&limit=24'
@@ -147,7 +153,19 @@ export function MangaCard({ media, index, mode }) {
   );
 }
 
-export default function MangaDiscovery({ popular, category, label }) {
+export default function MangaDiscovery(props) {
+  const selection = useReaderSelection();
+  const reading = props.category !== 'anime';
+  const coreAllowed =
+    !reading || (selection?.ready && selection.context.integrationMode !== 'extensions');
+  return (
+    <>
+      {reading && <ReaderCatalog category={props.category} />}
+      {coreAllowed && <CoreMangaDiscovery {...props} />}
+    </>
+  );
+}
+function CoreMangaDiscovery({ popular, category, label }) {
   const anime = category === 'anime';
   const [mode, setMode] = useState('new');
   const [period, setPeriod] = useState('month');

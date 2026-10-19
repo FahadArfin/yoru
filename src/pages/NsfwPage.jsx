@@ -2,8 +2,9 @@ import React, { lazy, Suspense, useEffect } from 'react';
 import { Link, Route, Routes, useParams, useLocation } from 'react-router-dom';
 import { ArrowUpRight, LockKeyhole } from 'lucide-react';
 import { confirmationKey } from '../nsfw';
+import { parseMediaReference } from '../../shared/media-reference';
 import { useCollection } from '../collection-context';
-import { Empty, Loading, ErrorNotice } from '../components';
+import { Empty, Loading } from '../components';
 import Home from './Home';
 import Browse from './Browse';
 import AnimePage from './AnimePage';
@@ -21,10 +22,11 @@ const Library = lazy(() => import('./Library'));
 const Rooms = lazy(() => import('./Rooms'));
 const Room = lazy(() => import('./Room'));
 const Settings = lazy(() => import('./Settings'));
-function ReviewedTitle({ children }) {
+function ReviewedTitle({ children, reading = true }) {
   const { id } = useParams();
   const scope = useCollection();
-  return scope.catalog?.items?.some((item) => item.id === id) ? (
+  return (reading && parseMediaReference(id)?.kind === 'extension-manga') ||
+    scope.catalog?.items?.some((item) => item.id === id) ? (
     children
   ) : (
     <Empty title="Title not in this collection">
@@ -54,8 +56,8 @@ export default function NsfwPage() {
         <h1 id="nsfw-gate-title">Adults only</h1>
         <p>Welcome to Ara Ara, the separate Yoru space for visitors aged 18 or older.</p>
         <p className="nsfw-gate-detail">
-          Mature themes, violence and strong language. This collection excludes sexually explicit
-          titles. Please confirm your age before continuing.
+          This space may include explicit adult content from enabled reading sources. Please confirm
+          your age before continuing.
         </p>
         <div className="nsfw-gate-actions">
           <button className="btn btn-primary" onClick={confirm}>
@@ -68,8 +70,6 @@ export default function NsfwPage() {
       </section>
     );
 
-  if (scope.loading) return <Loading cards />;
-  if (scope.error) return <ErrorNotice message={scope.error} retry={scope.refresh} />;
   return (
     <Suspense fallback={<Loading />}>
       <Routes>
@@ -89,7 +89,7 @@ export default function NsfwPage() {
         <Route
           path="watch/:id/latest"
           element={
-            <ReviewedTitle>
+            <ReviewedTitle reading={false}>
               <WatchLatest />
             </ReviewedTitle>
           }
@@ -97,7 +97,7 @@ export default function NsfwPage() {
         <Route
           path="watch/:id/:unit"
           element={
-            <ReviewedTitle>
+            <ReviewedTitle reading={false}>
               <Watch />
             </ReviewedTitle>
           }

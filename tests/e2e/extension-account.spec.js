@@ -16,6 +16,7 @@ test('fresh login scopes fixture native history through disable, reload and Ara 
     email: `${randomUUID()}@example.test`,
     password: 'Native account history 2026',
   };
+  const editorialRequests = [];
   const safe = {
     id: 'ext-manga-' + 'a'.repeat(32),
     title: 'Native safe saved edition',
@@ -48,9 +49,10 @@ test('fresh login scopes fixture native history through disable, reload and Ara 
         },
       }),
     );
-    await context.route('**/api/ara-ara/catalog', (route) =>
-      route.fulfill({ json: { items: [], total: 0 } }),
-    );
+    await context.route('**/api/ara-ara/catalog*', (route) => {
+      editorialRequests.push(new URL(route.request().url()));
+      return route.fulfill({ json: { items: [], total: 0 } });
+    });
     const accountView = async (route) => {
       const url = new URL(route.request().url()),
         destination = url.searchParams.get('destination') || 'yoru';
@@ -152,6 +154,12 @@ test('fresh login scopes fixture native history through disable, reload and Ara 
     await page.getByRole('button', { name: /I’m 18 or older/ }).click();
     await expect(rail).toContainText(adult.title);
     await expect(rail).not.toContainText(safe.title);
+    await expect.poll(() => editorialRequests.length).toBeGreaterThan(0);
+    for (const url of editorialRequests) {
+      expect(url.pathname).toBe('/api/ara-ara/catalog');
+      expect(url.searchParams.get('destination')).toBe('ara-ara');
+      expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
+    }
     await page.goto('/');
     await expect(rail).toContainText(safe.title);
     await expect(page.getByText(adult.title)).toHaveCount(0);

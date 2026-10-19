@@ -11,10 +11,11 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { api, coverOf, isAnime, kindOf, send, titleOf } from '../api';
+import { api, isAnime, kindOf, send, titleOf } from '../api';
 import { useApp } from '../state';
 import { Button, Empty, ErrorNotice, Modal } from '../components';
 import FavoritesImport from '../FavoritesImport';
+import CoverImage from '../CoverImage';
 export default function Library() {
   const {
     user,
@@ -178,7 +179,7 @@ export default function Library() {
               {list.map((item) => (
                 <article key={item.mediaId} className="library-row">
                   <Link to={`/title/${item.mediaId}`}>
-                    <img src={coverOf(item.media)} alt="" />
+                    <CoverImage media={item.media} alt="" />
                   </Link>
                   <div className="library-title">
                     <span className="eyebrow">{kindOf(item.media)}</span>

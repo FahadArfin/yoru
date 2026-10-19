@@ -135,6 +135,23 @@ export function Poster({ media, rank, compact = false, href }) {
         <span className="dot" />
         <span>{media.genres?.[0] || (media.type === 'ANIME' ? 'Anime' : 'Comics')}</span>
       </div>
+      {(media.sourceRef || media.readingChoices?.length) && (
+        <div className="poster-meta">
+          <span>
+            {[
+              ...new Set(
+                [
+                  media.sourceRef?.providerKey,
+                  ...(media.readingChoices || []).map((choice) => choice.sourceRef?.providerKey),
+                ].filter(Boolean),
+              ),
+            ].join(' · ')}
+          </span>
+          {media.readingChoices?.length > 1 && (
+            <span>{media.readingChoices.length} reading editions</span>
+          )}
+        </div>
+      )}
     </article>
   );
 }

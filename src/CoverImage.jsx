@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { coverCandidates } from './image-loading';
+import { useReaderSelection } from './useCatalogPreferences';
+import { useCollection } from './collection-context';
 
 const recovered = new Map();
 const placeholder = '/cover-placeholder.svg';
@@ -82,6 +84,17 @@ function Cover({
   );
 }
 export default function CoverImage({ media, ...props }) {
-  const candidates = coverCandidates(media);
-  return <Cover key={candidates.join('|')} candidates={candidates} {...props} />;
+  const selection = useReaderSelection();
+  const collection = useCollection();
+  const allowed = !collection?.active || collection.confirmed;
+  const candidates = allowed
+    ? coverCandidates(media, selection?.ready ? selection.context : null)
+    : [];
+  return (
+    <Cover
+      key={`${selection?.context?.owner}:${candidates.join('|')}`}
+      candidates={candidates}
+      {...props}
+    />
+  );
 }

@@ -1,4 +1,5 @@
 import { coverOf, kindOf } from './api.js';
+import { assertMediaEligible, assertSourceEligible } from '../shared/reading-eligibility.js';
 
 const genreKey = (value) =>
   String(value)
@@ -50,18 +51,29 @@ export function sharedRecommendationGenres(media, item) {
     .sort((a, b) => weight(genreKey(b)) - weight(genreKey(a)));
 }
 
-export function relatedTitles(media, items = []) {
+export function relatedTitles(
+  media,
+  items = [],
+  { destination = 'yoru', overrides = {}, integrationMode = 'all' } = {},
+) {
   const genres = new Set((media.genres || []).map(genreKey));
   const anchor = genreKey(recommendationGenre(media));
   if (!anchor) return [];
   const seen = new Set([String(media.id)]);
   return items
     .filter((item) => {
+      try {
+        const context = { destination, overrides, integrationMode, extensionsEnabled: true };
+        assertMediaEligible(item, context);
+        if (item.sourceRef) assertSourceEligible(item.sourceRef, context, { discovery: true });
+        else if (kindOf(item) !== 'ANIME' && integrationMode === 'extensions') return false;
+      } catch {
+        return false;
+      }
       if (
         !item.id ||
         seen.has(String(item.id)) ||
         kindOf(item) !== kindOf(media) ||
-        item.isAdult ||
         item.imported ||
         coverOf(item) === '/icon.svg' ||
         !(item.genres || []).some((genre) => genreKey(genre) === anchor)

@@ -1,7 +1,9 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from './collection-router';
 import { Search, X, ArrowUpRight, LoaderCircle } from 'lucide-react';
-import { api, titleOf } from './api';
+import { api, readerRequest, titleOf } from './api';
+import { useReaderSelection } from './useCatalogPreferences';
+import { readingFeedKey, readingSuggestions } from './reader/feed';
 import CoverImage from './CoverImage';
 import './global-search.css';
 
@@ -12,6 +14,8 @@ const filters = [
   ['manhwa', 'Manhwa'],
 ];
 export default function GlobalSearch({ inputRef, collection }) {
+  const selection = useReaderSelection();
+  const readerContext = selection?.ready ? selection.context : null;
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef();
@@ -25,7 +29,7 @@ export default function GlobalSearch({ inputRef, collection }) {
   const [result, setResult] = useState({ key: '', items: [], loading: false });
   const [panelStyle, setPanelStyle] = useState({});
   const term = query.trim();
-  const key = `${category}:${term.toLowerCase()}`;
+  const key = `${readingFeedKey(readerContext, `${category}:${term.toLowerCase()}`)}`;
   const shown = result.key === key ? result : { items: [], loading: true };
   const expanded = open && term.length >= 2;
   const allUrl = `${collection ? '/ara-ara' : '/browse'}/${category}?q=${encodeURIComponent(term)}`;
@@ -76,7 +80,7 @@ export default function GlobalSearch({ inputRef, collection }) {
     };
   }, [expanded]);
   useEffect(() => {
-    if (!expanded || (collection && !collection.confirmed)) return;
+    if (!expanded || !readerContext || (collection && !collection.confirmed)) return;
     const controller = new AbortController();
     let timer;
     const saved = cached.current.get(key);
@@ -87,7 +91,7 @@ export default function GlobalSearch({ inputRef, collection }) {
     setResult({ key, items: [], loading: true });
     const load = async (attempt = 0) => {
       try {
-        const data = collection
+        const coreRequest = collection
           ? {
               items: (collection.catalog?.items || [])
                 .filter(
@@ -99,9 +103,35 @@ export default function GlobalSearch({ inputRef, collection }) {
                 )
                 .slice(0, 12),
             }
-          : await api(`/api/search/suggestions?${new URLSearchParams({ q: term, category })}`, {
+          : api(`/api/search/suggestions?${new URLSearchParams({ q: term, category })}`, {
               signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
             });
+        const nativeRequest =
+          category !== 'anime' && readerContext.integrationMode !== 'core'
+            ? readerRequest(
+                `/api/reader/suggestions?${new URLSearchParams({ q: term, limit: '12' })}`,
+                { ...readerContext, signal: controller.signal },
+              )
+            : Promise.resolve({ items: [] });
+        const [core, native] = await Promise.allSettled([coreRequest, nativeRequest]);
+        if (
+          core.status === 'rejected' &&
+          (native.status === 'rejected' || !native.value.items?.length)
+        )
+          throw core.reason;
+        const coreData =
+          core.status === 'fulfilled' ? core.value : { items: [], providerUnavailable: true };
+        const data = {
+          ...coreData,
+          items: readingSuggestions(
+            [
+              ...(coreData.items || []),
+              ...(native.status === 'fulfilled' ? native.value.items || [] : []),
+            ],
+            readerContext,
+            category,
+          ),
+        };
         if (controller.signal.aborted) return;
         setResult({ key, ...data, loading: false, waiting: data.pending && attempt < 5 });
         if (data.pending && attempt < 5) timer = setTimeout(() => load(attempt + 1), 1800);
@@ -156,7 +186,7 @@ export default function GlobalSearch({ inputRef, collection }) {
           expanded && active >= 0 && shown.items[active] ? `search-option-${active}` : undefined
         }
         aria-label="Search anime, manga, and manhwa"
-        disabled={Boolean(collection && (!collection.confirmed || !collection.catalog))}
+        disabled={!selection?.ready || Boolean(collection && !collection.confirmed)}
         placeholder="Search your next obsession…"
         onFocus={showSuggestions}
         onClick={showSuggestions}
@@ -260,6 +290,12 @@ export default function GlobalSearch({ inputRef, collection }) {
                   <strong>{titleOf(item)}</strong>
                   <span>
                     {item.category?.toLowerCase()}
+                    {item.sourceRef?.providerKey && (
+                      <>
+                        <i>·</i>
+                        {item.sourceRef.providerKey}
+                      </>
+                    )}
                     {item.format && item.format.toUpperCase() !== item.category && (
                       <>
                         <i>·</i>

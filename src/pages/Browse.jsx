@@ -6,13 +6,44 @@ import { useResource } from '../state';
 import { Empty, ErrorNotice, Loading, Poster } from '../components';
 import GenreCollections, { browseGenres } from './GenreCollections';
 import { animeFormats } from '../CategoryNavigation';
+import { useReaderSelection } from '../useCatalogPreferences';
+import ReaderCatalog from '../reader/ReaderCatalog';
 const labels = {
   anime: ['Anime', 'Find a world worth getting lost in.'],
   manga: ['Manga', 'Great stories, one panel at a time.'],
   manhwa: ['Manhwa', 'Your next scroll-stopping obsession.'],
   all: ['Explore everything', 'One universe. Endless ways to escape.'],
 };
-export default function Browse({ embedded = false, categoryOverride }) {
+export default function Browse(props) {
+  const route = useParams();
+  const [params] = useSearchParams();
+  const category = props.categoryOverride || route.category || 'all';
+  const reading = category !== 'anime';
+  const selection = useReaderSelection();
+  const showCore =
+    !reading ||
+    (selection?.ready &&
+      (category === 'all' || selection.context.integrationMode !== 'extensions'));
+  const showRemote = reading && !props.embedded;
+  return (
+    <>
+      {showRemote && (
+        <div className="page">
+          <ReaderCatalog
+            key={`${category}:${params.get('source')}:${params.get('language')}`}
+            category={category}
+            query={params.get('q') || ''}
+            genre={params.get('genre') || ''}
+            source={params.get('source') || ''}
+            language={params.get('language') || ''}
+          />
+        </div>
+      )}
+      {showCore && <CoreBrowse {...props} readingMode={selection?.context?.integrationMode} />}
+    </>
+  );
+}
+function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
   const route = useParams();
   const category = categoryOverride || route.category;
   const navigate = useNavigate();
@@ -32,7 +63,7 @@ export default function Browse({ embedded = false, categoryOverride }) {
     if (!embedded) window.scrollTo({ top: 0, behavior: 'instant' });
   }, [page, chosen, embedded, discovery, genre, format, q]);
   const query = new URLSearchParams({
-    category: chosen.toUpperCase(),
+    category: chosen === 'all' && readingMode === 'extensions' ? 'ANIME' : chosen.toUpperCase(),
     search: q,
     genre,
     ...(format ? { format } : {}),

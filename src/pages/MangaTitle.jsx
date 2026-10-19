@@ -24,6 +24,7 @@ import MangaRecommendations from './MangaRecommendations';
 import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
 import './manga-title.css';
+import { parseEditionReference } from '../../shared/media-reference';
 
 function SourceLinks({ title, links }) {
   if (!links.length) return null;
@@ -53,6 +54,10 @@ export default function MangaTitle({ media }) {
       ? 'reviews'
       : 'chapters';
   const unit = Math.max(0, Math.min(100000, Math.trunc(Number(params.get('unit')) || 0)));
+  const reference = parseEditionReference(params.get('edition'));
+  const edition = reference?.kind === 'extension' ? reference.id : undefined;
+  const discussion = useRef({ unit, edition });
+  if (params.has('unit')) discussion.current = { unit, edition };
   const [progress, setProgress] = useState(entry?.progress || 0);
   const dirty = useRef(false);
   const [expandedStory, setExpandedStory] = useState(false);
@@ -101,7 +106,12 @@ export default function MangaTitle({ media }) {
     return () => observer.disconnect();
   }, [description, expandedStory]);
   const status = String(media.status || 'Unknown').replaceAll('_', ' ');
-  const metadataSource = media.source === 'Kitsu' ? 'Kitsu' : 'MyAnimeList';
+  const native = /^ext-manga-[a-f0-9]{32}$/.test(media.id);
+  const metadataSource = native
+    ? media.sourceRef?.providerKey || 'Source catalog'
+    : media.source === 'Kitsu'
+      ? 'Kitsu'
+      : 'MyAnimeList';
   return (
     <div className="manga-title-page">
       <div className="manga-title-container">
@@ -164,19 +174,18 @@ export default function MangaTitle({ media }) {
             </span>
           </div>
           <div className="manga-title-stats">
-            <span
-              className="manga-score"
-              title={`${media.source === 'Kitsu' ? 'Kitsu' : 'MyAnimeList'} title rating`}
-            >
+            <span className="manga-score" title={`${metadataSource} title rating`}>
               <Star size={16} />
               {scoreOf(media) > 0 ? scoreOf(media).toFixed(2) : 'Unrated'}
-              <small>{media.source === 'Kitsu' ? 'Kitsu' : 'MAL'}</small>
+              <small>{native ? metadataSource : media.source === 'Kitsu' ? 'Kitsu' : 'MAL'}</small>
             </span>
             {media.members > 0 && (
               <span title={`Readers listed on ${metadataSource}`}>
                 <Bookmark size={15} />
                 {Number(media.members).toLocaleString()}
-                <small>{metadataSource === 'Kitsu' ? 'Kitsu' : 'MAL'} readers</small>
+                <small>
+                  {native ? metadataSource : metadataSource === 'Kitsu' ? 'Kitsu' : 'MAL'} readers
+                </small>
               </span>
             )}
             {media.chapters > 0 && (
@@ -217,7 +226,16 @@ export default function MangaTitle({ media }) {
               aria-selected={tab === key}
               className={tab === key ? 'active' : ''}
               onClick={() =>
-                setParams(key === 'discussion' ? { unit: String(unit) } : { tab: key })
+                setParams(
+                  key === 'discussion'
+                    ? {
+                        unit: String(discussion.current.unit),
+                        ...(discussion.current.edition
+                          ? { edition: discussion.current.edition }
+                          : {}),
+                      }
+                    : { tab: key },
+                )
               }
             >
               {label}
@@ -339,7 +357,13 @@ export default function MangaTitle({ media }) {
                   />
                 </label>
                 {unit === 0 && <p className="muted">Discussion for the whole title.</p>}
-                <Discussion key={`${media.id}-${unit}`} mediaId={media.id} unit={unit} />
+                <Discussion
+                  key={`${media.id}-${unit}-${edition || ''}`}
+                  mediaId={media.id}
+                  media={media}
+                  unit={unit}
+                  edition={edition}
+                />
               </>
             )}
             {tab === 'reviews' && <Reviews mediaId={media.id} />}

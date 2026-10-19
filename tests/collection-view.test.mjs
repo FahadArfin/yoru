@@ -2,6 +2,13 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { collectionRequest, collectionView } from '../shared/collection-view.js';
 import { collectionPath } from '../src/collection-context.js';
+test('native title detail is resolved independently of the reviewed Ara shelf', () => {
+  const id = 'ext-manga-' + 'a'.repeat(32);
+  const path = `/api/media/${id}`;
+  const data = { media: { id, title: 'Provider native title', category: 'MANGA' } };
+  assert.equal(collectionRequest(path, true), `${path}?destination=ara-ara`);
+  assert.equal(collectionView(path, data, { items: [] }), data);
+});
 const catalog = {
   items: [
     {

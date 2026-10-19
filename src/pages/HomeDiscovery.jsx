@@ -17,6 +17,8 @@ import { ago, coverOf } from '../api';
 import CoverImage from '../CoverImage';
 import { MangaCard } from './MangaDiscovery';
 import '../discovery.css';
+import ReaderCatalog from '../reader/ReaderCatalog';
+import { useReaderSelection } from '../useCatalogPreferences';
 
 const tabs = [
   { value: 'released', label: 'Just released', icon: Sparkles },
@@ -430,7 +432,19 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
   );
 }
 
-export default function HomeDiscovery({ home, language, onLanguage, category = 'anime' }) {
+export default function HomeDiscovery(props) {
+  const selection = useReaderSelection();
+  const reading = props.category && props.category !== 'anime';
+  const coreAllowed =
+    !reading || (selection?.ready && selection.context.integrationMode !== 'extensions');
+  return (
+    <>
+      {reading && <ReaderCatalog category={props.category} />}
+      {coreAllowed && <CoreHomeDiscovery {...props} />}
+    </>
+  );
+}
+function CoreHomeDiscovery({ home, language, onLanguage, category = 'anime' }) {
   const [mode, setMode] = useState('released');
   const panelsRef = useRef(null);
   const previousBounds = useRef(null);

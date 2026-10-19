@@ -1,7 +1,11 @@
-// The same presentation consumes either Yoru's feeds or Ara Ara's reviewed membership.
+// Reviewed core shelves remain editorial; native titles resolve through destination policy.
 export function collectionRequest(path, active) {
   if (!active || !path) return path;
   const url = new URL(path, 'https://yoru.local');
+  if (/^\/api\/media\/ext-manga-[a-f0-9]{32}$/.test(url.pathname)) {
+    url.searchParams.set('destination', 'ara-ara');
+    return url.pathname + url.search;
+  }
   if (
     /^\/api\/(home|manga|manhwa)\/discovery$/.test(url.pathname) &&
     ['new', 'popular'].includes(url.searchParams.get('mode'))
@@ -21,6 +25,7 @@ export function collectionRequest(path, active) {
 export function collectionView(path, data, catalog) {
   if (!path || !catalog) return data;
   const url = new URL(path, 'https://yoru.local');
+  if (/^\/api\/media\/ext-manga-[a-f0-9]{32}$/.test(url.pathname)) return data;
   const p = url.searchParams;
   const all = catalog.items || [];
   const ids = new Set(all.map((item) => item.id));

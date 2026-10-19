@@ -21,6 +21,7 @@ import LiveComments from './LiveComments';
 import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import '../manga.css';
 import { useCollection } from '../collection-context';
+import { useReaderSelection } from '../useCatalogPreferences';
 
 function MangaRow({ media }) {
   return (
@@ -45,29 +46,43 @@ function MangaRow({ media }) {
 
 export function MangaLanding({ category, label, homepage = false, children, categoryControls }) {
   const scope = useCollection();
+  const selection = useReaderSelection();
+  const coreAllowed = selection?.ready && selection.context.integrationMode !== 'extensions';
+  const selectionKey = `${category}:${selection?.context?.owner}:${selection?.context?.destination}:${selection?.context?.selectionFingerprint}`;
   const popular = useMangaFeed('popular', 'all', category);
-  const curated = useResource(`/api/catalog?category=${category.toUpperCase()}&curated=1`);
-  const previousPopular = useRef({ category, items: [] });
-  if (previousPopular.current.category !== category)
-    previousPopular.current = { category, items: [] };
-  if (Array.isArray(popular.data?.items))
-    previousPopular.current = { category, items: popular.data.items };
+  const curated = useResource(
+    coreAllowed ? `/api/catalog?category=${category.toUpperCase()}&curated=1` : null,
+  );
+  const previousPopular = useRef({ key: selectionKey, items: [] });
+  if (previousPopular.current.key !== selectionKey || !coreAllowed)
+    previousPopular.current = { key: selectionKey, items: [] };
+  if (coreAllowed && Array.isArray(popular.data?.items))
+    previousPopular.current = { key: selectionKey, items: popular.data.items };
   // Keep the featured lineup stable while the periodic background refresh is in flight.
   const picks = previousPopular.current.items.length
     ? previousPopular.current.items
-    : itemsOf(curated.data);
+    : coreAllowed
+      ? itemsOf(curated.data)
+      : [];
   const { user, setAuthOpen } = useApp();
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (
     <div
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''} ${homepage ? '' : 'compact-category-page'}`}
     >
-      <MangaHero
-        items={picks}
-        category={category}
-        label={label}
-        categoryControls={categoryControls}
-      />
+      {coreAllowed ? (
+        <MangaHero
+          items={picks}
+          category={category}
+          label={label}
+          categoryControls={categoryControls}
+        />
+      ) : (
+        <div className="home-width">
+          <h1>{label}</h1>
+          {categoryControls}
+        </div>
+      )}
       {homepage && (
         <div className="home-resume home-width">
           <PickUpWhereLeftOff />
@@ -98,67 +113,70 @@ export function MangaLanding({ category, label, homepage = false, children, cate
           {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
           {children}
         </div>
-        <aside
-          className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
-          aria-label={`${label} highlights`}
-        >
-          <section className="home-rail-panel" aria-label="Reader favorites">
-            <div className="rail-heading">
-              <h2>
-                <Crown size={14} /> Reader favorites
-              </h2>
-            </div>
-            <p className="rail-note">
-              {scope?.active
-                ? 'From the Ara Ara collection'
-                : popular.data?.items?.length
-                  ? 'Popular with Kitsu readers'
-                  : 'From the Yoru collection'}
-            </p>
-            {picks.slice(0, 4).map((media) => (
-              <MangaRow key={media.id} media={media} />
-            ))}
-          </section>
-          {completed.length > 0 && (
-            <section className="home-rail-panel" aria-label="Completed stories">
+        {coreAllowed && (
+          <aside
+            className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
+            aria-label={`${label} highlights`}
+          >
+            <section className="home-rail-panel" aria-label="Reader favorites">
               <div className="rail-heading">
                 <h2>
-                  <BookCheck size={14} /> Completed stories
+                  <Crown size={14} /> Reader favorites
                 </h2>
               </div>
-              <p className="rail-note">The whole story is waiting.</p>
-              {completed.map((media) => (
+              <p className="rail-note">
+                {scope?.active
+                  ? 'From the Ara Ara collection'
+                  : popular.data?.items?.length
+                    ? 'Popular with Kitsu readers'
+                    : 'From the Yoru collection'}
+              </p>
+              {picks.slice(0, 4).map((media) => (
                 <MangaRow key={media.id} media={media} />
               ))}
             </section>
-          )}
-          <section className="home-rail-panel manga-rail-cta" aria-label="Your reading list">
-            <Bookmark size={24} />
-            <h2>Your next chapter.</h2>
-            <p>Keep your favorites close. Save a {category} and pick up where you left off.</p>
-            {user ? (
-              <Link to="/library">
-                Open your library <ArrowRight size={14} />
-              </Link>
-            ) : (
-              <button onClick={() => setAuthOpen(true)}>
-                Build your reading list <ArrowRight size={14} />
-              </button>
+            {completed.length > 0 && (
+              <section className="home-rail-panel" aria-label="Completed stories">
+                <div className="rail-heading">
+                  <h2>
+                    <BookCheck size={14} /> Completed stories
+                  </h2>
+                </div>
+                <p className="rail-note">The whole story is waiting.</p>
+                {completed.map((media) => (
+                  <MangaRow key={media.id} media={media} />
+                ))}
+              </section>
             )}
-          </section>
-          {!homepage && (
-            <section className="home-rail-panel manga-rail-cta" aria-label={`${label} community`}>
-              <MessageSquare size={22} />
-              <h2>Better with your people.</h2>
-              <p>
-                Share a favorite. Find your next recommendation. There’s always more to talk about.
-              </p>
-              <Link to="/community">
-                Join the conversation <ArrowRight size={14} />
-              </Link>
+            <section className="home-rail-panel manga-rail-cta" aria-label="Your reading list">
+              <Bookmark size={24} />
+              <h2>Your next chapter.</h2>
+              <p>Keep your favorites close. Save a {category} and pick up where you left off.</p>
+              {user ? (
+                <Link to="/library">
+                  Open your library <ArrowRight size={14} />
+                </Link>
+              ) : (
+                <button onClick={() => setAuthOpen(true)}>
+                  Build your reading list <ArrowRight size={14} />
+                </button>
+              )}
             </section>
-          )}
-        </aside>
+            {!homepage && (
+              <section className="home-rail-panel manga-rail-cta" aria-label={`${label} community`}>
+                <MessageSquare size={22} />
+                <h2>Better with your people.</h2>
+                <p>
+                  Share a favorite. Find your next recommendation. There’s always more to talk
+                  about.
+                </p>
+                <Link to="/community">
+                  Join the conversation <ArrowRight size={14} />
+                </Link>
+              </section>
+            )}
+          </aside>
+        )}
       </div>
       {!homepage && (
         <div className="manga-catalog-wrap home-width">
@@ -172,7 +190,9 @@ export function MangaLanding({ category, label, homepage = false, children, cate
 export default function MangaPage({ category = 'manga' }) {
   const label = category === 'manhwa' ? 'Manhwa' : 'Manga';
   const [params] = useSearchParams();
-  const filtered = ['q', 'genre', 'sort', 'page', 'view'].some((key) => params.get(key));
+  const filtered = ['q', 'genre', 'sort', 'page', 'view', 'source', 'language'].some((key) =>
+    params.get(key),
+  );
   return filtered ? (
     <>
       <div className="manga-return">

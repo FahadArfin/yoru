@@ -18,6 +18,7 @@ import LiveChapters from './LiveChapters';
 import './reader.css';
 import { visibleAccountHistory } from '../../shared/reading-account-view.js';
 import { CATALOG_PREFERENCES_EVENT } from './catalog-preferences';
+import CoverImage from '../CoverImage';
 
 export function ChapterCollection({ media }) {
   const data = useChapters(media.id);
@@ -136,6 +137,7 @@ export function PickUpWhereLeftOff() {
       mediaId: entry.mediaId,
       title: titleOf(entry.media),
       cover: entry.media.cover,
+      mediaSnapshot: entry.media,
       category: kindOf(entry.media),
       number: entry.progress,
       updatedAt: entry.updatedAt,
@@ -218,7 +220,11 @@ export function PickUpWhereLeftOff() {
           const anime = item.category === 'ANIME';
           return (
             <Link key={item.mediaId} to={item.href} className="continue-reading-card">
-              <img src={item.cover || '/icon.svg'} alt="" loading="lazy" />
+              <CoverImage
+                media={item.mediaSnapshot || { ...item, id: item.mediaId }}
+                alt=""
+                loading="lazy"
+              />
               <div>
                 <strong>{item.title}</strong>
                 <span>

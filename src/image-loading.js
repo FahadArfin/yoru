@@ -1,3 +1,4 @@
+import { assertMediaEligible } from '../shared/reading-eligibility.js';
 const warmed = new Map();
 const waiting = new Map();
 const queue = [];
@@ -61,7 +62,19 @@ export function warmImage(url, signal) {
   return promise;
 }
 
-export function coverCandidates(media) {
+export function coverCandidates(media, context) {
+  if (/^ext-manga-[a-f0-9]{32}$/.test(media?.id)) {
+    if (!context?.selectionFingerprint || (context.expiresAt && context.expiresAt <= Date.now()))
+      return [];
+    try {
+      assertMediaEligible(media, { ...context, extensionsEnabled: true });
+    } catch {
+      return [];
+    }
+    return [
+      `/api/media/${media.id}/cover?${new URLSearchParams({ destination: context.destination, selectionFingerprint: context.selectionFingerprint })}`,
+    ];
+  }
   const primary = media?.cover || media?.coverImage?.extraLarge || media?.coverImage?.large;
   const supplied = [
     primary,
