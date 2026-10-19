@@ -1,11 +1,8 @@
-import { cachedApi } from '../api.js';
+import { api, readerRequest } from '../api.js';
 import { canPreload, warmImage } from '../image-loading.js';
-import {
-  catalogEnabled,
-  filterReadingSources,
-  readingProvider,
-} from '../../shared/catalog-preferences.js';
-import { catalogDestination, loadCatalogPreferences } from './catalog-preferences.js';
+import { catalogEnabled, readingProvider } from '../../shared/catalog-preferences.js';
+import { parseEditionReference, parseMediaReference } from '../../shared/media-reference.js';
+import { readerSourceChoices } from './model.js';
 
 export function savedReadingSource(id) {
   try {
@@ -21,20 +18,68 @@ export function rememberReadingSource(id, source) {
     /* Optional device preference. */
   }
 }
+export function requireReaderContext(context) {
+  if (!context?.selectionFingerprint)
+    throw new Error('Wait for the current reader selection to sync.');
+  if (Number.isFinite(context.expiresAt) && context.expiresAt <= Date.now())
+    throw new Error('Reader choices expired. Refresh to sync your current choices.');
+  context.signal?.throwIfAborted();
+  return context;
+}
+export const readerContextKey = (context) =>
+  context
+    ? JSON.stringify([
+        context.owner,
+        context.scope,
+        context.destination,
+        context.integrationMode,
+        context.selectionFingerprint,
+      ])
+    : '';
+export function readerContextPath(path, context) {
+  requireReaderContext(context);
+  const url = new URL(path, 'https://yoru.invalid');
+  if (url.origin !== 'https://yoru.invalid' || !url.pathname.startsWith('/api/'))
+    throw new Error('Invalid reader request.');
+  url.searchParams.set('destination', context.destination);
+  url.searchParams.set('integration', context.integrationMode);
+  url.searchParams.set('selectionFingerprint', context.selectionFingerprint);
+  return url.pathname + url.search;
+}
+export async function readerMutation(path, body, method, context) {
+  const result = await api(readerContextPath(path, context), {
+    method: method || 'POST',
+    body: JSON.stringify(body),
+    signal: context.signal,
+    ...(context.scope === null ? { credentials: 'omit' } : {}),
+  });
+  requireReaderContext(context);
+  return result;
+}
+export function readerSourceAllowed(source, context) {
+  if (!context) return false;
+  if (source === 'local' || source?.id === 'local') return true;
+  const ref = source?.sourceRef || source;
+  const id = typeof ref === 'string' ? ref : ref?.id;
+  const provider =
+    typeof ref === 'object' ? ref?.providerKey || readingProvider(id) : readingProvider(id);
+  return !!provider && catalogEnabled(provider, context.destination, context.overrides);
+}
 export const chapterListPath = (id, options = {}) =>
   `/api/media/${id}/chapters?${new URLSearchParams({
-    source: options.source || 'mangadex',
+    source: options.source || options.sourceRef?.id || 'mangadex',
     language: options.language || 'en',
     group: options.group || 'all',
     q: options.q || '',
     sort: options.sort || 'desc',
     offset: String(options.offset || 0),
+    ...(options.page != null ? { page: String(options.page) } : {}),
   })}`;
-export async function chapterList(id, options, scope = null, force = false) {
-  const overrides = await loadCatalogPreferences(scope);
+export async function chapterList(id, options, context = null, force = false) {
+  requireReaderContext(context);
   if (
     options?.source === '' ||
-    !catalogEnabled(readingProvider(options?.source || 'mangadex'), catalogDestination(), overrides)
+    !readerSourceAllowed(options?.sourceRef || options?.source || 'mangadex', context)
   )
     return {
       mediaId: id,
@@ -45,56 +90,101 @@ export async function chapterList(id, options, scope = null, force = false) {
       nextOffset: null,
       state: 'disabled',
     };
-  const result = await cachedApi(chapterListPath(id, options), force, { scope, ttl: 30000 });
-  // An unresolved session must neither cache nor display a cookie owner's personal vote.
-  return scope === null
-    ? {
-        ...result,
-        items: result.items.map((item) => ({
-          ...item,
-          stats: item.stats ? { ...item.stats, myRating: 0 } : item.stats,
-        })),
-      }
-    : result;
+  const result = await readerRequest(chapterListPath(id, options), {
+    ...context,
+    force,
+    ttl: 30000,
+  });
+  requireReaderContext(context);
+  return result;
 }
 export const readerPath = (id, chapter) => `/api/media/${id}/reader/${encodeURIComponent(chapter)}`;
-export async function readingSources(id, force = false, scope = null) {
-  const [data, overrides] = await Promise.all([
-    cachedApi(`/api/media/${id}/reading-sources`, force, { ttl: 30000 }),
-    loadCatalogPreferences(scope),
-  ]);
-  const sources = filterReadingSources(data.sources, catalogDestination(), overrides);
-  const disabled = !['MangaDex', 'Weeb Central'].some((provider) =>
-    catalogEnabled(provider, catalogDestination(), overrides),
+export async function readingSources(id, force = false, context = null) {
+  requireReaderContext(context);
+  const data = await readerRequest(`/api/media/${id}/reading-sources`, {
+    ...context,
+    force,
+    ttl: 30000,
+  });
+  requireReaderContext(context);
+  const sources = readerSourceChoices(
+    (data.sources || []).map((source) => ({ ...source, mediaId: source.mediaId || id })),
+    context,
   );
-  return { ...data, sources, disabled };
+  return { ...data, sources, disabled: !sources.length && data.state !== 'offline' };
 }
-export async function readerChapter(id, chapter, force = false, scope = null) {
-  const overrides = await loadCatalogPreferences(scope);
-  const provider = chapter.startsWith('sw-weebcentral-') ? 'Weeb Central' : 'MangaDex';
-  if (!catalogEnabled(provider, catalogDestination(), overrides))
-    throw new Error(
-      'This chapter source is disabled for this section. Change Reader catalogs in Settings.',
-    );
-  return cachedApi(readerPath(id, chapter), force, { ttl: 60000 });
-}
-export async function warmReaderLink(href, signal, count = 2, scope = null) {
-  if (!canPreload() || signal?.aborted) return;
-  const url = new URL(href, location.origin);
-  const match = url.pathname.match(/^\/read\/(mal-manga-\d+)\/[^/]+$/);
-  const chapter = url.searchParams.get('chapter');
+export async function readerChapter(id, chapter, force = false, context = null) {
+  requireReaderContext(context);
+  const selected = typeof chapter === 'string' ? { id: chapter } : chapter;
+  const parsed = parseEditionReference(selected?.id);
+  if (!parsed) throw new Error('This chapter edition is unavailable.');
+  const source =
+    selected.sourceRef || selected.source || (parsed.kind !== 'extension' ? parsed.kind : null);
   if (
-    url.origin !== location.origin ||
-    !match ||
-    !/^(?:[a-f0-9-]{36}|sw-weebcentral-\d+-\d+)$/i.test(chapter || '')
+    parsed.kind !== 'extension' &&
+    (typeof source === 'string' ? source : source?.id) !== parsed.kind
   )
-    return;
+    throw new Error('This chapter belongs to a different reading source.');
+  if (!readerSourceAllowed(source, context))
+    throw new Error(
+      'This chapter source is disabled for this section. Choose another source or change Reader catalogs in Settings.',
+    );
+  const result = await readerRequest(readerPath(id, selected.id), {
+    ...context,
+    force,
+    ttl: 60000,
+  });
+  requireReaderContext(context);
+  if (
+    result.id !== selected.id ||
+    (result.mediaId && result.mediaId !== id) ||
+    (parsed.kind === 'extension' &&
+      selected.sourceRef &&
+      result.sourceRef?.id !== selected.sourceRef.id)
+  )
+    throw new Error('The reading source returned a different chapter edition.');
+  return {
+    ...result,
+    mediaId: id,
+    sourceRef: result.sourceRef || selected.sourceRef,
+    source: result.source || (typeof source === 'string' ? source : source?.id),
+    kind: 'remote',
+    group: result.group || result.groups?.map((g) => g.name).join(', ') || result.readLabel || '',
+    pages: (result.pages || []).map((page) => ({
+      ...page,
+      url: readerContextPath(page.url, context),
+    })),
+  };
+}
+export async function warmReaderLink(href, signal, count = 2, context = null, edition = null) {
+  if (!context || !canPreload() || signal?.aborted) return;
   try {
-    const result = await readerChapter(match[1], chapter, false, scope);
-    if (signal?.aborted) return;
+    const current = { ...context, signal };
+    requireReaderContext(current);
+    const url = new URL(href, location.origin);
+    const match = url.pathname.match(/^(\/ara-ara)?\/read\/([^/]+)\/[^/]+$/);
+    const chapter = url.searchParams.get('chapter');
+    if (
+      url.origin !== location.origin ||
+      !match ||
+      !parseMediaReference(match[2]) ||
+      !parseEditionReference(chapter)
+    )
+      return;
+    if ((match[1] ? 'ara-ara' : 'yoru') !== context.destination) return;
+    let selected = edition || { id: chapter };
+    if (parseEditionReference(chapter)?.kind === 'extension' && !selected.sourceRef) {
+      const data = await readerRequest(`/api/media/${match[2]}`, current);
+      const media = data.media || data;
+      if (url.searchParams.get('source') && url.searchParams.get('source') !== media.sourceRef?.id)
+        return;
+      selected = { id: chapter, sourceRef: media.sourceRef };
+    }
+    const result = await readerChapter(match[2], selected, false, current);
+    requireReaderContext(current);
     const start = Math.max(0, Number(url.searchParams.get('page') || 1) - 1);
     result.pages.slice(start, start + count).forEach((page) => warmImage(page.url, signal));
   } catch {
-    /* Navigation still owns errors and retries. */
+    /* Navigation owns errors and retries. */
   }
 }

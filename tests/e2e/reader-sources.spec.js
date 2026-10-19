@@ -5,12 +5,19 @@ const md = '11111111-2222-4333-8444-555555555555';
 const sw = 'sw-weebcentral-8-90';
 const es = '22222222-2222-4333-8444-555555555555';
 const pixel = readerImage();
+function assertContext(request) {
+  const query = new URL(request.url()).searchParams;
+  expect(query.get('destination')).toBe('yoru');
+  expect(query.get('integration')).toBe('all');
+  expect(query.get('selectionFingerprint')).toBeTruthy();
+}
 async function setup(page, context, baseURL) {
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
-  await page.route('**/api/media/*/reading-sources', (route) =>
-    route.fulfill({
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) => {
+    assertContext(route.request());
+    return route.fulfill({
       json: {
         state: 'ready',
         sources: [
@@ -18,9 +25,10 @@ async function setup(page, context, baseURL) {
           { id: 'weebcentral', name: 'Weeb Central' },
         ],
       },
-    }),
-  );
+    });
+  });
   await page.route('**/api/media/*/chapters?*', (route) => {
+    assertContext(route.request());
     const query = new URL(route.request().url()).searchParams;
     const source = query.get('source');
     return route.fulfill({
@@ -49,7 +57,8 @@ async function setup(page, context, baseURL) {
   await page.route('**/api/media/*/reader/*/page/*', (route) =>
     route.fulfill({ contentType: 'image/png', body: pixel }),
   );
-  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+$/, (route) => {
+  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?.*)?$/, (route) => {
+    assertContext(route.request());
     const url = new URL(route.request().url());
     const id = url.pathname.split('/').at(-1);
     return route.fulfill({
@@ -68,6 +77,8 @@ async function setup(page, context, baseURL) {
 async function menu(page) {
   if (await page.getByRole('complementary', { name: 'Reader menu' }).isVisible())
     return page.getByRole('complementary', { name: 'Reader menu' });
+  const dialog = page.getByRole('dialog', { name: 'Reader menu', exact: true });
+  if (await dialog.isVisible()) return dialog;
   const reveal = page.getByRole('button', { name: 'Show chapter and page controls', exact: true });
   if (await reveal.isVisible()) await reveal.click();
   await page.getByRole('button', { name: 'Reader menu', exact: true }).click();
@@ -120,7 +131,7 @@ test('site catalog defaults drive chapter sources and guest overrides reset', as
   await expect(page.getByRole('link', { name: /Suwayomi edition/ }).first()).toBeVisible();
 });
 
-test('live sources open native pages and switching clears the old edition while the new one loads', async ({
+test('live source switching retains the old edition until an exact target is chosen', async ({
   page,
   context,
   baseURL,
@@ -131,11 +142,14 @@ test('live sources open native pages and switching clears the old edition while 
   await expect(page.locator('.reader-canvas')).toHaveAttribute('data-mode', 'single');
   const controls = await menu(page);
   await expect(controls.getByLabel('Page direction', { exact: true })).toHaveValue('rtl');
+  await controls.getByLabel('Page number', { exact: true }).selectOption('2');
+  const originalURL = page.url();
   let release;
   const paused = new Promise((resolve) => {
     release = resolve;
   });
-  await page.route(`**/api/media/mal-manga-21/reader/${md}`, async (route) => {
+  await page.route(new RegExp(`/api/media/mal-manga-21/reader/${md}(?:\\?.*)?$`), async (route) => {
+    assertContext(route.request());
     await paused;
     await route.fulfill({
       json: {
@@ -150,6 +164,13 @@ test('live sources open native pages and switching clears the old edition while 
     });
   });
   await controls.getByLabel('Reading source', { exact: true }).selectOption('mangadex');
+  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(sw));
+  expect(page.url()).toBe(originalURL);
+  await expect(controls.getByLabel('Page number', { exact: true })).toHaveValue('2');
+  await page
+    .getByRole('dialog', { name: 'Choose an exact edition', exact: true })
+    .getByRole('button', { name: /Read chapter 1/ })
+    .click();
   await expect(page.locator('.reader-canvas')).toHaveCount(0);
   release();
   const mobile = page.getByRole('dialog', { name: 'Reader menu', exact: true });
@@ -158,6 +179,11 @@ test('live sources open native pages and switching clears the old edition while 
   await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
   const nextControls = await menu(page);
   await nextControls.getByLabel('Page number', { exact: true }).selectOption('2');
+  const saved = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('yoru:reader:state:mal-manga-21')).chapters,
+  );
+  expect(saved[sw].page).toBe(2);
+  expect(saved[md].page).toBe(2);
   await page.reload();
   await expect(page.getByRole('img', { name: 'Chapter 1, page 2', exact: true })).toBeVisible();
   await expect((await menu(page)).getByLabel('Reading source', { exact: true })).toHaveValue(
@@ -171,7 +197,7 @@ test('explicit remote sources never fall back to imported pages during an outage
   baseURL,
 }) => {
   await setup(page, context, baseURL);
-  await page.route('**/api/media/*/reading-sources', (route) =>
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) =>
     route.fulfill({ json: { state: 'offline', sources: [] } }),
   );
   await page.goto('/read/mal-manga-21/1?source=weebcentral');
@@ -200,10 +226,11 @@ test('explicit remote sources never fall back to imported pages during an outage
   await expect(
     page.getByText('The reading server is offline. Try again shortly.', { exact: true }),
   ).toBeVisible();
+  await page.getByLabel('Reading source', { exact: true }).selectOption('local');
   await page
-    .locator('.reader-welcome')
-    .getByLabel('Reading source', { exact: true })
-    .selectOption('local');
+    .getByRole('dialog', { name: 'Choose an exact edition', exact: true })
+    .getByRole('button', { name: /Read chapter 1/ })
+    .click();
   await expect(page.locator('.reader-canvas')).toBeVisible();
 });
 
@@ -215,16 +242,25 @@ test('remote translation choices fetch the selected language and retain chapter 
   await setup(page, context, baseURL);
   await page.goto('/read/mal-manga-21/1?source=mangadex');
   await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
+  await (await menu(page)).getByLabel('Page number', { exact: true }).selectOption('2');
   await (await menu(page)).getByRole('button', { name: 'Chapters', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Chapters', exact: true });
   await expect(dialog.getByLabel('Chapter language')).toHaveValue('en');
   await expect(dialog.getByText('Available from this source', { exact: true })).toBeVisible();
   await dialog.getByLabel('Chapter language').selectOption('es');
+  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
+  expect(new URL(page.url()).searchParams.get('page')).toBe('2');
+  expect(new URL(page.url()).searchParams.get('chapter')).not.toBe(es);
   await dialog.getByRole('button', { name: /Read chapter 2/ }).click();
   await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(es));
   await (await menu(page)).getByLabel('Page number', { exact: true }).selectOption('2');
   await page.goto(`/read/mal-manga-21/2?chapter=${es}&language=es`);
   await expect(page.getByRole('img', { name: 'Chapter 2, page 2', exact: true })).toBeVisible();
+  const saved = await page.evaluate(
+    () => JSON.parse(localStorage.getItem('yoru:reader:state:mal-manga-21')).chapters,
+  );
+  expect(saved[md].page).toBe(2);
+  expect(saved[es].page).toBe(2);
 });
 
 test('chapter directory reports partial source discovery and can retry it', async ({
@@ -234,7 +270,7 @@ test('chapter directory reports partial source discovery and can retry it', asyn
 }) => {
   await setup(page, context, baseURL);
   let requests = 0;
-  await page.route('**/api/media/*/reading-sources', (route) =>
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) =>
     route.fulfill({
       json:
         ++requests === 1
@@ -271,14 +307,18 @@ test('a disabled saved source stays disabled during an outage and a direct link 
     );
     localStorage.setItem('yoru:reading-source:mal-manga-21', 'weebcentral');
   });
-  await page.route('**/api/media/*/reading-sources', (route) =>
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) =>
     route.fulfill({
       json: { state: 'ready', partial: true, sources: [{ id: 'mangadex', name: 'MangaDex' }] },
     }),
   );
   await page.goto('/title/mal-manga-21');
   await expect(page.getByRole('link', { name: /MangaDex edition/ }).first()).toBeVisible();
-  await expect(page.getByRole('option', { name: /Weeb Central/ })).toHaveCount(0);
+  await expect(
+    page
+      .getByLabel('Chapter source', { exact: true })
+      .getByRole('option', { name: /Weeb Central/ }),
+  ).toHaveCount(0);
   await page.goto(`/read/mal-manga-21/1?chapter=${sw}`);
   await expect(
     page.getByText(
@@ -289,6 +329,11 @@ test('a disabled saved source stays disabled during an outage and a direct link 
   await expect(page.locator('.reader-canvas')).toHaveCount(0);
   const controls = await menu(page);
   await controls.getByLabel('Reading source', { exact: true }).selectOption('mangadex');
+  expect(new URL(page.url()).searchParams.get('chapter')).toBe(sw);
+  await page
+    .getByRole('dialog', { name: 'Choose an exact edition', exact: true })
+    .getByRole('button', { name: /Read chapter 1/ })
+    .click();
   await expect(page.locator('.reader-canvas')).toBeVisible();
 });
 
@@ -301,11 +346,11 @@ test('live manhwa opens vertically and an offline server preserves access to loc
   await page.goto(`/read/mal-manga-121496/1?chapter=${sw}`);
   await expect(page.locator('.reader-canvas')).toHaveAttribute('data-mode', 'webtoon');
   await expect(page.getByRole('img', { name: 'Chapter 1, page 1', exact: true })).toBeVisible();
-  await page.route('**/api/media/*/reading-sources', (route) =>
+  await page.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) =>
     route.fulfill({ json: { state: 'offline', sources: [{ id: 'mangadex', name: 'MangaDex' }] } }),
   );
   // An exact chapter can still open when discovery alone is down; a full outage also fails its manifest.
-  await page.route(`**/api/media/*/reader/${sw}`, (route) =>
+  await page.route(new RegExp(`/api/media/[^/]+/reader/${sw}(?:\\?.*)?$`), (route) =>
     route.fulfill({
       status: 503,
       json: { error: 'The reading server is offline. Try again shortly.' },

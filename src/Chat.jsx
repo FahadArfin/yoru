@@ -1,12 +1,29 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { MessageCircle, Send, Wifi, WifiOff } from 'lucide-react';
-import { ago, itemsOf, send, api } from './api';
+import { ago, itemsOf, send, api, readerRequest } from './api';
+import { useReaderResource } from './reader/use-resource';
+import { readerContextPath, readerMutation, readerContextKey } from './reader/requests';
 import { useApp, useResource } from './state';
 import { Avatar, Empty, ErrorNotice } from './components';
-export default function Chat({ roomId, roomEvent, enabled = true, live }) {
+export default function Chat({ roomId, roomEvent, enabled = true, live, context }) {
+  if (Number.isFinite(context?.expiresAt) && context.expiresAt <= Date.now()) context = null;
   const { user, requireUser, event, connected } = useApp();
-  const path = roomId ? `/api/rooms/${roomId}/chat` : '/api/chat';
-  const resource = useResource(enabled ? path : null, false);
+  enabled = enabled && (!roomId || !!context);
+  const path = roomId
+    ? context
+      ? readerContextPath(`/api/rooms/${roomId}/chat`, context)
+      : null
+    : '/api/chat';
+  const legacyResource = useResource(!roomId && enabled ? path : null, false);
+  const scopedResource = useReaderResource(roomId && enabled ? path : null, { force: true });
+  const resource = roomId ? scopedResource : legacyResource;
+  const requestController = useRef(null);
+  const contextKey = readerContextKey(context);
+  useEffect(() => {
+    const controller = new AbortController();
+    requestController.current = controller;
+    return () => controller.abort();
+  }, [contextKey, roomId, enabled]);
   const [body, setBody] = useState('');
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
@@ -30,7 +47,10 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
   useEffect(() => {
     if (enabled && currentEvent?.type === 'snapshot') {
       const requestedIdentity = identityRef.current;
-      api(path)
+      (roomId
+        ? readerRequest(path, { ...context, signal: requestController.current.signal, force: true })
+        : api(path)
+      )
         .then((data) => {
           if (identityRef.current !== requestedIdentity) return;
           resource.setData((old) => ({
@@ -71,7 +91,12 @@ export default function Chat({ roomId, roomEvent, enabled = true, live }) {
     setError('');
     setBusy(true);
     try {
-      const result = await send(path, { body });
+      const result = await (roomId
+        ? readerMutation(path, { body }, 'POST', {
+            ...context,
+            signal: requestController.current.signal,
+          })
+        : send(path, { body }));
       if (identityRef.current !== requestedIdentity) return;
       setBody('');
       follow.current = true;

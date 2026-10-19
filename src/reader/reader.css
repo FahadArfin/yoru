@@ -933,6 +933,9 @@
   gap: 8px;
   flex-wrap: wrap;
 }
+.live-chapter-controls .reader-integration-filter {
+  min-width: min(100%, 320px);
+}
 .live-chapter-controls label,
 .live-chapter-search,
 .chapter-order {

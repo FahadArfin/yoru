@@ -1,3 +1,5 @@
+import { catalogEnabled, readingProvider } from '../../shared/catalog-preferences.js';
+
 export const MAX_MANIFEST_BYTES = 2 * 1024 * 1024;
 export const naturalCompare = (a, b) => String(a).localeCompare(String(b), 'en', { numeric: true });
 const text = (value, max = 160) =>
@@ -148,13 +150,44 @@ export function chapterUnit(value) {
   const number = Number(value);
   return Number.isFinite(number) && number <= 100000 ? number : null;
 }
-export function readerLink(mediaId, chapter, page) {
+export function readerLink(mediaId, chapter, page, { destination = 'yoru' } = {}) {
   const number = chapter && /^\d+(\.\d+)?$/.test(chapter.number) ? chapter.number : '1';
   const params = new URLSearchParams();
   if (chapter?.id) params.set('chapter', chapter.id);
+  const source = chapter?.sourceRef?.id || chapter?.source;
+  if (source) params.set('source', source);
   if (chapter?.kind === 'remote' && chapter.language) params.set('language', chapter.language);
   if (page) params.set('page', String(page));
-  return `/read/${mediaId}/${number}${params.size ? `?${params}` : ''}`;
+  return `${destination === 'ara-ara' ? '/ara-ara' : ''}/read/${mediaId}/${number}${params.size ? `?${params}` : ''}`;
+}
+// Discovery choices follow the saved group; an explicit current edition stays
+// visible while its provider remains enabled. Nothing here chooses a chapter.
+export function readerSourceChoices(sources, context, pinned = null) {
+  if (!context) return [];
+  const candidates = [...sources];
+  if (pinned && !candidates.some((s) => s.id === pinned.id && s.mediaId === pinned.mediaId))
+    candidates.push(pinned);
+  return candidates.filter((source, index) => {
+    if (candidates.findIndex((s) => s.id === source.id && s.mediaId === source.mediaId) !== index)
+      return false;
+    if (source.id === 'local') return true;
+    const ref = source.sourceRef || source;
+    if (
+      !catalogEnabled(
+        ref.providerKey || readingProvider(source.id),
+        context.destination,
+        context.overrides,
+      )
+    )
+      return false;
+    const integration =
+      (ref.integration || source.integration) === 'suwayomi' ? 'extensions' : 'core';
+    return (
+      context.integrationMode === 'all' ||
+      context.integrationMode === integration ||
+      (pinned?.id === source.id && pinned?.mediaId === source.mediaId)
+    );
+  });
 }
 export function languageName(language) {
   if (!language || language === 'und') return 'Unspecified language';

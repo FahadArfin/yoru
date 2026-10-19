@@ -1,7 +1,7 @@
 import React, { useMemo, useRef, useState } from 'react';
 import { BookOpen, ChevronDown, Clock3, ExternalLink, Eye, List, Star, Users } from 'lucide-react';
 import { groupChapterEditions } from './chapter-groups';
-import { languageName } from './model';
+import { languageName, readerLink } from './model';
 import PrefetchLink from '../PrefetchLink';
 
 const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
@@ -39,13 +39,19 @@ function dateLabel(value) {
   if (Math.abs(days) >= 1) return relative.format(Math.trunc(days), 'day');
   return relative.format(Math.trunc(days * 24), 'hour');
 }
-function Edition({ item, opened, rate, nested }) {
+function Edition({ item, opened, rate, nested, mediaId, context }) {
   const ChapterLink = item.native ? PrefetchLink : 'a';
   return (
     <article className={`live-chapter-row${nested ? ' nested-edition' : ''}`}>
       <ChapterLink
         className="live-chapter-link"
-        {...(item.native ? { to: item.readUrl } : { href: item.readUrl })}
+        {...(item.native
+          ? {
+              to: readerLink(item.mediaId || mediaId, { ...item, kind: 'remote' }, undefined, {
+                destination: context?.destination,
+              }),
+            }
+          : { href: item.readUrl })}
         target={item.native ? undefined : '_blank'}
         rel="noopener noreferrer"
         onClick={() => opened(item)}
@@ -64,12 +70,12 @@ function Edition({ item, opened, rate, nested }) {
             <span>
               {nested
                 ? item.title || chapterLabel(item)
-                : `Ch. ${item.number || 'Special'}${item.title ? ` – ${item.title}` : ''}`}
+                : `Ch. ${item.number ?? 'Special'}${item.title ? ` – ${item.title}` : ''}`}
             </span>
           </strong>
           <span className="chapter-edition-meta">
             <Users size={13} />
-            <span>{item.groups.map((g) => g.name).join(', ') || 'No group credited'}</span>
+            <span>{item.groups?.map((g) => g.name).join(', ') || 'No group credited'}</span>
             <span className="chapter-read-provider">
               {item.readLabel}
               {item.native ? <BookOpen size={11} /> : <ExternalLink size={11} />}
@@ -118,7 +124,7 @@ function Edition({ item, opened, rate, nested }) {
     </article>
   );
 }
-export default function ChapterDirectory({ items, sort, opened, rate }) {
+export default function ChapterDirectory({ items, sort, opened, rate, mediaId, context }) {
   const volumes = useMemo(() => groupChapterEditions(items, sort), [items, sort]);
   const refs = useRef(new Map());
   const [indexOpen, setIndexOpen] = useState(false);
@@ -190,7 +196,15 @@ export default function ChapterDirectory({ items, sort, opened, rate }) {
                         </span>
                       </summary>
                       {chapter.items.map((item) => (
-                        <Edition key={item.id} item={item} opened={opened} rate={rate} nested />
+                        <Edition
+                          key={item.id}
+                          item={item}
+                          opened={opened}
+                          rate={rate}
+                          mediaId={mediaId}
+                          context={context}
+                          nested
+                        />
                       ))}
                     </details>
                   ) : (
@@ -199,6 +213,8 @@ export default function ChapterDirectory({ items, sort, opened, rate }) {
                       item={chapter.items[0]}
                       opened={opened}
                       rate={rate}
+                      mediaId={mediaId}
+                      context={context}
                     />
                   ),
                 )}
