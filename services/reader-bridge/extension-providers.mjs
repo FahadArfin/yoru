@@ -19,6 +19,10 @@ export class ExtensionProviders {
     this.knownSources = new Map();
   }
   async bindingStore() {
+    // Open only on generic use. Retain the same promise, including rejection:
+    // corrupt authoritative state must fail closed without resetting identities
+    // or creating an unhandled startup rejection that can terminate core paths.
+    if (typeof this.bindings === 'function') this.bindings = this.bindings();
     const bindings = await this.bindings;
     if (bindings?.instanceId) this.bridgeInstance = await bindings.instanceId();
     return bindings;

@@ -117,11 +117,12 @@ export class Providers {
       client: this.client,
       bindings:
         bindings ||
-        openSourceBindings({
-          directory: join(directory, 'source-bindings'),
-          client: this.client,
-          now,
-        }),
+        (() =>
+          openSourceBindings({
+            directory: join(directory, 'source-bindings'),
+            client: this.client,
+            now,
+          })),
       metadata: this.metadata,
       images: this.images,
       now,

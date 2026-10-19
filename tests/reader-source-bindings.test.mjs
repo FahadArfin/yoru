@@ -1,9 +1,68 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { mkdtemp, rm, readFile } from 'node:fs/promises';
+import { mkdtemp, rm, readFile, mkdir, writeFile } from 'node:fs/promises';
+import { spawnSync } from 'node:child_process';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { source, manga } from './fixtures/suwayomi.mjs';
+
+test('malformed generic binding state cannot terminate core-only processes or reset identities', async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), 'yoru-binding-failure-'));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  await mkdir(join(directory, 'source-bindings'));
+  const path = join(directory, 'source-bindings', 'bindings.json');
+  await writeFile(path, '{malformed-authoritative-state');
+  const providersUrl = new URL('../services/reader-bridge/providers.mjs', import.meta.url).href;
+  const serverUrl = new URL('../services/reader-bridge/server.mjs', import.meta.url).href;
+  for (const mode of ['core-only', 'generic-error']) {
+    const script = `
+      import assert from 'node:assert/strict';
+      import { readFile } from 'node:fs/promises';
+      import { setTimeout as delay } from 'node:timers/promises';
+      const { Providers } = await import(${JSON.stringify(providersUrl)});
+      const { bridgeHandler } = await import(${JSON.stringify(serverUrl)});
+      const key = 'x'.repeat(32);
+      const provider = new Providers({ directory: process.argv[1], client: { execute: async () => ({ sources: { nodes: [] } }) } });
+      const request = (path, body = {}) => new Request('http://bridge' + path, { method: 'POST', headers: { authorization: 'Bearer ' + key }, body: JSON.stringify(body) });
+      const core = bridgeHandler({ key, provider, extensionsEnabled: false });
+      await delay(50);
+      const statuses = [(await core(request('/catalogs'))).status];
+      if (process.argv[2] === 'generic-error') {
+        const generic = bridgeHandler({ key, provider, extensionsEnabled: true });
+        for (let i = 0; i < 2; i++) {
+          const result = await generic(request('/extension/details', { titleRef: { sourceId: 'suwayomi:123', upstreamKey: '/synthetic', language: 'en' } }));
+          statuses.push(result.status);
+          assert.deepEqual(await result.json(), { error: 'The source binding needs verification.' });
+        }
+        statuses.push((await core(request('/catalogs'))).status);
+      }
+      console.log(JSON.stringify({ statuses }));
+    `;
+    const child = spawnSync(
+      process.execPath,
+      ['--input-type=module', '-e', script, directory, mode],
+      {
+        encoding: 'utf8',
+        timeout: 10000,
+        env: { ...process.env, READER_EXTENSIONS_ENABLED: '0' },
+      },
+    );
+    assert.equal(
+      child.status,
+      0,
+      `${mode} must survive without unhandled rejection: ${child.stderr}`,
+    );
+    assert.deepEqual(
+      JSON.parse(child.stdout).statuses,
+      mode === 'core-only' ? [200] : [200, 409, 409, 200],
+    );
+    assert.equal(
+      await readFile(path, 'utf8'),
+      '{malformed-authoritative-state',
+      'binding failure must never mint a replacement identity',
+    );
+  }
+});
 
 async function fixture(t) {
   const directory = await mkdtemp(join(tmpdir(), 'yoru-exact-'));
