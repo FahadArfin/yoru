@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as preferences from '../src/reader/catalog-preferences.js';
+import { cachedApi, peek } from '../src/api.js';
 import { normalizeGuestSelection, selectionProjection } from '../shared/catalog-selection.js';
 import {
   loadCatalogPreferences,
@@ -315,5 +316,33 @@ test('legacy guest choices apply on title pages before Settings is opened', asyn
   } finally {
     globalThis.fetch = originalFetch;
     delete globalThis.localStorage;
+  }
+});
+
+test('loading unchanged selection settings keeps prepared chapter metadata in cache', async () => {
+  const original = globalThis.fetch;
+  const owner = 'prepared-settings-owner';
+  const path = '/api/media/mal-manga-21/reader/prepared-metadata';
+  let settingsReads = 0;
+  globalThis.fetch = async (url) => {
+    if (url === '/api/reader/preferences') {
+      settingsReads++;
+      return Response.json({
+        owner,
+        revision: 1,
+        overrides: {},
+        modes: { yoru: 'all', 'ara-ara': 'all' },
+      });
+    }
+    return Response.json({ pages: [{ url: '/api/prepared-page' }] });
+  };
+  try {
+    const prepared = await cachedApi(path, false, { scope: owner });
+    await preferences.loadReaderSettings(owner, true);
+    await preferences.loadReaderSettings(owner);
+    assert.equal(settingsReads, 1);
+    assert.equal(peek(path, owner), prepared);
+  } finally {
+    globalThis.fetch = original;
   }
 });

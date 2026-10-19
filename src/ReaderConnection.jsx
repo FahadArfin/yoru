@@ -2,7 +2,8 @@ import React, { useEffect, useRef, useState } from 'react';
 import { BookOpen, RefreshCw } from 'lucide-react';
 import { Link } from './collection-router';
 import { useCollection } from './collection-context';
-import useCatalogPreferences from './useCatalogPreferences';
+import useCatalogPreferences, { useReaderSelection } from './useCatalogPreferences';
+import CatalogIntegrationSelect from './CatalogIntegrationSelect';
 import { catalogEnabled } from '../shared/catalog-preferences';
 import { migrateGuestCatalogPreferences } from './reader/catalog-preferences';
 import { discoverCatalogs, browseCatalog, normalizeServerUrl } from '../shared/reader-connection';
@@ -28,6 +29,7 @@ function saved() {
 export default function ReaderConnection() {
   const collectionActive = !!useCollection()?.active;
   const preferences = useCatalogPreferences();
+  const readerSelection = useReaderSelection();
   const [mode, setMode] = useState('yoru');
   const [url, setUrl] = useState(() => saved().url || '');
   const [username, setUsername] = useState('');
@@ -214,6 +216,46 @@ export default function ReaderConnection() {
         </div>
       </div>
       <p>Choose the reader catalogs you want in Yoru and Ara Ara.</p>
+      {mode === 'yoru' && (
+        <>
+          <label className="reader-list-filter">
+            Source list
+            <select value={sourceList} onChange={(event) => setSourceList(event.target.value)}>
+              <option value="yoru">Yoru</option>
+              <option value="ara-ara">Ara Ara</option>
+            </select>
+          </label>
+          <CatalogIntegrationSelect
+            value={readerSelection?.context?.modes?.[sourceList] || 'all'}
+            disabled={!preferences.scope || !readerSelection?.ready || preferences.saving}
+            onChange={(value) => readerSelection.setIntegrationMode(value, sourceList)}
+          />
+          <p className="small">
+            The integration filters browsing and source choices for{' '}
+            {sourceList === 'yoru' ? 'Yoru' : 'Ara Ara'}. Provider switches below enable or disable
+            each provider independently. Changing an integration keeps your current reading edition
+            and progress.
+          </p>
+          {sourceList === 'ara-ara' &&
+            readerSelection?.context?.modes?.['ara-ara'] === 'core' &&
+            !['MangaDex', 'Weeb Central'].some((provider) =>
+              catalogEnabled(provider, 'ara-ara', preferences.overrides),
+            ) && (
+              <p className="small">
+                MangaDex and Weeb Central are disabled in Ara Ara with your current memberships.
+                Enable either provider below or choose another integration.
+              </p>
+            )}
+          {readerSelection?.error && (
+            <div>
+              <p role="alert">{readerSelection.error}</p>
+              <button type="button" className="btn btn-subtle" onClick={readerSelection.refresh}>
+                Refresh reader choices
+              </button>
+            </div>
+          )}
+        </>
+      )}
       <div className="reader-connection-modes" role="group" aria-label="Reader server">
         <button
           type="button"
@@ -314,8 +356,8 @@ export default function ReaderConnection() {
           <p>
             Connected
             {sources.length
-              ? ` · ${sources.length} supported ${sources.length === 1 ? 'catalog' : 'catalogs'}`
-              : ' · No supported online catalogs installed.'}
+              ? ` · ${sources.length} installed ${sources.length === 1 ? 'catalog' : 'catalogs'}`
+              : ' · No online catalogs installed.'}
           </p>
         )}
       </div>
@@ -326,7 +368,8 @@ export default function ReaderConnection() {
         <p className="reader-catalog-note">
           Available catalogs come from the reader server. Each language counts as a separate
           catalog. Assigning a provider to a section does not change that section’s content rules or
-          Ara Ara’s age gate. New installations can take up to a minute to appear.
+          Ara Ara’s age gate. Installed metadata does not verify browsing or reading capabilities.
+          New installations can take up to a minute to appear.
         </p>
       )}
       {sources.length > 0 && (
@@ -365,15 +408,6 @@ export default function ReaderConnection() {
               </select>
             </label>
           </div>
-          {mode === 'yoru' && (
-            <label className="reader-list-filter">
-              Source list
-              <select value={sourceList} onChange={(event) => setSourceList(event.target.value)}>
-                <option value="yoru">Yoru</option>
-                <option value="ara-ara">Ara Ara</option>
-              </select>
-            </label>
-          )}
           <div className="reader-filter-summary">
             <p aria-live="polite">
               {filteredSources.length} of {sources.length} catalogs
@@ -387,7 +421,7 @@ export default function ReaderConnection() {
           <div
             className="reader-catalog-list"
             role="region"
-            aria-label="Supported reader catalogs"
+            aria-label="Installed reader catalogs"
             tabIndex={0}
           >
             {!filteredSources.length && <p>No catalogs match your filters.</p>}
@@ -482,9 +516,10 @@ export default function ReaderConnection() {
             {preferences.scope === 'guest'
               ? ' Your changes stay in this browser. Sign in to sync choices across devices.'
               : ' Your personal changes sync with your account across devices.'}{' '}
-            New providers start disabled until you choose a list. These choices select catalogs and
-            supported chapter sources; they don’t install extensions or add unsupported chapter
-            readers.
+            New providers start disabled until you choose a list. These choices apply to catalog
+            browsing and eligible chapter sources throughout the site; they don’t install extensions
+            or establish that an unverified operation is supported. Reset also restores both
+            sections’ catalog integrations to All sources.
           </p>
           <button
             type="button"

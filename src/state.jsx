@@ -13,11 +13,15 @@ import useVisitorPresence from './useVisitorPresence';
 import { accountPageUrl, createAccountPager } from './account-pages.js';
 import { useResume } from './resume';
 import { setReaderAccount } from './reader/storage';
-import { useCollection } from './collection-context';
+import {
+  useCollection,
+  collectionDestination,
+  collectionContentAllowed,
+} from './collection-context';
 import { collectionRequest, collectionView } from '../shared/collection-view';
 import { useLocation } from 'react-router-dom';
 import { confirmationKey } from './nsfw';
-import { CATALOG_PREFERENCES_EVENT, loadReaderSettings } from './reader/catalog-preferences';
+import { useReaderSelectionState } from './reader/use-selection';
 const Context = createContext(null);
 export function useApp() {
   const app = useContext(Context);
@@ -81,27 +85,24 @@ export function useRawResource(path, cache = true) {
 }
 export function AppProvider({ children }) {
   const { pathname } = useLocation();
-  const destination = /^\/ara-ara(?:\/|$)/.test(pathname) ? 'ara-ara' : 'yoru';
+  const destination = collectionDestination(pathname);
   const [confirmation, setConfirmation] = useState(false);
-  const [preferenceVersion, setPreferenceVersion] = useState(0);
   useEffect(() => {
     const confirm = (e) => setConfirmation(Boolean(e.detail?.confirmed));
-    const preferences = () => setPreferenceVersion((v) => v + 1);
     window.addEventListener('ara-confirmation', confirm);
-    window.addEventListener(CATALOG_PREFERENCES_EVENT, preferences);
     return () => {
       window.removeEventListener('ara-confirmation', confirm);
-      window.removeEventListener(CATALOG_PREFERENCES_EVENT, preferences);
     };
   }, []);
   let confirmed = confirmation;
   try {
     confirmed = confirmed || sessionStorage.getItem(confirmationKey) === '1';
   } catch {}
-  const contentAllowed = destination === 'yoru' || confirmed;
+  const contentAllowed = collectionContentAllowed(destination, confirmed);
   const [user, setUserState] = useState(null);
   const visitors = useVisitorPresence(user?.id);
   const [authKnown, setAuthKnown] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const setUser = useCallback((value) => {
     invalidateScopedApi();
     setReaderAccount(value?.id);
@@ -109,33 +110,25 @@ export function AppProvider({ children }) {
     setAuthKnown(true);
   }, []);
   const accountScope = user?.id || 'guest';
-  const [readerPolicy, setReaderPolicy] = useState(null);
-  useEffect(() => {
-    if (!authKnown) return;
-    let active = true;
-    loadReaderSettings(accountScope)
-      .then((settings) => {
-        if (active) setReaderPolicy({ owner: accountScope, version: preferenceVersion, settings });
-      })
-      .catch(() => {
-        if (active) setReaderPolicy(null);
-      });
-    return () => {
-      active = false;
-    };
-  }, [accountScope, authKnown, preferenceVersion]);
-  const policyReady =
-    contentAllowed &&
-    authKnown &&
-    readerPolicy?.owner === accountScope &&
-    readerPolicy.version === preferenceVersion;
+  const selectionScope = authKnown ? accountScope : null;
+  const readerSelection = useReaderSelectionState({
+    scope: selectionScope,
+    destination,
+    enabled: !authLoading && contentAllowed,
+  });
+  const policyReady = contentAllowed && readerSelection.ready;
   const [sourceInventory, setSourceInventory] = useState({ key: null, sources: [] });
   const [inventoryRefresh, setInventoryRefresh] = useState(0);
-  const viewKey = `${accountScope}:${destination}:${preferenceVersion}:${readerPolicy?.settings?.revision ?? 0}:${contentAllowed}`;
+  const viewKey = JSON.stringify([
+    selectionScope,
+    destination,
+    readerSelection.context?.selectionFingerprint || null,
+    contentAllowed,
+  ]);
   const guestInventoryPager = useRef(null);
   const loadMoreReaderSources = useCallback(() => guestInventoryPager.current?.loadMore(), []);
   useEffect(() => {
-    if (!policyReady || user) return;
+    if (!policyReady || user || !authKnown) return;
     const pager = createAccountPager({
       request: async (task, signal) => {
         const sources = [];
@@ -175,9 +168,9 @@ export function AppProvider({ children }) {
       pager.stop();
       if (guestInventoryPager.current === pager) guestInventoryPager.current = null;
     };
-  }, [policyReady, user, viewKey, destination, inventoryRefresh]);
+  }, [policyReady, user, authKnown, viewKey, destination, inventoryRefresh]);
   useEffect(() => {
-    if (!policyReady || user) return;
+    if (!policyReady || user || !authKnown) return;
     const refresh = () => {
       if (!document.hidden) setInventoryRefresh((v) => v + 1);
     };
@@ -189,15 +182,18 @@ export function AppProvider({ children }) {
       window.removeEventListener('focus', refresh);
       window.removeEventListener('online', refresh);
     };
-  }, [policyReady, user]);
+  }, [policyReady, user, authKnown]);
   const readingContext = useMemo(
-    () => ({
-      destination,
-      extensionsEnabled: true,
-      overrides: readerPolicy?.settings?.overrides || {},
-      integrationMode: readerPolicy?.settings?.modes?.[destination] || 'all',
-    }),
-    [destination, readerPolicy],
+    () =>
+      readerSelection.context
+        ? {
+            ...readerSelection.context,
+            // Local history still requires fresh inventory or authoritative server IDs;
+            // this eligibility switch does not advertise a server feature capability.
+            extensionsEnabled: true,
+          }
+        : null,
+    [readerSelection.context],
   );
   const inventoryFresh =
     sourceInventory.key === viewKey && Date.now() - (sourceInventory.observedAt || 0) < 60000;
@@ -209,7 +205,6 @@ export function AppProvider({ children }) {
     readinessKey: viewKey,
     currentSources,
   });
-  const [authLoading, setAuthLoading] = useState(true);
   const [authOpen, setAuthOpen] = useState(false);
   const [config, setConfig] = useState({});
   const [librarySnapshot, setLibrarySnapshot] = useState({ key: null, items: [] });
@@ -383,10 +378,13 @@ export function AppProvider({ children }) {
         library,
         libraryPage,
         loadMoreLibrary,
+        readerSelection,
         readingContext: policyReady ? readingContext : null,
         currentReaderSources: currentSources,
         readerInventoryPage:
-          !user && policyReady && sourceInventory.key === viewKey ? sourceInventory : {},
+          !user && authKnown && policyReady && sourceInventory.key === viewKey
+            ? sourceInventory
+            : {},
         loadMoreReaderSources,
         refreshLibrary,
         entryFor,

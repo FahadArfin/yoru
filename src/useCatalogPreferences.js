@@ -7,6 +7,9 @@ import {
   saveCatalogPreference,
   resetCatalogPreferences,
 } from './reader/catalog-preferences';
+export function useReaderSelection() {
+  return useApp().readerSelection;
+}
 export default function useCatalogPreferences() {
   const { user, authLoading, authKnown } = useApp();
   const scope = authLoading || !authKnown ? null : user?.id || 'guest';

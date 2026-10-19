@@ -10,6 +10,7 @@ import {
 const KEY = 'yoru:catalog-overrides:guest:v1';
 const MODE_KEY = 'yoru:reader-integration-modes:guest:v1';
 export const CATALOG_PREFERENCES_EVENT = 'yoru:catalog-preferences';
+export const READER_SELECTION_ACTION_EVENT = 'yoru:reader-selection-action';
 const accounts = new Map();
 const pending = new Map();
 const versions = new Map();
@@ -48,10 +49,13 @@ function accept(scope, data) {
   accounts.set(scope, { settings, at: Date.now() });
   return settings;
 }
-function publish(scope) {
+function publish(scope, destination) {
   advance(scope);
   invalidateApi('/api/media/');
   window.dispatchEvent(new CustomEvent(CATALOG_PREFERENCES_EVENT, { detail: scope }));
+  window.dispatchEvent(
+    new CustomEvent(READER_SELECTION_ACTION_EVENT, { detail: { scope, destination } }),
+  );
   return current(scope);
 }
 export async function loadReaderSettings(scope, force = false) {
@@ -123,7 +127,7 @@ export async function saveCatalogPreference(scope, provider, destination, enable
       }),
     );
   }
-  return publish(scope).overrides;
+  return publish(scope, destination).overrides;
 }
 export async function saveIntegrationMode(scope, destination, mode) {
   if (!scope) throw new Error('Wait for your account to load.');
@@ -141,7 +145,7 @@ export async function saveIntegrationMode(scope, destination, mode) {
       }),
     );
   }
-  return publish(scope).modes;
+  return publish(scope, destination).modes;
 }
 export async function resetCatalogPreferences(scope) {
   if (!scope) throw new Error('Wait for your account to load.');
@@ -158,7 +162,7 @@ export async function resetCatalogPreferences(scope) {
       }),
     );
   }
-  return publish(scope).overrides;
+  return publish(scope, null).overrides;
 }
 export function migrateGuestCatalogPreferences(sources) {
   if (localStorage.getItem(KEY) !== null) return;

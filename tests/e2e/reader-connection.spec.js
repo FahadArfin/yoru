@@ -86,7 +86,7 @@ test('provider and language filters combine, survive refresh and clear without l
   );
   await page.goto('/settings');
   const card = page.locator('.reader-connection');
-  const list = card.getByRole('region', { name: 'Supported reader catalogs' });
+  const list = card.getByRole('region', { name: 'Installed reader catalogs' });
   await card.getByLabel('Filter providers').fill('  WEB  ');
   await card.getByLabel('Catalog language').selectOption('fr');
   await expect(list).toContainText('Webcomics');
@@ -156,11 +156,11 @@ test('Yoru and Ara Ara list switches are independent and retain existing browser
   await card.getByLabel('Source list').selectOption('ara-ara');
   await card.getByLabel('Catalog status').selectOption('on');
   await expect(card.getByText('2 of 3 catalogs')).toBeVisible();
-  await expect(card.getByRole('region', { name: 'Supported reader catalogs' })).not.toContainText(
+  await expect(card.getByRole('region', { name: 'Installed reader catalogs' })).not.toContainText(
     'Webcomics',
   );
   await card.getByLabel('Source list').selectOption('yoru');
-  await expect(card.getByRole('region', { name: 'Supported reader catalogs' })).not.toContainText(
+  await expect(card.getByRole('region', { name: 'Installed reader catalogs' })).not.toContainText(
     'Cubari',
   );
   await card.getByRole('button', { name: 'Clear filters' }).click();
@@ -207,9 +207,7 @@ test('default server needs no address and reports connection failure with retry'
   await expect(card.getByRole('alert')).toHaveText('Reader offline. Try again.');
   fail = false;
   await card.getByRole('button', { name: 'Refresh connection' }).click();
-  await expect(card.getByRole('status')).toContainText(
-    'Connected · No supported online catalogs installed.',
-  );
+  await expect(card.getByRole('status')).toContainText('Connected · No online catalogs installed.');
   await expect(card.getByLabel('Suwayomi server address')).toHaveCount(0);
 });
 
@@ -256,7 +254,7 @@ test('custom server validates addresses, remembers toggles and browses only enab
   await card.getByLabel('Server username').fill('reader');
   await card.getByLabel('Server password').fill('not-persisted');
   await card.getByRole('button', { name: 'Connect', exact: true }).click();
-  await expect(card.getByRole('status')).toContainText('2 supported catalogs');
+  await expect(card.getByRole('status')).toContainText('2 installed catalogs');
   await expect(card.getByLabel('Suwayomi server address')).toHaveValue('https://reader.example');
   await expect(card.getByText('Excluded', { exact: true })).toBeVisible();
   const toggle = card.getByRole('switch', { name: 'Sample Catalog catalog' });
