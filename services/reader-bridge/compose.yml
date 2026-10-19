@@ -16,7 +16,8 @@ services:
       EXTENSION_STORES: '["https://github.com/keiyoushi/extensions/raw/repo/index.pb"]'
       UPDATE_INTERVAL: '0'
       WEB_UI_UPDATE_INTERVAL: '0'
-      WEB_UI_ENABLED: 'false'
+      WEB_UI_ENABLED: 'true'
+      WEB_UI_CHANNEL: BUNDLED
       FLARESOLVERR_ENABLED: 'false'
       KCEF_ENABLED: 'false'
     volumes:

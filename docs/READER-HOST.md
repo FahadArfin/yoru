@@ -16,7 +16,7 @@ Docker Desktop shows two containers: `suwayomi` and `bridge`. Both restart when 
 
 Secrets are in `%LOCALAPPDATA%\Yoru\reader\.env`, outside the repository. `READER_BRIDGE_KEY` is a random 32-byte secret shared with Sites. `SUWAYOMI_PASSWORD` is a separate random password for Suwayomi's `yoru` account. Neither value is shipped to visitors. Back up this file privately. Changing the bridge key requires updating the Sites secret and deploying a saved version, then recreating the bridge container.
 
-Suwayomi's authenticated API binds to `127.0.0.1:4567`; the authenticated bridge binds to `127.0.0.1:4568`. Suwayomi's WebUI is disabled. Only the bridge's fixed manga-reading operations pass through the tunnel; administration, extension installation, arbitrary GraphQL and arbitrary URL fetching are unavailable publicly.
+Suwayomi's authenticated API and bundled administration WebUI bind to `127.0.0.1:4567`; the authenticated bridge binds to `127.0.0.1:4568`. Open `http://127.0.0.1:4567` on the host PC to manage sources. Sign in as `yoru` with the existing `SUWAYOMI_PASSWORD` from the private environment file above. The bundled WebUI matches the pinned server; automatic UI updates remain disabled. Only the bridge's fixed manga-reading operations pass through the tunnel; administration, extension installation, arbitrary GraphQL and arbitrary URL fetching are unavailable publicly.
 
 ## Sources and caching
 
