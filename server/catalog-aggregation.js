@@ -143,6 +143,10 @@ async function aggregate(input, context, deps) {
       state.pointer = (sourceIndex + 1) % sources.length;
       if (sourceIndex === sources.length - 1) cycled = true;
       try {
+        // Capture database authority before awaiting this source. Explicit null
+        // guards a first observation against a concurrent source insertion.
+        const expectedSource =
+          s.integration === 'suwayomi' ? await store.getSourceAuthority(s.id) : undefined;
         const operation = { signal: context.signal, deadlineAt, priority: 'discovery' };
         const result = await withinReaderDeadline(
           operation,
@@ -182,7 +186,7 @@ async function aggregate(input, context, deps) {
             { reason: failure.reason, retryAt: failure.retryAt },
           );
         }
-        results[index] = { s, result };
+        results[index] = { s, result, expectedSource };
       } catch (error) {
         const failure = safeState(s.id, error, params.mode, now());
         pos.retryAt = failure.retryAt;
@@ -194,13 +198,8 @@ async function aggregate(input, context, deps) {
   for (const entry of results.filter(Boolean)) {
     const { s, result } = entry,
       pos = state.positions[s.id];
-    // Failed operations never reach this advancement branch.
-    pos.page = result.nextPage ?? pos.page + 1;
-    pos.done = !(result.hasMore ?? result.pageInfo?.hasNextPage ?? result.hasNextPage);
-    pos.retryAt = null;
-    sourceStates.push(
-      publicSourceState(result.sourceState, s.id, params.mode, !result.items.length),
-    );
+    let expectedSource = entry.expectedSource,
+      persistenceFailure;
     for (const item of result.items) {
       let media;
       try {
@@ -219,10 +218,17 @@ async function aggregate(input, context, deps) {
             item.sourceRef,
           );
           current.set(s.id, observed);
-          media = await store.rememberTitle({ ...item, sourceRef: observed });
+          media = await store.rememberTitle({ ...item, sourceRef: observed }, { expectedSource });
+          // Reuse only the proof produced by our own committed CAS. A fresh DB
+          // read here could authorize overwriting a concurrent adult observation.
+          expectedSource = media.sourceAuthority;
         } else media = { ...item, readingState: 'metadata-only', availableIntegrations: [] };
         assertMediaEligible(media, context);
-      } catch {
+      } catch (error) {
+        if (error.status === 409) {
+          persistenceFailure = error;
+          break;
+        }
         continue;
       }
       await deps.db.run(
@@ -232,6 +238,19 @@ async function aggregate(input, context, deps) {
         now(),
       );
       state.pending.push(media.id);
+    }
+    if (persistenceFailure) {
+      const failure = safeState(s.id, persistenceFailure, params.mode, now());
+      pos.retryAt = failure.retryAt;
+      sourceStates.push(failure);
+    } else {
+      // A provider response whose source CAS failed is still a failed page.
+      pos.page = result.nextPage ?? pos.page + 1;
+      pos.done = !(result.hasMore ?? result.pageInfo?.hasNextPage ?? result.hasNextPage);
+      pos.retryAt = null;
+      sourceStates.push(
+        publicSourceState(result.sourceState, s.id, params.mode, !result.items.length),
+      );
     }
   }
   const items = [],

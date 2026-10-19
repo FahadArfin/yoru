@@ -93,6 +93,8 @@ export async function executeReaderRoute(action, input, context, deps, options) 
     // The adapter's resolve operation fetches the exact installed source again;
     // no local Suwayomi integer is accepted as canonical ownership.
     if (!context.extensionsEnabled) throw apiError(404, 'This title is unavailable.');
+    const store = createExternalCatalogStore(deps.db, deps);
+    const expectedSource = await store.getSourceAuthority(sourceId);
     const result = await deps.bridge.resolveLink(
       { sourceId, url: input.url },
       {
@@ -104,7 +106,7 @@ export async function executeReaderRoute(action, input, context, deps, options) 
     if (result.sourceRef?.id !== sourceId || result.upstreamRef?.sourceId !== sourceId)
       throw apiError(502, 'Invalid resolved title.');
     assertSourceEligible(result.sourceRef, context, { discovery: true });
-    const media = await createExternalCatalogStore(deps.db, deps).rememberTitle(result);
+    const media = await store.rememberTitle(result, { expectedSource });
     assertMediaEligible(media, context);
     return publicReadingMedia(media, context);
   }
