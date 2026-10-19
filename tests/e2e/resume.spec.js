@@ -2,6 +2,7 @@ import { test, expect } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { readerImage } from '../fixtures/reader-image.mjs';
+import { accountSource, accountClassification } from '../extension-account-contract.mjs';
 
 const chapter = '11111111-2222-4333-8444-555555555555';
 const manga = 'mal-manga-21',
@@ -31,14 +32,18 @@ async function setup(context, baseURL) {
       body: readFileSync(new URL('./fixtures/sync.webm', import.meta.url)),
     }),
   );
-  await context.route('**/api/media/*/reading-sources', (route) =>
+  await context.route(/\/api\/media\/[^/]+\/reading-sources(?:\?.*)?$/, (route) =>
     route.fulfill({ json: { state: 'ready', sources: [{ id: 'mangadex', name: 'MangaDex' }] } }),
   );
   await context.route('**/api/media/*/chapters?*', (route) =>
     route.fulfill({ json: { state: 'ready', items: [], total: 0 } }),
   );
-  await context.route(/\/api\/media\/[^/]+\/reader\/[^/?]+$/, (route) => {
-    const path = new URL(route.request().url()).pathname;
+  await context.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?.*)?$/, (route) => {
+    const url = new URL(route.request().url());
+    expect(url.searchParams.get('destination')).toBe('yoru');
+    expect(url.searchParams.get('integration')).toBe('all');
+    expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
+    const path = url.pathname;
     return route.fulfill({
       json: {
         id: chapter,
@@ -351,6 +356,153 @@ test('active video and Watch state survive deferred background resume refresh an
         user.id,
       ),
     ).toBe(true);
+  } finally {
+    for (const requestGate of gates) requestGate.release();
+  }
+});
+
+test('guest active Watch survives held inventory success and failure without retaining stale native history', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(context, baseURL);
+  const nativeMedia = {
+    id: 'ext-manga-' + '8'.repeat(32),
+    title: 'Guest source proof history',
+    category: 'MANGA',
+    isAdult: false,
+    sourceRef: accountSource(),
+    classification: accountClassification(),
+    cover: '/icon.svg',
+  };
+  await context.addInitScript(
+    (media) =>
+      localStorage.setItem(
+        'yoru:resume:guest',
+        JSON.stringify({
+          items: [
+            {
+              mediaId: media.id,
+              mediaSnapshot: media,
+              title: media.title,
+              category: media.category,
+              destination: 'yoru',
+              number: 3,
+              page: 8,
+              updatedAt: Date.now(),
+            },
+          ],
+          pending: {},
+        }),
+      ),
+    nativeMedia,
+  );
+  const gate = () => {
+    let enter, release;
+    return {
+      entered: new Promise((resolve) => {
+        enter = resolve;
+      }),
+      released: new Promise((resolve) => {
+        release = resolve;
+      }),
+      enter: () => enter(),
+      release: () => release(),
+      status: 200,
+    };
+  };
+  let held = null;
+  const gates = [];
+  await context.route('**/api/reader/catalogs*', async (route) => {
+    const requestGate = held;
+    if (requestGate) {
+      requestGate.enter();
+      await requestGate.released;
+    }
+    await route.fulfill({
+      status: requestGate?.status || 200,
+      json:
+        requestGate?.status === 500
+          ? { error: 'Unavailable' }
+          : { sources: [nativeMedia.sourceRef], complete: true, nextCursor: null },
+    });
+  });
+  const settleRender = () =>
+    page.evaluate(
+      () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+    );
+  const samePlayer = () =>
+    page.evaluate(
+      () =>
+        document.querySelector('video') === window.guestRefreshVideo &&
+        window.guestRefreshVideo?.isConnected,
+    );
+  try {
+    const initialCatalog = page.waitForResponse(
+      (response) => new URL(response.url()).pathname === '/api/reader/catalogs',
+    );
+    await page.goto(`/watch/${anime}/3`);
+    await initialCatalog;
+    await settleRender();
+    const video = page.locator('video');
+    await expect.poll(() => video.evaluate((v) => v.readyState)).toBeGreaterThanOrEqual(2);
+    await page.getByRole('button', { name: 'Theater', exact: true }).click();
+    await video.evaluate(async (v) => {
+      window.guestRefreshVideo = v;
+      v.muted = true;
+      v.loop = true;
+      v.volume = 0.41;
+      v.playbackRate = 0.25;
+      v.currentTime = 1;
+      await v.play();
+    });
+    for (const status of [200, 500]) {
+      held = gate();
+      held.status = status;
+      gates.push(held);
+      await page.evaluate(() => window.dispatchEvent(new Event('focus')));
+      await held.entered;
+      await settleRender();
+      expect(await samePlayer(), 'inventory revalidation keeps the exact guest video node').toBe(
+        true,
+      );
+      const response = page.waitForResponse(
+        (response) =>
+          new URL(response.url()).pathname === '/api/reader/catalogs' &&
+          response.status() === status,
+      );
+      held.release();
+      await response;
+      await settleRender();
+      expect(await samePlayer(), `inventory ${status} keeps active guest playback mounted`).toBe(
+        true,
+      );
+      await expect(page.getByRole('button', { name: 'Theater', exact: true })).toHaveAttribute(
+        'aria-pressed',
+        'true',
+      );
+      expect(await video.evaluate((v) => ({ paused: v.paused, volume: v.volume }))).toEqual({
+        paused: false,
+        volume: 0.41,
+      });
+      await expect.poll(() => video.evaluate((v) => v.currentTime)).toBeGreaterThanOrEqual(1);
+    }
+    await page.goto('/');
+    await expect(page.getByText(nativeMedia.title)).toHaveCount(0);
+    await expect(page.getByText('Installed sources could not be verified.')).toBeVisible();
+    expect(
+      await page.evaluate(
+        (id) =>
+          JSON.parse(localStorage.getItem('yoru:resume:guest')).items.some(
+            (item) => item.mediaId === id,
+          ),
+        nativeMedia.id,
+      ),
+    ).toBe(true);
+    await page.goto('/ara-ara');
+    await expect(page.getByRole('heading', { name: 'Adults only' })).toBeVisible();
+    await expect(page.getByText(nativeMedia.title)).toHaveCount(0);
   } finally {
     for (const requestGate of gates) requestGate.release();
   }

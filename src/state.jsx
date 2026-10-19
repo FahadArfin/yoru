@@ -206,6 +206,7 @@ export function AppProvider({ children }) {
     context: readingContext,
     ready: policyReady,
     viewKey: `${viewKey}:${inventoryFresh ? sourceInventory.observedAt : 0}`,
+    readinessKey: viewKey,
     currentSources,
   });
   const [authLoading, setAuthLoading] = useState(true);

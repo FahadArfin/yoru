@@ -32,7 +32,7 @@ function merge(items, updates) {
 export function useResume(
   owner,
   authKnown,
-  { context, ready = true, viewKey = '', currentSources = [] } = {},
+  { context, ready = true, viewKey = '', readinessKey = viewKey, currentSources = [] } = {},
 ) {
   const destination = context?.destination || 'yoru';
   const projectVisible = (state) =>
@@ -64,6 +64,7 @@ export function useResume(
           owner,
           destination,
           viewKey,
+          readinessKey,
           items: projectVisible(state),
           ready: state.loaded,
           page: state.page,
@@ -141,7 +142,7 @@ export function useResume(
       window.removeEventListener('pagehide', flush);
       document.removeEventListener('visibilitychange', visible);
     };
-  }, [owner, authKnown, destination, viewKey, ready]);
+  }, [owner, authKnown, destination, viewKey, readinessKey, ready]);
   const saveResume = useCallback(
     (media, patch) => {
       const state = session.current;
@@ -181,6 +182,7 @@ export function useResume(
         owner,
         destination,
         viewKey,
+        readinessKey,
         items: projectVisible(state),
         ready: state.loaded,
         page: state.page,
@@ -191,7 +193,7 @@ export function useResume(
       clearTimeout(state.timer);
       state.timer = setTimeout(state.flush, 500);
     },
-    [owner, authKnown, destination, viewKey, ready],
+    [owner, authKnown, destination, viewKey, readinessKey, ready],
   );
   const current =
     ready &&
@@ -227,7 +229,9 @@ export function useResume(
       authKnown &&
       snapshot.owner === owner &&
       snapshot.destination === destination &&
-      snapshot.viewKey === viewKey &&
+      // Inventory generations narrow visible history independently of whether
+      // this owner/destination/fingerprint/confirmation scope was initialized.
+      snapshot.readinessKey === readinessKey &&
       snapshot.ready,
     saveResume,
   };
