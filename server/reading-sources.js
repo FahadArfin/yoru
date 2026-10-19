@@ -1,6 +1,103 @@
 import { createHash, timingSafeEqual } from 'node:crypto';
 import { apiError } from './validation.js';
 import { getChapterCatalog, getCatalogChapter } from './chapter-catalog.js';
+import { parseMediaReference, parseEditionReference } from '../shared/media-reference.js';
+import { resolveMedia, resolveReadingEdition, assertSourceEligible } from './media-resolver.js';
+import { createExternalCatalogStore } from './external-catalog-store.js';
+import { createExtensionGateway } from './extension-gateway.js';
+
+const defaultContext = {
+  destination: 'yoru',
+  integrationMode: 'all',
+  overrides: {},
+  extensionsEnabled: false,
+};
+const readingContext = (options) => options.context || defaultContext;
+const native = (id) => parseMediaReference(id)?.kind === 'extension-manga';
+const deps = (options) => ({
+  db: options.readerDb || options.db,
+  coreMedia: options.media,
+  bridge:
+    options.bridge ||
+    createExtensionGateway({
+      ...options,
+      extensionsEnabled: readingContext(options).extensionsEnabled,
+    }),
+});
+const operationContext = (options) => ({
+  signal: readingContext(options).signal,
+  deadlineAt: Date.now() + 12000,
+  priority: 'interactive',
+});
+async function storedEligible(id, options) {
+  return resolveMedia(id, readingContext(options), {
+    db: deps(options).db,
+    coreMedia: options.media,
+  });
+}
+async function nativeMedia(id, options) {
+  return resolveMedia(id, readingContext(options), deps(options));
+}
+async function nativeEdition(id, chapter, options) {
+  return resolveReadingEdition(id, chapter, readingContext(options), deps(options));
+}
+function publicEdition(id, edition, options) {
+  const item = {};
+  for (const key of [
+    'id',
+    'mediaId',
+    'sourceRef',
+    'upstreamRef',
+    'integration',
+    'volume',
+    'number',
+    'title',
+    'language',
+    'order',
+    'pageCount',
+    'pages',
+    'native',
+  ])
+    if (Object.hasOwn(edition, key)) item[key] = edition[key];
+  const result = internal(id, {
+    ...item,
+    native: true,
+    source: edition.sourceRef.id,
+    readLabel: 'Read chapter',
+  });
+  return options
+    ? { ...result, readUrl: `${result.readUrl}&destination=${readingContext(options).destination}` }
+    : result;
+}
+const choices = (media) =>
+  (media.readingChoices || []).map((choice) => ({
+    id: choice.sourceRef.id,
+    name: choice.sourceRef.providerKey,
+    native: choice.integration === 'suwayomi',
+    languages: [choice.sourceRef.language],
+    ...choice,
+  }));
+function allowedSources(sources, options) {
+  return sources.filter((source) => {
+    try {
+      assertSourceEligible(source.sourceRef || source, readingContext(options), {
+        discovery: true,
+      });
+      return true;
+    } catch {
+      return false;
+    }
+  });
+}
+function exactEdition(result, selected) {
+  if (
+    result?.sourceRef?.id !== selected.sourceRef.id ||
+    result.upstreamRef?.upstreamKey !== selected.upstreamRef.upstreamKey ||
+    JSON.stringify(result.upstreamRef?.title) !== JSON.stringify(selected.upstreamRef.title)
+  )
+    throw apiError(404, 'This chapter is unavailable.');
+  return result;
+}
 
 const REGISTRATION = 'reader-bridge:v1:endpoint';
 const CHAPTER =
@@ -75,6 +172,7 @@ async function title(id, options) {
   const media = await options.media(id);
   if (!media || media.id !== id || !['MANGA', 'MANHWA'].includes(media.category) || media.isAdult)
     throw apiError(404, 'This manga is unavailable.');
+  if (options.context) await resolveMedia(id, options.context, { coreMedia: options.media });
   return {
     id,
     category: media.category,
@@ -104,6 +202,13 @@ async function bytes(response, max) {
   return Buffer.concat(chunks);
 }
 async function call(id, path, payload, options, image = false) {
+  if (options.context && payload.source)
+    assertSourceEligible({ id: payload.source, integration: 'core' }, options.context);
+  if (options.context && payload.chapterId)
+    assertSourceEligible(
+      { id: parseEditionReference(payload.chapterId)?.kind, integration: 'core' },
+      options.context,
+    );
   const media = await title(id, options),
     bridge = await readerBridge(options);
   if (!bridge) throw apiError(503, 'The reading server is offline. Please try again shortly.');
@@ -139,9 +244,28 @@ async function call(id, path, payload, options, image = false) {
   return result;
 }
 export async function getReadingSources(id, options) {
+  if (native(id)) {
+    const media = await nativeMedia(id, options);
+    return { sources: choices(media), state: 'ready' };
+  }
   await title(id, options);
+  const mapped =
+    options.readerDb && options.context
+      ? choices(
+          await resolveMedia(id, options.context, {
+            db: options.readerDb,
+            coreMedia: options.media,
+          }),
+        ).filter((choice) => choice.integration === 'suwayomi')
+      : [];
   const fallback = {
-    sources: [{ id: 'mangadex', name: 'MangaDex', native: false, languages: [] }],
+    sources: [
+      ...allowedSources(
+        [{ id: 'mangadex', name: 'MangaDex', native: false, languages: [] }],
+        options,
+      ),
+      ...mapped,
+    ],
     state: 'external-only',
   };
   if (!options.bridgeKey) return fallback;
@@ -149,7 +273,13 @@ export async function getReadingSources(id, options) {
   try {
     const data = await call(id, '/sources', {}, options);
     return {
-      sources: data.sources.filter((s) => ['mangadex', 'weebcentral'].includes(s.id)),
+      sources: [
+        ...allowedSources(
+          data.sources.filter((s) => ['mangadex', 'weebcentral'].includes(s.id)),
+          options,
+        ),
+        ...mapped,
+      ],
       state: 'ready',
       partial: !!data.unavailable,
     };
@@ -164,8 +294,38 @@ const internal = (id, c) => ({
     : c.readUrl,
 });
 export async function getReadingCatalog(id, params, options) {
+  if (native(id)) {
+    const media = await nativeMedia(id, options);
+    if (params.source && params.source !== media.sourceRef.id)
+      throw apiError(404, 'This source is unavailable.');
+    assertSourceEligible(media.sourceRef, readingContext(options), { discovery: true });
+    const result = await deps(options).bridge.chapters(
+      media.upstreamRef,
+      { language: params.language, page: params.page },
+      operationContext(options),
+    );
+    if (!Array.isArray(result.items) || result.items.length > 1000)
+      throw apiError(502, 'Invalid chapter list.');
+    const store = createExternalCatalogStore(deps(options).db);
+    const items = [];
+    for (const item of result.items)
+      items.push(publicEdition(id, await store.rememberEdition(id, item), options));
+    await storedEligible(id, options);
+    return {
+      items,
+      nextPage: result.nextPage,
+      hasMore: !!result.hasMore,
+      total: null,
+      totalIsEstimate: true,
+      state: 'ready',
+    };
+  }
   const source = params.source || 'mangadex';
   if (!['mangadex', 'weebcentral'].includes(source)) throw apiError(400, 'Unknown reading source.');
+  if (options.context) {
+    await title(id, options);
+    assertSourceEligible({ id: source, integration: 'core' }, options.context, { discovery: true });
+  }
   if (source === 'mangadex' && (!options.bridgeKey || !(await readerBridge(options))))
     return getChapterCatalog(id, params, options);
   const data = await call(id, '/chapters', { source, filters: params }, options);
@@ -178,13 +338,63 @@ export async function getReadingCatalog(id, params, options) {
   return { ...data, items: data.items.map((c) => internal(id, c)) };
 }
 export async function getReadingChapter(id, chapterId, options) {
+  if (native(id) || parseEditionReference(chapterId)?.kind === 'extension') {
+    const selected = await nativeEdition(id, chapterId, options);
+    const result = exactEdition(
+      await deps(options).bridge.chapter(
+        selected.upstreamRef.title,
+        selected.upstreamRef,
+        operationContext(options),
+      ),
+      selected,
+    );
+    const publicChapter = publicEdition(
+      id,
+      await createExternalCatalogStore(deps(options).db).rememberEdition(id, result),
+      options,
+    );
+    await storedEligible(id, options);
+    return publicChapter;
+  }
   if (!CHAPTER.test(chapterId || '')) throw apiError(400, 'Invalid chapter ID.');
+  if (options.context) {
+    await title(id, options);
+    assertSourceEligible(
+      { id: parseEditionReference(chapterId)?.kind, integration: 'core' },
+      options.context,
+    );
+  }
   if (!chapterId.startsWith('sw-')) return getCatalogChapter(id, chapterId, options);
   const result = await call(id, '/chapter', { chapterId }, options);
   if (result.chapter?.id !== chapterId) throw apiError(502, 'Invalid chapter.');
   return result.chapter;
 }
 export async function getReaderChapter(id, chapterId, options) {
+  if (native(id) || parseEditionReference(chapterId)?.kind === 'extension') {
+    const selected = await nativeEdition(id, chapterId, options);
+    const result = await deps(options).bridge.reader(
+      selected.upstreamRef.title,
+      selected.upstreamRef,
+      operationContext(options),
+    );
+    exactEdition(result.edition, selected);
+    await createExternalCatalogStore(deps(options).db).rememberEdition(id, result.edition);
+    await storedEligible(id, options);
+    if (
+      !Array.isArray(result.pages) ||
+      !result.pages.length ||
+      result.pages.length > 500 ||
+      result.pages.some((p, i) => p !== i)
+    )
+      throw apiError(502, 'Invalid chapter pages.');
+    return {
+      ...publicEdition(id, selected, options),
+      kind: 'remote',
+      pages: result.pages.map((_, i) => ({
+        url: `/api/media/${id}/reader/${chapterId}/page/${i}?destination=${readingContext(options).destination}`,
+      })),
+    };
+  }
   if (!CHAPTER.test(chapterId || '')) throw apiError(400, 'Invalid chapter ID.');
   const result = await call(id, '/reader', { chapterId }, options);
   const c = result.chapter;
@@ -195,12 +405,28 @@ export async function getReaderChapter(id, chapterId, options) {
     kind: 'remote',
     group: c.groups?.map((g) => g.name).join(', ') || c.readLabel,
     pages: c.pages.map((_, i) => ({
-      url: `/api/media/${id}/reader/${encodeURIComponent(chapterId)}/page/${i}`,
+      url: `/api/media/${id}/reader/${encodeURIComponent(chapterId)}/page/${i}${options.context?.destination === 'ara-ara' ? '?destination=ara-ara' : ''}`,
     })),
   };
 }
 export async function getReaderPage(id, chapterId, page, options) {
+  if (native(id) || parseEditionReference(chapterId)?.kind === 'extension') {
+    if (!/^\d{1,3}$/.test(String(page)) || Number(page) >= 500)
+      throw apiError(400, 'Invalid page.');
+    const selected = await nativeEdition(id, chapterId, options);
+    return deps(options).bridge.page(
+      selected.upstreamRef.title,
+      selected.upstreamRef,
+      Number(page),
+      operationContext(options),
+    );
+  }
   if (!CHAPTER.test(chapterId || '') || !/^\d{1,3}$/.test(String(page)) || Number(page) >= 500)
     throw apiError(400, 'Invalid page.');
   return call(id, '/page', { chapterId, page: Number(page) }, options, true);
+}
+export async function getReaderCover(id, options) {
+  if (!native(id)) throw apiError(404, 'This cover is unavailable.');
+  const media = await nativeMedia(id, options);
+  return deps(options).bridge.cover(media.upstreamRef, operationContext(options));
 }

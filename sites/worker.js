@@ -9,6 +9,16 @@ import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
 import { store, sitesReaderDb } from './store.js';
 import {
+  resolveReaderContext,
+  saveReaderContext,
+  readerContextResponse,
+  readerGuestId,
+  READER_GUEST_COOKIE,
+  READER_CONTEXT_SECONDS,
+} from '../server/reader-context.js';
+import { resolveMedia } from '../server/media-resolver.js';
+import { createExtensionGateway } from '../server/extension-gateway.js';
+import {
   authRoutes,
   sessionMiddleware,
   originGuard,
@@ -61,6 +71,7 @@ import {
   getReaderPage,
   registerReaderBridge,
   getReaderCatalogs,
+  getReaderCover,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
 import { requireAuth } from './security.js';
@@ -85,6 +96,18 @@ app.use(
   }),
 );
 app.use('/api/*', originGuard, sessionMiddleware);
+const contextOptions = (c, guestId = getCookie(c, READER_GUEST_COOKIE)) => ({
+  db: sitesReaderDb(c.get('db')),
+  userId: c.get('user')?.id,
+  sessionHash: c.get('sessionHash'),
+  guestId,
+  extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+  signal: c.req.raw.signal,
+});
+app.use('/api/media/*', async (c, next) => {
+  c.set('readerContext', await resolveReaderContext(c.req.query(), contextOptions(c)));
+  await next();
+});
 app.use('/api/*', async (c, next) => {
   // Drain bounded write bodies even for routes such as logout and leave. Keeping
   // unread bytes on these requests can reset the client's next keep-alive request.
@@ -169,6 +192,37 @@ const chapterOptions = (c) => ({
   db: c.get('db'),
   userId: c.get('user')?.id,
   sessionHash: c.get('sessionHash'),
+  readerDb: sitesReaderDb(c.get('db')),
+  context: c.get('readerContext'),
+});
+for (const method of ['get', 'post'])
+  app[method]('/api/reader/context', async (c) => {
+    const guestId = c.get('user') ? undefined : readerGuestId(getCookie(c, READER_GUEST_COOKIE));
+    const context = await (method === 'post' ? saveReaderContext : resolveReaderContext)(
+      method === 'post' ? await c.req.json() : c.req.query(),
+      contextOptions(c, guestId),
+    );
+    if (guestId)
+      setCookie(c, READER_GUEST_COOKIE, guestId, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        secure: new URL(c.req.url).protocol === 'https:',
+        path: '/',
+        maxAge: READER_CONTEXT_SECONDS,
+      });
+    c.header('Cache-Control', 'no-store');
+    return c.json(readerContextResponse(context));
+  });
+app.get('/api/media/:id/cover', async (c) => {
+  const image = await getReaderCover(c.req.param('id'), chapterOptions(c));
+  return new Response(image.body, {
+    headers: {
+      'content-type': image.type,
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      'x-yoru-cache': image.cached ? 'hit' : 'miss',
+    },
+  });
 });
 app.post('/api/reader-bridge/register', async (c) =>
   c.json(
@@ -222,7 +276,7 @@ app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
   return new Response(page.body, {
     headers: {
       'content-type': page.type,
-      'cache-control': 'private, max-age=300',
+      'cache-control': 'no-store',
       'x-yoru-cache': page.cached ? 'hit' : 'miss',
       'x-content-type-options': 'nosniff',
     },
@@ -303,9 +357,15 @@ app.get('/api/media/:id/cast', async (c) =>
   ),
 );
 app.get('/api/media/:id', async (c) => {
-  if (!parseMediaId(c.req.param('id'))) throw apiError(400, 'Invalid media ID');
-  const media = await getMedia(c.req.param('id'));
-  if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
+  const options = chapterOptions(c);
+  const media = await resolveMedia(c.req.param('id'), c.get('readerContext'), {
+    db: sitesReaderDb(c.get('db')),
+    coreMedia: getMedia,
+    bridge: createExtensionGateway({
+      ...options,
+      extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+    }),
+  });
   return c.json(media);
 });
 app.post('/api/media/:id/view', async (c) => {

@@ -25,6 +25,17 @@ import { scheduleOptions } from './schedule-storage.js';
 import { getHomeSidebar, mostViewedQuery } from './home-sidebar.js';
 import { all, run, get, transaction } from './db.js';
 import { nodeReaderDb } from './reader-db.js';
+import {
+  resolveReaderContext,
+  saveReaderContext,
+  readerContextResponse,
+  readerGuestId,
+  READER_GUEST_COOKIE,
+  READER_CONTEXT_SECONDS,
+  nodeReaderSignal,
+} from './reader-context.js';
+import { resolveMedia } from './media-resolver.js';
+import { createExtensionGateway } from './extension-gateway.js';
 import { cookie, asyncRoute, requireAuth } from './auth.js';
 import {
   getReadingCatalog,
@@ -33,6 +44,7 @@ import {
   getReaderPage,
   registerReaderBridge,
   getReaderCatalogs,
+  getReaderCover,
 } from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
 import { getPopularAnime } from './home-discovery.js';
@@ -51,6 +63,34 @@ export * from './catalog-core.js';
 
 export const catalogRouter = Router();
 const preferenceDb = nodeReaderDb({ all, run, get, transaction });
+const contextOptions = (req, guestId = cookie(req, READER_GUEST_COOKIE)) => ({
+  db: preferenceDb,
+  userId: req.user?.id,
+  sessionHash: req.sessionHash,
+  guestId,
+  extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+  signal: req.readerSignal,
+});
+for (const method of ['get', 'post'])
+  catalogRouter[method](
+    '/reader/context',
+    asyncRoute(async (req, res) => {
+      const guestId = req.user ? undefined : readerGuestId(cookie(req, READER_GUEST_COOKIE));
+      const context = await (method === 'post' ? saveReaderContext : resolveReaderContext)(
+        method === 'post' ? req.body : req.query,
+        contextOptions(req, guestId),
+      );
+      if (guestId)
+        res.cookie(READER_GUEST_COOKIE, guestId, {
+          httpOnly: true,
+          sameSite: 'lax',
+          secure: req.secure || req.headers['x-forwarded-proto'] === 'https',
+          path: '/',
+          maxAge: READER_CONTEXT_SECONDS * 1000,
+        });
+      res.set('Cache-Control', 'no-store').json(readerContextResponse(context));
+    }),
+  );
 catalogRouter.get(
   '/reader/preferences',
   asyncRoute(async (req, res) => {
@@ -125,7 +165,31 @@ const chapterOptions = (req) => ({
   db: { all, run },
   userId: req.user?.id,
   sessionHash: req.sessionHash,
+  readerDb: preferenceDb,
+  context: req.readerContext,
 });
+catalogRouter.use(
+  '/media/:id',
+  asyncRoute(async (req, res, next) => {
+    req.readerSignal = nodeReaderSignal(req, res);
+    req.readerContext = await resolveReaderContext(req.query, contextOptions(req));
+    next();
+  }),
+);
+catalogRouter.get(
+  '/media/:id/cover',
+  asyncRoute(async (req, res) => {
+    const image = await getReaderCover(req.params.id, chapterOptions(req));
+    res
+      .set({
+        'content-type': image.type,
+        'cache-control': 'no-store',
+        'x-content-type-options': 'nosniff',
+        'x-yoru-cache': image.cached ? 'hit' : 'miss',
+      })
+      .send(image.body);
+  }),
+);
 catalogRouter.get(
   '/reader/catalogs',
   asyncRoute(async (req, res) => {
@@ -168,7 +232,7 @@ catalogRouter.get(
     res
       .set({
         'content-type': page.type,
-        'cache-control': 'private, max-age=300',
+        'cache-control': 'no-store',
         'x-yoru-cache': page.cached ? 'hit' : 'miss',
         'x-content-type-options': 'nosniff',
       })
@@ -330,11 +394,16 @@ catalogRouter.get('/catalog', async (req, res, next) => {
 });
 catalogRouter.get('/media/:id', async (req, res, next) => {
   try {
-    if (!parseMediaId(req.params.id)) return res.status(400).json({ error: 'Invalid media ID' });
-    const media = await getMedia(req.params.id);
-    if (!media)
-      return res.status(404).json({ error: 'This title is unavailable. Please try again later.' });
-    res.set('Cache-Control', 'private, max-age=60').json(media);
+    const options = chapterOptions(req);
+    const media = await resolveMedia(req.params.id, req.readerContext, {
+      db: preferenceDb,
+      coreMedia: getMedia,
+      bridge: createExtensionGateway({
+        ...options,
+        extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+      }),
+    });
+    res.set('Cache-Control', 'no-store').json(media);
   } catch (error) {
     next(error);
   }

@@ -1,7 +1,8 @@
 import { araTitles, isAraMedia } from '../shared/ara-ara.js';
 import { getMedia } from './catalog-core.js';
+import { assertMediaEligible } from './media-resolver.js';
 
-export async function getAraCatalog(media = getMedia) {
+export async function getAraCatalog(media = getMedia, { context, nativeItems = [] } = {}) {
   const resolved = await Promise.all(
     araTitles.map(async (entry) => {
       const item = await media(entry.id).catch(() => null);
@@ -9,7 +10,19 @@ export async function getAraCatalog(media = getMedia) {
     }),
   );
   return {
-    items: resolved.filter(Boolean),
+    items: [
+      ...resolved.filter(Boolean),
+      ...nativeItems.filter((item) => {
+        if (!context || context.destination !== 'ara-ara' || !item?.id?.startsWith('ext-manga-'))
+          return false;
+        try {
+          assertMediaEligible(item, context);
+          return true;
+        } catch {
+          return false;
+        }
+      }),
+    ],
     curated: true,
     unavailable: resolved.filter((x) => !x).length,
   };

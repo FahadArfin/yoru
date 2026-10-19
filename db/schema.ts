@@ -434,6 +434,21 @@ export const readerSettings = sqliteTable('reader_settings', {
   revision: integer().notNull().default(0),
 });
 
+export const readerGuestContexts = sqliteTable(
+  'reader_guest_contexts',
+  {
+    guest_hash: text().notNull(),
+    destination: text().notNull(),
+    selection: text().notNull(),
+    revision: integer().notNull(),
+    expires_at: integer().notNull(),
+  },
+  (t) => [
+    primaryKey({ columns: [t.guest_hash, t.destination] }),
+    index('reader_guest_contexts_expiry').on(t.expires_at),
+  ],
+);
+
 export const chapterOpens = sqliteTable(
   'chapter_opens',
   {
