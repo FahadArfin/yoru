@@ -155,6 +155,7 @@ async function fixture(t) {
         };
       else if (query.includes('ExtensionPages')) {
         const chapter = state.chapters.find((x) => x.id === v.input.chapterId);
+        if (state.fetchedPageCount !== undefined) chapter.pageCount = state.fetchedPageCount;
         data = {
           fetchChapterPages: {
             chapter: { ...chapter, manga: state.titles.find((x) => x.id === chapter.mangaId) },
@@ -187,6 +188,52 @@ async function fixture(t) {
     openSourceBindings,
   };
 }
+
+test('unknown page count chapters open lazily and retain exact identity through manifest and page zero', async (t) => {
+  const { state, provider, title } = await fixture(t);
+  state.chapters.forEach((chapter) => {
+    chapter.pageCount = -1;
+  });
+  state.fetchedPageCount = 2;
+  const listed = await provider.chapters(title);
+  assert.deepEqual(
+    listed.items.map((chapter) => chapter.metadata.pageCount),
+    [0, 0, 0, 0],
+  );
+  assert.equal(
+    state.requests.some((request) => request.query.includes('ExtensionPages')),
+    false,
+  );
+  assert.equal(state.imageCalls, 0);
+  const selected = listed.items[1];
+  const manifest = await provider.reader(title, selected.upstreamRef);
+  assert.deepEqual(manifest.pages, [0, 1]);
+  assert.equal(manifest.edition.metadata.pageCount, 2);
+  assert.deepEqual(manifest.edition.upstreamRef, selected.upstreamRef);
+  assert.equal(
+    new TextDecoder().decode((await provider.page(title, selected.upstreamRef, 0)).body),
+    'png',
+  );
+  assert.equal((await provider.page(title, selected.upstreamRef, 0)).cached, true);
+  assert.equal((await provider.chapters(title)).items[1].metadata.pageCount, 2);
+  assert.equal(state.imageCalls, 1);
+  state.chapters[1].mangaId = 999;
+  await assert.rejects(provider.page(title, selected.upstreamRef, 0), { status: 409 });
+  assert.equal(state.imageCalls, 1, 'unknown count never relaxes ownership before cached bytes');
+});
+
+test('only the upstream unknown page sentinel is accepted outside bounded integer page counts', async (t) => {
+  const { state, provider, title } = await fixture(t);
+  for (const invalid of [-2, -99, 1.5, '-1', null, 501]) {
+    state.chapters[1].pageCount = invalid;
+    await assert.rejects(provider.chapters(title), { status: 409 });
+  }
+  for (const valid of [0, 500]) {
+    state.chapters[1].pageCount = valid;
+    assert.equal((await provider.chapters(title)).items[1].metadata.pageCount, valid);
+  }
+  assert.equal(state.imageCalls, 0);
+});
 
 test('page bytes require exact source title and chapter ownership', async (t) => {
   const { state, provider, title, bindings } = await fixture(t);

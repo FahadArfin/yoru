@@ -233,7 +233,8 @@ export class ExtensionProviders {
       !Number.isInteger(row.sourceOrder) ||
       row.sourceOrder < 0 ||
       !Number.isInteger(row.pageCount) ||
-      row.pageCount < 0
+      row.pageCount < -1 ||
+      row.pageCount > 500
     )
       return null;
     let id;
@@ -256,7 +257,8 @@ export class ExtensionProviders {
         volume: null,
         language: source.ref.language,
         order: row.sourceOrder,
-        pageCount: row.pageCount,
+        // Suwayomi uses -1 until the chapter's pages are fetched lazily.
+        pageCount: row.pageCount === -1 ? 0 : row.pageCount,
         scanlator: typeof row.scanlator === 'string' ? row.scanlator.slice(0, 500) : null,
         publishedAt:
           Number(row.uploadDate) > 0 && Number(row.uploadDate) <= 8.64e15
