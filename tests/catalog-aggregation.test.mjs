@@ -378,3 +378,157 @@ test('deadline exhaustion rotates from the last attempted source without starvin
     f.close();
   }
 });
+
+function consumeFeedPage(cards, page) {
+  for (const item of page.items) cards.set(item.id, item);
+  for (const update of page.updates || []) {
+    const card = cards.get(update.id);
+    assert.ok(card, 'updates target a representative previously emitted in this selection');
+    const choices = new Map((card.readingChoices || []).map((choice) => [choice.mediaId, choice]));
+    for (const choice of update.readingChoices) choices.set(choice.mediaId, choice);
+    cards.set(update.id, {
+      ...card,
+      readingChoices: [...choices.values()],
+      availableIntegrations: [
+        ...new Set([...choices.values()].map((choice) => choice.integration)),
+      ],
+    });
+  }
+}
+
+for (const scenario of ['limited page', 'later four-operation batch'])
+  test(`equivalent choices survive a ${scenario} as bounded updates to one representative`, async () => {
+    const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
+    const { createExternalCatalogStore } = await import('../server/external-catalog-store.js');
+    const f = contextFixture(),
+      count = scenario === 'limited page' ? 2 : 6,
+      sources = Array.from({ length: count }, (_, i) => source(i + 1)),
+      store = createExternalCatalogStore(f.db);
+    let calls = 0;
+    try {
+      const firstTitle = await store.rememberTitle(title(sources[0]));
+      const lastTitle = await store.rememberTitle(title(sources.at(-1)));
+      await store.addEquivalence(firstTitle.id, lastTitle.id, {
+        kind: 'trusted-mapping',
+        reference: 'fixture-exact-cross-page-edition',
+      });
+      const deps = {
+        db: f.db,
+        currentSources: sources,
+        bridge: {
+          async browse({ sourceId }) {
+            calls++;
+            return {
+              items:
+                sourceId === sources[0].id || sourceId === sources.at(-1).id
+                  ? [title(sources.find((s) => s.id === sourceId))]
+                  : [],
+              hasMore: false,
+            };
+          },
+        },
+      };
+      const input = { limit: scenario === 'limited page' ? 1 : 20 };
+      const first = await getReadingDiscovery(input, context, deps);
+      assert.equal(first.items.length, 1);
+      assert.equal(first.items[0].readingChoices.length, 1);
+      assert.ok(first.nextCursor);
+      const initialCalls = calls,
+        cards = new Map();
+      consumeFeedPage(cards, first);
+      const second = await getReadingDiscovery(
+        { ...input, cursor: first.nextCursor },
+        context,
+        deps,
+      );
+      assert.equal(
+        second.items.length,
+        0,
+        'an equivalent path must not create another display card',
+      );
+      assert.equal(
+        second.updates?.length,
+        1,
+        'later equivalent path needs an explicit merge update',
+      );
+      assert.equal(second.updates[0].id, first.items[0].id);
+      assert.deepEqual(
+        Object.keys(second.updates[0]).sort(),
+        ['id', 'readingChoices'],
+        'updates never reserialize old representative metadata',
+      );
+      assert.equal(
+        second.hasMore,
+        false,
+        'terminal update-only pages still carry the new reading path',
+      );
+      consumeFeedPage(cards, second);
+      consumeFeedPage(cards, second);
+      assert.equal(cards.size, 1);
+      assert.deepEqual(
+        [...cards.values()][0].readingChoices.map((c) => c.mediaId).sort(),
+        [firstTitle.id, lastTitle.id].sort(),
+      );
+      assert.ok(initialCalls <= 4);
+      assert.ok(calls - initialCalls <= 4);
+      if (scenario === 'later four-operation batch') {
+        assert.equal(initialCalls, 4);
+        assert.equal(calls, 6);
+      }
+      const row = await f.db.get('SELECT payload FROM reader_continuations');
+      const state = JSON.parse(row.payload);
+      assert.ok(Buffer.byteLength(row.payload) <= 1048576);
+      assert.ok(
+        Object.values(state.representatives).every((value) => typeof value === 'string'),
+        'session retains only bounded identity mapping, not provider/card payloads',
+      );
+    } finally {
+      f.close();
+    }
+  });
+
+test('later inventory segment updates retain only the newly eligible exact path', async () => {
+  const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
+  const { createExternalCatalogStore } = await import('../server/external-catalog-store.js');
+  const f = contextFixture(),
+    original = source(1),
+    later = source(601),
+    store = createExternalCatalogStore(f.db);
+  try {
+    const firstTitle = await store.rememberTitle(title(original)),
+      lastTitle = await store.rememberTitle(title(later));
+    await store.addEquivalence(firstTitle.id, lastTitle.id, {
+      kind: 'trusted-mapping',
+      reference: 'fixture-exact-inventory-segment',
+    });
+    let calls = 0;
+    const deps = {
+      db: f.db,
+      currentSources: [original],
+      bridge: {
+        async browse({ sourceId }) {
+          calls++;
+          const s = sourceId === original.id ? original : later;
+          return { items: [title(s)], hasMore: s.id === original.id, nextPage: 2 };
+        },
+      },
+    };
+    const first = await getReadingDiscovery({}, context, deps);
+    deps.currentSources = [later];
+    const second = await getReadingDiscovery({ cursor: first.nextCursor }, context, deps);
+    assert.equal(second.items.length, 0);
+    assert.equal(second.updates.length, 1);
+    assert.equal(second.updates[0].id, firstTitle.id);
+    assert.deepEqual(
+      second.updates[0].readingChoices.map((choice) => choice.mediaId),
+      [lastTitle.id],
+    );
+    assert.ok(
+      !JSON.stringify(second.updates).includes(original.id),
+      'no old source snapshot is reserialized',
+    );
+    assert.equal(calls, 2, 'equivalence updates make no extra remote calls');
+  } finally {
+    f.close();
+  }
+});

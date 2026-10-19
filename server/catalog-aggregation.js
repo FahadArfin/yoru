@@ -95,15 +95,16 @@ async function aggregate(input, context, deps) {
   const state = input.cursor
     ? await continuation.resume(input.cursor, context)
     : {
-        version: 1,
+        version: 2,
         query: key(params),
         positions: {},
         pointer: 0,
         seen: [],
+        representatives: {},
         pending: [],
         inventoryStart: null,
       };
-  if (state.version !== 1 || state.query !== key(params)) throw restartRequired();
+  if (state.version !== 2 || state.query !== key(params)) throw restartRequired();
   const inventory = deps.currentSources
     ? { currentSources: deps.currentSources, sourceStates: [], complete: true, nextCursor: null }
     : await refreshReaderSources(context, deps, { deadlineAt, cursor: state.inventoryStart });
@@ -234,11 +235,13 @@ async function aggregate(input, context, deps) {
     }
   }
   const items = [],
-    seen = new Set(state.seen);
+    updates = new Map();
+  let updateChoices = 0;
+  const seen = new Set(state.seen);
   const pending = [...new Set(state.pending)];
   state.pending = [];
   for (const id of pending) {
-    if (items.length >= params.limit) {
+    if (items.length >= params.limit || updateChoices >= params.limit) {
       state.pending.push(id);
       continue;
     }
@@ -267,20 +270,29 @@ async function aggregate(input, context, deps) {
     );
     if (equivalent) {
       const other = equivalent.leftId === id ? equivalent.rightId : equivalent.leftId;
-      const existing = items.find(
-        (item) => item.id === other || item.readingChoices?.some((c) => c.mediaId === other),
-      );
+      const representativeId = state.representatives[other];
+      if (!representativeId) throw restartRequired();
+      const existing = items.find((item) => item.id === representativeId);
       const choice = readingChoice(media);
       if (existing && choice) {
         existing.readingChoices = [...(existing.readingChoices || []), choice];
         existing.availableIntegrations = [
           ...new Set([...(existing.availableIntegrations || []), choice.integration]),
         ];
+      } else if (choice) {
+        // Send only newly observed eligible choices. Re-emitting an older card
+        // would trust metadata/source safety from another inventory segment.
+        const patch = updates.get(representativeId) || { id: representativeId, readingChoices: [] };
+        patch.readingChoices.push(choice);
+        updates.set(representativeId, patch);
+        updateChoices++;
       }
+      state.representatives[id] = representativeId;
       seen.add(id);
       continue;
     }
     seen.add(id);
+    state.representatives[id] = id;
     items.push(
       id.startsWith('ext-')
         ? { ...publicReadingMedia(media, context), readingChoices: [readingChoice(media)] }
@@ -304,6 +316,7 @@ async function aggregate(input, context, deps) {
     : null;
   return {
     items,
+    updates: [...updates.values()],
     nextCursor,
     hasMore,
     total: null,

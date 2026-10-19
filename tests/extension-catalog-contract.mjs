@@ -108,6 +108,11 @@ export function extensionCatalogContract(label, fixture) {
       );
       assert.equal(response.status, 200);
       const feed = await response.json();
+      assert.deepEqual(
+        feed.updates,
+        [],
+        'public runtimes retain the additive merge-update protocol',
+      );
       assert.equal(feed.items.length, 1);
       assert.equal(feed.total, null);
       const media = feed.items[0];

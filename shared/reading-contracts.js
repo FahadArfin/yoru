@@ -20,9 +20,11 @@
  * @typedef {{body:Uint8Array,type:string,cached:boolean}} BinaryAsset
  * @typedef {{signal:AbortSignal,deadlineAt:number,priority:'interactive'|'discovery'}} OperationContext
  * @typedef {{destination:Destination,integrationMode:IntegrationMode,userId:string|null,sessionHash:string|null,guestId:string|null,overrides:CatalogSelection['overrides'],selectionFingerprint:string,language:string,signal:AbortSignal}} ReaderContext
- * @typedef {Object<string,unknown> & {id:string,sourceRef:SourceRef,upstreamRef:UpstreamTitleRef,classification:Classification,provenance:unknown,category:string,availableIntegrations:Array<'core'|'suwayomi'>}} ReadingMedia
+ * @typedef {Object<string,unknown> & {id:string,sourceRef:SourceRef,upstreamRef:UpstreamTitleRef,classification:Classification,provenance:unknown,category:string,availableIntegrations:Array<'core'|'suwayomi'>,readingChoices?:ReadingChoice[]}} ReadingMedia
  * @typedef {Object<string,unknown> & {id:string,mediaId:string,sourceRef:SourceRef,upstreamRef:UpstreamEditionRef,integration:'core'|'suwayomi',volume:number|string|null,number:number|null,language:string,order:number,pageCount:number|null,pages:number|null}} ReadingEdition
- * @typedef {{items:ReadingMedia[],nextCursor:string|null,hasMore:boolean,total:null,totalIsEstimate:true,sourceStates:SourceState[],selectionFingerprint:string,nextPage?:number|null}} FeedPage
+ * @typedef {{mediaId:string,sourceRef:SourceRef,upstreamRef:UpstreamTitleRef|null,integration:'core'|'suwayomi',state:'ready'|'unverified'|'unresolved'}} ReadingChoice
+ * @typedef {{id:string,readingChoices:ReadingChoice[]}} FeedChoiceUpdate
+ * @typedef {{items:ReadingMedia[],updates?:FeedChoiceUpdate[],nextCursor:string|null,hasMore:boolean,total:null,totalIsEstimate:true,sourceStates:SourceState[],selectionFingerprint:string,nextPage?:number|null}} FeedPage
  * @typedef {{sql:string,values:unknown[]}} DbStatement
  * @typedef {{userId:string,sessionHash:string}} DbGuard
  * @typedef {{get:(sql:string,...values:unknown[])=>Promise<any>,all:(sql:string,...values:unknown[])=>Promise<any[]>,run:(sql:string,...values:unknown[])=>Promise<any>,atomic:(statements:DbStatement[],guard?:DbGuard)=>Promise<any>}} ReaderDb
@@ -32,6 +34,10 @@
  * Core adapters retain their existing URLs and shapes; generic results below are
  * normalized/stored before public serialization. Reader manifests retain the
  * direct chapter DTO and same-origin {url} page objects at the public API boundary.
+ * FeedPage updates append/upsert newly observed exact choices by mediaId into a
+ * previously emitted representative id within this selection. Apply updates even
+ * when items is empty and hasMore is false; derive availableIntegrations from the
+ * merged choices. Updates never replace card metadata or select another edition.
  *
  * @typedef {object} ExtensionGateway
  * @property {(input:object,context:OperationContext)=>Promise<{sources:SourceRef[],nextCursor:string|null}>} catalogs
