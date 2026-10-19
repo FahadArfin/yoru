@@ -1,11 +1,134 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as preferences from '../src/reader/catalog-preferences.js';
+import { normalizeGuestSelection, selectionProjection } from '../shared/catalog-selection.js';
 import {
   loadCatalogPreferences,
   saveCatalogPreference,
   resetCatalogPreferences,
 } from '../src/reader/catalog-preferences.js';
+
+test('authoritative snapshots above guest quotas retain every account choice through load save and reset', async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.window = new EventTarget();
+  const cases = [
+    Object.fromEntries(Array.from({ length: 101 }, (_, i) => [`provider-${i}`, { yoru: true }])),
+    Object.fromEntries(
+      Array.from({ length: 60 }, (_, i) => [
+        `${i}${'漢'.repeat(95)}`,
+        { yoru: true, 'ara-ara': false },
+      ]),
+    ),
+  ];
+  assert.ok(new TextEncoder().encode(JSON.stringify(cases[1])).byteLength > 16384);
+  try {
+    for (const [index, overrides] of cases.entries()) {
+      const owner = `large-settings-${index}`;
+      const expected = { overrides, modes: { yoru: 'all', 'ara-ara': 'all' } };
+      assert.throws(() => normalizeGuestSelection(expected), { status: 400 });
+      let snapshot = { owner, ...expected, revision: 101 };
+      globalThis.fetch = async (_path, options) => {
+        if (options.method === 'PATCH') {
+          const body = JSON.parse(options.body);
+          snapshot = { ...snapshot, revision: snapshot.revision + 1 };
+          if (body.operation === 'mode')
+            snapshot.modes = { ...snapshot.modes, [body.destination]: body.mode };
+          else
+            snapshot.overrides = {
+              ...snapshot.overrides,
+              [body.provider]: {
+                ...snapshot.overrides[body.provider],
+                [body.destination]: body.enabled,
+              },
+            };
+        } else if (options.method === 'DELETE')
+          snapshot = {
+            owner,
+            overrides: {},
+            modes: { yoru: 'all', 'ara-ara': 'all' },
+            revision: snapshot.revision + 1,
+          };
+        return Response.json(snapshot);
+      };
+      assert.deepEqual((await preferences.loadReaderSettings(owner, true)).overrides, overrides);
+      const provider = Object.keys(overrides)[0];
+      const saved = await preferences.saveCatalogPreference(owner, provider, 'yoru', false);
+      assert.deepEqual(saved, {
+        ...overrides,
+        [provider]: { ...overrides[provider], yoru: false },
+      });
+      await preferences.saveIntegrationMode(owner, 'ara-ara', 'extensions');
+      const settings = await preferences.loadReaderSettings(owner);
+      assert.equal(Object.keys(settings.overrides).length, Object.keys(overrides).length);
+      assert.equal(settings.modes['ara-ara'], 'extensions');
+      assert.equal(settings.revision, 103);
+      assert.deepEqual(await preferences.resetCatalogPreferences(owner), {});
+      assert.deepEqual(await preferences.loadReaderSettings(owner), {
+        overrides: {},
+        modes: { yoru: 'all', 'ara-ara': 'all' },
+        revision: 104,
+      });
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    delete globalThis.window;
+  }
+});
+
+test('authoritative projection remains sorted and rejects unsafe structures without guest quotas', () => {
+  for (const input of [
+    { overrides: { MangaDex: { yoru: 'false' } } },
+    { overrides: { MangaDex: { unknown: true } } },
+    { overrides: { MangaDex: Object.create({ yoru: true }) } },
+    { overrides: Object.create({ MangaDex: { yoru: true } }) },
+    JSON.parse('{"overrides":{"__proto__":{"yoru":true}}}'),
+    { modes: { yoru: 'invalid' } },
+    { overrides: [] },
+  ])
+    assert.throws(() => selectionProjection(input), { status: 400 });
+  assert.deepEqual(
+    Object.keys(
+      selectionProjection({
+        overrides: { Zebra: { yoru: true }, Alpha: { yoru: false } },
+        owner: 'server-owned',
+      }).overrides,
+    ),
+    ['Alpha', 'Zebra'],
+  );
+});
+
+test('late A cannot clear or replace B while B remains pending', async () => {
+  const originalFetch = globalThis.fetch;
+  const requests = [];
+  globalThis.fetch = () => new Promise((resolve) => requests.push(resolve));
+  try {
+    const a = preferences.loadReaderSettings('pending-a', true);
+    const b = preferences.loadReaderSettings('pending-b', true);
+    requests[0](
+      Response.json({
+        owner: 'pending-a',
+        overrides: {},
+        modes: { yoru: 'core', 'ara-ara': 'all' },
+        revision: 1,
+      }),
+    );
+    assert.equal((await a).modes.yoru, 'core');
+    const secondB = preferences.loadReaderSettings('pending-b', true);
+    assert.equal(requests.length, 2);
+    requests[1](
+      Response.json({
+        owner: 'pending-b',
+        overrides: {},
+        modes: { yoru: 'extensions', 'ara-ara': 'all' },
+        revision: 2,
+      }),
+    );
+    assert.equal((await b).modes.yoru, 'extensions');
+    assert.deepEqual(await secondB, await b);
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
+});
 
 test('stale reads and revoked sessions cannot overwrite newer choices', async () => {
   const originalFetch = globalThis.fetch;

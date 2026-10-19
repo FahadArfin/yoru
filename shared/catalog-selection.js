@@ -48,9 +48,21 @@ export function normalizeGuestSelection(input = {}) {
   record(input);
   bounded(input);
   if (Object.keys(input).some((key) => !['overrides', 'modes'].includes(key))) invalid();
+  const result = selectionProjection(input);
+  if (Object.keys(result.overrides).length > 100) invalid();
+  bounded(result);
+  return result;
+}
+
+/** Canonical authoritative projection, without guest transport quotas.
+ * Account snapshots may contain any number of independently accepted providers.
+ * Only membership and mode fields enter selection hashing, never account identity.
+ * @returns {import('./reading-contracts.js').CatalogSelection}
+ */
+export function selectionProjection(input = {}) {
+  record(input);
   const rawOverrides = record(input.overrides === undefined ? {} : input.overrides);
   const providers = Object.keys(rawOverrides).sort();
-  if (providers.length > 100) invalid();
   const overrides = {};
   for (const provider of providers) {
     if (
@@ -77,16 +89,5 @@ export function normalizeGuestSelection(input = {}) {
     if (!MODES.includes(rawModes[destination])) invalid();
     modes[destination] = rawModes[destination];
   }
-  const result = { overrides, modes };
-  bounded(result);
-  return result;
-}
-
-/** Project server/account selections into the same canonical guest-safe value. */
-export function selectionProjection(selection = {}) {
-  record(selection);
-  return normalizeGuestSelection({
-    overrides: selection.overrides,
-    modes: selection.modes,
-  });
+  return { overrides, modes };
 }

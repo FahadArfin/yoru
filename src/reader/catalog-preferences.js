@@ -2,6 +2,7 @@ import { api, invalidateApi } from '../api.js';
 import { catalogEnabled } from '../../shared/catalog-preferences.js';
 import {
   selectionProjection,
+  normalizeGuestSelection,
   validDestination,
   validIntegrationMode,
 } from '../../shared/catalog-selection.js';
@@ -19,18 +20,20 @@ const guest = () => {
   let overrides = {},
     modes = {};
   try {
-    overrides = selectionProjection({
+    overrides = normalizeGuestSelection({
       overrides: JSON.parse(localStorage.getItem(KEY)) || {},
     }).overrides;
   } catch {
     /* Optional guest storage. */
   }
   try {
-    modes = selectionProjection({ modes: JSON.parse(localStorage.getItem(MODE_KEY)) || {} }).modes;
+    modes = normalizeGuestSelection({
+      modes: JSON.parse(localStorage.getItem(MODE_KEY)) || {},
+    }).modes;
   } catch {
     /* Optional guest storage. */
   }
-  return { ...selectionProjection({ overrides, modes }), revision: 0 };
+  return { ...normalizeGuestSelection({ overrides, modes }), revision: 0 };
 };
 const current = (scope) => (scope === 'guest' ? guest() : accounts.get(scope)?.settings || empty());
 const advance = (scope) => versions.set(scope, (versions.get(scope) || 0) + 1);
@@ -101,7 +104,7 @@ export async function saveCatalogPreference(scope, provider, destination, enable
   advance(scope);
   if (scope === 'guest') {
     const old = guest().overrides;
-    const overrides = selectionProjection({
+    const overrides = normalizeGuestSelection({
       overrides: { ...old, [provider]: { ...old[provider], [destination]: enabled } },
     }).overrides;
     localStorage.setItem(KEY, JSON.stringify(overrides));

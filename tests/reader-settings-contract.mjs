@@ -1,8 +1,44 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import * as preferences from '../server/catalog-preferences.js';
+import { normalizeGuestSelection, selectionProjection } from '../shared/catalog-selection.js';
 
 export function readerSettingsContract(label, createFixture) {
+  test(`${label}: accepted account preferences exceed guest quotas without losing authoritative projection`, async () => {
+    const fixture = await createFixture();
+    try {
+      const options = { db: fixture.db, userId: 'one', sessionHash: 'one-session' };
+      let saved;
+      for (let i = 0; i < 101; i++)
+        saved = await preferences.changeCatalogPreference(
+          {
+            owner: 'one',
+            provider: `${i}${'漢'.repeat(95)}`,
+            destination: 'yoru',
+            enabled: i % 2 === 0,
+          },
+          options,
+        );
+      assert.equal(Object.keys(saved.overrides).length, 101);
+      assert.equal(saved.revision, 101);
+      assert.ok(new TextEncoder().encode(JSON.stringify(saved.overrides)).byteLength > 16384);
+      assert.throws(
+        () => normalizeGuestSelection({ overrides: saved.overrides, modes: saved.modes }),
+        { status: 400 },
+      );
+      assert.deepEqual(selectionProjection(saved), {
+        overrides: saved.overrides,
+        modes: { yoru: 'all', 'ara-ara': 'all' },
+      });
+      assert.deepEqual(
+        (await preferences.getCatalogPreferences(options)).overrides,
+        saved.overrides,
+      );
+    } finally {
+      await fixture.close();
+    }
+  });
+
   test(`${label}: integration settings reset both destinations atomically`, async () => {
     const fixture = await createFixture();
     try {
