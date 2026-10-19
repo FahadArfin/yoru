@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { finalDeliveryContract } from './reader-final-delivery-contract.mjs';
+import { normalizeSource } from '../services/reader-bridge/suwayomi-operations.mjs';
 
 export const inventoryRating = (rating = 'safe') => ({
   rating,
@@ -182,6 +183,62 @@ export function extensionCatalogContract(label, fixture) {
         );
         assert.deepEqual((await response.json()).items, []);
       }
+      const originalSources = f.provider.state.sources;
+      for (const [id, name, suffix, destination] of [
+        ['7001', 'Webtoons.com', 'all.webtoons', 'yoru'],
+        ['7002', 'Webcomics', 'all.webcomics', 'yoru'],
+        ['7003', 'Frieren Online', 'en.frierenonline', 'yoru'],
+        ['7004', 'Aunt Manhwa', 'en.auntmanhwa', 'ara-ara'],
+        ['7005', 'NineHentai', 'en.ninehentai', 'ara-ara'],
+      ]) {
+        const installed = normalizeSource(
+          {
+            id,
+            name,
+            lang: 'en',
+            contentWarning: 'SAFE',
+            extension: { pkgName: `eu.kanade.tachiyomi.extension.${suffix}`, isInstalled: true },
+          },
+          { bridgeInstance: 'fixture' },
+        );
+        f.provider.state.sources = [installed];
+        const path = `/api/reader/browse?destination=${destination}&integration=extensions&source=${encodeURIComponent(installed.id)}`;
+        const initial = await f.request(`/api/reader/context?destination=${destination}`, {
+          cookie: '',
+        });
+        const cookie = initial.headers.get('set-cookie').split(';')[0];
+        const before = f.provider.state.calls.filter((path) => path === '/extension/browse').length;
+        const allowed = await f.request(path, { cookie });
+        assert.equal(allowed.status, 200);
+        assert.equal(
+          (await allowed.json()).items.length,
+          1,
+          `${name} installed package honors ${destination} default`,
+        );
+        assert.equal(
+          f.provider.state.calls.filter((path) => path === '/extension/browse').length,
+          before + 1,
+        );
+        const changed = await f.request('/api/reader/context', {
+          method: 'POST',
+          cookie,
+          body: {
+            destination,
+            expectedRevision: 0,
+            selection: { overrides: { [name]: { [destination]: false } } },
+          },
+        });
+        assert.equal(changed.status, 200);
+        const denied = await f.request(path, { cookie });
+        assert.equal(denied.status, 200);
+        assert.deepEqual((await denied.json()).items, []);
+        assert.equal(
+          f.provider.state.calls.filter((path) => path === '/extension/browse').length,
+          before + 1,
+          'saved family disable prevents provider work',
+        );
+      }
+      f.provider.state.sources = originalSources;
       f.provider.state.mode = 'rate-limited';
       response = await f.request('/api/reader/catalogs?limit=100');
       assert.equal(response.status, 429);

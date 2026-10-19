@@ -3,6 +3,7 @@ import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { nodeReaderDb } from '../server/reader-db.js';
 import { readerSettingsContract } from './reader-settings-contract.mjs';
+import { catalogDefaults, catalogEnabled } from '../shared/catalog-preferences.js';
 
 function database(sql) {
   return nodeReaderDb({
@@ -53,6 +54,85 @@ test('provider defaults apply across languages and personal choices override onl
     ['weebcentral'],
   );
   assert.equal(catalogEnabled('MangaDex', 'ara-ara', overrides), false);
+});
+
+test('installed package families preserve all 21 saved defaults and conservative alias overrides', () => {
+  const installed = [
+    ['all.allporncomicsco', 'AllPornComics.co'],
+    ['all.cubari', 'Cubari'],
+    ['all.hennojin', 'Hennojin'],
+    ['all.hentai3', '3Hentai'],
+    ['all.hentaihand', 'HentaiHand'],
+    ['all.luscious', 'Luscious'],
+    ['all.mangadex', 'MangaDex'],
+    ['all.manhwa18cc', 'Manhwa18.cc'],
+    ['all.manhwaclubnet', 'ManhwaClub.net'],
+    ['all.nhentaito', 'NHentai.to'],
+    ['all.nhentaixxx', 'NHentai.xxx'],
+    ['all.webcomics', 'Webcomics'],
+    ['all.webtoons', 'Webtoons.com'],
+    ['en.auntmanhwa', 'Aunt Manhwa'],
+    ['en.frierenonline', 'Frieren Online'],
+    ['en.hentaixdickgirl', 'HentaiXDickgirl'],
+    ['en.hentaixyuri', 'HentaiXYuri'],
+    ['en.mangakakalot', 'Mangakakalot'],
+    ['en.manhwacomics', 'Manhwa Comics'],
+    ['en.ninehentai', 'NineHentai'],
+    ['en.weebcentral', 'Weeb Central'],
+  ];
+  assert.equal(Object.keys(catalogDefaults).length, 21);
+  for (const [suffix, family] of installed) {
+    const pkg = `eu.kanade.tachiyomi.extension.${suffix}`;
+    for (const destination of ['yoru', 'ara-ara']) {
+      assert.equal(
+        catalogEnabled(pkg, destination),
+        catalogDefaults[family][destination],
+        `${family} ${destination}`,
+      );
+      for (const provider of [pkg, family]) {
+        assert.equal(
+          catalogEnabled(provider, destination, {
+            [family]: { [destination]: false },
+            [pkg]: { [destination]: true },
+          }),
+          false,
+        );
+        assert.equal(
+          catalogEnabled(provider, destination, {
+            [family]: { [destination]: true },
+            [pkg]: { [destination]: false },
+          }),
+          false,
+        );
+        assert.equal(
+          catalogEnabled(provider, destination, { [family]: { [destination]: true } }),
+          true,
+        );
+        assert.equal(
+          catalogEnabled(provider, destination, { [pkg]: { [destination]: true } }),
+          true,
+        );
+        assert.equal(
+          catalogEnabled(provider, destination, {}),
+          catalogDefaults[family][destination],
+          'reset restores unchanged defaults',
+        );
+      }
+    }
+  }
+  for (const unknown of [
+    'eu.kanade.tachiyomi.extension.en.newprovider',
+    'other.extension.all.webtoons',
+    'eu.kanade.tachiyomi.extension.zz.webtoons',
+  ]) {
+    assert.equal(catalogEnabled(unknown, 'yoru'), false);
+    assert.equal(catalogEnabled(unknown, 'ara-ara'), false);
+    assert.equal(
+      catalogEnabled(unknown, 'yoru', { [unknown]: { yoru: true } }),
+      true,
+      'explicit unknown-provider opt-in remains supported',
+    );
+  }
 });
 
 test('account writes cannot select another owner and independent provider changes survive reset', async () => {

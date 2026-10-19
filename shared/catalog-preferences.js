@@ -29,9 +29,49 @@ export const catalogDefaults = Object.freeze(
     ['Aunt Manhwa', Object.freeze({ yoru: true, 'ara-ara': true })],
   ]),
 );
+// Exact installed package families, verified against the retained source inventory.
+// Keep package identities in bindings/storage; Settings continues using these labels.
+const packageFamilies = Object.freeze(
+  Object.fromEntries(
+    [
+      ['all.allporncomicsco', 'AllPornComics.co'],
+      ['all.cubari', 'Cubari'],
+      ['all.hennojin', 'Hennojin'],
+      ['all.hentai3', '3Hentai'],
+      ['all.hentaihand', 'HentaiHand'],
+      ['all.luscious', 'Luscious'],
+      ['all.mangadex', 'MangaDex'],
+      ['all.manhwa18cc', 'Manhwa18.cc'],
+      ['all.manhwaclubnet', 'ManhwaClub.net'],
+      ['all.nhentaito', 'NHentai.to'],
+      ['all.nhentaixxx', 'NHentai.xxx'],
+      ['all.webcomics', 'Webcomics'],
+      ['all.webtoons', 'Webtoons.com'],
+      ['en.auntmanhwa', 'Aunt Manhwa'],
+      ['en.frierenonline', 'Frieren Online'],
+      ['en.hentaixdickgirl', 'HentaiXDickgirl'],
+      ['en.hentaixyuri', 'HentaiXYuri'],
+      ['en.mangakakalot', 'Mangakakalot'],
+      ['en.manhwacomics', 'Manhwa Comics'],
+      ['en.ninehentai', 'NineHentai'],
+      ['en.weebcentral', 'Weeb Central'],
+    ].map(([suffix, name]) => [`eu.kanade.tachiyomi.extension.${suffix}`, name]),
+  ),
+);
+const familyPackages = Object.freeze(
+  Object.fromEntries(Object.entries(packageFamilies).map(([pkg, name]) => [name, pkg])),
+);
 export function catalogEnabled(provider, destination = 'yoru', overrides = {}) {
-  const value = Object.hasOwn(overrides, provider) ? overrides[provider]?.[destination] : undefined;
-  return typeof value === 'boolean' ? value : catalogDefaults[provider]?.[destination] === true;
+  const family = Object.hasOwn(packageFamilies, provider) ? packageFamilies[provider] : provider;
+  const aliases = [family, Object.hasOwn(familyPackages, family) ? familyPackages[family] : null];
+  const values = aliases
+    .filter(Boolean)
+    .map((alias) =>
+      Object.hasOwn(overrides, alias) ? overrides[alias]?.[destination] : undefined,
+    );
+  if (values.includes(false)) return false;
+  if (values.includes(true)) return true;
+  return catalogDefaults[family]?.[destination] === true;
 }
 export const readingProvider = (source) =>
   ({ mangadex: 'MangaDex', weebcentral: 'Weeb Central' })[source];
