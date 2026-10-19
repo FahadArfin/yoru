@@ -2,7 +2,7 @@
 
 Date: 2026-10-18 (America/New_York)
 
-Status: implementation specification for user review. The integration approach is approved; this document does not authorize starting product implementation before its review.
+Status: approved by the user in this chat on 2026-10-18. Product implementation awaits review of the implementation plan and execution-method selection.
 
 ## 1. Outcome and approved scope
 
@@ -193,4 +193,4 @@ The implementation is accepted when all of the following have evidence:
 
 **Keep a separate extension browser only in Settings, or mirror every full catalog:** rejected. Settings-only does not meet site-wide discovery/reading; a full mirror adds unbounded crawl/storage/provider load without improving exact identity or availability.
 
-The user's approval of this document is the next review boundary. After that, prepare a separate implementation plan with file-level tasks and verification steps before product implementation.
+The user approved this document. The next review boundary is the [implementation plan](../plans/2026-10-18-enabled-reader-catalogs.md), including file-level tasks, verification steps and execution-method selection before product implementation.
