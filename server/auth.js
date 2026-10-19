@@ -10,6 +10,7 @@ import {
 import { promisify } from 'node:util';
 import { EventEmitter } from 'node:events';
 import { get, run, now } from './db.js';
+import { parseMediaReference } from '../shared/media-reference.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
@@ -94,8 +95,7 @@ export function numeric(value, { name = 'Value', min = 0, max = 100000, integer 
   return value;
 }
 export function mediaId(value) {
-  if (typeof value !== 'string' || !/^mal-(anime|manga)-[1-9]\d{0,8}$/.test(value))
-    throw apiError(400, 'Invalid title ID.');
+  if (!parseMediaReference(value)) throw apiError(400, 'Invalid title ID.');
   return value;
 }
 export const asyncRoute = (fn) => (req, res, next) =>

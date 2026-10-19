@@ -1,3 +1,5 @@
+import { parseMediaReference } from '../shared/media-reference.js';
+
 export function apiError(status, message) {
   return Object.assign(new Error(message), { status, expose: true });
 }
@@ -27,8 +29,7 @@ export function numeric(value, { name = 'Value', min = 0, max = 100000, integer 
   return value;
 }
 export function mediaId(value) {
-  if (typeof value !== 'string' || !/^mal-(anime|manga)-[1-9]\d{0,8}$/.test(value))
-    throw apiError(400, 'Invalid title ID.');
+  if (!parseMediaReference(value)) throw apiError(400, 'Invalid title ID.');
   return value;
 }
 export function bool(value, name) {

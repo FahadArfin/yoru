@@ -37,5 +37,12 @@ export const readingProvider = (source) =>
   ({ mangadex: 'MangaDex', weebcentral: 'Weeb Central' })[source];
 export const filterReadingSources = (sources, destination, overrides) =>
   sources.filter((source) =>
-    catalogEnabled(readingProvider(source.id) || source.name, destination, overrides),
+    catalogEnabled(
+      source.sourceRef?.providerKey ??
+        source.providerKey ??
+        readingProvider(source.id) ??
+        source.name,
+      destination,
+      overrides,
+    ),
   );
