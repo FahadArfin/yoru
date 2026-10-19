@@ -36,6 +36,7 @@ import {
 } from './reader-context.js';
 import { resolveMedia } from './media-resolver.js';
 import { createExtensionGateway } from './extension-gateway.js';
+import { registerNodeReaderRoutes } from './reader-routes.js';
 import { cookie, asyncRoute, requireAuth } from './auth.js';
 import {
   getReadingCatalog,
@@ -43,7 +44,6 @@ import {
   getReaderChapter,
   getReaderPage,
   registerReaderBridge,
-  getReaderCatalogs,
   getReaderCover,
 } from './reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from './chapter-activity.js';
@@ -190,12 +190,13 @@ catalogRouter.get(
       .send(image.body);
   }),
 );
-catalogRouter.get(
-  '/reader/catalogs',
-  asyncRoute(async (req, res) => {
-    res.set('Cache-Control', 'no-store').json(await getReaderCatalogs(chapterOptions(req)));
-  }),
-);
+registerNodeReaderRoutes(catalogRouter, {
+  contextOptions,
+  chapterOptions,
+  coreSearch: searchCatalog,
+  cookie,
+  asyncRoute,
+});
 catalogRouter.post(
   '/reader-bridge/register',
   asyncRoute(async (req, res) => {

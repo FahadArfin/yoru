@@ -18,6 +18,7 @@ import {
 } from '../server/reader-context.js';
 import { resolveMedia } from '../server/media-resolver.js';
 import { createExtensionGateway } from '../server/extension-gateway.js';
+import { registerSitesReaderRoutes } from './reader-routes.js';
 import { readerErrorResponse } from '../server/reader-errors.js';
 import {
   authRoutes,
@@ -71,7 +72,6 @@ import {
   getReaderChapter,
   getReaderPage,
   registerReaderBridge,
-  getReaderCatalogs,
   getReaderCover,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
@@ -237,10 +237,7 @@ app.post('/api/reader-bridge/register', async (c) =>
 app.get('/api/media/:id/reading-sources', async (c) =>
   c.json(await getReadingSources(c.req.param('id'), chapterOptions(c))),
 );
-app.get('/api/reader/catalogs', async (c) => {
-  c.header('Cache-Control', 'no-store');
-  return c.json(await getReaderCatalogs(chapterOptions(c)));
-});
+registerSitesReaderRoutes(app, { contextOptions, chapterOptions, coreSearch: searchCatalog });
 app.get('/api/reader/preferences', async (c) =>
   c.json(
     await getCatalogPreferences({ db: sitesReaderDb(c.get('db')), userId: c.get('user')?.id }),

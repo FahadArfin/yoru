@@ -84,7 +84,7 @@ function classification(value) {
   json(value, 'classification', 16384);
   return value;
 }
-function sourceRef(value) {
+export function validateReaderSource(value) {
   object(value, 'source');
   exactText(value.id, 'source ID', 128);
   if (value.integration === 'suwayomi') {
@@ -112,6 +112,7 @@ function sourceRef(value) {
   if (value.bridgeInstance !== null) exactText(value.bridgeInstance, 'bridge instance', 256);
   return value;
 }
+const sourceRef = validateReaderSource;
 function titleRef(value, source) {
   object(value, 'canonical title reference');
   if (value.sourceId !== source.id) throw conflict();

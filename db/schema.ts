@@ -449,6 +449,29 @@ export const readerGuestContexts = sqliteTable(
   ],
 );
 
+export const readerContinuations = sqliteTable(
+  'reader_continuations',
+  {
+    id: text().primaryKey().notNull(),
+    owner_hash: text().notNull(),
+    destination: text().notNull(),
+    selection_fingerprint: text().notNull(),
+    payload: text().notNull(),
+    expires_at: integer().notNull(),
+  },
+  (t) => [index('reader_continuations_expiry').on(t.expires_at)],
+);
+export const readerInventoryCache = sqliteTable('reader_inventory_cache', {
+  source_id: text().primaryKey().notNull(),
+  payload: text().notNull(),
+  observed_at: integer().notNull(),
+});
+export const readerFeedCache = sqliteTable('reader_feed_cache', {
+  media_id: text().primaryKey().notNull(),
+  payload: text().notNull(),
+  observed_at: integer().notNull(),
+});
+
 export const chapterOpens = sqliteTable(
   'chapter_opens',
   {

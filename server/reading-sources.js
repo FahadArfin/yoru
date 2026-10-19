@@ -156,7 +156,6 @@ export async function getReaderCatalogs(options) {
     return {
       sources: data.sources
         .filter((s) => /^[1-9]\d{0,23}$/.test(s.id) && typeof s.name === 'string')
-        .slice(0, 500)
         .map((s) => ({
           id: String(s.id),
           name: s.name.slice(0, 100),
