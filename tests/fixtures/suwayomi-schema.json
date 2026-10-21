@@ -1,0 +1,3423 @@
+{
+  "artifactVersion": 1,
+  "checkedAt": "2026-10-19T03:50:17.568Z",
+  "provenance": {
+    "method": "Authenticated GraphQL introspection only",
+    "container": "yoru-reader-bridge-1",
+    "endpoint": "[private Suwayomi origin]/api/graphql",
+    "configurationChanged": false,
+    "providerFeedsCalled": false,
+    "operationDataFetched": false,
+    "authorizationMaterialRetained": false
+  },
+  "scope": "Relevant installed-schema definitions only; operation presence is not provider runtime verification.",
+  "rootOperationNames": {
+    "Query": [
+      "restoreStatus",
+      "validateBackup",
+      "categories",
+      "category",
+      "chapter",
+      "chapters",
+      "downloadStatus",
+      "extension",
+      "extensions",
+      "extensionStore",
+      "extensionStores",
+      "aboutServer",
+      "aboutWebUI",
+      "checkForServerUpdates",
+      "checkForWebUIUpdate",
+      "getWebUIUpdateStatus",
+      "koSyncStatus",
+      "manga",
+      "mangas",
+      "meta",
+      "metas",
+      "settings",
+      "source",
+      "sources",
+      "lastSyncStatus",
+      "searchTracker",
+      "trackRecord",
+      "trackRecords",
+      "tracker",
+      "trackers",
+      "lastUpdateTimestamp",
+      "libraryUpdateStatus",
+      "updateStatus"
+    ],
+    "Mutation": [
+      "createBackup",
+      "restoreBackup",
+      "createCategory",
+      "deleteCategory",
+      "deleteCategoryMeta",
+      "deleteCategoryMetas",
+      "setCategoryMeta",
+      "setCategoryMetas",
+      "updateCategories",
+      "updateCategory",
+      "updateCategoryOrder",
+      "updateMangaCategories",
+      "updateMangasCategories",
+      "deleteChapterMeta",
+      "deleteChapterMetas",
+      "fetchChapterPages",
+      "fetchChapters",
+      "setChapterMeta",
+      "setChapterMetas",
+      "updateChapter",
+      "updateChapters",
+      "clearDownloader",
+      "deleteDownloadedChapter",
+      "deleteDownloadedChapters",
+      "dequeueChapterDownload",
+      "dequeueChapterDownloads",
+      "enqueueChapterDownload",
+      "enqueueChapterDownloads",
+      "reorderChapterDownload",
+      "reorderChapterDownloads",
+      "startDownloader",
+      "stopDownloader",
+      "fetchExtensions",
+      "installExternalExtension",
+      "updateExtension",
+      "updateExtensions",
+      "addExtensionStore",
+      "removeExtensionStore",
+      "clearCachedImages",
+      "resetWebUIUpdateStatus",
+      "updateWebUI",
+      "connectKoSyncAccount",
+      "logoutKoSyncAccount",
+      "pullKoSyncProgress",
+      "pushKoSyncProgress",
+      "deleteMangaMeta",
+      "deleteMangaMetas",
+      "fetchManga",
+      "fetchMangaAndChapters",
+      "setMangaMeta",
+      "setMangaMetas",
+      "updateManga",
+      "updateMangas",
+      "deleteGlobalMeta",
+      "deleteGlobalMetas",
+      "setGlobalMeta",
+      "setGlobalMetas",
+      "resetSettings",
+      "setSettings",
+      "startSync",
+      "deleteSourceMeta",
+      "deleteSourceMetas",
+      "fetchSourceManga",
+      "setSourceMeta",
+      "setSourceMetas",
+      "updateSourcePreference",
+      "bindTrack",
+      "bindTrackRecord",
+      "fetchTrack",
+      "loginTrackerCredentials",
+      "loginTrackerOAuth",
+      "logoutTracker",
+      "trackProgress",
+      "unbindTrack",
+      "updateTrack",
+      "updateCategoryManga",
+      "updateLibrary",
+      "updateLibraryManga",
+      "updateStop",
+      "login",
+      "refreshToken",
+      "clearCookiesAndCache"
+    ]
+  },
+  "roots": [
+    {
+      "kind": "OBJECT",
+      "name": "Query",
+      "description": null,
+      "fields": [
+        {
+          "name": "chapter",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ChapterType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "chapters",
+          "description": null,
+          "args": [
+            {
+              "name": "condition",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ChapterConditionInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "filter",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "ChapterFilterInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "order",
+              "defaultValue": null,
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "ChapterOrderInput",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "before",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "after",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "first",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "last",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "offset",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ChapterNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "manga",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "Int",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "mangas",
+          "description": null,
+          "args": [
+            {
+              "name": "condition",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaConditionInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "filter",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaFilterInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "order",
+              "defaultValue": null,
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "MangaOrderInput",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "before",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "after",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "first",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "last",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "offset",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "source",
+          "description": null,
+          "args": [
+            {
+              "name": "id",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "LongString",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "SourceType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "sources",
+          "description": null,
+          "args": [
+            {
+              "name": "condition",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "SourceConditionInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "filter",
+              "defaultValue": null,
+              "type": {
+                "kind": "INPUT_OBJECT",
+                "name": "SourceFilterInput",
+                "ofType": null
+              }
+            },
+            {
+              "name": "order",
+              "defaultValue": null,
+              "type": {
+                "kind": "LIST",
+                "name": null,
+                "ofType": {
+                  "kind": "NON_NULL",
+                  "name": null,
+                  "ofType": {
+                    "kind": "INPUT_OBJECT",
+                    "name": "SourceOrderInput",
+                    "ofType": null
+                  }
+                }
+              }
+            },
+            {
+              "name": "before",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "after",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Cursor",
+                "ofType": null
+              }
+            },
+            {
+              "name": "first",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "last",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            },
+            {
+              "name": "offset",
+              "defaultValue": null,
+              "type": {
+                "kind": "SCALAR",
+                "name": "Int",
+                "ofType": null
+              }
+            }
+          ],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "SourceNodeList",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "Mutation",
+      "description": null,
+      "fields": [
+        {
+          "name": "fetchChapterPages",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "FetchChapterPagesInput",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "OBJECT",
+            "name": "FetchChapterPagesPayload",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fetchChapters",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "FetchChaptersInput",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "OBJECT",
+            "name": "FetchChaptersPayload",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fetchManga",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "FetchMangaInput",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "OBJECT",
+            "name": "FetchMangaPayload",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fetchMangaAndChapters",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "FetchMangaAndChaptersInput",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "OBJECT",
+            "name": "FetchMangaAndChaptersPayload",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fetchSourceManga",
+          "description": null,
+          "args": [
+            {
+              "name": "input",
+              "defaultValue": null,
+              "type": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "INPUT_OBJECT",
+                  "name": "FetchSourceMangaInput",
+                  "ofType": null
+                }
+              }
+            }
+          ],
+          "type": {
+            "kind": "OBJECT",
+            "name": "FetchSourceMangaPayload",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    }
+  ],
+  "types": [
+    {
+      "kind": "OBJECT",
+      "name": "ChapterType",
+      "description": null,
+      "fields": [
+        {
+          "name": "chapterNumber",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Float",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "fetchedAt",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "id",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isBookmarked",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isDownloaded",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isRead",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "lastPageRead",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "lastReadAt",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "mangaId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "name",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "pageCount",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "realUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "scanlator",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sourceOrder",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "uploadDate",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "url",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "manga",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "meta",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ChapterMetaType"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "ENUM",
+      "name": "ContentWarning",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": [
+        {
+          "name": "SAFE",
+          "description": null
+        },
+        {
+          "name": "MIXED",
+          "description": null
+        },
+        {
+          "name": "NSFW",
+          "description": null
+        }
+      ],
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "ExtensionType",
+      "description": null,
+      "fields": [
+        {
+          "name": "apkName",
+          "description": "This will be nullable in the future",
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "apkUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "contentWarning",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "ContentWarning",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "extensionLib",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "hasUpdate",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "iconUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isInstalled",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isNsfw",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isObsolete",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "jarUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lang",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "name",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "pkgName",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "repo",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "storeIndexUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "versionCode",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "versionCodeLong",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "versionName",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "extensionStore",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ExtensionStoreType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "source",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "SourceNodeList",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FetchChapterPagesInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "chapterId",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "clientMutationId",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "format",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FetchChapterPagesPayload",
+      "description": null,
+      "fields": [
+        {
+          "name": "chapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ChapterType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "clientMutationId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "pages",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "syncConflict",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "SyncConflictInfoType",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FetchChaptersInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "clientMutationId",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "mangaId",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FetchChaptersPayload",
+      "description": null,
+      "fields": [
+        {
+          "name": "chapters",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ChapterType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "clientMutationId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FetchMangaAndChaptersInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "clientMutationId",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "fetchChapters",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "fetchManga",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "id",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FetchMangaAndChaptersPayload",
+      "description": null,
+      "fields": [
+        {
+          "name": "chapters",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "ChapterType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "clientMutationId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "manga",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaType",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FetchMangaInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "clientMutationId",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FetchMangaPayload",
+      "description": null,
+      "fields": [
+        {
+          "name": "clientMutationId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "manga",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaType",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FetchSourceMangaInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "clientMutationId",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "filters",
+          "defaultValue": null,
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "FilterChangeInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "page",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "query",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "source",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "type",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "FetchSourceMangaType",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "FetchSourceMangaPayload",
+      "description": null,
+      "fields": [
+        {
+          "name": "clientMutationId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "hasNextPage",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "mangas",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaType"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "ENUM",
+      "name": "FetchSourceMangaType",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": [
+        {
+          "name": "SEARCH",
+          "description": null
+        },
+        {
+          "name": "POPULAR",
+          "description": null
+        },
+        {
+          "name": "LATEST",
+          "description": null
+        }
+      ],
+      "possibleTypes": null
+    },
+    {
+      "kind": "UNION",
+      "name": "Filter",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": [
+        {
+          "name": "CheckBoxFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "GroupFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "HeaderFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "SelectFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "SeparatorFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "SortFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "TextFilter",
+          "kind": "OBJECT"
+        },
+        {
+          "name": "TriStateFilter",
+          "kind": "OBJECT"
+        }
+      ]
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "FilterChangeInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "checkBoxState",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "groupChange",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "FilterChangeInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "position",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "selectState",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "Int",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sortState",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SortSelectionInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "textState",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "triState",
+          "defaultValue": null,
+          "type": {
+            "kind": "ENUM",
+            "name": "TriState",
+            "ofType": null
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "SCALAR",
+      "name": "LongString",
+      "description": "A 64-bit signed integer as a String",
+      "fields": null,
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "ENUM",
+      "name": "MangaStatus",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": [
+        {
+          "name": "UNKNOWN",
+          "description": null
+        },
+        {
+          "name": "ONGOING",
+          "description": null
+        },
+        {
+          "name": "COMPLETED",
+          "description": null
+        },
+        {
+          "name": "LICENSED",
+          "description": null
+        },
+        {
+          "name": "PUBLISHING_FINISHED",
+          "description": null
+        },
+        {
+          "name": "CANCELLED",
+          "description": null
+        },
+        {
+          "name": "ON_HIATUS",
+          "description": null
+        }
+      ],
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "MangaType",
+      "description": null,
+      "fields": [
+        {
+          "name": "artist",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "author",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "chaptersLastFetchedAt",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "description",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "genre",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "SCALAR",
+                  "name": "String"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "id",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "inLibrary",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "inLibraryAt",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "initialized",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "lastFetchedAt",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "realUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "status",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "MangaStatus",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "thumbnailUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "thumbnailUrlLastFetched",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "title",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "updateStrategy",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "UpdateStrategy",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "url",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "age",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "bookmarkCount",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "categories",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "CategoryNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "chapters",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ChapterNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "chaptersAge",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "downloadCount",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "firstUnreadChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "hasDuplicateChapters",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "highestNumberedChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lastReadChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "latestFetchedChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "latestReadChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "latestUploadedChapter",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "ChapterType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "meta",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaMetaType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "source",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "OBJECT",
+            "name": "SourceType",
+            "ofType": null
+          }
+        },
+        {
+          "name": "trackRecords",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "TrackRecordNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "unreadCount",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "PageInfo",
+      "description": null,
+      "fields": [
+        {
+          "name": "endCursor",
+          "description": "When paginating forwards, the cursor to continue.",
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "Cursor",
+            "ofType": null
+          }
+        },
+        {
+          "name": "hasNextPage",
+          "description": "When paginating forwards, are there more items?",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "hasPreviousPage",
+          "description": "When paginating backwards, are there more items?",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "startCursor",
+          "description": "When paginating backwards, the cursor to continue.",
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "Cursor",
+            "ofType": null
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "SourceConditionInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "contentWarning",
+          "defaultValue": null,
+          "type": {
+            "kind": "ENUM",
+            "name": "ContentWarning",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lang",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "name",
+          "defaultValue": null,
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "SourceEdge",
+      "description": null,
+      "fields": [
+        {
+          "name": "cursor",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Cursor",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "node",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "SourceType",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "SourceFilterInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "and",
+          "defaultValue": null,
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "SourceFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "contentWarning",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "ContentWarningFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lang",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "name",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "not",
+          "defaultValue": null,
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "SourceFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "or",
+          "defaultValue": null,
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "SourceFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "SourceNodeList",
+      "description": null,
+      "fields": [
+        {
+          "name": "edges",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SourceEdge"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "nodes",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SourceType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "pageInfo",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "PageInfo",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "totalCount",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "ENUM",
+      "name": "SourceOrderBy",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": [
+        {
+          "name": "ID",
+          "description": null
+        },
+        {
+          "name": "NAME",
+          "description": null
+        },
+        {
+          "name": "LANG",
+          "description": null
+        }
+      ],
+      "possibleTypes": null
+    },
+    {
+      "kind": "INPUT_OBJECT",
+      "name": "SourceOrderInput",
+      "description": null,
+      "fields": null,
+      "inputFields": [
+        {
+          "name": "by",
+          "defaultValue": null,
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "SourceOrderBy",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "byType",
+          "defaultValue": null,
+          "type": {
+            "kind": "ENUM",
+            "name": "SortOrder",
+            "ofType": null
+          }
+        }
+      ],
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "OBJECT",
+      "name": "SourceType",
+      "description": null,
+      "fields": [
+        {
+          "name": "baseUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "contentWarning",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "ENUM",
+              "name": "ContentWarning",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "displayName",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "homeUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "SCALAR",
+            "name": "String",
+            "ofType": null
+          }
+        },
+        {
+          "name": "iconUrl",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "id",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "LongString",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isConfigurable",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "isNsfw",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "lang",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "name",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "String",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "supportsLatest",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Boolean",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "extension",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "ExtensionType",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "filters",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "UNION",
+                  "name": "Filter"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "manga",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "MangaNodeList",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "meta",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "SourceMetaType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "preferences",
+          "description": null,
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "UNION",
+                  "name": "Preference"
+                }
+              }
+            }
+          }
+        }
+      ],
+      "inputFields": null,
+      "enumValues": null,
+      "possibleTypes": null
+    },
+    {
+      "kind": "ENUM",
+      "name": "UpdateStrategy",
+      "description": null,
+      "fields": null,
+      "inputFields": null,
+      "enumValues": [
+        {
+          "name": "ALWAYS_UPDATE",
+          "description": null
+        },
+        {
+          "name": "ONLY_FETCH_ONCE",
+          "description": null
+        }
+      ],
+      "possibleTypes": null
+    },
+    {
+      "name": "MangaNodeList",
+      "kind": "OBJECT",
+      "fields": [
+        {
+          "name": "edges",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaEdge"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "nodes",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "LIST",
+              "name": null,
+              "ofType": {
+                "kind": "NON_NULL",
+                "name": null,
+                "ofType": {
+                  "kind": "OBJECT",
+                  "name": "MangaType"
+                }
+              }
+            }
+          }
+        },
+        {
+          "name": "pageInfo",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "OBJECT",
+              "name": "PageInfo",
+              "ofType": null
+            }
+          }
+        },
+        {
+          "name": "totalCount",
+          "args": [],
+          "type": {
+            "kind": "NON_NULL",
+            "name": null,
+            "ofType": {
+              "kind": "SCALAR",
+              "name": "Int",
+              "ofType": null
+            }
+          }
+        }
+      ]
+    },
+    {
+      "name": "MangaFilterInput",
+      "kind": "INPUT_OBJECT",
+      "inputFields": [
+        {
+          "name": "and",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "artist",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "author",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "categoryId",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "chaptersLastFetchedAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "description",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "genre",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "id",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "IntFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "inLibrary",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "BooleanFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "inLibraryAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "initialized",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "BooleanFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lastFetchedAt",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "not",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MangaFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "or",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "INPUT_OBJECT",
+                "name": "MangaFilterInput",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "realUrl",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "sourceId",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "LongFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "status",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "MangaStatusFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "thumbnailUrl",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "title",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        },
+        {
+          "name": "url",
+          "type": {
+            "kind": "INPUT_OBJECT",
+            "name": "StringFilterInput",
+            "ofType": null
+          }
+        }
+      ]
+    },
+    {
+      "name": "LongFilterInput",
+      "kind": "INPUT_OBJECT",
+      "inputFields": [
+        {
+          "name": "distinctFrom",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "distinctFromAll",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "distinctFromAny",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "equalTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "greaterThan",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "greaterThanOrEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "in",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "isNull",
+          "type": {
+            "kind": "SCALAR",
+            "name": "Boolean",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lessThan",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "lessThanOrEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notDistinctFrom",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notEqualTo",
+          "type": {
+            "kind": "SCALAR",
+            "name": "LongString",
+            "ofType": null
+          }
+        },
+        {
+          "name": "notEqualToAll",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "notEqualToAny",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        },
+        {
+          "name": "notIn",
+          "type": {
+            "kind": "LIST",
+            "name": null,
+            "ofType": {
+              "kind": "NON_NULL",
+              "name": null,
+              "ofType": {
+                "kind": "SCALAR",
+                "name": "LongString",
+                "ofType": null
+              }
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "syntheticExamples": {
+    "notice": "These examples are fabricated contract illustrations, not live provider responses.",
+    "browseVariables": {
+      "input": {
+        "source": "1234567890123456789",
+        "type": "SEARCH",
+        "page": 1,
+        "query": "Synthetic Example"
+      }
+    },
+    "browseResult": {
+      "fetchSourceManga": {
+        "hasNextPage": true,
+        "mangas": [
+          {
+            "id": 7,
+            "sourceId": "1234567890123456789",
+            "title": "Synthetic Example",
+            "url": "/series/synthetic",
+            "realUrl": "https://example.invalid/series/synthetic",
+            "thumbnailUrl": null
+          }
+        ]
+      }
+    },
+    "emptyContinuingResult": {
+      "fetchSourceManga": {
+        "hasNextPage": true,
+        "mangas": []
+      }
+    },
+    "chapterIdentity": {
+      "id": 11,
+      "mangaId": 7,
+      "url": "/series/synthetic/chapter-1",
+      "realUrl": "https://example.invalid/series/synthetic/chapter-1",
+      "chapterNumber": 1,
+      "sourceOrder": 0,
+      "pageCount": 2
+    }
+  }
+}

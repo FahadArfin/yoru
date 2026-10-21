@@ -4,15 +4,51 @@ import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-reac
 import { itemsOf } from '../api';
 import { useResource } from '../state';
 import { Empty, ErrorNotice, Loading, Poster } from '../components';
-import GenreCollections, { browseGenres } from './GenreCollections';
+import GenreCollections, { genresForCategory } from './GenreCollections';
 import { animeFormats } from '../CategoryNavigation';
+import { useReaderSelection } from '../useCatalogPreferences';
+import ReaderCatalog from '../reader/ReaderCatalog';
+import { useCollection } from '../collection-context';
 const labels = {
   anime: ['Anime', 'Find a world worth getting lost in.'],
   manga: ['Manga', 'Great stories, one panel at a time.'],
   manhwa: ['Manhwa', 'Your next scroll-stopping obsession.'],
   all: ['Explore everything', 'One universe. Endless ways to escape.'],
 };
-export default function Browse({ embedded = false, categoryOverride }) {
+export default function Browse(props) {
+  const scope = useCollection();
+  const route = useParams();
+  const [params] = useSearchParams();
+  const category = props.categoryOverride || route.category || 'all';
+  const reading = category !== 'anime';
+  const yoruReadingPage = !scope?.active && ['manga', 'manhwa'].includes(category);
+  const selection = useReaderSelection();
+  const showCore =
+    yoruReadingPage ||
+    !reading ||
+    (selection?.ready &&
+      (category === 'all' || selection.context.integrationMode !== 'extensions'));
+  const showRemote = reading && !props.embedded && !yoruReadingPage;
+  return (
+    <>
+      {showRemote && (
+        <div className="page">
+          <ReaderCatalog
+            key={`${category}:${params.get('source')}:${params.get('language')}`}
+            category={category}
+            query={params.get('q') || ''}
+            genre={params.get('genre') || ''}
+            source={params.get('source') || ''}
+            language={params.get('language') || ''}
+          />
+        </div>
+      )}
+      {showCore && <CoreBrowse {...props} readingMode={selection?.context?.integrationMode} />}
+    </>
+  );
+}
+function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
+  const scope = useCollection();
   const route = useParams();
   const category = categoryOverride || route.category;
   const navigate = useNavigate();
@@ -20,10 +56,15 @@ export default function Browse({ embedded = false, categoryOverride }) {
   const q = params.get('q') || '';
   const [search, setSearch] = useState(q);
   const genre = params.get('genre') || '';
-  const format = category === 'anime' ? params.get('format') || '' : '';
+  const format = ['anime', 'manga'].includes(category) ? params.get('format') || '' : '';
   const sort = params.get('sort') || 'trending';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
+  const { data: genreDirectory } = useResource(
+    !scope?.active && ['manga', 'manhwa'].includes(chosen) ? '/api/catalog/genres' : null,
+  );
+  const availableGenres =
+    genreDirectory?.items?.map((item) => item.name) || genresForCategory(chosen, scope?.active);
   const discovery =
     chosen !== 'all' &&
     !['q', 'genre', 'format', 'sort', 'page', 'view'].some((key) => params.get(key));
@@ -32,13 +73,13 @@ export default function Browse({ embedded = false, categoryOverride }) {
     if (!embedded) window.scrollTo({ top: 0, behavior: 'instant' });
   }, [page, chosen, embedded, discovery, genre, format, q]);
   const query = new URLSearchParams({
-    category: chosen.toUpperCase(),
+    category: chosen === 'all' && readingMode === 'extensions' ? 'ANIME' : chosen.toUpperCase(),
     search: q,
     genre,
     ...(format ? { format } : {}),
     sort,
     page,
-    limit: '48',
+    limit: !scope?.active && ['manga', 'manhwa'].includes(chosen) ? '144' : '48',
   });
   const { data, error, loading, refresh } = useResource(discovery ? null : `/api/catalog?${query}`);
   const update = (changes) => {
@@ -49,7 +90,6 @@ export default function Browse({ embedded = false, categoryOverride }) {
     if (!('page' in changes)) next.delete('page');
     setParams(next);
   };
-  const collectionControlsBelow = chosen === 'anime' && discovery;
   const filters = (
     <div className="filter-bar" role="region" aria-label="Catalog filters">
       <form
@@ -99,15 +139,21 @@ export default function Browse({ embedded = false, categoryOverride }) {
           ))}
         </select>
       </label>
-      {chosen === 'anime' && (
+      {['anime', 'manga'].includes(chosen) && (
         <label className="filter-select">
           <select
-            aria-label="Anime format"
+            aria-label={chosen === 'anime' ? 'Anime format' : 'Manga format'}
             value={format}
             onChange={(e) => update({ format: e.target.value })}
           >
             <option value="">All types</option>
-            {animeFormats.map(([value, label]) => (
+            {(chosen === 'anime'
+              ? animeFormats
+              : [
+                  ['manga', 'Series'],
+                  ['oneshot', 'One-shots'],
+                ]
+            ).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>
@@ -123,7 +169,7 @@ export default function Browse({ embedded = false, categoryOverride }) {
           onChange={(e) => update({ genre: e.target.value })}
         >
           <option value="">All genres</option>
-          {browseGenres.map((x) => (
+          {availableGenres.map((x) => (
             <option key={x}>{x}</option>
           ))}
         </select>
@@ -162,12 +208,9 @@ export default function Browse({ embedded = false, categoryOverride }) {
           </button>
         )}
       </div>
-      {!collectionControlsBelow && filters}
+      {filters}
       {discovery ? (
-        <GenreCollections
-          category={chosen}
-          collectionControls={collectionControlsBelow ? filters : null}
-        />
+        <GenreCollections category={chosen} />
       ) : (
         <>
           <div className="results-bar">

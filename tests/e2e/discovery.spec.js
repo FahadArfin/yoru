@@ -100,6 +100,8 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
     released.getByRole('button', { name: 'Just released', exact: true }),
   ).toHaveAttribute('aria-expanded', 'true');
   await expect(popular.locator('.discovery-preview-card')).toHaveCount(1);
+  await expect(popular.getByRole('group', { name: 'Popularity release period' })).toHaveCount(0);
+  await expect(popular.locator('.discovery-filter-row')).toHaveCount(0);
   await expect(trending.locator('.discovery-preview-card')).toHaveCount(1);
   await checkSelectedLayout(released);
   for (const category of [popular, trending]) {
@@ -121,6 +123,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   await expect(page.locator('.discovery-panel.is-expanded')).toHaveCount(1);
   await expect(panel.getByRole('link', { name: /popular month pick/ })).toBeVisible();
   await expect(panel.getByRole('button', { name: 'Last month', exact: true })).toBeVisible();
+  await expect(panel.locator('.popularity-cycle svg')).toHaveCount(0);
   await expect(
     panel.getByRole('group', { name: 'Popularity release period' }).getByRole('button'),
   ).toHaveCount(1);
@@ -150,6 +153,7 @@ test('discovery collections expand, preserve filters, handle fast switches, and 
   panel = trending;
   await expect(panel.getByText('12 viewers this week')).toBeVisible();
   await checkSelectedLayout(trending);
+  await expect(popular.getByRole('group', { name: 'Popularity release period' })).toHaveCount(0);
   await expect(panel.getByRole('link', { name: /trending week pick/ })).toHaveAttribute(
     'href',
     '/watch/mal-anime-21/latest',

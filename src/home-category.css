@@ -286,9 +286,6 @@ html[data-reduce-motion='true'] :is(.home-genre-card, .home-genre-arrow, .home-g
   justify-content: flex-end;
   bottom: 25px;
 }
-.category-home .weekly-caption {
-  display: none;
-}
 .category-home .weekly-content,
 .category-home .manga-hero .weekly-content {
   height: calc(100% - 66px);

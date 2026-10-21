@@ -3,10 +3,27 @@ import { randomUUID } from 'node:crypto';
 import { onlineState } from './social.js';
 import { activeMember, checkedRoom, roomShape, reconcileRooms } from './rooms.js';
 import { apiError } from '../server/validation.js';
+import { socialRequest, socialDatabase } from './native-social.js';
+import { liveSocialPolicy } from '../server/native-social-policy.js';
+import { readSocialEvents } from '../server/native-social-events.js';
+
+const eventWhere = `(room_id IS NULL OR room_id=?) AND (user_id IS NULL OR user_id=?)
+ AND (?='' OR EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?))
+ AND (room_id IS NULL OR EXISTS(SELECT 1 FROM room_members WHERE room_id=event_log.room_id AND user_id=? AND last_seen>?))`;
+const eventValues = (roomId, user, sessionHash) => [
+  roomId,
+  user?.id || '',
+  sessionHash,
+  sessionHash,
+  Date.now(),
+  user?.id || '',
+  Date.now() - 90000,
+];
 
 export function eventRoutes(app) {
   app.get('/api/poll', async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
+      policy = await socialRequest(c),
       user = c.get('user'),
       sessionHash = c.get('sessionHash'),
       roomId = c.req.query('roomId') || null;
@@ -16,6 +33,7 @@ export function eventRoutes(app) {
     if (roomId) {
       await reconcileRooms(db);
       room = await checkedRoom(db, roomId);
+      await policy.room(room);
       if (!(await activeMember(db, roomId, user?.id)))
         throw apiError(403, 'Join this room to take part.');
     }
@@ -47,21 +65,16 @@ export function eventRoutes(app) {
       Number.isSafeInteger(requested) && requested >= 0
         ? Math.min(requested, newest.sequence)
         : newest.sequence;
-    const events = await db.all(
-      `SELECT sequence,event,payload FROM event_log WHERE sequence>? AND (room_id IS NULL OR room_id=?) AND (user_id IS NULL OR user_id=?)
-      AND (?='' OR EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?))
-      AND (room_id IS NULL OR EXISTS(SELECT 1 FROM room_members WHERE room_id=event_log.room_id AND user_id=? AND last_seen>?))
-      ORDER BY sequence LIMIT 100`,
+    const page = await readSocialEvents({
+      policy,
+      db,
       cursor,
-      roomId,
-      user?.id || '',
-      sessionHash,
-      sessionHash,
-      Date.now(),
-      user?.id || '',
-      Date.now() - 90000,
-    );
-    const shaped = room ? await roomShape(db, room, user?.id) : undefined,
+      where: eventWhere,
+      values: eventValues(roomId, user, sessionHash),
+    });
+    const shaped = room
+        ? await roomShape(db, await checkedRoom(db, roomId), user?.id, false, policy)
+        : undefined,
       online = await onlineState(db);
     if (
       roomId &&
@@ -73,26 +86,28 @@ export function eventRoutes(app) {
         )))
     )
       throw apiError(403, 'Join this room to take part.');
+    await policy.atomic([]);
     return c.json({
       viewerId: user?.id || null,
-      cursor: events.length ? events.at(-1).sequence : Math.max(cursor, newest.sequence),
-      events: events.map((row) => ({
-        id: row.sequence,
-        event: row.event,
-        data: JSON.parse(row.payload),
-      })),
+      cursor: page.complete ? Math.max(page.cursor, newest.sequence) : page.cursor,
+      events: page.events.map((event) =>
+        event.data.room ? { ...event, data: { ...event.data, room: shaped || null } } : event,
+      ),
+      ...(await policy.status()),
+      complete: page.complete && (await policy.status()).complete,
       online,
       ...(roomId ? { room: shaped } : {}),
     });
   });
   app.get('/api/events', async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
+      policy = await socialRequest(c),
       user = c.get('user'),
       sessionHash = c.get('sessionHash'),
       roomId = c.req.query('roomId') || null;
     if (roomId) {
       await reconcileRooms(db);
-      await checkedRoom(db, roomId);
+      await policy.room(await checkedRoom(db, roomId));
       if (!(await activeMember(db, roomId, user?.id)))
         throw apiError(403, 'Join this room to take part.');
     }
@@ -124,6 +139,15 @@ export function eventRoutes(app) {
         : newest.sequence;
     c.header('Cache-Control', 'no-store, no-transform');
     c.header('X-Accel-Buffering', 'no');
+    let initial = policy;
+    const live = liveSocialPolicy(async () => {
+      if (initial) {
+        const value = initial;
+        initial = null;
+        return value;
+      }
+      return socialRequest(c, { fresh: true });
+    });
     return streamSSE(c, async (stream) => {
       let aborted = false,
         previousOnline = '',
@@ -131,7 +155,10 @@ export function eventRoutes(app) {
       stream.onAbort(() => {
         aborted = true;
         c.executionCtx.waitUntil(
-          db.run('DELETE FROM presence_leases WHERE connection_id=?', connectionId).catch(() => {}),
+          c
+            .get('db')
+            .run('DELETE FROM presence_leases WHERE connection_id=?', connectionId)
+            .catch(() => {}),
         );
       });
       await stream.write('retry: 1000\n\n');
@@ -151,10 +178,21 @@ export function eventRoutes(app) {
           if (roomId) await stream.writeSSE({ event: 'left', data: JSON.stringify({ roomId }) });
           break;
         }
+        let delivery;
+        try {
+          delivery = await live.delivery();
+        } catch {
+          if (roomId) await stream.writeSSE({ event: 'left', data: JSON.stringify({ roomId }) });
+          break;
+        }
         let shaped;
         if (roomId) {
           const room = await db.get('SELECT * FROM rooms WHERE id=? AND closed_at IS NULL', roomId);
-          shaped = room ? await roomShape(db, room, user?.id) : null;
+          try {
+            shaped = room ? await roomShape(db, room, user?.id, false, delivery) : null;
+          } catch {
+            break;
+          }
           if (!shaped?.joined) {
             await stream.writeSSE({ event: 'left', data: JSON.stringify({ roomId }) });
             break;
@@ -179,24 +217,31 @@ export function eventRoutes(app) {
         }
         previousOnline = onlineKey;
         previousRoom = roomKey;
-        const events = await db.all(
-          `SELECT * FROM event_log WHERE sequence>? AND (room_id IS NULL OR room_id=?) AND (user_id IS NULL OR user_id=?)
-          AND (?='' OR EXISTS(SELECT 1 FROM sessions WHERE token_hash=? AND expires_at>?))
-          AND (room_id IS NULL OR EXISTS(SELECT 1 FROM room_members WHERE room_id=event_log.room_id AND user_id=? AND last_seen>?))
-          ORDER BY sequence LIMIT 100`,
-          cursor,
-          roomId,
-          user?.id || '',
-          sessionHash,
-          sessionHash,
-          Date.now(),
-          user?.id || '',
-          Date.now() - 90000,
-        );
-        for (const event of events) {
-          cursor = event.sequence;
-          await stream.writeSSE({ id: String(cursor), event: event.event, data: event.payload });
+        let page;
+        try {
+          page = await readSocialEvents({
+            policy: delivery,
+            db,
+            cursor,
+            where: eventWhere,
+            values: eventValues(roomId, user, sessionHash),
+            deadlineAt: Date.now() + 12000,
+          });
+        } catch {
+          break;
         }
+        for (const event of page.events) {
+          await delivery.atomic([]);
+          if (roomId) await delivery.room(await checkedRoom(db, roomId));
+          await stream.writeSSE({
+            id: String(event.id),
+            event: event.event,
+            data: JSON.stringify(
+              event.data.room ? { ...event.data, room: shaped || null } : event.data,
+            ),
+          });
+        }
+        cursor = page.cursor;
         await stream.write(': heartbeat\n\n');
       }
     });

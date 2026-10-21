@@ -1,12 +1,20 @@
 import { send } from './api.js';
+import { readerMutation } from './reader/requests.js';
 
 let queue = Promise.resolve();
-export function recordView(id, reading = false) {
-  const record = () => send(`/api/media/${id}/${reading ? 'read-view' : 'view'}`, {});
+export function recordView(id, reading = false, context) {
+  const record = () =>
+    reading && context
+      ? readerMutation(`/api/media/${id}/read-view`, {}, 'POST', context)
+      : send(`/api/media/${id}/${reading ? 'read-view' : 'view'}`, {});
   return recordVisitorAction(record);
 }
-export function recordChapterView(id, chapterId) {
-  return recordVisitorAction(() => send(`/api/media/${id}/chapters/${chapterId}/open`, {}));
+export function recordChapterView(id, chapterId, context) {
+  return recordVisitorAction(() =>
+    context
+      ? readerMutation(`/api/media/${id}/chapters/${chapterId}/open`, {}, 'POST', context)
+      : send(`/api/media/${id}/chapters/${chapterId}/open`, {}),
+  );
 }
 function recordVisitorAction(record) {
   // The first response establishes the HttpOnly visitor cookie. Coordinate

@@ -1,4 +1,166 @@
 /* Reuse the catalog-sized section shell; keep these controls local to Settings. */
+.reader-connection-modes,
+.reader-catalog-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.reader-connection-modes {
+  margin-bottom: 18px;
+}
+.reader-connection-modes [aria-pressed='true'],
+.reader-catalog-actions [aria-checked='true'] {
+  border-color: var(--section-accent);
+  background: rgb(var(--chrome-soft) / 0.12);
+}
+.reader-connection-form,
+.reader-catalog-results form {
+  display: grid;
+  gap: 12px;
+  margin-block: 18px;
+}
+.reader-connection label {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+  margin-block: 10px;
+}
+.reader-connection input,
+.reader-connection select {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  border: 1px solid var(--section-line);
+  border-radius: 8px;
+  background: rgb(var(--chrome-soft) / 0.04);
+  color: rgb(var(--chrome-text));
+  padding: 10px 12px;
+  font: inherit;
+  font-size: 16px;
+}
+.reader-catalog-filters {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 0.8fr);
+  gap: 0 10px;
+}
+.reader-catalog-filters .reader-provider-search {
+  grid-column: 1 / -1;
+}
+.reader-filter-summary,
+.reader-provider-controls {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.reader-filter-summary {
+  min-height: 44px;
+  margin-bottom: 8px;
+}
+.reader-filter-summary p {
+  margin: 0;
+}
+.reader-provider-controls {
+  margin-left: auto;
+  justify-content: flex-end;
+}
+.reader-provider-controls [aria-checked='true'] {
+  border-color: var(--section-accent);
+  background: rgb(var(--chrome-soft) / 0.12);
+}
+.reader-placement-switches {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.settings-page .reader-placement-switches .btn {
+  padding: 8px 10px;
+  gap: 6px;
+}
+.reader-placement-state {
+  font-size: 10px;
+  opacity: 0.7;
+}
+.reader-connection .reader-list-filter {
+  grid-template-columns: auto minmax(0, 160px);
+  align-items: center;
+  justify-content: space-between;
+}
+.reader-connection .setting-row {
+  flex-wrap: wrap;
+}
+.reader-catalog-list {
+  max-height: 280px;
+  overflow-y: auto;
+  scrollbar-gutter: stable;
+  border: 1px solid var(--section-line);
+  border-radius: 8px;
+  padding-inline: 12px;
+}
+.reader-catalog-list:focus-visible {
+  outline: 2px solid var(--section-accent);
+  outline-offset: 3px;
+}
+.reader-catalog-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 6px 12px;
+  min-height: 42px;
+  padding-block: 8px;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+.reader-catalog-row + .reader-catalog-row {
+  border-top: 1px solid var(--section-line);
+}
+.reader-catalog-identity,
+.reader-catalog-languages {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px 8px;
+  min-width: 0;
+}
+.reader-catalog-languages span {
+  padding: 2px 5px;
+  border-radius: 4px;
+  background: rgb(var(--chrome-soft) / 0.06);
+}
+.reader-catalog-languages,
+.reader-catalog-identity > span {
+  color: var(--section-muted);
+  font-size: 10px;
+}
+.settings-page .settings-card > p.reader-catalog-note {
+  font-size: 11px;
+  line-height: 1.6;
+  margin-bottom: 12px;
+}
+.reader-connection .btn {
+  min-height: 44px !important;
+}
+.reader-connection [role='alert'] {
+  color: var(--status-error, #b44b4b) !important;
+}
+.reader-catalog-results ul {
+  list-style: none;
+  padding: 0;
+}
+.reader-catalog-results li {
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--section-line);
+  overflow-wrap: anywhere;
+}
+.reader-catalog-results li a {
+  flex-shrink: 0;
+}
 .settings-page .settings-grid {
   grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr);
   gap: 22px;
@@ -319,4 +481,15 @@
     border-top: 1px solid var(--section-line);
     padding-top: 20px;
   }
+}
+
+.account-connections {
+  margin-top: 1.25rem;
+}
+.account-connections .form-stack {
+  margin-block: 1rem;
+}
+.account-connections .setting-row {
+  flex-wrap: wrap;
+  gap: 1rem;
 }

@@ -4,6 +4,13 @@ import { dirname, resolve } from 'node:path';
 import { presenceSchema } from './visitor-presence.js';
 import { resumeSchema } from './resume.js';
 import { forumSchema } from './forum.js';
+import { catalogPreferenceSchema } from './catalog-preferences.js';
+import { externalCatalogSchema } from './external-catalog-store.js';
+import { readerContextSchema } from './reader-context.js';
+import { continuationSchema } from './reader-continuation.js';
+import { readingAccountSchema } from './reading-account.js';
+import { markerSchema } from './reader-marker-schema.js';
+import { channelSchema } from './channels.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -117,9 +124,47 @@ if (
 )
   db.exec('ALTER TABLE library ADD COLUMN score REAL');
 
+db.exec(catalogPreferenceSchema);
+db.exec(externalCatalogSchema);
+db.exec(readerContextSchema);
+db.exec(continuationSchema);
+db.exec(readingAccountSchema);
+for (const [table, column, definition] of [
+  ['users', 'chatgpt_id', 'TEXT'],
+  ['sessions', 'auth_provider', "TEXT NOT NULL DEFAULT 'password'"],
+  ['comments', 'edition_id', 'TEXT'],
+  ['rooms', 'destination', "TEXT NOT NULL DEFAULT 'yoru'"],
+  ['rooms', 'reader_source_id', 'TEXT'],
+  ['rooms', 'reader_edition_id', 'TEXT'],
+  ['rooms', 'reader_provenance', 'TEXT'],
+]) {
+  if (
+    !db
+      .prepare(`PRAGMA table_info(${table})`)
+      .all()
+      .some((item) => item.name === column)
+  )
+    db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+db.exec(
+  'CREATE INDEX IF NOT EXISTS comments_media_edition ON comments(media_id,edition_id,created_at)',
+);
+db.exec('CREATE INDEX IF NOT EXISTS rooms_destination_open ON rooms(destination,closed_at)');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_chatgpt_id_unique ON users(chatgpt_id)');
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);
+db.exec(channelSchema);
+db.exec(markerSchema);
+if (
+  !db
+    .prepare('PRAGMA table_info(messages)')
+    .all()
+    .some((column) => column.name === 'channel_id')
+)
+  db.exec('ALTER TABLE messages ADD COLUMN channel_id TEXT REFERENCES chat_channels(id)');
+db.exec('CREATE INDEX IF NOT EXISTS messages_channel_room ON messages(channel_id,room_id)');
+db.exec('CREATE INDEX IF NOT EXISTS messages_user_time ON messages(user_id,created_at)');
 export const get = (sql, ...values) => db.prepare(sql).get(...values);
 export const all = (sql, ...values) => db.prepare(sql).all(...values);
 export const run = (sql, ...values) => db.prepare(sql).run(...values);

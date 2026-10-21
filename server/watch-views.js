@@ -1,5 +1,6 @@
 import { createHash, randomBytes } from 'node:crypto';
 import { apiError } from './validation.js';
+import { parseMediaReference } from '../shared/media-reference.js';
 
 export const VIEW_COOKIE = 'yoru_viewer';
 export const VIEW_COOKIE_SECONDS = 30 * 86400;
@@ -15,34 +16,71 @@ export const recordWatchView = (id, cookie, options) =>
 export const recordReadView = (id, cookie, options) =>
   recordMediaView(id, cookie, 'MANGA', options);
 
-async function recordMediaView(id, cookie, category, { db, media, now = Date.now() }) {
+async function recordMediaView(id, cookie, category, { db, media, policy, now = Date.now() }) {
   const kind = category.toLowerCase();
-  if (!new RegExp(`^mal-${kind}-[1-9]\\d{0,8}$`).test(id || ''))
+  const reading = category !== 'ANIME' && policy;
+  if (
+    reading
+      ? !['manga', 'extension-manga'].includes(parseMediaReference(id)?.kind)
+      : !new RegExp(`^mal-${kind}-[1-9]\\d{0,8}$`).test(id || '')
+  )
     throw apiError(400, `Invalid ${kind} ID.`);
-  const title = await media(id);
+  const title = reading ? await policy.media(id) : await media(id);
   const allowed = category === 'ANIME' ? ['ANIME'] : ['MANGA', 'MANHWA'];
-  if (!title || title.id !== id || !allowed.includes(title.category) || title.isAdult)
+  if (!title || title.id !== id || !allowed.includes(title.category) || (!reading && title.isAdult))
     throw apiError(404, `This ${kind} is unavailable.`);
   const visitor = /^[A-Za-z0-9_-]{43}$/.test(cookie || '')
     ? cookie
     : randomBytes(32).toString('base64url');
   const hash = createHash('sha256').update(visitor).digest('hex');
-  await db.run(
-    `INSERT INTO watch_views(media_id,visitor_hash,last_seen,category) VALUES(?,?,?,?)
+  const statement = {
+    sql: `INSERT INTO watch_views(media_id,visitor_hash,last_seen,category) VALUES(?,?,?,?)
     ON CONFLICT(media_id,visitor_hash) DO UPDATE SET last_seen=MAX(watch_views.last_seen,excluded.last_seen),category=excluded.category`,
-    id,
-    hash,
-    now,
-    title.category,
-  );
-  await db.run('DELETE FROM watch_views WHERE last_seen<=?', now - VIEW_WINDOW);
+    values: [id, hash, now, title.category],
+  };
+  if (reading)
+    await policy.atomic([
+      statement,
+      { sql: 'DELETE FROM watch_views WHERE last_seen<=?', values: [now - VIEW_WINDOW] },
+    ]);
+  else {
+    await db.run(statement.sql, ...statement.values);
+    await db.run('DELETE FROM watch_views WHERE last_seen<=?', now - VIEW_WINDOW);
+  }
   return visitor;
 }
 
 export const getTrendingAnime = (options) => getTrendingMedia('ANIME', options);
 export const getTrendingManga = (options) => getTrendingMedia('MANGA', options);
 export const getTrendingManhwa = (options) => getTrendingMedia('MANHWA', options);
-async function getTrendingMedia(category, { db, media, now = Date.now() }) {
+async function getTrendingMedia(category, { db, media, policy, now = Date.now() }) {
+  if (category !== 'ANIME' && policy) {
+    const page = await policy.select({
+      candidates:
+        'SELECT media_id,media_id AS social_id,COUNT(*) AS viewers,MAX(last_seen) AS latest FROM watch_views WHERE last_seen>? AND category=? GROUP BY media_id',
+      candidateValues: [now - VIEW_WINDOW, category],
+      scope: [category],
+      where: "json_extract(policy.value,'$.category')=?",
+      values: [category],
+      orderBy: [
+        ['viewers', 'DESC'],
+        ['latest', 'DESC'],
+        ['social_id', 'ASC'],
+      ],
+      limit: 18,
+    });
+    const { rows, mediaById, ...status } = page;
+    return {
+      mode: 'trending',
+      category,
+      period: 'week',
+      items: rows.map((row) => ({ ...mediaById.get(row.media_id), viewers: row.viewers })),
+      state: page.complete ? 'ready' : 'incomplete',
+      source: 'Yoru',
+      caption: 'Unique read-page visitors · Past 7 days',
+      ...status,
+    };
+  }
   const rows = await db.all(
     category === 'ANIME'
       ? trendingQuery

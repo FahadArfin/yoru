@@ -6,6 +6,8 @@ import { useResource } from '../state';
 import { Poster } from '../components';
 import './genre-collections.css';
 import { useCollection } from '../collection-context';
+import { imageLookahead } from '../image-loading';
+import GenreBrowser from './GenreBrowser';
 
 export const browseGenres = [
   'Action',
@@ -22,6 +24,33 @@ export const browseGenres = [
   'Horror',
   'Suspense',
 ];
+// Supported manga genres and themes, shared by discovery shelves and their filters.
+const readingGenres = [
+  ...browseGenres,
+  'Historical',
+  'Martial Arts',
+  'School',
+  'Psychological',
+  'Isekai',
+  'Reincarnation',
+  'Time Travel',
+  'Survival',
+  'Detective',
+  'Military',
+  'Mecha',
+  'Super Power',
+  'Vampire',
+  'Video Game',
+  'Workplace',
+  'Music',
+  'Gourmet',
+  'Medical',
+  'Team Sports',
+  'Award Winning',
+];
+export const genresForCategory = (category, customCollection = false) =>
+  !customCollection && ['manga', 'manhwa'].includes(category) ? readingGenres : browseGenres;
+
 const genreId = (category, genre) =>
   `${category}-shelf-${genre.toLowerCase().replaceAll(' ', '-')}`;
 
@@ -52,7 +81,7 @@ function CollectionShelf({ category, genre = '', children }) {
           observer.disconnect();
         }
       },
-      { rootMargin: '300px' },
+      { rootMargin: `${imageLookahead(true)}px 0px` },
     );
     observer.observe(section.current);
     return () => observer.disconnect();
@@ -166,7 +195,7 @@ function CollectionShelf({ category, genre = '', children }) {
   );
 }
 
-export default function GenreCollections({ category, collectionControls }) {
+export default function GenreCollections({ category }) {
   const scope = useCollection();
   const genres = scope?.active
     ? browseGenres.filter((genre) =>
@@ -174,25 +203,27 @@ export default function GenreCollections({ category, collectionControls }) {
           (item) => item.category.toLowerCase() === category && item.genres?.includes(genre),
         ),
       )
-    : browseGenres;
+    : genresForCategory(category);
   return (
     <div className="genre-collections" key={category}>
-      <nav className="genre-jump-list" aria-label="Explore genres">
-        {genres.map((genre) => (
-          <a key={genre} href={`#${genreId(category, genre)}`}>
-            {genre}
+      {!scope?.active && ['manga', 'manhwa'].includes(category) ? (
+        <GenreBrowser key={category} category={category} shelves={genres} />
+      ) : (
+        <nav className="genre-jump-list" aria-label="Explore genres">
+          {genres.map((genre) => (
+            <a key={genre} href={`#${genreId(category, genre)}`}>
+              {genre}
+            </a>
+          ))}
+          <a href={`#${genreId(category, 'all')}`}>
+            Full collection <ArrowRight size={12} />
           </a>
-        ))}
-        <a href={`#${genreId(category, 'all')}`}>
-          Full collection <ArrowRight size={12} />
-        </a>
-      </nav>
+        </nav>
+      )}
       {genres.map((genre) => (
         <CollectionShelf key={`${category}-${genre}`} category={category} genre={genre} />
       ))}
-      <CollectionShelf key={`${category}-all`} category={category}>
-        {collectionControls}
-      </CollectionShelf>
+      <CollectionShelf key={`${category}-all`} category={category} />
     </div>
   );
 }

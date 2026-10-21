@@ -72,6 +72,60 @@ async function setup(page, context, baseURL) {
   });
   return requests;
 }
+test('chapter message icons open isolated discussions with replies and votes', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  const account = await context.request.post('/api/auth/register', {
+    headers: { Origin: baseURL },
+    data: {
+      name: 'Chapter discussion reader',
+      email: `chapter-chat-${Date.now()}-${test.info().project.name}@example.com`,
+      password: 'Reader-password-123',
+    },
+  });
+  expect(account.ok()).toBeTruthy();
+  await page.goto('/title/mal-manga-121496');
+  const link = page.getByRole('link', { name: 'Chapter 2 discussion', exact: true });
+  await expect(link).toHaveAttribute('title', 'Chapter 2 discussion');
+  await link.click();
+  await expect(page).toHaveURL(/unit=2#chapter-discussion$/);
+  const thread = page.getByRole('region', { name: 'Chapter 2 discussion', exact: true });
+  await expect(thread).toBeVisible();
+  const body = `Only chapter two ${Date.now()} ${test.info().project.name}`;
+  await thread.getByLabel('Discussion comment').fill(body);
+  await thread.getByRole('button', { name: 'Post comment', exact: true }).click();
+  const comment = thread.locator('article.comment').filter({ hasText: body });
+  await expect(comment).toBeVisible();
+  await comment
+    .getByRole('button', { name: 'Like comment by Chapter discussion reader', exact: true })
+    .click();
+  await expect(
+    comment.getByRole('button', { name: 'Like comment by Chapter discussion reader', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await comment.getByRole('button', { name: 'Dislike comment', exact: true }).click();
+  await expect(
+    comment.getByRole('button', { name: 'Dislike comment', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
+  await comment.getByRole('button', { name: 'Reply', exact: true }).click();
+  await thread.getByLabel('Discussion comment').fill('A reply about chapter two');
+  await thread.getByRole('button', { name: 'Post reply', exact: true }).click();
+  await expect(comment.locator('.comment-reply')).toContainText('A reply about chapter two');
+  await page.getByRole('link', { name: 'Back to chapters', exact: true }).click();
+  await page.getByRole('link', { name: 'Chapter 1 discussion', exact: true }).click();
+  await expect(
+    page.getByRole('region', { name: 'Chapter 1 discussion', exact: true }),
+  ).toBeVisible();
+  await expect(page.getByText(body, { exact: true })).toHaveCount(0);
+  await page.getByRole('link', { name: 'Back to chapters', exact: true }).click();
+  await page.getByRole('link', { name: 'Chapter 2 discussion', exact: true }).click();
+  await page.reload();
+  await expect(page.getByText(body, { exact: true })).toBeVisible();
+  await expect(comment.locator('.comment-reply')).toContainText('A reply about chapter two');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
 for (const [category, id] of [
   ['manga', 'mal-manga-21'],
   ['manhwa', 'mal-manga-121496'],
@@ -150,7 +204,10 @@ test('signed-in chapter ratings save and failed feeds have a retry without inven
     },
   });
   expect(account.ok()).toBeTruthy();
-  await page.route('**/api/media/*/chapters/*/rating', async (route) => {
+  await page.route(/\/api\/media\/[^/]+\/chapters\/[^/]+\/rating(?:\?|$)/, async (route) => {
+    const params = new URL(route.request().url()).searchParams;
+    expect(params.get('destination')).toBe('yoru');
+    expect(params.get('selectionFingerprint')).toBeTruthy();
     expect(route.request().postDataJSON()).toEqual({ rating: 5 });
     await route.fulfill({ json: { opens: 7, votes: 3, rating: 4.67, myRating: 5 } });
   });

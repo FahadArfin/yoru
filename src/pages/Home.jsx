@@ -5,6 +5,7 @@ import { ArrowRight, BookOpen, Play, Sparkles, Swords, Heart, MoonStar } from 'l
 import { Loading } from '../components';
 import '../home-category.css';
 import { useCollection } from '../collection-context';
+import HomeCollections from './HomeCollections';
 
 const ReadingHome = lazy(() =>
   import('./MangaPage').then((module) => ({ default: module.MangaLanding })),
@@ -25,6 +26,8 @@ function savedCategory(key) {
 }
 
 function HomeCollection({ category }) {
+  const scope = useCollection();
+  if (!scope?.active) return <HomeCollections category={category} />;
   const genres = [
     {
       name: 'Fantasy',

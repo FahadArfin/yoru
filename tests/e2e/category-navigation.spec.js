@@ -16,7 +16,7 @@ test('catalog controls filter each category without a duplicate navigation strip
   });
   await page.goto('/browse/anime?view=all');
   await expect(page.getByRole('navigation', { name: 'anime collections' })).toHaveCount(0);
-  const filters = page.getByRole('region', { name: 'Catalog filters' });
+  const filters = page.getByRole('region', { name: 'Catalog filters', exact: true });
   await expect(filters).toHaveCount(1);
   await filters.getByLabel('Anime format').selectOption('movie');
   await expect(page).toHaveURL(/format=movie/);

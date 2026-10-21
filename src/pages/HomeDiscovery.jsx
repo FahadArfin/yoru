@@ -15,8 +15,10 @@ import {
 import { useResource } from '../state';
 import { ago, coverOf } from '../api';
 import CoverImage from '../CoverImage';
-import { MangaCard } from './MangaDiscovery';
+import { MangaCard } from './MangaCard';
 import '../discovery.css';
+import ReaderCatalog from '../reader/ReaderCatalog';
+import { useReaderSelection } from '../useCatalogPreferences';
 
 const tabs = [
   { value: 'released', label: 'Just released', icon: Sparkles },
@@ -223,17 +225,29 @@ function PreviewCard({ item, mode, index, reading }) {
   );
 }
 
-function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, category }) {
+function DiscoveryPanel({
+  mode,
+  expanded,
+  onExpand,
+  home,
+  language,
+  onLanguage,
+  category,
+  newSeries,
+}) {
   const reading = category !== 'anime';
-  const animeReleases = !reading && mode === 'released';
-  const feedMode = reading && mode === 'released' ? 'new' : mode;
+  const animeNew = !reading && newSeries && mode === 'released';
+  const animeReleases = !reading && !newSeries && mode === 'released';
+  const feedMode = (reading || newSeries) && mode === 'released' ? 'new' : mode;
   const [period, setPeriod] = useState(mode === 'popular' ? 'month' : 'all');
   const feedPeriod = mode === 'trending' ? 'week' : period;
   const [pendingTimedOut, setPendingTimedOut] = useState(false);
   const ranked = useResource(
     animeReleases
       ? null
-      : `/api/${reading ? category : 'home'}/discovery?mode=${feedMode}&period=${feedPeriod}`,
+      : animeNew
+        ? '/api/catalog?category=ANIME&sort=newest&page=1&limit=24'
+        : `/api/${reading ? category : 'home'}/discovery?mode=${feedMode}&period=${feedPeriod}`,
   );
   useEffect(() => {
     if (animeReleases) return;
@@ -263,9 +277,11 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
     ? !home.data?.language || home.data.language === language
       ? home.data
       : null
-    : ranked.data?.mode === feedMode && ranked.data?.period === feedPeriod
+    : animeNew
       ? ranked.data
-      : null;
+      : ranked.data?.mode === feedMode && ranked.data?.period === feedPeriod
+        ? ranked.data
+        : null;
   const feedItems = (animeReleases ? data?.releases : data?.items) || [];
   const items = mode === 'trending' ? feedItems.slice(0, 10) : feedItems;
   const loading = (!data || (data.state === 'pending' && !pendingTimedOut)) && !resource.error;
@@ -275,7 +291,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
     ['not-configured', 'unavailable', 'partial'].includes(data?.state) ||
     (data?.stale && !items.length);
   const active = { ...tabs.find((tab) => tab.value === mode) };
-  if (reading && mode === 'released') active.label = 'New series';
+  if ((reading || newSeries) && mode === 'released') active.label = 'New series';
   const Icon = active.icon;
   const selection = `${mode}:${mode === 'released' ? language : period}:${expanded}`;
   return (
@@ -299,7 +315,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
           </button>
         </h2>
       </header>
-      {mode !== 'trending' && (
+      {mode !== 'trending' && (mode !== 'popular' || expanded) && (
         <div className="discovery-filter-row">
           {animeReleases ? (
             <div className="release-language" role="group" aria-label="Release filter">
@@ -316,7 +332,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                 </button>
               ))}
             </div>
-          ) : reading && mode === 'released' ? (
+          ) : (reading || animeNew) && mode === 'released' ? (
             <span className="discovery-week">
               <Sparkles size={12} /> New {category} series
             </span>
@@ -337,7 +353,6 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                 <span aria-live="polite">
                   {periods.find((item) => item.value === period)?.label}
                 </span>
-                <RotateCw size={12} aria-hidden="true" />
               </button>
             </div>
           ) : null}
@@ -365,7 +380,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                   style={{ '--card-delay': `${Math.min(index, 8) * 22}ms` }}
                   key={item.id || item.route}
                 >
-                  {reading ? (
+                  {reading || animeNew ? (
                     <MangaCard media={item} index={index} mode={feedMode} />
                   ) : mode === 'released' ? (
                     <ReleaseCard entry={item} />
@@ -381,7 +396,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                 <PreviewCard
                   key={item.id || item.route}
                   item={item}
-                  mode={mode}
+                  mode={animeNew ? 'new' : mode}
                   index={index}
                   reading={reading}
                 />
@@ -399,7 +414,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                 : mode === 'trending'
                   ? 'Be the first to start a trend.'
                   : mode === 'released'
-                    ? reading
+                    ? reading || animeNew
                       ? 'No new series found.'
                       : 'You’re all caught up.'
                     : 'No premieres found for this period.'}
@@ -430,7 +445,25 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
   );
 }
 
-export default function HomeDiscovery({ home, language, onLanguage, category = 'anime' }) {
+export default function HomeDiscovery(props) {
+  const selection = useReaderSelection();
+  const reading = props.category && props.category !== 'anime';
+  const coreAllowed =
+    !reading || (selection?.ready && selection.context.integrationMode !== 'extensions');
+  return (
+    <>
+      {reading && <ReaderCatalog category={props.category} />}
+      {coreAllowed && <CoreHomeDiscovery {...props} />}
+    </>
+  );
+}
+export function CoreHomeDiscovery({
+  home,
+  language,
+  onLanguage,
+  category = 'anime',
+  newSeries = false,
+}) {
   const [mode, setMode] = useState('released');
   const panelsRef = useRef(null);
   const previousBounds = useRef(null);
@@ -476,14 +509,15 @@ export default function HomeDiscovery({ home, language, onLanguage, category = '
   }, [mode]);
   const categories = tabs.map((tab) => ({
     ...tab,
-    label: category !== 'anime' && tab.value === 'released' ? 'New series' : tab.label,
+    label:
+      (category !== 'anime' || newSeries) && tab.value === 'released' ? 'New series' : tab.label,
   }));
   const orderedCategories = [
     categories.find((tab) => tab.value === mode),
     ...categories.filter((tab) => tab.value !== mode),
   ];
   return (
-    <div className="release-section discovery-section">
+    <section className="release-section discovery-section" aria-label={`Discover ${category}`}>
       <div className="discovery-mobile-switcher" role="group" aria-label="Choose expanded category">
         {categories.map(({ value, label }) => (
           <button key={value} aria-pressed={mode === value} onClick={() => selectMode(value)}>
@@ -502,9 +536,10 @@ export default function HomeDiscovery({ home, language, onLanguage, category = '
             language={language}
             onLanguage={onLanguage}
             category={category}
+            newSeries={newSeries}
           />
         ))}
       </div>
-    </div>
+    </section>
   );
 }

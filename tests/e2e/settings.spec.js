@@ -1,6 +1,7 @@
 import { test, expect } from '@playwright/test';
 
 test.beforeEach(async ({ context, page, baseURL }) => {
+  await page.route('**/api/reader/catalogs', (route) => route.fulfill({ json: { sources: [] } }));
   await context.route('**/*', (route) =>
     new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
   );
@@ -44,6 +45,9 @@ test('settings recovers connection status and preserves MAL actions', async ({
     }),
   );
   await page.route('**/api/library', (route) => route.fulfill({ json: { items: [] } }));
+  await page.route('**/api/reader/preferences', (route) =>
+    route.fulfill({ json: { owner: 'settings-user', overrides: {} } }),
+  );
   let failed = true;
   let connected = true;
   let syncs = 0;

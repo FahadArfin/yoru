@@ -116,10 +116,14 @@ test('homepage switches complete categories, retains links, filters and saved pr
       .getByRole('heading', { name: 'manhwa popular all 1' }),
   ).toBeVisible();
   const explorer = page.getByRole('region', { name: 'Explore manhwa', exact: true });
-  await expect(explorer.getByRole('heading', { name: 'More stories' })).toBeVisible();
-  await expect(explorer.getByRole('link', { name: /Fantasy/ })).toHaveAttribute(
+  await expect(explorer.getByRole('heading', { name: 'Find your next favorite' })).toBeVisible();
+  await expect(explorer.getByRole('tab', { name: /Manhwa favorites/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(explorer.getByRole('link', { name: 'View full list' })).toHaveAttribute(
     'href',
-    '/browse/manhwa?genre=Fantasy',
+    '/browse/manhwa?sort=score',
   );
   await expect(page.getByRole('region', { name: 'Manhwa community', exact: true })).toHaveCount(0);
   await checkBannerSwitch();
@@ -182,10 +186,16 @@ test('homepage resumes anime, manga and manhwa together below every category ban
   baseURL,
 }) => {
   await mockFeeds(page, context, baseURL);
-  await page.route('**/api/auth/me', (route) =>
-    route.fulfill({ json: { user: { id: 'test-reader', name: 'Test reader' } } }),
-  );
-  await page.route('**/api/library', (route) =>
+  const registered = await context.request.post('/api/auth/register', {
+    headers: { Origin: baseURL },
+    data: {
+      name: 'Test reader',
+      email: `resume-${Date.now()}-${Math.random()}@example.test`,
+      password: 'Reader fixture password 2026',
+    },
+  });
+  expect(registered.status()).toBe(201);
+  await page.route(/\/api\/library(?:\?|$)/, (route) =>
     route.fulfill({
       json: {
         items: [
@@ -237,7 +247,7 @@ test('homepage resumes anime, manga and manhwa together below every category ban
       },
     }),
   );
-  await page.route('**/api/resume', (route) =>
+  await page.route(/\/api\/resume(?:\?|$)/, (route) =>
     route.fulfill({
       json: {
         items: [
@@ -356,6 +366,7 @@ test('banner controls sit at bottom center, reveal on hover or keyboard, and sta
   const bar = page.locator('.home-category-bar');
   const controls = hero.locator('.weekly-controls');
   await expect(controls).toBeAttached();
+  await expect(hero).toBeVisible();
   const frame = await hero.boundingBox();
   const bounds = await bar.boundingBox();
   expect(Math.abs(bounds.x + bounds.width / 2 - (frame.x + frame.width / 2))).toBeLessThan(2);

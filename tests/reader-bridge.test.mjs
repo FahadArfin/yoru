@@ -3,6 +3,153 @@ import { test } from 'node:test';
 import { mkdtemp, rm, readdir, writeFile, utimes } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { request as httpRequest } from 'node:http';
+import { once } from 'node:events';
+import { setTimeout as delay } from 'node:timers/promises';
+
+function deferred() {
+  let resolve;
+  const promise = new Promise((r) => {
+    resolve = r;
+  });
+  return { promise, resolve };
+}
+
+async function localBridge(provider) {
+  const { createBridgeServer } = await import('../services/reader-bridge/server.mjs');
+  const key = 'x'.repeat(32);
+  const server = createBridgeServer({ key, provider, extensionsEnabled: true });
+  server.listen(0, '127.0.0.1');
+  await once(server, 'listening');
+  return {
+    server,
+    send() {
+      const request = httpRequest({
+        host: '127.0.0.1',
+        port: server.address().port,
+        path: '/extension/browse',
+        method: 'POST',
+        headers: { authorization: `Bearer ${key}`, connection: 'close' },
+      });
+      request.on('error', () => {});
+      request.end('{}');
+      return request;
+    },
+    async close() {
+      const closed = new Promise((resolve) => server.close(resolve));
+      server.closeAllConnections();
+      await closed;
+    },
+  };
+}
+
+test('real HTTP disconnect removes queued generic work before an upstream request', async () => {
+  const { createSuwayomiClient } = await import('../services/reader-bridge/suwayomi-client.mjs');
+  const blocker = deferred(),
+    entered = deferred();
+  let upstreamCalls = 0;
+  const client = createSuwayomiClient({
+    url: 'http://fixture',
+    fetchImpl: async () => {
+      upstreamCalls++;
+      return Response.json({ data: { sources: { nodes: [] } } });
+    },
+  });
+  const active = client.queue.run(() => blocker.promise);
+  const bridge = await localBridge({
+    extensions: {
+      browse(_input, context) {
+        entered.resolve(context.signal);
+        return client.execute('sources', {}, context);
+      },
+    },
+  });
+  try {
+    const request = bridge.send();
+    const signal = await entered.promise;
+    assert.equal(client.queue.snapshot().pending, 1);
+    const aborted = new Promise((resolve) =>
+      signal.addEventListener('abort', () => resolve(true), { once: true }),
+    );
+    request.destroy();
+    assert.equal(
+      await Promise.race([aborted, delay(250, false)]),
+      true,
+      'client disconnect must abort its operation context',
+    );
+    assert.equal(client.queue.snapshot().pending, 0);
+    blocker.resolve();
+    await active;
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(upstreamCalls, 0);
+  } finally {
+    blocker.resolve();
+    await active;
+    await bridge.close();
+  }
+});
+
+test('real HTTP disconnect aborts active upstream work while normal responses keep a live signal', async () => {
+  const { createSuwayomiClient } = await import('../services/reader-bridge/suwayomi-client.mjs');
+  const dispatched = deferred(),
+    aborted = deferred();
+  const client = createSuwayomiClient({
+    url: 'http://fixture',
+    fetchImpl: async (_url, options) => {
+      dispatched.resolve();
+      return new Promise((_resolve, reject) =>
+        options.signal.addEventListener(
+          'abort',
+          () => {
+            aborted.resolve(true);
+            reject(new DOMException('Cancelled', 'AbortError'));
+          },
+          { once: true },
+        ),
+      );
+    },
+  });
+  let complete = false,
+    completedSignal;
+  const bridge = await localBridge({
+    extensions: {
+      browse(_input, context) {
+        if (complete) {
+          completedSignal = context.signal;
+          return { items: [], hasMore: false };
+        }
+        return client.execute('sources', {}, context);
+      },
+    },
+  });
+  try {
+    const request = bridge.send();
+    await dispatched.promise;
+    request.destroy();
+    assert.equal(
+      await Promise.race([aborted.promise, delay(250, false)]),
+      true,
+      'client disconnect must abort active transport',
+    );
+    await new Promise((resolve) => setImmediate(resolve));
+    assert.equal(client.queue.snapshot().active, 0);
+    complete = true;
+    const normal = bridge.send();
+    const [response] = await once(normal, 'response');
+    const chunks = [];
+    for await (const chunk of response) chunks.push(chunk);
+    assert.equal(response.statusCode, 200);
+    assert.equal(JSON.parse(Buffer.concat(chunks)).hasMore, false);
+    await delay(10);
+    assert.equal(
+      completedSignal.aborted,
+      false,
+      'a normally completed response must not abort its operation context',
+    );
+  } finally {
+    await bridge.close();
+  }
+});
 
 test('source matching requires the exact MAL mapping and preserves distinct source editions', async () => {
   const { mappedSources, sourceIdentity } = await import('../services/reader-bridge/providers.mjs');

@@ -19,6 +19,31 @@ export async function resumeContract(request, register) {
     assert.equal((await put(id, patch)).status, 200);
   const items = (await request('/api/resume', { session: alice })).body.items;
   assert.equal(items.length, 3);
+  assert.ok(
+    items.every((item) => item.destination === 'yoru'),
+    'omitted destination remains the legacy Yoru view',
+  );
+  const ara = await request('/api/resume?destination=ara-ara', { session: alice });
+  assert.deepEqual(
+    ara.body.items.map((item) => item.mediaId),
+    ['mal-manga-21'],
+  );
+  assert.equal((await request('/api/resume?destination=unknown', { session: alice })).status, 400);
+  const page = await request('/api/resume?limit=1', { session: alice });
+  assert.equal(page.body.items.length, 1);
+  assert.equal(page.body.hasMore, true);
+  assert.equal(
+    (await request(`/api/resume?limit=1&cursor=${page.body.nextCursor}`, { session: bob })).status,
+    409,
+  );
+  assert.equal(
+    (
+      await request(`/api/resume?destination=ara-ara&limit=1&cursor=${page.body.nextCursor}`, {
+        session: alice,
+      })
+    ).status,
+    409,
+  );
   assert.equal(items.find((x) => x.category === 'ANIME').position, 127.5);
   assert.equal(items.find((x) => x.category === 'MANHWA').page, 12);
   assert.equal(items.find((x) => x.category === 'MANGA').number, 1.5);

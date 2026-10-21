@@ -68,8 +68,6 @@
 .manhwa-home .weekly-watch:hover {
   background: rgb(var(--chrome-bright));
 }
-.manhwa-home .manga-intro > div,
-.manhwa-home .manga-intro > a,
 .manhwa-home .manga-rail-cta > svg,
 .manhwa-home .manga-rail-cta a,
 .manhwa-home .manga-rail-cta button {
@@ -103,32 +101,6 @@
     opacity: 1;
   }
 }
-.manga-intro {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 20px;
-  padding-block: 24px;
-  border-bottom: 1px solid rgb(var(--chrome-bright) / 0.031);
-}
-.manga-intro > div {
-  display: flex;
-  gap: 14px;
-  align-items: center;
-  color: rgb(var(--chrome-text));
-}
-.manga-intro strong {
-  display: block;
-  font-size: 12px;
-  color: rgb(var(--chrome-text));
-}
-.manga-intro small {
-  display: block;
-  font-size: 11px;
-  margin-top: 5px;
-  color: rgb(var(--chrome-muted));
-}
-.manga-intro > a,
 .manga-rail-cta a,
 .manga-rail-cta button {
   display: inline-flex;
@@ -194,9 +166,6 @@
   .manga-hero .weekly-description {
     max-width: 50%;
   }
-  .manga-intro > a {
-    white-space: nowrap;
-  }
 }
 @media (max-width: 600px) {
   .manga-hero {
@@ -241,14 +210,6 @@
   .manga-hero .weekly-actions > * {
     padding-inline: 14px;
     font-size: 11px;
-  }
-  .manga-intro {
-    padding-block: 18px;
-    flex-wrap: wrap;
-    gap: 12px;
-  }
-  .manga-intro > a {
-    margin-left: 33px;
   }
   .manga-return {
     width: calc(100% - 28px);

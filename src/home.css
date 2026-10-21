@@ -231,17 +231,8 @@
   right: 2.5vw;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-end;
   gap: 20px;
-}
-.weekly-caption {
-  color: rgb(var(--chrome-soft));
-  font-size: 9px;
-  letter-spacing: 0.2px;
-}
-.weekly-caption > span {
-  color: rgb(var(--chrome-quiet));
-  padding: 0 8px;
 }
 .weekly-controls {
   display: flex;
@@ -571,9 +562,6 @@
   .release-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
     gap: 22px 14px;
-  }
-  .weekly-caption {
-    display: none;
   }
   .weekly-bottom {
     justify-content: flex-end;

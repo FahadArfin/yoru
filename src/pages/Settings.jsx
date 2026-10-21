@@ -21,6 +21,8 @@ import { useWebMCPStatus } from '../webmcp-state';
 import { useTheme } from '../theme';
 import '../section-pages.css';
 import '../settings-page.css';
+import ReaderConnection from '../ReaderConnection';
+import AccountSettings from '../AccountSettings';
 export default function Settings() {
   const [theme, setTheme] = useTheme();
   const webmcp = useWebMCPStatus();
@@ -115,7 +117,12 @@ export default function Settings() {
                 <Avatar user={user} />
                 <div>
                   <strong>{user.name}</strong>
-                  <span>{user.email || 'Connected through Discord'}</span>
+                  <span>
+                    {user.email ||
+                      (user.chatgptConnected
+                        ? 'Connected through ChatGPT'
+                        : 'Connected through Discord')}
+                  </span>
                 </div>
                 <button
                   className="icon-button"
@@ -135,6 +142,7 @@ export default function Settings() {
                 </Button>
               </>
             )}
+            <AccountSettings />
             <div className="setting-row">
               <div>
                 <strong>Discord sign-in</strong>
@@ -237,6 +245,7 @@ export default function Settings() {
               </p>
             </details>
           </section>
+          <ReaderConnection />
         </div>
         <div className="settings-column">
           <section className="panel settings-card" aria-labelledby="settings-comfort">

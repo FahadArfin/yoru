@@ -21,12 +21,19 @@ import {
   Plus,
   Users,
 } from 'lucide-react';
-import { bannerOf, send, titleOf } from '../api';
-import { useApp, useResource } from '../state';
+import { bannerOf, titleOf } from '../api';
+import { useApp } from '../state';
 import { Avatar, Badge, Button, Empty, ErrorNotice, Loading } from '../components';
 import Chat from '../Chat';
 import { ExternalPlayer, SourceForm, SyncedVideo } from '../Playback';
 import { connectEvents } from '../realtime';
+import { useReaderResource } from '../reader/use-resource';
+import { readerMutation, readerContextKey } from '../reader/requests';
+import { readerLink, chapterUnit } from '../reader/model';
+import ReaderEditionPicker from '../reader/ReaderEditionPicker';
+import CatalogIntegrationSelect from '../CatalogIntegrationSelect';
+import { useReaderSelection } from '../useCatalogPreferences';
+import { collectionPath } from '../collection-context';
 export default function Room() {
   const { id } = useParams();
   const [params] = useSearchParams();
@@ -34,21 +41,30 @@ export default function Room() {
   const navigate = useNavigate();
   const location = useLocation();
   const { user, requireUser, notify, config } = useApp();
-  const resource = useResource(
+  const selection = useReaderSelection();
+  const resource = useReaderResource(
     `/api/rooms/${id}${invite ? `?invite=${encodeURIComponent(invite)}` : ''}`,
-    false,
+    { force: true },
   );
-  const room = resource.data?.room;
+  const context = resource.context;
+  const contextKey = readerContextKey(context);
+  const room =
+    context && (resource.data?.room?.destination || 'yoru') === context.destination
+      ? resource.data?.room
+      : null;
   const sharedInvite =
     room &&
-    (invite ? `/rooms/${id}?invite=${encodeURIComponent(invite)}` : roomInvite(user?.id, room));
+    collectionPath(
+      invite ? `/rooms/${id}?invite=${encodeURIComponent(invite)}` : roomInvite(user?.id, room),
+      context.destination === 'ara-ara',
+    );
   useEffect(() => {
-    if (room?.joined && invite)
-      rememberRoomInvite(user?.id, id, `/rooms/${id}?invite=${encodeURIComponent(invite)}`);
-  }, [id, user?.id, invite, room?.joined]);
+    if (room?.joined && invite) rememberRoomInvite(user?.id, id, sharedInvite);
+  }, [id, user?.id, invite, room?.joined, sharedInvite]);
   const [roomEvent, setRoomEvent] = useState(null);
   const [inviteOpen, setInviteOpen] = useState(Boolean(location.state?.shareRoom));
   const [sourceOpen, setSourceOpen] = useState(false);
+  const [editionOpen, setEditionOpen] = useState(false);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [unitDraft, setUnitDraft] = useState(1);
@@ -56,7 +72,7 @@ export default function Room() {
   const joined = Boolean(room?.joined && user);
   const host = Boolean(user && room?.hostId === user.id);
   const [live, setLive] = useState(false);
-  const identity = `${id}:${user?.id || 'guest'}`;
+  const identity = `${id}:${user?.id || 'guest'}:${contextKey}`;
   const identityRef = useRef(identity);
   identityRef.current = identity;
   useEffect(() => {
@@ -64,16 +80,25 @@ export default function Room() {
     resource.refresh();
     setRoomEvent(null);
     setSourceOpen(false);
+    setEditionOpen(false);
     setBusy(false);
     setError('');
-  }, [id, user?.id]);
+  }, [identity]);
+  const requestController = useRef(null);
+  useEffect(() => {
+    const controller = new AbortController();
+    requestController.current = controller;
+    return () => controller.abort();
+  }, [identity]);
+  const sendRoom = (path, body, method = 'POST') =>
+    readerMutation(path, body, method, { ...context, signal: requestController.current?.signal });
   useEffect(() => {
     if (room) {
       setUnitDraft(room.unit);
     }
   }, [room?.unit, room?.version]);
   useEffect(() => {
-    if (!joined || !config.realtime?.transport) return;
+    if (!joined || !context || !config.realtime?.transport) return;
     let active = true;
     const handle = (e) => {
       if (!active) return;
@@ -97,6 +122,7 @@ export default function Room() {
     const stream = connectEvents({
       transport: config.realtime.transport,
       roomId: id,
+      context: { ...context, signal: requestController.current?.signal },
       onEvent: handle,
       onOpen: () => {
         if (active) setLive(true);
@@ -110,14 +136,14 @@ export default function Room() {
       stream.close();
       setLive(false);
     };
-  }, [id, joined, user?.id, config.realtime?.transport]);
+  }, [identity, joined, context?.expiresAt, config.realtime?.transport]);
   const join = async () => {
     if (!requireUser()) return;
     const requestedIdentity = identityRef.current;
     setBusy(true);
     setError('');
     try {
-      const data = await send(`/api/rooms/${id}/join`, { invite });
+      const data = await sendRoom(`/api/rooms/${id}/join`, { invite });
       if (identityRef.current === requestedIdentity) resource.setData(data);
     } catch (e) {
       if (identityRef.current === requestedIdentity) setError(e.message);
@@ -135,7 +161,7 @@ export default function Room() {
       .then(async () => {
         if (identityRef.current !== requestedIdentity) return;
         try {
-          const data = await send(
+          const data = await sendRoom(
             `/api/rooms/${id}`,
             { ...patch, version: stateRef.current?.version },
             'PATCH',
@@ -160,7 +186,7 @@ export default function Room() {
   const leave = async () => {
     const requestedIdentity = identityRef.current;
     try {
-      await send(`/api/rooms/${id}/leave`, {});
+      await sendRoom(`/api/rooms/${id}/leave`, {});
       if (identityRef.current !== requestedIdentity) return;
       navigate('/rooms');
       notify('You left the room.');
@@ -227,14 +253,22 @@ export default function Room() {
       <div className="room-layout">
         <div className="room-stage">
           {joined ? (
-            room.type === 'read' && (!room.sourceUrl || room.sourceKind === 'reader') ? (
+            room.type === 'read' && room.media?.sourceRef && !room.sourceUrl ? (
+              <div className="room-empty-stage">
+                <BookOpen size={38} />
+                <h2>A conversation about the whole story.</h2>
+                <p>The host can choose an exact chapter edition to start the shared reader.</p>
+              </div>
+            ) : room.type === 'read' && (!room.sourceUrl || room.sourceKind === 'reader') ? (
               <iframe
                 className="room-reader"
                 title="Shared reader"
                 src={
                   room.sourceKind === 'reader'
                     ? room.sourceUrl
-                    : `/read/${room.mediaId}/${room.unit}`
+                    : readerLink(room.mediaId, { number: String(room.unit) }, undefined, {
+                        destination: room.destination,
+                      })
                 }
                 sandbox="allow-same-origin allow-scripts allow-forms allow-downloads allow-popups"
               />
@@ -305,54 +339,70 @@ export default function Room() {
                 <Crown size={18} />
                 <strong>You’re the host</strong>
               </div>
-              <form
-                onSubmit={(e) => {
-                  e.preventDefault();
-                  const nextUnit = Number(unitDraft);
-                  const nextSource =
-                    nextUnit === room.unit
-                      ? { url: room.sourceUrl, kind: room.sourceKind }
-                      : room.sourceKind === 'reader'
-                        ? {
-                            kind: 'reader',
-                            url: readerAtUnit(room.sourceUrl, room.mediaId, nextUnit),
-                          }
-                        : sourceForUnit(
-                            room.mediaId,
-                            nextUnit,
-                            { url: room.sourceUrl, kind: room.sourceKind },
-                            room.unit,
-                          );
-                  update({
-                    unit: nextUnit,
-                    position: 0,
-                    paused: true,
-                    sourceUrl: nextSource?.url || '',
-                    sourceKind: nextSource?.kind || 'external',
-                  });
-                }}
-              >
-                <label>
-                  {room.type === 'watch' ? 'Episode' : 'Chapter'}
-                  <input
-                    aria-label="Room unit"
-                    type="number"
-                    min={room.type === 'watch' ? 1 : 0}
-                    step={room.type === 'watch' ? 1 : 'any'}
-                    max="100000"
-                    value={unitDraft}
-                    onChange={(e) => setUnitDraft(e.target.value)}
+              {room.media?.sourceRef ? (
+                <>
+                  <CatalogIntegrationSelect
+                    value={context.integrationMode}
+                    onChange={(mode) => selection.setIntegrationMode(mode)}
                   />
-                </label>
-                <Button type="submit" variant="subtle">
-                  Go
-                  <ArrowRight size={15} />
+                  <Button variant="subtle" onClick={() => setEditionOpen(true)}>
+                    Choose exact chapter edition
+                  </Button>
+                </>
+              ) : (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    const nextUnit = Number(unitDraft);
+                    const nextSource =
+                      nextUnit === room.unit
+                        ? { url: room.sourceUrl, kind: room.sourceKind }
+                        : room.sourceKind === 'reader'
+                          ? {
+                              kind: 'reader',
+                              url: readerAtUnit(room.sourceUrl, room.mediaId, nextUnit, {
+                                destination: room.destination,
+                              }),
+                            }
+                          : sourceForUnit(
+                              room.mediaId,
+                              nextUnit,
+                              { url: room.sourceUrl, kind: room.sourceKind },
+                              room.unit,
+                            );
+                    update({
+                      unit: nextUnit,
+                      position: 0,
+                      paused: true,
+                      sourceUrl: nextSource?.url || '',
+                      sourceKind: nextSource?.kind || 'external',
+                    });
+                  }}
+                >
+                  <label>
+                    {room.type === 'watch' ? 'Episode' : 'Chapter'}
+                    <input
+                      aria-label="Room unit"
+                      type="number"
+                      min={room.type === 'watch' ? 1 : 0}
+                      step={room.type === 'watch' ? 1 : 'any'}
+                      max="100000"
+                      value={unitDraft}
+                      onChange={(e) => setUnitDraft(e.target.value)}
+                    />
+                  </label>
+                  <Button type="submit" variant="subtle">
+                    Go
+                    <ArrowRight size={15} />
+                  </Button>
+                </form>
+              )}
+              {!room.media?.sourceRef && (
+                <Button variant="subtle" onClick={() => setSourceOpen(true)}>
+                  <Link2 size={15} />
+                  {room.sourceUrl ? 'Change source' : 'Add source'}
                 </Button>
-              </form>
-              <Button variant="subtle" onClick={() => setSourceOpen(true)}>
-                <Link2 size={15} />
-                {room.sourceUrl ? 'Change source' : 'Add source'}
-              </Button>
+              )}
               {['video', 'hls'].includes(room.sourceKind) && (
                 <>
                   <Button
@@ -387,15 +437,32 @@ export default function Room() {
               ))}
             </div>
           </div>
-          <Link
-            to={`/${room.type === 'watch' ? 'watch' : 'read'}/${room.mediaId}/${room.unit}`}
-            className="text-link"
-          >
-            Open {room.type === 'watch' ? 'episode' : 'chapter'} discussion
-            <ArrowRight size={16} />
-          </Link>
+          {joined && (
+            <Link
+              to={
+                room.type === 'watch'
+                  ? `/watch/${room.mediaId}/${room.unit}`
+                  : room.sourceKind === 'reader' && room.sourceUrl
+                    ? room.sourceUrl
+                    : readerLink(room.mediaId, { number: String(room.unit) }, undefined, {
+                        destination: room.destination,
+                      })
+              }
+              className="text-link"
+            >
+              Open {room.type === 'watch' ? 'episode' : 'chapter'} discussion
+              <ArrowRight size={16} />
+            </Link>
+          )}
         </div>
-        <Chat roomId={id} roomEvent={roomEvent} enabled={joined} live={live} />
+        <Chat
+          key={identity}
+          roomId={id}
+          roomEvent={roomEvent}
+          enabled={joined}
+          live={live}
+          context={context}
+        />
       </div>
       {inviteOpen && (
         <RoomInvite
@@ -410,13 +477,38 @@ export default function Room() {
           initial={{ url: room.sourceUrl, kind: room.sourceKind }}
           onSave={async (source) => {
             const requestedIdentity = identityRef.current;
-            const data = await send(
+            const data = await sendRoom(
               `/api/rooms/${id}`,
               { sourceUrl: source.url, sourceKind: source.kind, position: 0, paused: true },
               'PATCH',
             );
             if (identityRef.current === requestedIdentity)
               resource.setData((old) => ({ room: { ...old?.room, ...data.room } }));
+          }}
+        />
+      )}
+      {editionOpen && room.media?.sourceRef && (
+        <ReaderEditionPicker
+          mediaId={room.mediaId}
+          source={{
+            id: room.media.sourceRef.id,
+            sourceRef: room.media.sourceRef,
+            mediaId: room.mediaId,
+            name: room.media.sourceRef.providerKey,
+          }}
+          context={context}
+          close={() => setEditionOpen(false)}
+          onSelect={async (edition) => {
+            await update({
+              unit: chapterUnit(edition.number) ?? 1,
+              position: 0,
+              paused: true,
+              sourceKind: 'reader',
+              sourceUrl: readerLink(room.mediaId, edition, undefined, {
+                destination: room.destination,
+              }),
+            });
+            setEditionOpen(false);
           }}
         />
       )}

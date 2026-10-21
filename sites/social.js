@@ -1,15 +1,60 @@
-import { getAraCatalog } from '../server/ara-ara.js';
 import { randomUUID } from 'node:crypto';
-import { getMedia, rememberImportedMedia } from '../server/catalog-core.js';
+import { getMedia, coreAccountMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
 import { requireAuth, publicUser } from './security.js';
-import { now, eventStatement, changes, liveSession, sessionValues } from './store.js';
+import {
+  now,
+  eventStatement,
+  changes,
+  liveSession,
+  sessionValues,
+  sitesReaderDb,
+} from './store.js';
 import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from '../server/community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { readerMarkers } from '../server/reader-markers.js';
 import { resumeInput, resumeUpsert } from '../server/resume.js';
 import { forumRoutes } from './forum.js';
+import { resolveReaderContext } from '../server/reader-context.js';
+import { createExtensionGateway } from '../server/extension-gateway.js';
+import { socialRequest, socialDatabase } from './native-social.js';
+import { commentReadingPredicate } from '../server/native-social-policy.js';
+import {
+  listReadingLibrary,
+  listReadingResume,
+  resolveAccountMedia,
+  accountAtomic,
+  accountSnapshotStatement,
+  resumeMetadata,
+  exportReadingAccount,
+} from '../server/reading-account.js';
+
+async function accountRequest(c) {
+  const db = sitesReaderDb(c.get('db'));
+  const context = await resolveReaderContext(c.req.query(), {
+    db,
+    userId: c.get('user').id,
+    sessionHash: c.get('sessionHash'),
+    extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+    signal: c.req.raw.signal,
+  });
+  return {
+    context,
+    deps: {
+      db,
+      coreMedia: getMedia,
+      coreAccountMedia,
+      bridge: createExtensionGateway({
+        ...scheduleOptions(c.env),
+        bridgeUrl: c.env.READER_BRIDGE_URL,
+        bridgeKey: c.env.READER_BRIDGE_KEY,
+        extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+      }),
+    },
+  };
+}
 
 const author = (row) => ({ id: row.user_id, name: row.name, avatar: row.avatar || '' });
 export const libraryShape = (row, media) => ({
@@ -37,6 +82,7 @@ const commentShape = (row) => ({
   id: row.id,
   mediaId: row.media_id,
   unit: row.unit,
+  editionId: row.edition_id || null,
   parentId: row.parent_id,
   userId: row.user_id,
   author: author(row),
@@ -72,7 +118,7 @@ export const MESSAGE_QUERY =
 export async function messages(db, roomId = null) {
   return (
     await db.all(
-      `${MESSAGE_QUERY} WHERE room_id IS ? ORDER BY messages.created_at DESC LIMIT 100`,
+      `${MESSAGE_QUERY} WHERE room_id IS ? AND channel_id IS NULL ORDER BY messages.created_at DESC LIMIT 100`,
       roomId,
     )
   )
@@ -93,24 +139,45 @@ export async function onlineState(db) {
 }
 export function socialRoutes(app) {
   forumRoutes(app);
-  app.get('/api/resume', requireAuth, async (c) =>
-    c.json({
-      items: (
-        await c
-          .get('db')
-          .all(
-            'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
-            c.get('user').id,
-          )
-      ).map((row) => JSON.parse(row.payload)),
-    }),
-  );
+  for (const method of ['get', 'put'])
+    app[method]('/api/reader-markers/:mediaId', requireAuth, async (c) => {
+      const request = await accountRequest(c);
+      return c.json(
+        await readerMarkers(
+          mediaId(c.req.param('mediaId')),
+          method === 'put' ? await c.req.json() : null,
+          c.get('user').id,
+          request,
+        ),
+      );
+    });
+  app.get('/api/resume', requireAuth, async (c) => {
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await listReadingResume(context, c.req.query(), deps));
+  });
   app.put('/api/resume/:mediaId', requireAuth, async (c) => {
     const id = mediaId(c.req.param('mediaId')),
       user = c.get('user'),
       db = c.get('db');
-    const item = resumeInput(await c.req.json(), await getMedia(id), user.id);
-    await db.run(resumeUpsert, user.id, id, JSON.stringify(item), item.updatedAt);
+    const input = await c.req.json(),
+      request = await accountRequest(c);
+    const { context, media } = await resolveAccountMedia(
+      id,
+      input.chapterId,
+      request.context,
+      request.deps,
+    );
+    const item = { ...resumeInput(input, media, user.id), ...resumeMetadata(media, context) };
+    await accountAtomic(
+      context,
+      [
+        { sql: resumeUpsert, values: [user.id, id, JSON.stringify(item), item.updatedAt] },
+        accountSnapshotStatement(context, media, 'resume', item),
+      ],
+      request.deps,
+      { media },
+    );
     return c.json({
       item: JSON.parse(
         (
@@ -123,27 +190,23 @@ export function socialRoutes(app) {
       ),
     });
   });
+  app.get('/api/library/export', requireAuth, async (c) => {
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await exportReadingAccount(context, deps));
+  });
   app.get('/api/library', requireAuth, async (c) => {
-    const entries = await c
-      .get('db')
-      .all(
-        'SELECT library.*,imported_media.metadata FROM library LEFT JOIN imported_media ON imported_media.media_id=library.media_id WHERE user_id=? ORDER BY updated_at DESC LIMIT 5000',
-        c.get('user').id,
-      );
-    rememberImportedMedia(entries.filter((x) => x.metadata).map((x) => JSON.parse(x.metadata)));
-    return c.json({
-      items: await Promise.all(
-        entries.map(async (row) => libraryShape(row, await getMedia(row.media_id))),
-      ),
-    });
+    const { context, deps } = await accountRequest(c);
+    c.header('Cache-Control', 'no-store');
+    return c.json(await listReadingLibrary(context, c.req.query(), deps));
   });
   app.put('/api/library/:mediaId', requireAuth, async (c) => {
     const id = mediaId(c.req.param('mediaId')),
       input = await c.req.json(),
       db = c.get('db'),
       user = c.get('user');
-    const media = await getMedia(id);
-    if (!media) throw apiError(404, 'This title could not be found.');
+    const request = await accountRequest(c);
+    const { context, media } = await resolveAccountMedia(id, null, request.context, request.deps);
     if (
       input.status !== undefined &&
       !['planned', 'watching', 'reading', 'completed', 'paused', 'dropped'].includes(input.status)
@@ -156,31 +219,47 @@ export function socialRoutes(app) {
       input.score === undefined || input.score === null
         ? null
         : numeric(input.score, { name: 'Score', max: 10 });
-    const result = await db.batch([
-      db.statement(
-        `INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) SELECT ?,?,?,?,?,?,? WHERE ${liveSession}
+    const result = await accountAtomic(
+      context,
+      [
+        {
+          sql: `INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) SELECT ?,?,?,?,?,?,? WHERE ${liveSession}
         ON CONFLICT(user_id,media_id) DO UPDATE SET
         favorite=CASE WHEN ? THEN excluded.favorite ELSE library.favorite END,
         status=CASE WHEN ? THEN excluded.status ELSE library.status END,
         progress=CASE WHEN ? THEN excluded.progress ELSE library.progress END,
         score=CASE WHEN ? THEN excluded.score ELSE library.score END,updated_at=excluded.updated_at RETURNING *`,
-        user.id,
-        id,
-        favorite,
-        input.status || 'planned',
-        progress,
-        score,
-        now(),
-        ...sessionValues(c),
-        Number(input.favorite !== undefined),
-        Number(input.status !== undefined),
-        Number(input.progress !== undefined),
-        Number(input.score !== undefined),
-      ),
-      eventStatement(db, 'library', { userId: user.id, mediaId: id }, { userId: user.id }),
-    ]);
-    if (!result[0].results.length) throw apiError(401, 'Your session changed. Sign in again.');
-    return c.json({ item: libraryShape(result[0].results[0], media) });
+          values: [
+            user.id,
+            id,
+            favorite,
+            input.status || 'planned',
+            progress,
+            score,
+            now(),
+            ...sessionValues(c),
+            Number(input.favorite !== undefined),
+            Number(input.status !== undefined),
+            Number(input.progress !== undefined),
+            Number(input.score !== undefined),
+          ],
+        },
+        accountSnapshotStatement(context, media),
+        {
+          sql: 'INSERT INTO event_log(event,payload,room_id,user_id,created_at) VALUES(?,?,NULL,?,?)',
+          values: [
+            'library',
+            JSON.stringify({ userId: user.id, mediaId: id }),
+            user.id,
+            Date.now(),
+          ],
+        },
+      ],
+      request.deps,
+      { media },
+    );
+    if (!result[0].length) throw apiError(401, 'Your session changed. Sign in again.');
+    return c.json({ item: libraryShape(result[0][0], media) });
   });
   app.delete('/api/library/:mediaId', requireAuth, async (c) => {
     const db = c.get('db'),
@@ -206,7 +285,7 @@ export function socialRoutes(app) {
   );
   app.post('/api/reviews/:mediaId', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id,
       id = mediaId(c.req.param('mediaId'));
     const body = text(input.body, { name: 'Review', min: 10, max: 10000 }),
@@ -244,7 +323,7 @@ export function socialRoutes(app) {
     );
   });
   app.delete('/api/reviews/:id', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
       review = await db.get(
         'DELETE FROM reviews WHERE id=? AND user_id=? RETURNING media_id',
         c.req.param('id'),
@@ -260,18 +339,17 @@ export function socialRoutes(app) {
     return c.json({ ok: true });
   });
   app.get('/api/comments/:mediaId', async (c) => {
-    const unit = numeric(Number(c.req.query('unit') || 0), {
-      name: 'Episode or chapter',
-      integer: true,
-    });
+    const { unit, editionId } = c.get('socialAccess').discussion;
     return c.json({
       items: (
         await c
           .get('db')
           .all(
-            `${COMMENT_QUERY} WHERE media_id=? AND unit=? ORDER BY comments.created_at DESC LIMIT 500`,
+            `${COMMENT_QUERY} WHERE media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?) ORDER BY comments.created_at DESC LIMIT 500`,
             c.get('user')?.id || '',
             c.req.param('mediaId'),
+            editionId,
+            editionId,
             unit,
           )
       ).map(commentShape),
@@ -279,22 +357,21 @@ export function socialRoutes(app) {
   });
   app.post('/api/comments/:mediaId', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id,
       id = mediaId(c.req.param('mediaId'));
-    const unit = numeric(Number(input.unit ?? c.req.query('unit') ?? 0), {
-      name: 'Episode or chapter',
-      integer: true,
-    });
+    const { unit, editionId } = c.get('socialAccess').discussion;
     const body = text(input.body ?? input.text, { name: 'Comment', min: 1, max: 5000 }),
       parentId = input.parentId || null;
     const mediaError = commentMediaError(body);
     if (mediaError) throw apiError(400, mediaError);
     if (parentId) {
       let ancestor = await db.get(
-        'SELECT * FROM comments WHERE id=? AND media_id=? AND unit=?',
+        'SELECT * FROM comments WHERE id=? AND media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?)',
         typeof parentId === 'string' ? parentId : '',
         id,
+        editionId,
+        editionId,
         unit,
       );
       if (!ancestor) throw apiError(400, 'Reply to a comment in this discussion.');
@@ -309,17 +386,18 @@ export function socialRoutes(app) {
       commentId = randomUUID();
     await db.batch([
       db.statement(
-        'INSERT INTO comments(id,user_id,media_id,unit,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?)',
+        'INSERT INTO comments(id,user_id,media_id,unit,edition_id,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
         commentId,
         userId,
         id,
         unit,
+        editionId,
         parentId,
         body,
         Number(spoiler),
         now(),
       ),
-      eventStatement(db, 'comments', { mediaId: id, unit }),
+      eventStatement(db, 'comments', { mediaId: id, unit, editionId }),
     ]);
     return c.json(
       {
@@ -332,7 +410,7 @@ export function socialRoutes(app) {
   });
   app.post('/api/comments/:id/vote', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id;
     const value = numeric(input.value, { name: 'Vote', min: -1, max: 1, integer: true });
     const comment = await db.get('SELECT * FROM comments WHERE id=?', c.req.param('id'));
@@ -359,7 +437,7 @@ export function socialRoutes(app) {
     });
   });
   app.delete('/api/comments/:id', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
       row = await db.get(
         'DELETE FROM comments WHERE id=? AND user_id=? RETURNING media_id,unit',
         c.req.param('id'),
@@ -381,44 +459,42 @@ export function socialRoutes(app) {
         offline: isOffline(),
         db: c.get('db'),
         media: getMedia,
+        policy: await socialRequest(c),
       }),
     ),
   );
   app.get('/api/community', async (c) => {
-    const db = c.get('db');
-    const scopedIds =
-      c.req.query('collection') === 'ara-ara'
-        ? (await getAraCatalog()).items.map((item) => item.id)
-        : null;
-    const filter = scopedIds
-      ? ` WHERE media_id IN (${scopedIds.map(() => '?').join(',') || 'NULL'})`
-      : '';
-    const bindings = scopedIds || [];
-    const comments = (
-      await db.all(
-        `${COMMENT_QUERY}${filter} ORDER BY comments.created_at DESC LIMIT 20`,
-        '',
-        ...bindings,
-      )
-    ).map((x) => ({ ...commentShape(x), kind: 'comment', type: 'comment' }));
-    const reviews =
-      c.req.query('type') === 'comment'
-        ? []
-        : (
-            await db.all(`${REVIEW_QUERY}${filter} ORDER BY updated_at DESC LIMIT 20`, ...bindings)
-          ).map((x) => ({
-            ...reviewShape(x),
-            kind: 'review',
-            type: 'review',
-          }));
+    const db = c.get('db'),
+      policy = await socialRequest(c);
+    const page = await policy.select({
+      candidates: `SELECT id AS social_id,media_id,unit,edition_id,created_at AS social_sort,'comment' AS kind FROM comments
+        ${c.req.query('type') === 'comment' ? '' : "UNION ALL SELECT id AS social_id,media_id,0 AS unit,NULL AS edition_id,created_at AS social_sort,'review' AS kind FROM reviews"}`,
+      where: `(a.kind='review' OR ${commentReadingPredicate})`,
+      scope: [c.req.query('type') === 'comment' ? 'comment' : 'all'],
+      limit: 24,
+    });
+    const items = await Promise.all(
+      page.rows.map(async (row) => {
+        const item =
+          row.kind === 'comment'
+            ? commentShape(
+                await db.get(
+                  `${COMMENT_QUERY} WHERE comments.id=?`,
+                  c.get('user')?.id || '',
+                  row.social_id,
+                ),
+              )
+            : reviewShape(await db.get(`${REVIEW_QUERY} WHERE reviews.id=?`, row.social_id));
+        return { ...item, kind: row.kind, type: row.kind, media: page.mediaById.get(row.media_id) };
+      }),
+    );
     return c.json({
-      items: await Promise.all(
-        [...comments, ...reviews]
-          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-          .slice(0, 24)
-          .map(async (x) => ({ ...x, media: await getMedia(x.mediaId) })),
-      ),
+      items,
       online: await onlineState(db),
+      complete: page.complete,
+      nextCursor: page.nextCursor,
+      nextSourceCursor: page.nextSourceCursor,
+      sourceStates: page.sourceStates,
     });
   });
   app.get('/api/online', async (c) => c.json(await onlineState(c.get('db'))));

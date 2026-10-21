@@ -1,7 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { Link, useLocation } from './collection-router';
 import { ArrowUpRight, ChevronDown } from 'lucide-react';
-import { browseGenres } from './pages/GenreCollections';
+import { genresForCategory } from './pages/GenreCollections';
+import { useCollection } from './collection-context';
 import './category-navigation.css';
 
 export const animeFormats = [
@@ -13,6 +14,7 @@ export const animeFormats = [
 ];
 
 export default function CategoryNavigation({ category }) {
+  const scope = useCollection();
   const location = useLocation();
   const [open, setOpen] = useState(null);
   const root = useRef(null);
@@ -111,7 +113,7 @@ export default function CategoryNavigation({ category }) {
           </Link>
         </div>
         <div className="category-genres-grid">
-          {[...browseGenres].sort().map((genre) => (
+          {[...genresForCategory(category, scope?.active)].sort().map((genre) => (
             <Link
               key={genre}
               to={destination({ genre })}

@@ -1,8 +1,25 @@
 import { getAraCatalog, scopeAraSchedule } from '../server/ara-ara.js';
 import { Hono } from 'hono';
+import {
+  getCatalogPreferences,
+  changeReaderPreference,
+  resetCatalogPreferences,
+} from '../server/catalog-preferences.js';
 import { getCookie, setCookie } from 'hono/cookie';
 import { bodyLimit } from 'hono/body-limit';
-import { store } from './store.js';
+import { store, sitesReaderDb } from './store.js';
+import {
+  resolveReaderContext,
+  saveReaderContext,
+  readerContextResponse,
+  readerGuestId,
+  READER_GUEST_COOKIE,
+  READER_CONTEXT_SECONDS,
+} from '../server/reader-context.js';
+import { resolveMedia } from '../server/media-resolver.js';
+import { createExtensionGateway } from '../server/extension-gateway.js';
+import { registerSitesReaderRoutes } from './reader-routes.js';
+import { readerErrorResponse } from '../server/reader-errors.js';
 import {
   authRoutes,
   sessionMiddleware,
@@ -12,6 +29,8 @@ import {
   cookieOptions,
 } from './security.js';
 import { socialRoutes } from './social.js';
+import { chatgptRoutes } from './chatgpt-auth.js';
+import { channelRoutes } from './channels.js';
 import { roomRoutes, reconcileRooms } from './rooms.js';
 import { eventRoutes } from './events.js';
 import { importRoutes } from './imports.js';
@@ -28,6 +47,7 @@ import {
   fetchAnimeCast,
 } from '../server/catalog-core.js';
 import { getMangaDiscovery } from '../server/manga-discovery.js';
+import { getGenreDirectory } from '../server/genre-directory.js';
 import { getAnimeEpisodes } from '../server/anime-episodes.js';
 import { getAnimeCast } from '../server/anime-cast.js';
 import { apiError } from '../server/validation.js';
@@ -55,8 +75,11 @@ import {
   getReaderChapter,
   getReaderPage,
   registerReaderBridge,
+  getReaderCover,
+  assertReadingDelivery,
 } from '../server/reading-sources.js';
 import { chapterStats, recordChapterOpen, rateChapter } from '../server/chapter-activity.js';
+import { socialRequest, socialAccess } from './native-social.js';
 import { requireAuth } from './security.js';
 import { touchVisitor, PRESENCE_COOKIE } from '../server/visitor-presence.js';
 
@@ -79,6 +102,18 @@ app.use(
   }),
 );
 app.use('/api/*', originGuard, sessionMiddleware);
+const contextOptions = (c, guestId = getCookie(c, READER_GUEST_COOKIE)) => ({
+  db: sitesReaderDb(c.get('db')),
+  userId: c.get('user')?.id,
+  sessionHash: c.get('sessionHash'),
+  guestId,
+  extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+  signal: c.req.raw.signal,
+});
+app.use('/api/media/*', async (c, next) => {
+  c.set('readerContext', await resolveReaderContext(c.req.query(), contextOptions(c)));
+  await next();
+});
 app.use('/api/*', async (c, next) => {
   // Drain bounded write bodies even for routes such as logout and leave. Keeping
   // unread bytes on these requests can reset the client's next keep-alive request.
@@ -114,6 +149,7 @@ app.get('/api/config', (c) => {
         db.statement('DELETE FROM presence_leases WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM favorite_previews WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM oauth_states WHERE expires_at<=?', timestamp),
+        db.statement('DELETE FROM chatgpt_states WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM mal_oauth_states WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM rate_limits WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM sessions WHERE expires_at<=?', timestamp),
@@ -122,7 +158,7 @@ app.get('/api/config', (c) => {
       .catch((error) => console.warn('[yoru] Expired record cleanup deferred:', error.message)),
   );
   return c.json({
-    auth: { email: true, discord, mal },
+    auth: { email: true, chatgpt: true, discord, mal },
     discordEnabled: discord,
     discordInviteUrl: c.env.DISCORD_INVITE_URL || null,
     features: {
@@ -140,6 +176,10 @@ app.get('/api/config', (c) => {
 });
 app.get('/api/ara-ara/catalog', async (c) => c.json(await getAraCatalog()));
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.get('/api/catalog/genres', async (c) => {
+  c.header('Cache-Control', 'public, max-age=3600');
+  return c.json(await getGenreDirectory());
+});
 app.post('/api/presence', async (c) => {
   const result = await touchVisitor(
     c.get('db'),
@@ -163,6 +203,40 @@ const chapterOptions = (c) => ({
   db: c.get('db'),
   userId: c.get('user')?.id,
   sessionHash: c.get('sessionHash'),
+  readerDb: sitesReaderDb(c.get('db')),
+  context: c.get('readerContext'),
+  refreshContext: () =>
+    resolveReaderContext(c.req.query(), contextOptions(c, c.get('readerContext')?.guestId)),
+});
+for (const method of ['get', 'post'])
+  app[method]('/api/reader/context', async (c) => {
+    const guestId = c.get('user') ? undefined : readerGuestId(getCookie(c, READER_GUEST_COOKIE));
+    const context = await (method === 'post' ? saveReaderContext : resolveReaderContext)(
+      method === 'post' ? await c.req.json() : c.req.query(),
+      contextOptions(c, guestId),
+    );
+    if (guestId)
+      setCookie(c, READER_GUEST_COOKIE, guestId, {
+        httpOnly: true,
+        sameSite: 'Lax',
+        secure: new URL(c.req.url).protocol === 'https:',
+        path: '/',
+        maxAge: READER_CONTEXT_SECONDS,
+      });
+    c.header('Cache-Control', 'no-store');
+    return c.json(readerContextResponse(context));
+  });
+app.get('/api/media/:id/cover', async (c) => {
+  const image = await getReaderCover(c.req.param('id'), chapterOptions(c));
+  await assertReadingDelivery(c.req.param('id'), null, chapterOptions(c));
+  return new Response(image.body, {
+    headers: {
+      'content-type': image.type,
+      'cache-control': 'no-store',
+      'x-content-type-options': 'nosniff',
+      'x-yoru-cache': image.cached ? 'hit' : 'miss',
+    },
+  });
 });
 app.post('/api/reader-bridge/register', async (c) =>
   c.json(
@@ -173,12 +247,44 @@ app.post('/api/reader-bridge/register', async (c) =>
     ),
   ),
 );
-app.get('/api/media/:id/reading-sources', async (c) =>
-  c.json(await getReadingSources(c.req.param('id'), chapterOptions(c))),
+app.get('/api/media/:id/reading-sources', async (c) => {
+  const result = await getReadingSources(c.req.param('id'), chapterOptions(c));
+  await assertReadingDelivery(c.req.param('id'), null, chapterOptions(c));
+  return c.json(result);
+});
+registerSitesReaderRoutes(app, { contextOptions, chapterOptions, coreSearch: searchCatalog });
+app.get('/api/reader/preferences', async (c) =>
+  c.json(
+    await getCatalogPreferences({ db: sitesReaderDb(c.get('db')), userId: c.get('user')?.id }),
+  ),
 );
-app.get('/api/media/:id/reader/:chapter', async (c) =>
-  c.json(await getReaderChapter(c.req.param('id'), c.req.param('chapter'), chapterOptions(c))),
+app.patch('/api/reader/preferences', requireAuth, async (c) =>
+  c.json(
+    await changeReaderPreference(await c.req.json(), {
+      db: sitesReaderDb(c.get('db')),
+      userId: c.get('user').id,
+      sessionHash: c.get('sessionHash'),
+    }),
+  ),
 );
+app.delete('/api/reader/preferences', requireAuth, async (c) =>
+  c.json(
+    await resetCatalogPreferences(await c.req.json(), {
+      db: sitesReaderDb(c.get('db')),
+      userId: c.get('user').id,
+      sessionHash: c.get('sessionHash'),
+    }),
+  ),
+);
+app.get('/api/media/:id/reader/:chapter', async (c) => {
+  const result = await getReaderChapter(
+    c.req.param('id'),
+    c.req.param('chapter'),
+    chapterOptions(c),
+  );
+  await assertReadingDelivery(c.req.param('id'), c.req.param('chapter'), chapterOptions(c));
+  return c.json(result);
+});
 app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
   const page = await getReaderPage(
     c.req.param('id'),
@@ -186,10 +292,11 @@ app.get('/api/media/:id/reader/:chapter/page/:page', async (c) => {
     c.req.param('page'),
     chapterOptions(c),
   );
+  await assertReadingDelivery(c.req.param('id'), c.req.param('chapter'), chapterOptions(c));
   return new Response(page.body, {
     headers: {
       'content-type': page.type,
-      'cache-control': 'private, max-age=300',
+      'cache-control': 'no-store',
       'x-yoru-cache': page.cached ? 'hit' : 'miss',
       'x-content-type-options': 'nosniff',
     },
@@ -204,6 +311,7 @@ app.get('/api/media/:id/chapters', async (c) => {
     result.items.map((item) => item.id),
     options.userId,
   );
+  await assertReadingDelivery(c.req.param('id'), null, options);
   return c.json({
     ...result,
     items: result.items.map((item) => ({ ...item, stats: stats[item.id] })),
@@ -214,7 +322,7 @@ app.post('/api/media/:id/chapters/:chapter/open', async (c) => {
     c.req.param('id'),
     c.req.param('chapter'),
     getCookie(c, VIEW_COOKIE),
-    chapterOptions(c),
+    { ...chapterOptions(c), policy: await socialRequest(c) },
   );
   setCookie(c, VIEW_COOKIE, result.visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
   return c.json(result.stats);
@@ -222,14 +330,21 @@ app.post('/api/media/:id/chapters/:chapter/open', async (c) => {
 app.post('/api/media/:id/chapters/:chapter/rating', requireAuth, async (c) => {
   const body = await c.req.json();
   return c.json(
-    await rateChapter(c.req.param('id'), c.req.param('chapter'), body.rating, chapterOptions(c)),
+    await rateChapter(c.req.param('id'), c.req.param('chapter'), body.rating, {
+      ...chapterOptions(c),
+      policy: await socialRequest(c),
+    }),
   );
 });
 app.on('GET', ['/api/manga/discovery', '/api/manhwa/discovery'], async (c) => {
   const manhwa = c.req.path === '/api/manhwa/discovery';
   return c.json(
     c.req.query('mode') === 'trending'
-      ? await (manhwa ? getTrendingManhwa : getTrendingManga)({ db: c.get('db'), media: getMedia })
+      ? await (manhwa ? getTrendingManhwa : getTrendingManga)({
+          db: c.get('db'),
+          media: getMedia,
+          policy: await socialRequest(c),
+        })
       : await getMangaDiscovery(c.req.query(), {
           ...scheduleOptions(c.env),
           category: manhwa ? 'MANHWA' : 'MANGA',
@@ -242,6 +357,7 @@ app.post('/api/media/:id/read-view', async (c) => {
   const visitor = await recordReadView(c.req.param('id'), getCookie(c, VIEW_COOKIE), {
     db: c.get('db'),
     media: getMedia,
+    policy: await socialRequest(c),
   });
   setCookie(c, VIEW_COOKIE, visitor, { ...cookieOptions(c), maxAge: VIEW_COOKIE_SECONDS });
   return c.json({ ok: true });
@@ -270,9 +386,15 @@ app.get('/api/media/:id/cast', async (c) =>
   ),
 );
 app.get('/api/media/:id', async (c) => {
-  if (!parseMediaId(c.req.param('id'))) throw apiError(400, 'Invalid media ID');
-  const media = await getMedia(c.req.param('id'));
-  if (!media) throw apiError(404, 'This title is unavailable. Please try again later.');
+  const options = chapterOptions(c);
+  const media = await resolveMedia(c.req.param('id'), c.get('readerContext'), {
+    db: sitesReaderDb(c.get('db')),
+    coreMedia: getMedia,
+    bridge: createExtensionGateway({
+      ...options,
+      extensionsEnabled: c.env.READER_EXTENSIONS_ENABLED,
+    }),
+  });
   return c.json(media);
 });
 app.post('/api/media/:id/view', async (c) => {
@@ -318,15 +440,18 @@ app.get('/api/chapter-calendar', async (c) => {
   );
 });
 
+chatgptRoutes(app);
 authRoutes(app, { onLogout: reconcileRooms });
+app.use('/api/*', socialAccess);
 socialRoutes(app);
+channelRoutes(app);
 roomRoutes(app);
 eventRoutes(app);
 importRoutes(app);
 malRoutes(app);
 app.all('/api/*', (c) => c.json({ error: 'This API route does not exist.' }, 404));
 app.all('*', async (c) => {
-  const asset = await c.env.ASSETS.fetch(c.req.raw);
+  let asset = await c.env.ASSETS.fetch(c.req.raw);
   if (
     asset.status === 404 &&
     ['GET', 'HEAD'].includes(c.req.method) &&
@@ -335,11 +460,17 @@ app.all('*', async (c) => {
   ) {
     // Sites provides the asset binding without Wrangler's SPA fallback option.
     // Resolve app deep links explicitly so chapter URLs and refreshes work there.
-    return c.env.ASSETS.fetch(new Request(new URL('/', c.req.url), c.req.raw));
+    asset = await c.env.ASSETS.fetch(new Request(new URL('/', c.req.url), c.req.raw));
+  }
+  if (asset.headers.get('content-type')?.includes('text/html')) {
+    asset = new Response(asset.body, asset);
+    asset.headers.set('Cache-Control', 'no-cache');
   }
   return asset;
 });
 app.onError((error, c) => {
+  const readerError = readerErrorResponse(error);
+  if (readerError) return c.json(readerError.body, readerError.status, readerError.headers);
   const status = error.status || (error instanceof SyntaxError ? 400 : 500);
   if (status >= 500 && !error.expose) console.error('[yoru]', error.message);
   return c.json(

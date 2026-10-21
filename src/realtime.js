@@ -1,5 +1,6 @@
 import { flushSync } from 'react-dom';
-import { api } from './api';
+import { api } from './api.js';
+import { readerContextPath, requireReaderContext } from './reader/requests.js';
 
 const names = [
   'snapshot',
@@ -14,16 +15,59 @@ const names = [
   'library',
   'left',
 ];
-export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onError, onSession }) {
+export function connectEvents({
+  transport = 'sse',
+  roomId,
+  context,
+  onEvent,
+  onOpen,
+  onError,
+  onSession,
+}) {
+  if (roomId) {
+    try {
+      requireReaderContext(context);
+    } catch {
+      return { close() {} };
+    }
+  }
+  const roomPath = (path) => (roomId ? readerContextPath(path, context) : path);
   if (transport === 'sse') {
     const stream = new EventSource(
-      `/api/events${roomId ? `?roomId=${encodeURIComponent(roomId)}` : ''}`,
+      roomPath(`/api/events${roomId ? `?roomId=${encodeURIComponent(roomId)}` : ''}`),
     );
+    let closed = false;
+    const close = () => {
+      closed = true;
+      clearTimeout(expiry);
+      stream.close();
+      context?.signal?.removeEventListener('abort', close);
+    };
+    const expiry =
+      roomId && Number.isFinite(context.expiresAt)
+        ? setTimeout(close, Math.max(0, context.expiresAt - Date.now()))
+        : null;
+    context?.signal?.addEventListener('abort', close, { once: true });
     for (const name of names)
-      stream.addEventListener(name, (event) => flushSync(() => onEvent(event)));
-    stream.onopen = onOpen;
-    stream.onerror = onError;
-    return { close: () => stream.close() };
+      stream.addEventListener(name, (event) => {
+        if (closed) return;
+        if (roomId) {
+          try {
+            requireReaderContext(context);
+          } catch {
+            close();
+            return;
+          }
+        }
+        flushSync(() => onEvent(event));
+      });
+    stream.onopen = () => {
+      if (!closed) onOpen?.();
+    };
+    stream.onerror = () => {
+      if (!closed) onError?.();
+    };
+    return { close };
   }
   let active = true,
     timer,
@@ -34,6 +78,14 @@ export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onEr
   const controller = new AbortController(),
     connectionId = crypto.randomUUID();
   const emit = (type, data) => {
+    if (roomId) {
+      try {
+        requireReaderContext(context);
+      } catch {
+        close();
+        return;
+      }
+    }
     if (active) flushSync(() => onEvent({ type, data: JSON.stringify(data) }));
   };
   async function poll() {
@@ -44,7 +96,7 @@ export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onEr
         ...(roomId ? { roomId } : {}),
         ...(cursor === undefined ? {} : { cursor: String(cursor) }),
       });
-      const data = await api(`/api/poll?${params}`, { signal: controller.signal });
+      const data = await api(roomPath(`/api/poll?${params}`), { signal: controller.signal });
       if (!active) return;
       await onSession?.(data.viewerId);
       if (!active) return;
@@ -76,12 +128,18 @@ export function connectEvents({ transport = 'sse', roomId, onEvent, onOpen, onEr
     }
     if (active) timer = setTimeout(poll, delay);
   }
+  function close() {
+    active = false;
+    clearTimeout(timer);
+    clearTimeout(expiry);
+    controller.abort();
+    context?.signal?.removeEventListener('abort', close);
+  }
+  const expiry =
+    roomId && Number.isFinite(context.expiresAt)
+      ? setTimeout(close, Math.max(0, context.expiresAt - Date.now()))
+      : null;
+  context?.signal?.addEventListener('abort', close, { once: true });
   poll();
-  return {
-    close() {
-      active = false;
-      clearTimeout(timer);
-      controller.abort();
-    },
-  };
+  return { close };
 }

@@ -6,12 +6,19 @@ import { useApp } from '../state';
 import { isAnime, kindOf, titleOf } from '../api';
 import { useChapters, useReadingState } from './hooks';
 import { readerLink } from './model';
-import { READER_EVENT, readingHistory, saveReadingState } from './storage';
+import {
+  READER_EVENT,
+  readingHistory,
+  saveReadingState,
+  hasStoredNativeReadingHistory,
+} from './storage';
 import ChapterList from './ChapterList';
 import ReaderImport from './ReaderImport';
 import LiveChapters from './LiveChapters';
 import './reader.css';
-import { useCollection } from '../collection-context';
+import { visibleAccountHistory } from '../../shared/reading-account-view.js';
+import { CATALOG_PREFERENCES_EVENT } from './catalog-preferences';
+import CoverImage from '../CoverImage';
 
 export function ChapterCollection({ media }) {
   const data = useChapters(media.id);
@@ -71,22 +78,42 @@ export function ChapterCollection({ media }) {
   );
 }
 export function PickUpWhereLeftOff() {
-  const scope = useCollection();
-  const { library, user, resumeItems } = useApp();
-  const [items, setItems] = useState(() => [
-    ...readingHistory('MANGA'),
-    ...readingHistory('MANHWA'),
-  ]);
+  const {
+    library,
+    user,
+    resumeItems,
+    resumePage,
+    resumeHasStoredNativeHistory,
+    loadMoreResume,
+    readerInventoryPage,
+    loadMoreReaderSources,
+    readingContext,
+    currentReaderSources,
+  } = useApp();
+  const [storedItems, setItems] = useState([]);
+  const [hasLocalNativeHistory, setHasLocalNativeHistory] = useState(false);
+  const items = visibleAccountHistory(storedItems, readingContext, {
+    currentSources: currentReaderSources,
+    limit: 24,
+  });
   useEffect(() => {
-    const update = () => setItems([...readingHistory('MANGA'), ...readingHistory('MANHWA')]);
+    const update = () => {
+      setHasLocalNativeHistory(hasStoredNativeReadingHistory());
+      setItems([
+        ...readingHistory('MANGA', readingContext, { currentSources: currentReaderSources }),
+        ...readingHistory('MANHWA', readingContext, { currentSources: currentReaderSources }),
+      ]);
+    };
     update();
     window.addEventListener(READER_EVENT, update);
     window.addEventListener('storage', update);
+    window.addEventListener(CATALOG_PREFERENCES_EVENT, update);
     return () => {
       window.removeEventListener(READER_EVENT, update);
       window.removeEventListener('storage', update);
+      window.removeEventListener(CATALOG_PREFERENCES_EVENT, update);
     };
-  }, []);
+  }, [readingContext, currentReaderSources]);
   const local = (user ? [] : items).map((item) => ({
     ...item,
     page: item.chapters[item.lastChapter].page,
@@ -110,6 +137,7 @@ export function PickUpWhereLeftOff() {
       mediaId: entry.mediaId,
       title: titleOf(entry.media),
       cover: entry.media.cover,
+      mediaSnapshot: entry.media,
       category: kindOf(entry.media),
       number: entry.progress,
       updatedAt: entry.updatedAt,
@@ -139,12 +167,14 @@ export function PickUpWhereLeftOff() {
     ...local.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
     ...saved.filter((item) => !synced.some((x) => x.mediaId === item.mediaId)),
   ]
-    .filter(
-      (item) => !scope?.active || scope.catalog?.items.some((media) => media.id === item.mediaId),
-    )
     .sort((a, b) => updatedAt(b) - updatedAt(a))
-    .slice(0, 12);
-  if (!progress.length) return null;
+    .slice(0, resumePage.pages > 1 ? Math.max(12, resumeItems.length) : 12);
+  const inventoryIncomplete =
+    !user &&
+    (resumeHasStoredNativeHistory || hasLocalNativeHistory) &&
+    (readerInventoryPage.incomplete || readerInventoryPage.loading);
+  if (!progress.length && !resumePage.incomplete && !resumePage.loading && !inventoryIncomplete)
+    return null;
   return (
     <section className="continue-reading" aria-label="Pick up where you left off">
       <div className="section-heading">
@@ -153,12 +183,48 @@ export function PickUpWhereLeftOff() {
           <h2>Pick up where you left off</h2>
         </div>
       </div>
+      {inventoryIncomplete && (
+        <div role="status">
+          <p>
+            {readerInventoryPage.error
+              ? 'Installed sources could not be verified.'
+              : 'Some installed sources have not been checked yet.'}
+          </p>
+          <button
+            className="button secondary"
+            disabled={readerInventoryPage.loading}
+            onClick={loadMoreReaderSources}
+          >
+            {readerInventoryPage.error ? 'Retry installed sources' : 'Load more installed sources'}
+          </button>
+        </div>
+      )}
+      {(resumePage.incomplete || resumePage.loading) && (
+        <div role="status">
+          <p>
+            {resumePage.error
+              ? 'Reading history could not be verified.'
+              : 'Some reading history has not been checked yet.'}
+          </p>
+          <button
+            className="button secondary"
+            disabled={resumePage.loading}
+            onClick={loadMoreResume}
+          >
+            {resumePage.error ? 'Retry reading history' : 'Load more reading history'}
+          </button>
+        </div>
+      )}
       <div className="continue-reading-rail">
         {progress.map((item) => {
           const anime = item.category === 'ANIME';
           return (
             <Link key={item.mediaId} to={item.href} className="continue-reading-card">
-              <img src={item.cover || '/icon.svg'} alt="" loading="lazy" />
+              <CoverImage
+                media={item.mediaSnapshot || { ...item, id: item.mediaId }}
+                alt=""
+                loading="lazy"
+              />
               <div>
                 <strong>{item.title}</strong>
                 <span>

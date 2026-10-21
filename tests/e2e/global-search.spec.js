@@ -6,6 +6,75 @@ test.beforeEach(async ({ context, baseURL }) => {
   );
 });
 
+test('popular titles appear before the suggestions network responds', async ({ page }) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  let requested = false;
+  await page.route('**/api/search/suggestions?**', async (route) => {
+    requested = true;
+    await held;
+    await route.fulfill({ json: { items: [], pending: false } }).catch(() => {});
+  });
+  await page.goto('/browse/manga');
+  const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
+  try {
+    await search.fill('my hero');
+    await expect(page.getByRole('option').filter({ hasText: 'My Hero Academia' })).toBeVisible();
+    await expect.poll(() => requested).toBe(true);
+    await search.fill('zzzz no match');
+    await expect(
+      page.getByRole('listbox', { name: 'Suggested titles' }).getByRole('option'),
+    ).toHaveCount(0);
+  } finally {
+    release();
+  }
+});
+
+test('recent matches refine locally while a new query waits, without leaking category results', async ({
+  page,
+}) => {
+  let release;
+  const held = new Promise((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/api/search/suggestions?**', async (route) => {
+    const q = new URL(route.request().url()).searchParams.get('q');
+    if (q !== 'quartz') await held;
+    await route
+      .fulfill({
+        json: {
+          items:
+            q === 'quartz'
+              ? [
+                  { id: 'mal-anime-987654', title: 'Quartz Hero', category: 'ANIME' },
+                  { id: 'mal-manga-987655', title: 'Quartz Story', category: 'MANGA' },
+                ]
+              : [],
+          pending: false,
+        },
+      })
+      .catch(() => {});
+  });
+  await page.goto('/');
+  const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
+  try {
+    await search.fill('quartz');
+    await expect(page.getByRole('option')).toHaveCount(2);
+    await search.fill('quartz hero');
+    await expect(page.getByRole('option')).toHaveCount(1);
+    await expect(page.getByRole('option')).toContainText('Quartz Hero');
+    await page
+      .locator('.search-filters')
+      .getByRole('button', { name: 'Manga', exact: true })
+      .click();
+    await expect(page.getByRole('option')).toHaveCount(0);
+  } finally {
+    release();
+  }
+});
+
 test('saved matches stay visible while live suggestions update and empty searches are honest', async ({
   page,
 }) => {
@@ -51,7 +120,14 @@ test('search shows ranked covers, category filters and navigable suggestions wit
   await expect(list.getByRole('option').first().locator('img')).toBeVisible();
   const panel = await page.locator('.search-panel').boundingBox();
   const field = await page.getByRole('search').boundingBox();
-  expect(Math.abs(panel.y - field.y - field.height - 8)).toBeLessThan(2);
+  // Local matches can render before the panel's opening animation finishes.
+  await expect
+    .poll(async () => {
+      const bounds = await page.locator('.search-panel').boundingBox();
+      const input = await page.getByRole('search').boundingBox();
+      return Math.abs(bounds.y - input.y - input.height - 8);
+    })
+    .toBeLessThan(2);
   if (!isMobile) {
     expect(Math.abs(panel.x - field.x)).toBeLessThan(2);
     expect(Math.abs(panel.width - field.width)).toBeLessThan(2);

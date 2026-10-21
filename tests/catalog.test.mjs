@@ -148,6 +148,45 @@ test('anime type filters reach both providers, isolate caches, and constrain sav
   }
 });
 
+test('one-shot collections isolate caches and preserve their format across providers and offline reads', async () => {
+  const query = { category: 'MANGA', format: 'oneshot', sort: 'score', limit: 6 };
+  assert.notEqual(catalogQueryKey(query), catalogQueryKey({ ...query, format: '' }));
+  assert.equal(catalogQueryKey(query), catalogQueryKey({ ...query, format: 'One-shot' }));
+  const previousFetch = globalThis.fetch;
+  const urls = [];
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    globalThis.fetch = async (input) => {
+      urls.push(new URL(input));
+      return Response.json({
+        data: [{ mal_id: 920106, type: 'One-shot', title: 'A complete short story', score: 8.1 }],
+        pagination: { items: { total: 1 } },
+      });
+    };
+    const result = await searchCatalog(query);
+    assert.equal(urls.at(-1).searchParams.get('type'), 'oneshot');
+    assert.equal(result.items[0].type, 'MANGA');
+    process.env.CATALOG_OFFLINE = '1';
+    const saved = await searchCatalog({ ...query, limit: 7 });
+    assert.deepEqual(
+      saved.items.map((item) => item.id),
+      ['mal-manga-920106'],
+    );
+    process.env.CATALOG_OFFLINE = '0';
+    globalThis.fetch = async (input) => {
+      const url = new URL(input);
+      urls.push(url);
+      if (url.hostname === 'api.tenrai.org') return new Response('{}', { status: 503 });
+      return Response.json({ data: [], meta: { count: 0 } });
+    };
+    await searchCatalog({ ...query, sort: 'title' });
+    assert.ok(urls.some((url) => url.searchParams.get('filter[subtype]') === 'oneshot'));
+  } finally {
+    globalThis.fetch = previousFetch;
+    process.env.CATALOG_OFFLINE = '1';
+  }
+});
+
 test('MAL import preserves separate media IDs, status, progress, ratings, and favorites', () => {
   const preview =
     parseMalXml(`<?xml version="1.0"?><myanimelist><myinfo><user_name>Fahad</user_name></myinfo>
@@ -185,6 +224,18 @@ test('MAL import deterministically deduplicates titles and clamps invalid progre
 });
 
 test('catalog cache keys and provider windows distinguish filters and later pages', () => {
+  for (const category of ['MANGA', 'MANHWA']) {
+    assert.deepEqual(catalogWindow({ category, page: 2, limit: 144 }, category), {
+      offset: 144,
+      limit: 144,
+    });
+    assert.equal(catalogWindow({ category, limit: 10000 }, category).limit, 144);
+    assert.equal(
+      catalogWindow({ category, page: Number.MAX_SAFE_INTEGER, limit: 144 }, category).offset,
+      0,
+    );
+  }
+  assert.equal(catalogWindow({ category: 'ANIME', limit: 144 }, 'ANIME').limit, 48);
   assert.deepEqual(catalogWindow({ category: 'ANIME', page: 101, limit: 24 }, 'ANIME'), {
     offset: 2400,
     limit: 24,
@@ -214,6 +265,48 @@ test('catalog cache keys and provider windows distinguish filters and later page
     limit: 24,
   });
   assert.deepEqual(catalogWindow({ page: 2, limit: 24 }, 'MANHWA'), { offset: 8, limit: 8 });
+});
+
+test('long manga pages cross provider boundaries without gaps and reuse cached results', async () => {
+  const previousFetch = globalThis.fetch;
+  let calls = 0;
+  globalThis.fetch = async (input) => {
+    calls++;
+    const url = new URL(input);
+    assert.equal(url.searchParams.get('limit'), '25');
+    const page = Number(url.searchParams.get('page'));
+    return Response.json({
+      data: Array.from({ length: Math.min(25, 300 - (page - 1) * 25) }, (_, i) => ({
+        mal_id: 970000 + (page - 1) * 25 + i,
+        title: `Long catalog ${(page - 1) * 25 + i}`,
+        type: 'Manhwa',
+        genres: [],
+      })),
+      pagination: { has_next_page: page < 12, items: { total: 300 } },
+    });
+  };
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    const query = { category: 'MANHWA', search: 'Long catalog', limit: 144 };
+    const first = await searchCatalog(query);
+    const second = await searchCatalog({ ...query, page: 2 });
+    const last = await searchCatalog({ ...query, page: 3 });
+    assert.equal(first.items.length, 144);
+    assert.equal(second.items.length, 144);
+    assert.equal(last.items.length, 12);
+    assert.equal(first.pages, 3);
+    assert.equal(last.pageInfo.hasNextPage, false);
+    assert.deepEqual(
+      [...first.items, ...second.items, ...last.items].map((item) => item.id),
+      Array.from({ length: 300 }, (_, i) => `mal-manga-${970000 + i}`),
+    );
+    const before = calls;
+    assert.equal((await searchCatalog(query)).items.length, 144);
+    assert.equal(calls, before);
+  } finally {
+    process.env.CATALOG_OFFLINE = '1';
+    globalThis.fetch = previousFetch;
+  }
 });
 
 test('default browse waits for live totals instead of returning the starter catalog', async () => {

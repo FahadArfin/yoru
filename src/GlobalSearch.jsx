@@ -1,8 +1,12 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from './collection-router';
 import { Search, X, ArrowUpRight, LoaderCircle } from 'lucide-react';
-import { api, titleOf } from './api';
+import { api, readerRequest, titleOf } from './api';
+import { useReaderSelection } from './useCatalogPreferences';
+import { readingFeedKey, readingSuggestions } from './reader/feed';
 import CoverImage from './CoverImage';
+import searchIndex from 'virtual:search-index';
+import { rankSearch, titleRelevance } from '../server/search-ranking.js';
 import './global-search.css';
 
 const filters = [
@@ -12,6 +16,8 @@ const filters = [
   ['manhwa', 'Manhwa'],
 ];
 export default function GlobalSearch({ inputRef, collection }) {
+  const selection = useReaderSelection();
+  const readerContext = selection?.ready ? selection.context : null;
   const location = useLocation();
   const navigate = useNavigate();
   const root = useRef();
@@ -25,7 +31,7 @@ export default function GlobalSearch({ inputRef, collection }) {
   const [result, setResult] = useState({ key: '', items: [], loading: false });
   const [panelStyle, setPanelStyle] = useState({});
   const term = query.trim();
-  const key = `${category}:${term.toLowerCase()}`;
+  const key = `${readingFeedKey(readerContext, `${category}:${term.toLowerCase()}`)}`;
   const shown = result.key === key ? result : { items: [], loading: true };
   const expanded = open && term.length >= 2;
   const allUrl = `${collection ? '/ara-ara' : '/browse'}/${category}?q=${encodeURIComponent(term)}`;
@@ -76,45 +82,93 @@ export default function GlobalSearch({ inputRef, collection }) {
     };
   }, [expanded]);
   useEffect(() => {
-    if (!expanded || (collection && !collection.confirmed)) return;
+    if (!expanded || !readerContext || (collection && !collection.confirmed)) return;
     const controller = new AbortController();
     let timer;
     const saved = cached.current.get(key);
-    if (saved && Date.now() - saved.time < 60000 && !retry) {
+    if (saved?.complete && Date.now() - saved.time < 60000 && !retry) {
       setResult({ key, ...saved.data, loading: false });
       return;
     }
-    setResult({ key, items: [], loading: true });
-    const load = async (attempt = 0) => {
+    const scope = readingFeedKey(readerContext, 'suggestions');
+    const local = collection ? collection.catalog?.items || [] : searchIndex;
+    const recent = [...cached.current.values()]
+      .filter((entry) => entry.scope === scope && Date.now() - entry.time < 60000)
+      .flatMap((entry) => entry.data.items);
+    const initial = readingSuggestions(
+      rankSearch(
+        [...recent, ...local].filter((item) => titleRelevance(item, term) >= 0),
+        term,
+      ),
+      readerContext,
+      category,
+    );
+    let core = { items: initial.filter((item) => !item.sourceRef), pending: false };
+    let native = { items: initial.filter((item) => item.sourceRef) };
+    let coreDone = false;
+    let nativeDone = category === 'anime' || readerContext.integrationMode === 'core';
+    let polling = false;
+    const publish = () => {
+      if (controller.signal.aborted) return;
+      const items = readingSuggestions(
+        rankSearch([...(core.items || []), ...(native.items || [])], term),
+        readerContext,
+        category,
+      );
+      const waiting = !coreDone || !nativeDone || polling;
+      const data = {
+        items,
+        pending: Boolean(core.pending || native.pending),
+        providerUnavailable: Boolean(core.providerUnavailable || native.providerUnavailable),
+      };
+      setResult({ key, ...data, loading: waiting && !items.length, waiting });
+      if (items.length || (!waiting && !data.providerUnavailable)) {
+        cached.current.set(key, {
+          time: Date.now(),
+          scope,
+          data,
+          complete: !waiting && !data.pending && !data.providerUnavailable,
+        });
+        if (cached.current.size > 40) cached.current.delete(cached.current.keys().next().value);
+      }
+    };
+    publish();
+    const loadCore = async (attempt = 0) => {
       try {
-        const data = collection
-          ? {
-              items: (collection.catalog?.items || [])
-                .filter(
-                  (item) =>
-                    (category === 'all' || item.category.toLowerCase() === category) &&
-                    [item.title, item.titleRomaji, item.titleJapanese].some((title) =>
-                      title?.toLowerCase().includes(term.toLowerCase()),
-                    ),
-                )
-                .slice(0, 12),
-            }
+        core = collection
+          ? { items: initial.filter((item) => !item.sourceRef) }
           : await api(`/api/search/suggestions?${new URLSearchParams({ q: term, category })}`, {
               signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
             });
-        if (controller.signal.aborted) return;
-        setResult({ key, ...data, loading: false, waiting: data.pending && attempt < 5 });
-        if (data.pending && attempt < 5) timer = setTimeout(() => load(attempt + 1), 1800);
-        else if (!data.pending && !data.providerUnavailable) {
-          cached.current.set(key, { time: Date.now(), data });
-          if (cached.current.size > 40) cached.current.delete(cached.current.keys().next().value);
-        }
       } catch {
-        if (!controller.signal.aborted)
-          setResult((old) => ({ ...old, key, loading: false, waiting: false, error: true }));
+        core = { ...core, pending: false, providerUnavailable: true };
       }
+      if (controller.signal.aborted) return;
+      coreDone = true;
+      polling = Boolean(core.pending && attempt < 5);
+      publish();
+      if (polling)
+        timer = setTimeout(() => loadCore(attempt + 1), Math.min(600 * (attempt + 1), 1800));
     };
-    timer = setTimeout(() => load(), 250);
+    const loadNative = async () => {
+      try {
+        native = await readerRequest(
+          `/api/reader/suggestions?${new URLSearchParams({ q: term, limit: '12' })}`,
+          {
+            ...readerContext,
+            signal: AbortSignal.any([controller.signal, AbortSignal.timeout(15000)]),
+          },
+        );
+      } catch {
+        native = { ...native, providerUnavailable: true };
+      }
+      nativeDone = true;
+      publish();
+    };
+    timer = setTimeout(() => {
+      void loadCore();
+      if (!nativeDone) void loadNative();
+    }, 120);
     return () => {
       controller.abort();
       clearTimeout(timer);
@@ -156,7 +210,7 @@ export default function GlobalSearch({ inputRef, collection }) {
           expanded && active >= 0 && shown.items[active] ? `search-option-${active}` : undefined
         }
         aria-label="Search anime, manga, and manhwa"
-        disabled={Boolean(collection && (!collection.confirmed || !collection.catalog))}
+        disabled={!selection?.ready || Boolean(collection && !collection.confirmed)}
         placeholder="Search your next obsession…"
         onFocus={showSuggestions}
         onClick={showSuggestions}
@@ -221,7 +275,11 @@ export default function GlobalSearch({ inputRef, collection }) {
               </button>
             ))}
           </div>
-          {(!shown.items.length || shown.loading || shown.waiting) && (
+          {(!shown.items.length ||
+            shown.loading ||
+            shown.waiting ||
+            shown.error ||
+            shown.providerUnavailable) && (
             <div className="search-status" role="status">
               {shown.loading ? (
                 <>
@@ -260,6 +318,12 @@ export default function GlobalSearch({ inputRef, collection }) {
                   <strong>{titleOf(item)}</strong>
                   <span>
                     {item.category?.toLowerCase()}
+                    {item.sourceRef?.providerKey && (
+                      <>
+                        <i>·</i>
+                        {item.sourceRef.providerKey}
+                      </>
+                    )}
                     {item.format && item.format.toUpperCase() !== item.category && (
                       <>
                         <i>·</i>

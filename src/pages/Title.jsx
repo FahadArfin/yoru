@@ -27,6 +27,8 @@ import MangaTitle from './MangaTitle';
 import AnimeEpisodeGrid from '../AnimeEpisodeGrid';
 import AnimeCast from '../AnimeCast';
 import MangaRecommendations from './MangaRecommendations';
+import { useReaderFeed } from '../reader/use-feed';
+import { parseMediaReference } from '../../shared/media-reference';
 const selectedTab = (params) =>
   params.get('unit')
     ? 'discussion'
@@ -36,7 +38,10 @@ export default function Title() {
   const { id } = useParams();
   const readingState = useReadingState(id);
   const [params, setParams] = useSearchParams();
-  const resource = useResource(`/api/media/${id}`);
+  const native = parseMediaReference(id)?.kind === 'extension-manga';
+  const nativeResource = useReaderFeed(native ? `/api/media/${id}` : null);
+  const legacyResource = useResource(native ? null : `/api/media/${id}`);
+  const resource = native ? nativeResource : legacyResource;
   const media = resource.data?.media || resource.data;
   const { entryFor, updateEntry } = useApp();
   const entry = entryFor(id);

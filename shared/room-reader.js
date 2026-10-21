@@ -1,5 +1,11 @@
-// Room readers may embed only Yoru's reader for this exact title and chapter.
-export function roomReaderPath(value, mediaId, unit) {
+import { parseMediaReference, parseEditionReference } from './media-reference.js';
+import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
+
+// Syntax validation only: the server separately verifies exact chapter ownership.
+export function roomReaderPath(value, mediaId, unit, { destination = 'yoru' } = {}) {
+  const ref = parseMediaReference(mediaId);
+  if (!['yoru', 'ara-ara'].includes(destination) || !ref || ref.kind === 'anime') return null;
+  const prefix = `${destination === 'ara-ara' ? '/ara-ara' : ''}/read/${mediaId}/`;
   if (
     typeof value !== 'string' ||
     !value.startsWith('/') ||
@@ -16,29 +22,44 @@ export function roomReaderPath(value, mediaId, unit) {
   if (
     url.origin !== 'https://yoru.invalid' ||
     url.hash ||
-    !url.pathname.startsWith(`/read/${mediaId}/`) ||
-    !/^\d+(\.\d+)?$/.test(url.pathname.slice(`/read/${mediaId}/`.length)) ||
-    Number(url.pathname.slice(`/read/${mediaId}/`.length)) !== unit ||
-    !/^mal-manga-\d+$/.test(mediaId)
+    !url.pathname.startsWith(prefix) ||
+    !/^\d+(\.\d+)?$/.test(url.pathname.slice(prefix.length)) ||
+    Number(url.pathname.slice(prefix.length)) !== unit
   )
     return null;
+  const keys = new Set();
   for (const [key, val] of url.searchParams) {
-    if (key === 'source' && ['mangadex', 'weebcentral', 'local'].includes(val)) continue;
+    if (keys.has(key)) return null;
+    keys.add(key);
+    if (
+      key === 'source' &&
+      (ref.kind === 'extension-manga'
+        ? val.startsWith('suwayomi:') && Boolean(decimalSourceId(val.slice(9)))
+        : ['mangadex', 'weebcentral', 'local'].includes(val))
+    )
+      continue;
     if (key === 'language' && /^(all|[a-z]{2}(?:-[a-z]{2,4})?)$/.test(val)) continue;
-    if (key === 'chapter' && val.length > 0 && val.length <= 512) continue;
+    if (
+      key === 'chapter' &&
+      (ref.kind === 'extension-manga'
+        ? parseEditionReference(val)?.kind === 'extension'
+        : val.length > 0 && val.length <= 512)
+    )
+      continue;
     if (key === 'page' && /^\d+$/.test(val) && Number(val) >= 1 && Number(val) <= 5000) continue;
     return null;
   }
-  return `/read/${mediaId}/${unit}` + url.search;
+  return prefix + unit + url.search;
 }
 
-export function readerAtUnit(value, mediaId, unit) {
+export function readerAtUnit(value, mediaId, unit, { destination = 'yoru' } = {}) {
   try {
     const url = new URL(value, 'https://yoru.invalid');
-    url.pathname = `/read/${mediaId}/${unit}`;
+    if (url.origin !== 'https://yoru.invalid') return null;
+    url.pathname = `${destination === 'ara-ara' ? '/ara-ara' : ''}/read/${mediaId}/${unit}`;
     url.searchParams.delete('chapter');
     url.searchParams.delete('page');
-    return roomReaderPath(url.pathname + url.search, mediaId, unit);
+    return roomReaderPath(url.pathname + url.search, mediaId, unit, { destination });
   } catch {
     return null;
   }

@@ -13,12 +13,16 @@ import {
   ShieldAlert,
   Star,
 } from 'lucide-react';
-import { ago, itemsOf, send } from './api';
-import { useApp, useResource } from './state';
+import { ago, itemsOf } from './api';
+import { useApp } from './state';
 import { Avatar, Button, Empty, ErrorNotice, Loading } from './components';
 import { CommentBody, CommentMediaPicker } from './CommentMedia';
 import { gifToken, emoteToken, commentMediaError } from '../shared/comment-media';
 import './discussion.css';
+import { useReaderResource } from './reader/use-resource';
+import { readerContextKey, readerMutation, readerSourceAllowed } from './reader/requests';
+import { useReaderSelection } from './useCatalogPreferences';
+import { discussionReference } from '../shared/native-social-contract';
 function Spoiler({ hidden, children }) {
   const [revealed, setRevealed] = useState(false);
   return hidden && !revealed ? (
@@ -30,9 +34,23 @@ function Spoiler({ hidden, children }) {
     <div className="comment-body">{children}</div>
   );
 }
-export default function Discussion({ mediaId, unit = 1, communityLink = true }) {
+export default function Discussion({ mediaId, media, unit = 1, edition, communityLink = true }) {
   const { user, requireUser, event, notify } = useApp();
-  const resource = useResource(`/api/comments/${mediaId}?unit=${unit}`, false);
+  const selection = useReaderSelection();
+  const context = selection?.ready ? selection.context : null;
+  const contextKey = readerContextKey(context);
+  const reference = discussionReference(mediaId, unit, edition);
+  const allowed =
+    !!context &&
+    !!reference &&
+    (!media?.sourceRef || readerSourceAllowed(media.sourceRef, context));
+  const resource = useReaderResource(
+    allowed
+      ? `/api/comments/${mediaId}?${new URLSearchParams({ unit: String(unit), ...(edition ? { edition } : {}) })}`
+      : null,
+    { force: true },
+  );
+  const controller = useRef(null);
   const [body, setBody] = useState('');
   const [spoiler, setSpoiler] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -44,21 +62,24 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
   const [emotes, setEmotes] = useState({});
   const [voting, setVoting] = useState({});
   const textarea = useRef(null);
-  const scope = useRef(0);
+  const scope = useRef('');
+  scope.current = `${contextKey}:${mediaId}:${unit}:${edition || ''}`;
   useEffect(() => {
     if (
       event?.type === 'snapshot' ||
       (event?.type === 'comments' &&
         event.data.mediaId === mediaId &&
-        event.data.unit === Number(unit))
+        event.data.unit === Number(unit) &&
+        (event.data.editionId || null) === (edition || null))
     )
       resource.refresh();
-  }, [event, mediaId, unit]);
+  }, [event, mediaId, unit, edition]);
   useEffect(() => {
     resource.refresh();
   }, [user?.id]);
   useEffect(() => {
-    scope.current++;
+    const pending = new AbortController();
+    controller.current = pending;
     setReplyTo(null);
     setError('');
     setBody('');
@@ -69,9 +90,9 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
     setBusy(false);
     setVoting({});
     return () => {
-      scope.current++;
+      pending.abort();
     };
-  }, [unit, mediaId]);
+  }, [unit, mediaId, edition, contextKey]);
   const insert = (value, emote) => {
     const field = textarea.current;
     const start = field?.selectionStart ?? body.length;
@@ -90,7 +111,7 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
   };
   const submit = async (e) => {
     e.preventDefault();
-    if (!requireUser()) return;
+    if (!requireUser() || !allowed) return;
     if (busy) return;
     const encoded = body
       .trim()
@@ -107,12 +128,18 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
     setError('');
     setBusy(true);
     try {
-      await send(`/api/comments/${mediaId}`, {
-        body: content,
-        unit: Number(unit),
-        parentId: replyTo?.id || null,
-        spoiler,
-      });
+      await readerMutation(
+        `/api/comments/${mediaId}`,
+        {
+          body: content,
+          unit: Number(unit),
+          parentId: replyTo?.id || null,
+          spoiler,
+          ...(edition ? { edition } : {}),
+        },
+        'POST',
+        { ...context, signal: controller.current?.signal },
+      );
       if (submissionScope !== scope.current) return;
       setBody('');
       setGif('');
@@ -128,16 +155,20 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
     }
   };
   const vote = async (id, value) => {
-    if (!requireUser()) return;
+    if (!requireUser() || !allowed) return;
+    const requestedScope = scope.current;
     if (voting[id]) return;
     setVoting((previous) => ({ ...previous, [id]: true }));
     try {
-      await send(`/api/comments/${id}/vote`, { value });
-      resource.refresh();
+      await readerMutation(`/api/comments/${id}/vote`, { value }, 'POST', {
+        ...context,
+        signal: controller.current?.signal,
+      });
+      if (scope.current === requestedScope) resource.refresh();
     } catch (e) {
-      notify(e.message, 'error');
+      if (scope.current === requestedScope) notify(e.message, 'error');
     } finally {
-      setVoting((previous) => ({ ...previous, [id]: false }));
+      if (scope.current === requestedScope) setVoting((previous) => ({ ...previous, [id]: false }));
     }
   };
   const all = itemsOf(resource.data);
@@ -230,7 +261,13 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
       <p className="muted discussion-subtitle">
         For this episode or chapter only. Keep future plot twists under wraps.
       </p>
-      {communityLink && Number(unit) > 0 && (
+      {!reference && (
+        <ErrorNotice message="Choose an exact chapter edition to open its discussion." />
+      )}
+      {context && !allowed && reference && (
+        <ErrorNotice message="This source is disabled for this section." />
+      )}
+      {communityLink && !edition && Number(unit) > 0 && (
         <Link className="text-link discussion-community-link" to={`/community/${mediaId}/${unit}`}>
           Open this thread in Community →
         </Link>
@@ -265,7 +302,7 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
               ? 'What a moment. What did you think?'
               : 'Sign in and add your take to the conversation…'
           }
-          disabled={!user || busy}
+          disabled={!user || busy || !allowed}
           maxLength={4000}
         />
         {gif && (
@@ -322,6 +359,7 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
           </label>
           <Button
             busy={busy}
+            disabled={!allowed}
             type={user ? 'submit' : 'button'}
             onClick={user ? undefined : requireUser}
             variant="primary"
@@ -348,33 +386,53 @@ export default function Discussion({ mediaId, unit = 1, communityLink = true }) 
 }
 export function Reviews({ mediaId }) {
   const { requireUser, event } = useApp();
-  const resource = useResource(`/api/reviews/${mediaId}`, false);
+  const resource = useReaderResource(`/api/reviews/${mediaId}`, { force: true });
+  const context = resource.context;
+  const contextKey = readerContextKey(context);
+  const identity = useRef('');
+  identity.current = `${contextKey}:${mediaId}`;
+  const controller = useRef(null);
   const [writing, setWriting] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
+  useEffect(() => {
+    const pending = new AbortController();
+    controller.current = pending;
+    setWriting(false);
+    setBusy(false);
+    setError('');
+    return () => pending.abort();
+  }, [contextKey, mediaId]);
   useEffect(() => {
     if (event?.type === 'snapshot' || (event?.type === 'reviews' && event.data.mediaId === mediaId))
       resource.refresh();
   }, [event, mediaId]);
   const submit = async (e) => {
     e.preventDefault();
-    if (!requireUser()) return;
+    if (!requireUser() || !context || resource.error) return;
+    const requestedIdentity = identity.current;
     const form = new FormData(e.currentTarget);
     setBusy(true);
     setError('');
     try {
-      await send(`/api/reviews/${mediaId}`, {
-        title: form.get('title'),
-        body: form.get('body'),
-        rating: Number(form.get('rating')),
-        spoiler: form.get('spoiler') === 'on',
-      });
+      await readerMutation(
+        `/api/reviews/${mediaId}`,
+        {
+          title: form.get('title'),
+          body: form.get('body'),
+          rating: Number(form.get('rating')),
+          spoiler: form.get('spoiler') === 'on',
+        },
+        'POST',
+        { ...context, signal: controller.current?.signal },
+      );
+      if (identity.current !== requestedIdentity) return;
       setWriting(false);
       resource.refresh();
     } catch (e) {
-      setError(e.message);
+      if (identity.current === requestedIdentity) setError(e.message);
     } finally {
-      setBusy(false);
+      if (identity.current === requestedIdentity) setBusy(false);
     }
   };
   return (
@@ -386,6 +444,7 @@ export function Reviews({ mediaId }) {
         </div>
         <Button
           variant="secondary"
+          disabled={!context || !!resource.error}
           onClick={() => {
             if (requireUser()) setWriting(!writing);
           }}

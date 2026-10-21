@@ -1,10 +1,13 @@
-import { roomReaderPath, readerAtUnit } from '../shared/room-reader.js';
+import { readerAtUnit } from '../shared/room-reader.js';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { getMedia } from '../server/catalog-core.js';
 import { apiError, text, numeric, mediaId, bool } from '../server/validation.js';
 import { requireAuth, hashToken, publicUser } from './security.js';
 import { now, eventStatement, changes, liveSession, sessionValues } from './store.js';
 import { messages } from './social.js';
+import { socialRequest, socialDatabase } from './native-social.js';
+import { roomReadingPredicate } from '../server/native-social-policy.js';
+import { roomReferenceEligible } from '../shared/native-social-contract.js';
 
 export const PRESENCE_TTL = 90000;
 const ACTIVE = `last_seen>? AND EXISTS(SELECT 1 FROM sessions WHERE sessions.user_id=room_members.user_id AND expires_at>?)`;
@@ -39,7 +42,8 @@ export async function reconcileRooms(db) {
     ),
   ]);
 }
-export async function roomShape(db, room, viewerId, withMedia = false) {
+export async function roomShape(db, room, viewerId, withMedia = false, policy = null) {
+  const media = policy ? await policy.room(room) : null;
   const members = (
     await db.all(
       `SELECT users.id,users.name,users.avatar,room_members.joined_at FROM room_members JOIN users ON users.id=room_members.user_id WHERE room_id=? AND ${ACTIVE} ORDER BY joined_at,user_id`,
@@ -67,11 +71,15 @@ export async function roomShape(db, room, viewerId, withMedia = false) {
     position: room.position,
     sourceUrl: joined ? room.source_url : '',
     sourceKind: room.source_kind,
+    destination: room.destination || 'yoru',
+    readerSourceId: joined ? room.reader_source_id || null : null,
+    readerEditionId: joined ? room.reader_edition_id || null : null,
+    readerProvenance: joined && room.reader_provenance ? JSON.parse(room.reader_provenance) : null,
     version: room.version,
     stateUpdatedAt: room.state_updated_at,
     updatedAt: room.state_updated_at,
     createdAt: room.created_at,
-    ...(withMedia ? { media: await getMedia(room.media_id) } : {}),
+    ...(withMedia ? { media: media || (await getMedia(room.media_id)) } : {}),
   };
 }
 function sourceUrl(value) {
@@ -102,20 +110,29 @@ export async function requireMember(c, id) {
 }
 export function roomRoutes(app) {
   app.get('/api/rooms', async (c) => {
-    const db = c.get('db');
+    const db = c.get('db'),
+      policy = await socialRequest(c);
     await reconcileRooms(db);
-    const rows = await db.all(
-      `SELECT rooms.* FROM rooms WHERE closed_at IS NULL AND (visibility='public' OR EXISTS(SELECT 1 FROM room_members WHERE room_id=rooms.id AND user_id=? AND ${ACTIVE})) ORDER BY created_at DESC LIMIT 20`,
-      c.get('user')?.id || '',
-      ...activeValues(),
-    );
+    const page = await policy.select({
+      candidates: `SELECT rooms.*,id AS social_id,created_at AS social_sort FROM rooms WHERE closed_at IS NULL AND destination=? AND (visibility='public' OR EXISTS(SELECT 1 FROM room_members WHERE room_id=rooms.id AND user_id=? AND ${ACTIVE}))`,
+      candidateValues: [policy.context.destination, c.get('user')?.id || '', ...activeValues()],
+      where: roomReadingPredicate,
+      rowAllowed: roomReferenceEligible,
+      limit: 20,
+    });
     return c.json({
-      items: await Promise.all(rows.map((x) => roomShape(db, x, c.get('user')?.id, true))),
+      items: await Promise.all(
+        page.rows.map((x) => roomShape(db, x, c.get('user')?.id, true, policy)),
+      ),
+      complete: page.complete,
+      nextCursor: page.nextCursor,
+      nextSourceCursor: page.nextSourceCursor,
+      sourceStates: page.sourceStates,
     });
   });
   app.post('/api/rooms', requireAuth, async (c) => {
     const input = await c.req.json(),
-      db = c.get('db'),
+      db = await socialDatabase(c),
       userId = c.get('user').id;
     const name = text(input.name, { name: 'Room name', min: 2, max: 80 }),
       id = randomBytes(12).toString('base64url'),
@@ -137,17 +154,24 @@ export function roomRoutes(app) {
             max: 100000,
             integer: type !== 'read',
           });
-    const media = await getMedia(titleId);
+    const policy = await socialRequest(c),
+      media = await policy.media(titleId);
     if (!media) throw apiError(404, 'Choose an available title.');
+    const reading =
+      input.sourceKind === 'reader' && input.sourceUrl
+        ? await policy.reader(input.sourceUrl, titleId, unit)
+        : null;
     const initialSource =
       input.sourceKind === 'reader'
-        ? roomReaderPath(input.sourceUrl, titleId, unit)
+        ? (reading?.path ?? (input.sourceUrl === '' && unit === 0 ? '' : null))
         : input.sourceUrl === undefined
           ? ''
           : sourceUrl(input.sourceUrl);
     if (initialSource === null)
       throw apiError(400, 'Choose a reader link for this title and chapter.');
     const initialKind = input.sourceKind ?? 'external';
+    if (media.sourceRef && (type !== 'read' || (!reading && (unit !== 0 || initialSource))))
+      throw apiError(400, 'Choose an exact native chapter reader link or a whole-title room.');
     if (!['external', 'embed', 'hls', 'video', 'reader'].includes(initialKind))
       throw apiError(400, 'Choose a valid source type.');
     const initialPosition =
@@ -158,8 +182,8 @@ export function roomRoutes(app) {
     await reconcileRooms(db);
     const result = await db.batch([
       db.statement(
-        `INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at)
-        SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM rooms WHERE host_id=? AND closed_at IS NULL)<5 AND ${liveSession}`,
+        `INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at,destination,reader_source_id,reader_edition_id,reader_provenance)
+        SELECT ?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,? WHERE (SELECT COUNT(*) FROM rooms WHERE host_id=? AND closed_at IS NULL)<5 AND ${liveSession}`,
         id,
         userId,
         name,
@@ -174,6 +198,10 @@ export function roomRoutes(app) {
         initialPosition,
         now(),
         now(),
+        policy.context.destination,
+        reading?.sourceId || null,
+        reading?.editionId || null,
+        reading?.provenance ? JSON.stringify(reading.provenance) : null,
         userId,
         ...sessionValues(c),
       ),
@@ -192,15 +220,16 @@ export function roomRoutes(app) {
       );
     return c.json(
       {
-        room: { ...(await roomShape(db, await checkedRoom(db, id), userId)), media },
-        inviteUrl: `/rooms/${id}${invite ? `?invite=${invite}` : ''}`,
+        room: { ...(await roomShape(db, await checkedRoom(db, id), userId, false, policy)), media },
+        inviteUrl: `/rooms/${id}?destination=${policy.context.destination}${invite ? `&invite=${invite}` : ''}`,
         invite,
       },
       201,
     );
   });
   app.get('/api/rooms/:id', async (c) => {
-    const db = c.get('db');
+    const db = await socialDatabase(c),
+      policy = await socialRequest(c);
     await reconcileRooms(db);
     const room = await checkedRoom(db, c.req.param('id')),
       member = await activeMember(db, room.id, c.get('user')?.id);
@@ -218,10 +247,11 @@ export function roomRoutes(app) {
         c.get('user').id,
         ...sessionValues(c),
       );
-    return c.json({ room: await roomShape(db, room, c.get('user')?.id, true) });
+    return c.json({ room: await roomShape(db, room, c.get('user')?.id, true, policy) });
   });
   app.post('/api/rooms/:id/join', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
+      policy = await socialRequest(c),
       input = await c.req.json(),
       userId = c.get('user').id;
     await reconcileRooms(db);
@@ -256,7 +286,9 @@ export function roomRoutes(app) {
     ]);
     if (!changes(result[0]))
       throw apiError(409, 'This room is full or your invitation/session expired.');
-    return c.json({ room: await roomShape(db, await checkedRoom(db, room.id), userId, true) });
+    return c.json({
+      room: await roomShape(db, await checkedRoom(db, room.id), userId, true, policy),
+    });
   });
   app.post('/api/rooms/:id/leave', requireAuth, async (c) => {
     const db = c.get('db'),
@@ -279,7 +311,8 @@ export function roomRoutes(app) {
     return c.json({ ok: true });
   });
   app.patch('/api/rooms/:id', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
+      policy = await socialRequest(c),
       input = await c.req.json(),
       room = await checkedRoom(db, c.req.param('id')),
       userId = c.get('user').id;
@@ -311,25 +344,37 @@ export function roomRoutes(app) {
     const requestedSource =
       input.sourceUrl === undefined
         ? kind === 'reader' && unit !== room.unit
-          ? readerAtUnit(room.source_url, room.media_id, unit)
+          ? readerAtUnit(room.source_url, room.media_id, unit, {
+              destination: policy.context.destination,
+            })
           : room.source_url
         : input.sourceUrl;
+    const reading =
+      kind === 'reader' && requestedSource
+        ? await policy.reader(requestedSource, room.media_id, unit)
+        : null;
     const source =
       kind === 'reader'
-        ? roomReaderPath(requestedSource, room.media_id, unit)
+        ? (reading?.path ?? (requestedSource === '' && unit === 0 ? '' : null))
         : sourceUrl(requestedSource);
     if (source === null) throw apiError(400, 'Choose a reader link for this title and chapter.');
+    const media = await policy.media(room.media_id);
+    if (media.sourceRef && !reading && (unit !== 0 || source))
+      throw apiError(400, 'Choose an exact native chapter reader link or a whole-title room.');
     if (!['external', 'embed', 'hls', 'video', 'reader'].includes(kind))
       throw apiError(400, 'Choose a valid source type.');
     const result = await db.batch([
       db.statement(
-        `UPDATE rooms SET unit=?,paused=?,position=?,source_url=?,source_kind=?,version=version+1,state_updated_at=? WHERE id=? AND host_id=? AND version=? AND closed_at IS NULL
+        `UPDATE rooms SET unit=?,paused=?,position=?,source_url=?,source_kind=?,reader_source_id=?,reader_edition_id=?,reader_provenance=?,version=version+1,state_updated_at=? WHERE id=? AND host_id=? AND version=? AND closed_at IS NULL
         AND ${liveSession} AND EXISTS(SELECT 1 FROM room_members WHERE room_id=rooms.id AND user_id=? AND ${ACTIVE})`,
         unit,
         Number(paused),
         position,
         source,
         kind,
+        reading?.sourceId || null,
+        reading?.editionId || null,
+        reading?.provenance ? JSON.stringify(reading.provenance) : null,
         now(),
         room.id,
         userId,
@@ -342,7 +387,9 @@ export function roomRoutes(app) {
     ]);
     if (!changes(result[0]))
       throw apiError(409, 'The room or your session changed. Refresh and try again.');
-    return c.json({ room: await roomShape(db, await checkedRoom(db, room.id), userId) });
+    return c.json({
+      room: await roomShape(db, await checkedRoom(db, room.id), userId, false, policy),
+    });
   });
   app.get('/api/rooms/:id/chat', requireAuth, async (c) => {
     const room = await checkedRoom(c.get('db'), c.req.param('id'));
@@ -350,7 +397,7 @@ export function roomRoutes(app) {
     return c.json({ items: await messages(c.get('db'), room.id) });
   });
   app.post('/api/rooms/:id/chat', requireAuth, async (c) => {
-    const db = c.get('db'),
+    const db = await socialDatabase(c),
       input = await c.req.json(),
       user = c.get('user'),
       room = await checkedRoom(db, c.req.param('id'));

@@ -9,6 +9,7 @@ import {
   saveSearch,
   loadMedia,
   saveMedia,
+  loadAccountMedia,
 } from './catalog-storage.js';
 import { titleRelevance, rankSearch, searchText } from './search-ranking.js';
 const TTL = 6 * 60 * 60 * 1000;
@@ -304,7 +305,7 @@ async function kitsuSearch(query, category, offset, limit) {
           query.genre.toLowerCase().replace(/\s+/g, '-'),
       );
     if (category === 'MANHWA') params.set('filter[subtype]', 'manhwa');
-    if (category === 'MANGA') params.set('filter[subtype]', 'manga');
+    if (category === 'MANGA') params.set('filter[subtype]', query.format || 'manga');
     if (category === 'ANIME' && query.format) params.set('filter[subtype]', query.format);
     const data = await kitsu(`/${kind}?${params}`);
     result.total = Number(data.meta?.count) || result.items.length;
@@ -479,6 +480,36 @@ export async function getMedia(id) {
   }
 }
 
+// Account selectors must not fan out to title providers. This bounded projection
+// reads existing metadata only; the caller applies the shared destination policy.
+export async function coreAccountMedia(ids, imported = []) {
+  if (!Array.isArray(ids) || ids.length > 5000)
+    throw new Error('Account metadata batch too large.');
+  const wanted = [...new Set(ids.filter((id) => parseMediaId(id)))];
+  const wantedSet = new Set(wanted);
+  const stored = await loadAccountMedia(wanted);
+  const byId = new Map(wanted.map((id) => [id, cache.get(id)]));
+  for (const media of stored)
+    if (
+      wantedSet.has(media?.id) &&
+      parseMediaId(media.id) &&
+      typeof media.title === 'string' &&
+      media.title
+    )
+      byId.set(media.id, media);
+  // The existing MAL import parser supplies these snapshots, preserving its
+  // established fallback representation without treating an unknown ID as safe.
+  rememberImportedMedia(
+    [...imported, ...stored.filter((item) => item?.mediaId)].filter((item) =>
+      wantedSet.has(item.mediaId),
+    ),
+  );
+  for (const id of wanted) if (!byId.get(id)) byId.set(id, cache.get(id));
+  return [...byId.values()].filter(
+    (media) => media && wantedSet.has(media.id) && typeof media.title === 'string' && media.title,
+  );
+}
+
 export function rememberImportedMedia(entries) {
   for (const entry of entries) {
     const parsed = parseMediaId(entry.mediaId);
@@ -524,6 +555,17 @@ export function rememberImportedMedia(entries) {
 
 function optionsFor(input = {}) {
   const query = typeof input === 'string' ? { search: input } : input;
+  const category = String(query.category || query.type).toUpperCase();
+  const maxLimit = ['MANGA', 'MANHWA'].includes(category) ? 144 : 48;
+  const format = String(query.format || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+  const formats =
+    category === 'ANIME'
+      ? ['tv', 'movie', 'ova', 'ona', 'special']
+      : category === 'MANGA'
+        ? ['manga', 'oneshot']
+        : [];
   return {
     category: categories.includes(String(query.category || query.type).toUpperCase())
       ? String(query.category || query.type).toUpperCase()
@@ -534,20 +576,17 @@ function optionsFor(input = {}) {
     genre: String(query.genre || '')
       .trim()
       .slice(0, 60),
-    ...(String(query.category || query.type).toUpperCase() === 'ANIME' &&
-    ['tv', 'movie', 'ova', 'ona', 'special'].includes(String(query.format).toLowerCase())
-      ? { format: String(query.format).toLowerCase() }
-      : {}),
+    ...(formats.includes(format) ? { format } : {}),
     sort: ['trending', 'popular', 'score', 'title', 'newest'].includes(query.sort)
       ? query.sort
       : 'trending',
     page:
       Number.isSafeInteger(Number(query.page)) &&
-      Number.isSafeInteger(Number(query.page) * 48) &&
+      Number.isSafeInteger(Number(query.page) * maxLimit) &&
       Number(query.page) > 0
         ? Number(query.page)
         : 1,
-    limit: Math.min(48, Math.max(1, Math.floor(Number(query.limit) || 24))),
+    limit: Math.min(maxLimit, Math.max(1, Math.floor(Number(query.limit) || 24))),
     curated: query.curated === '1' || query.curated === true,
   };
 }
@@ -557,7 +596,10 @@ function matches(item, query) {
     !item.isAdult &&
     !item.imported &&
     (!query.category || item.type === query.category) &&
-    (!query.format || String(item.format).toLowerCase() === query.format) &&
+    (!query.format ||
+      String(item.format)
+        .toLowerCase()
+        .replace(/[^a-z]/g, '') === query.format) &&
     (!query.search || titleRelevance(item, query.search) >= 0) &&
     (!query.genre || item.genres.some((genre) => genreKey(genre) === genreKey(query.genre)))
   );
@@ -615,7 +657,7 @@ async function categoryPage(query, category) {
         sort: ['score', 'newest'].includes(query.sort) ? 'desc' : 'asc',
       });
       if (category !== 'ANIME') params.set('type', category.toLowerCase());
-      if (category === 'ANIME' && query.format) params.set('type', query.format);
+      if (query.format) params.set('type', query.format);
       if (query.search) params.set('q', query.search);
       if (genreId) params.set('genres', String(genreId));
       const data = await tenrai(`/${kind}?${params}`);

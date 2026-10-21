@@ -1,5 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { searchIndexPlugin } from './scripts/search-index-plugin.mjs';
 import { cloudflare } from '@cloudflare/vite-plugin';
 import { sites } from '@openai/sites-vite-plugin';
 import { fileURLToPath } from 'node:url';
@@ -9,6 +10,7 @@ process.env.CLOUDFLARE_LOAD_DEV_VARS_FROM_DOT_ENV = 'false';
 export default defineConfig({
   plugins: [
     react(),
+    searchIndexPlugin(),
     cloudflare({ configPath: './wrangler.sites.jsonc', viteEnvironment: { name: 'server' } }),
     sites(),
   ],

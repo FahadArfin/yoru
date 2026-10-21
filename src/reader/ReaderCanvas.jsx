@@ -1,10 +1,54 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
+import { ArrowRight, ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
 import { warmImage } from '../image-loading';
+import { readerContextKey, readerContextPath } from './requests';
+import RemotePageImage from './RemotePageImage';
 
-function PageImage({ page, number, chapter, eager, onTap }) {
+function PageImage({ page, number, chapter, eager, onTap, context }) {
+  if (chapter.kind === 'remote') {
+    let url = null;
+    try {
+      url = readerContextPath(page.url, context);
+    } catch {
+      /* Pending selection. */
+    }
+    return (
+      <RemotePageImage
+        key={url}
+        url={url}
+        page={page}
+        number={number}
+        chapter={chapter}
+        eager={eager}
+        onTap={onTap}
+        context={context}
+      />
+    );
+  }
+  return (
+    <LocalPageImage
+      page={page}
+      number={number}
+      chapter={chapter}
+      eager={eager}
+      onTap={onTap}
+      context={context}
+    />
+  );
+}
+function LocalPageImage({ page, number, chapter, eager, onTap, context }) {
   const [status, setStatus] = useState('loading');
   const [attempt, setAttempt] = useState(0);
+  const [preparedUrl, setPreparedUrl] = useState(null);
+  let requestUrl = page.url;
+  if (chapter.kind === 'remote') {
+    try {
+      requestUrl = readerContextPath(page.url, context);
+    } catch {
+      requestUrl = null;
+    }
+  }
+  const url = preparedUrl || requestUrl;
   return (
     <div
       className={`comic-page ${status}`}
@@ -13,16 +57,19 @@ function PageImage({ page, number, chapter, eager, onTap }) {
         page.width && page.height ? { aspectRatio: `${page.width} / ${page.height}` } : undefined
       }
     >
-      {status !== 'error' && (
+      {status !== 'error' && url && (
         <img
           key={attempt}
-          src={page.url}
+          src={url}
           alt={`Chapter ${chapter.number}, page ${number}`}
           loading={eager ? 'eager' : 'lazy'}
           fetchPriority={eager ? 'high' : 'auto'}
           decoding="async"
           referrerPolicy="no-referrer"
-          onLoad={() => setStatus('ready')}
+          onLoad={(event) => {
+            setPreparedUrl(event.currentTarget.src);
+            setStatus('ready');
+          }}
           onError={() => setStatus('error')}
           onClick={onTap}
         />
@@ -39,7 +86,9 @@ function PageImage({ page, number, chapter, eager, onTap }) {
           <p>The image may be unavailable at its source.</p>
           <button
             className="btn btn-secondary"
+            disabled={!requestUrl}
             onClick={() => {
+              setPreparedUrl(null);
               setStatus('loading');
               setAttempt((n) => n + 1);
             }}
@@ -54,6 +103,7 @@ function PageImage({ page, number, chapter, eager, onTap }) {
 }
 export default function ReaderCanvas({
   chapter,
+  context,
   page,
   preferences,
   jump,
@@ -61,6 +111,9 @@ export default function ReaderCanvas({
   onTurn,
   onToggleControls,
   onScrollDirection,
+  nextChapter,
+  onNextChapter,
+  onChooseChapter,
 }) {
   const container = useRef();
   const scrollPosition = useRef(0);
@@ -175,20 +228,32 @@ export default function ReaderCanvas({
   }, [paged]);
   useEffect(() => {
     const controller = new AbortController();
+    // Remote images are loaded once into the displayed page by its bounded queue.
+    // Preloading their no-store API URLs separately downloads them twice.
+    if (chapter.kind === 'remote') return () => controller.abort();
     const current = container.current.querySelector(`[data-page="${page}"] img`);
     // Give the page being read first use of the connection, then keep a small rolling buffer.
     const prepare = () =>
       pages
         .slice(page, page + 5)
         .filter((item) => !item.blob)
-        .forEach((item) => warmImage(item.url, controller.signal));
+        .forEach((item) => {
+          try {
+            warmImage(
+              chapter.kind === 'remote' ? readerContextPath(item.url, context) : item.url,
+              controller.signal,
+            );
+          } catch {
+            /* Expired/pending context cannot start another page request. */
+          }
+        });
     if (current?.complete && current.naturalWidth) prepare();
     else current?.addEventListener('load', prepare, { once: true });
     return () => {
       controller.abort();
       current?.removeEventListener('load', prepare);
     };
-  }, [pages, page, paged]);
+  }, [pages, page, paged, readerContextKey(context)]);
   useEffect(() => {
     if (paged) return;
     const element = container.current;
@@ -250,8 +315,9 @@ export default function ReaderCanvas({
       >
         {visible.map(({ item, index }) => (
           <PageImage
-            key={`${index}:${item.url}`}
+            key={`${chapter.id}:${index}`}
             page={item}
+            context={context}
             number={index + 1}
             chapter={chapter}
             eager={paged || Math.abs(index - (page - 1)) <= 1}
@@ -260,10 +326,24 @@ export default function ReaderCanvas({
         ))}
       </div>
       {!paged && (
-        <div className="reader-end">
+        <section className="reader-end" aria-label="Chapter navigation">
           <strong>You’ve reached the end of this chapter.</strong>
-          <span>Open the reader menu or scroll up to choose another chapter.</span>
-        </div>
+          <span>
+            {nextChapter
+              ? `Continue with chapter ${nextChapter.number}`
+              : 'No later chapter is available in this source and language.'}
+          </span>
+          <div className="reader-end-actions">
+            {nextChapter && (
+              <button className="btn btn-primary" disabled={!context} onClick={onNextChapter}>
+                Next chapter <ArrowRight size={18} />
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={onChooseChapter}>
+              Choose chapter
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );

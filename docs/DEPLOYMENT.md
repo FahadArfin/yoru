@@ -82,6 +82,12 @@ yoru.example.com {
 
 Point the domain's DNS at the host and allow inbound ports 80 and 443. Caddy provisions TLS. With another reverse proxy, forward the original host and protocol, disable response buffering for `/api/events`, and permit long-running responses for live room and community events. Put any CDN in front of the reverse proxy; do not cache authenticated `/api/*` responses.
 
+## ChatGPT sign-in
+
+The public Sites deployment supports **Continue with ChatGPT** alongside email/password. It uses the Sites gateway's documented identity headers and top-level sign-in/out routes, with no additional OAuth secrets. Existing members connect through Settings while signed in to preserve the same account. Node/Docker does not trust these headers and keeps email/password and configured Discord sign-in.
+
+See [account identity and saved activity](ACCOUNT_IDENTITY.md) for ownership, linking, account-data inventory, device-only boundaries, and validation. Do not expose the Sites Worker directly behind an untrusted proxy that can forge gateway identity headers.
+
 ## Discord sign-in
 
 Create an application in the [Discord Developer Portal](https://discord.com/developers/applications), open **OAuth2**, and register this redirect URL with your real domain:

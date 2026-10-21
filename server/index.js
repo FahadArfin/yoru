@@ -13,6 +13,8 @@ import { createImportRouter } from './import.js';
 import { createMalRouter, malEnabled } from './mal.js';
 import { createFavoritesRouter } from './favorites.js';
 import { forumRouter } from './forum-routes.js';
+import { channelRouter } from './channel-routes.js';
+import { readerErrorMiddleware } from './reader-errors.js';
 
 export const app = express();
 if (process.env.TRUST_PROXY !== undefined) {
@@ -25,7 +27,7 @@ app.use(
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'"],
-        scriptSrc: ["'self'"],
+        scriptSrc: ["'self'", 'https://www.gstatic.com'],
         styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
         fontSrc: ["'self'", 'https://fonts.gstatic.com'],
         imgSrc: ["'self'", 'https:', 'data:', 'blob:'],
@@ -80,7 +82,7 @@ app.get('/api/health', (_req, res) => {
 });
 app.get('/api/config', (_req, res) =>
   res.json({
-    auth: { email: true, discord: discordEnabled, mal: malEnabled },
+    auth: { email: true, chatgpt: false, discord: discordEnabled, mal: malEnabled },
     discordEnabled,
     discordInviteUrl: process.env.DISCORD_INVITE_URL || null,
     features: {
@@ -108,6 +110,7 @@ app.use(
   createMalRouter({ onLibraryChange: (userId) => broadcast('library', { userId }) }),
 );
 app.use('/api', socialRouter);
+app.use('/api/channels', channelRouter());
 app.use(
   '/api/forum',
   forumRouter((data) => broadcast('forum', data)),
@@ -121,7 +124,8 @@ if (existsSync(dist)) {
       setHeaders: (res, path) => {
         if (path.includes(`${join('dist', 'assets')}`))
           res.set('Cache-Control', 'public,max-age=31536000,immutable');
-        if (path.endsWith('sw.js')) res.set('Cache-Control', 'no-cache');
+        if (path.endsWith('sw.js') || path.endsWith('index.html'))
+          res.set('Cache-Control', 'no-cache');
       },
     }),
   );
@@ -130,6 +134,7 @@ if (existsSync(dist)) {
     res.sendFile(join(dist, 'index.html'));
   });
 }
+app.use(readerErrorMiddleware);
 app.use((error, _req, res, _next) => {
   if (res.headersSent) return res.end();
   const status = error.status || (error.type === 'entity.too.large' ? 413 : 500);

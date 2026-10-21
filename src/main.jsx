@@ -16,8 +16,9 @@ import Home from './pages/Home';
 import Browse from './pages/Browse';
 import { setupWebMCP } from './webmcp';
 import { NsfwButton, AraAraBrand, AraAraNavigation, LegacyNsfwRedirect } from './nsfw';
-import { CollectionContext, useCollection } from './collection-context';
-import { confirmationKey } from './nsfw';
+import { CollectionContext, useCollection, collectionDestination } from './collection-context';
+import { useReaderSelection } from './useCatalogPreferences';
+import { confirmationKey, clearAdultConfirmation } from './nsfw';
 import GlobalSearch from './GlobalSearch';
 import SiteFooter from './SiteFooter';
 import SpaceLayout from './SpaceLayout';
@@ -29,6 +30,7 @@ import './nsfw.css';
 import './theme.css';
 import './mobile.css';
 import { useTheme } from './theme';
+import { isAssetLoadError, recoverAssetLoad } from './asset-recovery';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -57,7 +59,13 @@ function Brand() {
 }
 function CollectionBoundary({ children }) {
   const { pathname } = useLocation();
-  const active = /^\/ara-ara(?:\/|$)/.test(pathname);
+  const { readerSelection } = useApp();
+  const active = collectionDestination(pathname) === 'ara-ara';
+  const wasActive = useRef(active);
+  useEffect(() => {
+    if (wasActive.current && !active) clearAdultConfirmation();
+    wasActive.current = active;
+  }, [active]);
   const [sessionConfirmed, setSessionConfirmed] = useState(false);
   useEffect(() => {
     const update = (event) => setSessionConfirmed(Boolean(event.detail?.confirmed));
@@ -68,23 +76,35 @@ function CollectionBoundary({ children }) {
   try {
     confirmed = sessionConfirmed || sessionStorage.getItem(confirmationKey) === '1';
   } catch {}
-  const result = useRawResource(active && confirmed ? '/api/ara-ara/catalog' : null);
+  const result = useRawResource(
+    active && confirmed && readerSelection?.ready
+      ? `/api/ara-ara/catalog?destination=ara-ara&selectionFingerprint=${encodeURIComponent(readerSelection.context.selectionFingerprint)}`
+      : null,
+  );
   const scope = useMemo(
     () => ({
       active,
       confirmed,
-      catalog: result.data,
-      loading: result.loading,
-      error: result.error,
-      refresh: result.refresh,
+      catalog: readerSelection?.ready ? result.data : null,
+      loading:
+        result.loading ||
+        (active && confirmed && !readerSelection?.ready && !readerSelection?.error),
+      error: result.error || (active && confirmed ? readerSelection?.error : ''),
+      refresh: () => {
+        readerSelection?.refresh();
+        result.refresh();
+      },
     }),
-    [active, confirmed, result.data, result.loading, result.error, result.refresh],
+    [active, confirmed, result.data, result.loading, result.error, result.refresh, readerSelection],
   );
   return <CollectionContext.Provider value={scope}>{children}</CollectionContext.Provider>;
 }
 function Shell() {
   useTheme();
   const { user, setAuthOpen, visitors, toast, refreshLibrary } = useApp();
+  const readerSelection = useReaderSelection();
+  const selectionRef = useRef(readerSelection);
+  selectionRef.current = readerSelection;
   const navigate = useNavigate();
   const navigateRef = useRef(navigate);
   navigateRef.current = navigate;
@@ -118,7 +138,11 @@ function Shell() {
     } catch {}
   }, []);
   useEffect(
-    () => setupWebMCP((...args) => navigateRef.current(...args), { refreshLibrary }),
+    () =>
+      setupWebMCP((...args) => navigateRef.current(...args), {
+        refreshLibrary,
+        getReaderSelection: () => selectionRef.current,
+      }),
     [refreshLibrary],
   );
   return (
@@ -256,11 +280,21 @@ function Shell() {
   );
 }
 class ErrorBoundary extends React.Component {
-  state = { error: null };
+  state = { error: null, recoveryFailed: false };
   static getDerivedStateFromError(error) {
     return { error };
   }
+  componentDidCatch(error) {
+    if (isAssetLoadError(error) && !recoverAssetLoad(error))
+      this.setState({ recoveryFailed: true });
+  }
   render() {
+    if (isAssetLoadError(this.state.error) && !this.state.recoveryFailed)
+      return (
+        <div className="loading" role="status">
+          Updating Yoru…
+        </div>
+      );
     if (this.state.error)
       return (
         <div className="fatal">

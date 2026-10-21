@@ -135,6 +135,23 @@ export function Poster({ media, rank, compact = false, href }) {
         <span className="dot" />
         <span>{media.genres?.[0] || (media.type === 'ANIME' ? 'Anime' : 'Comics')}</span>
       </div>
+      {(media.sourceRef || media.readingChoices?.length) && (
+        <div className="poster-meta">
+          <span>
+            {[
+              ...new Set(
+                [
+                  media.sourceRef?.providerKey,
+                  ...(media.readingChoices || []).map((choice) => choice.sourceRef?.providerKey),
+                ].filter(Boolean),
+              ),
+            ].join(' · ')}
+          </span>
+          {media.readingChoices?.length > 1 && (
+            <span>{media.readingChoices.length} reading editions</span>
+          )}
+        </div>
+      )}
     </article>
   );
 }
@@ -277,6 +294,18 @@ export function AuthModal() {
       <p className="muted">
         Your favorites, late-night theories, and next chapter. All in one place.
       </p>
+      {config.auth?.chatgpt && (
+        <>
+          <a
+            className="btn btn-secondary auth-chatgpt"
+            target="_top"
+            href={`/api/auth/chatgpt/start?returnTo=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`}
+          >
+            Continue with ChatGPT
+          </a>
+          <p className="small muted auth-divider">or use your email</p>
+        </>
+      )}
       {config.auth?.discord && (
         <a href="/api/auth/discord" className="btn btn-discord">
           Continue with Discord

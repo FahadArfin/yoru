@@ -1,5 +1,48 @@
 import { test, expect } from '@playwright/test';
 
+test('genre data and covers start loading before the shelf reaches the viewport', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/catalog?**', (route) => {
+    const genre = new URL(route.request().url()).searchParams.get('genre');
+    return route.fulfill({
+      json: {
+        items: genre
+          ? [
+              {
+                id: 'mal-manga-21',
+                category: 'MANGA',
+                title: `${genre} story`,
+                cover: '/cover-placeholder.svg',
+              },
+            ]
+          : [],
+        pages: 1,
+      },
+    });
+  });
+  await page.goto('/browse/manga');
+  const shelf = page.getByRole('region', { name: 'Sci-Fi collection', exact: true });
+  await shelf.evaluate((element) =>
+    window.scrollTo({
+      top: element.getBoundingClientRect().top + window.scrollY - window.innerHeight - 1000,
+      behavior: 'instant',
+    }),
+  );
+  // Still 1,000px below the screen, with both data and artwork already loading.
+  await expect(shelf.locator('.poster-card')).toHaveCount(1);
+  await expect(shelf.locator('.cover-image')).toHaveAttribute('loading', 'eager');
+  expect(await shelf.evaluate((element) => element.getBoundingClientRect().top > innerHeight)).toBe(
+    true,
+  );
+});
+
 for (const category of ['anime', 'manga', 'manhwa']) {
   test(`${category} genre shelves stay in two rows and open the complete filtered collection`, async ({
     page,
@@ -68,8 +111,28 @@ for (const category of ['anime', 'manga', 'manhwa']) {
     await action.getByRole('link', { name: 'Show more action' }).click();
     await expect(page).toHaveURL(new RegExp(`/browse/${category}\\?genre=Action$`));
     await expect(page.getByLabel('Genre', { exact: true })).toHaveValue('Action');
-    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(48);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(
+      category === 'anime' ? 48 : 144,
+    );
     await page.goBack();
+    if (category !== 'anime') {
+      const historical = page.getByRole('region', { name: 'Historical collection', exact: true });
+      await historical.scrollIntoViewIfNeeded();
+      await expect(historical.locator('.poster-card')).toHaveCount(12);
+      expect(
+        await historical
+          .locator('.genre-shelf-track')
+          .evaluate(
+            (el) =>
+              new Set([...el.children].map((card) => Math.round(card.getBoundingClientRect().top)))
+                .size,
+          ),
+      ).toBe(2);
+      await historical.getByRole('link', { name: 'Show more historical' }).click();
+      await expect(page.getByLabel('Genre', { exact: true })).toHaveValue('Historical');
+      await expect(page.locator('.browse-grid .poster-card')).toHaveCount(144);
+      await page.goBack();
+    }
     const full = page.getByRole('region', { name: 'Full collection', exact: true });
     await full.scrollIntoViewIfNeeded();
     await expect(full.locator('.poster-card')).toHaveCount(12);
@@ -77,9 +140,16 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       .locator('.genre-collection')
       .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
     expect(order.at(-1)).toBe('Full collection');
+    expect(order).toHaveLength(category === 'anime' ? 14 : 34);
+    if (category !== 'anime') {
+      expect(order).toContain('Time Travel collection');
+      expect(order).toContain('Award Winning collection');
+    }
     await full.getByRole('link', { name: 'Show more full collection' }).click();
     await expect(page).toHaveURL(new RegExp(`/browse/${category}\\?view=all$`));
-    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(48);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(
+      category === 'anime' ? 48 : 144,
+    );
     expect(queries.filter((q) => q.genre).every((q) => q.category === category.toUpperCase())).toBe(
       true,
     );

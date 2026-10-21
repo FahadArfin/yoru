@@ -49,7 +49,7 @@ test('community filters preserve discussions, review destinations and spoiler pr
   await expect(page.locator('.feed-card')).toHaveCount(2);
   await expect(page.getByText('PRIVATE SPOILER TEXT')).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'Find a room' })).toHaveAttribute('href', '/rooms');
-  await expect(page.getByLabel('Chat message')).toBeVisible();
+  await expect(page.getByRole('button', { name: 'Browse live channels' })).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.screenshot({ path: testInfo.outputPath('community-populated.png'), fullPage: true });
   const filters = page.getByRole('group', { name: 'Conversation type' });

@@ -3,19 +3,31 @@ import { rememberRoomInvite } from './room-invites';
 import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from './collection-router';
 import { ArrowRight, Users } from 'lucide-react';
-import { coverOf, isAnime, itemsOf, send, titleOf } from './api';
+import { isAnime, itemsOf, titleOf } from './api';
+import CoverImage from './CoverImage';
 import { useApp, useResource } from './state';
 import { Button, ErrorNotice, Modal } from './components';
 import { sourceForUnit } from './room-source';
+import { useReaderSelection } from './useCatalogPreferences';
+import { readerContextKey, readerMutation } from './reader/requests';
+import { readerLink } from './reader/model';
+import { parseMediaReference } from '../shared/media-reference';
 
-export default function RoomLauncher({ media, unit = 1, source, getPosition }) {
+export default function RoomLauncher({ media, unit = 1, source, getPosition, className }) {
+  if (media?.sourceRef && !source?.url) unit = 0;
   const { requireUser, user } = useApp();
+  const selection = useReaderSelection();
   const [context, setContext] = useState(null);
-  useEffect(() => setContext(null), [media?.id, unit, user?.id]);
+  useEffect(
+    () => setContext(null),
+    [media?.id, unit, user?.id, readerContextKey(selection?.context)],
+  );
   return (
     <>
       <Button
         variant="secondary"
+        className={className}
+        disabled={!selection?.ready}
         onClick={() => {
           if (requireUser()) setContext({ source, position: getPosition?.() || 0 });
         }}
@@ -31,14 +43,30 @@ export default function RoomLauncher({ media, unit = 1, source, getPosition }) {
 }
 
 export function CreateRoom({ close, initialMedia, media, unit = 1, source, position = 0 }) {
+  const native =
+    !!media?.sourceRef || parseMediaReference(initialMedia)?.kind === 'extension-manga';
+  if (native && !source?.url) unit = 0;
   const navigate = useNavigate();
+  const selection = useReaderSelection();
+  const context = selection?.ready ? selection.context : null;
+  const contextKey = readerContextKey(context);
   const [category, setCategory] = useState(
     media?.category || (initialMedia?.includes('manga') ? 'MANGA' : 'ANIME'),
   );
-  const catalog = useResource(media ? null : `/api/catalog?category=${category}`);
+  const catalog = useResource(
+    media || !context
+      ? null
+      : `/api/catalog?category=${category}&destination=${context.destination}`,
+  );
   const { user } = useApp();
-  const identity = useRef(user?.id);
-  identity.current = user?.id;
+  const identity = useRef('');
+  identity.current = `${user?.id}:${contextKey}`;
+  const controller = useRef(null);
+  useEffect(() => {
+    const pending = new AbortController();
+    controller.current = pending;
+    return () => pending.abort();
+  }, [contextKey]);
   const mounted = useRef(true);
   useEffect(() => {
     mounted.current = true;
@@ -52,43 +80,56 @@ export function CreateRoom({ close, initialMedia, media, unit = 1, source, posit
   const submit = async (e) => {
     e.preventDefault();
     const values = Object.fromEntries(new FormData(e.currentTarget));
-    if (busy) return;
+    if (busy || !context) return;
     const account = identity.current;
     setBusy(true);
     setError('');
     try {
       const pickedId = selected || itemsOf(catalog.data)[0]?.id;
       const chosen =
-        media && category === 'ANIME'
-          ? sourceForUnit(pickedId, Number(values.unit), source, unit)
-          : media
-            ? {
-                kind: 'reader',
-                url:
-                  Number(values.unit) === unit && source?.kind === 'reader'
-                    ? source.url
-                    : readerAtUnit(
-                        source?.url || `/read/${pickedId}/${values.unit}`,
-                        pickedId,
-                        Number(values.unit),
-                      ),
-              }
-            : null;
-      const data = await send('/api/rooms', {
-        ...values,
-        mediaId: pickedId,
-        sourceUrl: chosen?.url || '',
-        sourceKind: chosen?.kind || 'external',
-        position:
-          chosen && ['video', 'hls'].includes(chosen.kind) && Number(values.unit) === unit
-            ? position
-            : 0,
-        type: category === 'ANIME' ? 'watch' : 'read',
-        capacity: Number(values.capacity),
-        unit: Number(values.unit),
-      });
+        media?.sourceRef && !source?.url
+          ? null
+          : media && category === 'ANIME'
+            ? sourceForUnit(pickedId, Number(values.unit), source, unit)
+            : media
+              ? {
+                  kind: 'reader',
+                  url:
+                    Number(values.unit) === unit && source?.kind === 'reader'
+                      ? source.url
+                      : readerAtUnit(
+                          source?.url ||
+                            readerLink(pickedId, { number: values.unit }, undefined, {
+                              destination: context.destination,
+                            }),
+                          pickedId,
+                          Number(values.unit),
+                          { destination: context.destination },
+                        ),
+                }
+              : null;
+      if (media?.sourceRef && Number(values.unit) !== unit)
+        throw new Error('Choose an exact chapter in the reader before creating its room.');
+      const data = await readerMutation(
+        '/api/rooms',
+        {
+          ...values,
+          mediaId: pickedId,
+          sourceUrl: chosen?.url || '',
+          sourceKind: chosen?.kind || 'external',
+          position:
+            chosen && ['video', 'hls'].includes(chosen.kind) && Number(values.unit) === unit
+              ? position
+              : 0,
+          type: category === 'ANIME' ? 'watch' : 'read',
+          capacity: Number(values.capacity),
+          unit: Number(values.unit),
+        },
+        'POST',
+        { ...context, signal: controller.current?.signal },
+      );
       if (!mounted.current || identity.current !== account) return;
-      rememberRoomInvite(account, data.room.id, data.inviteUrl);
+      rememberRoomInvite(user?.id, data.room.id, data.inviteUrl);
       if (media) {
         navigate(data.inviteUrl, { state: { shareRoom: true } });
         close();
@@ -109,7 +150,7 @@ export function CreateRoom({ close, initialMedia, media, unit = 1, source, posit
       <p className="muted">You bring the story. We’ll keep everyone together.</p>
       {media && (
         <div className="room-context">
-          <img src={coverOf(media)} alt="" />
+          <CoverImage media={media} alt="" />
           <div>
             <strong>{titleOf(media)}</strong>
             <small>{isAnime(media) ? 'Watch party' : 'Reading circle'}</small>
@@ -176,6 +217,7 @@ export function CreateRoom({ close, initialMedia, media, unit = 1, source, posit
               step={category === 'ANIME' ? 1 : 'any'}
               max="100000"
               defaultValue={unit}
+              readOnly={native}
               required
             />
           </label>
@@ -211,7 +253,11 @@ export function CreateRoom({ close, initialMedia, media, unit = 1, source, posit
           </p>
         )}
         {error && <ErrorNotice message={error} />}
-        <Button type="submit" busy={busy} disabled={!media && catalog.loading && !initialMedia}>
+        <Button
+          type="submit"
+          busy={busy}
+          disabled={!context || (!media && catalog.loading && !initialMedia)}
+        >
           Create room
           <ArrowRight size={17} />
         </Button>

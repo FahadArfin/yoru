@@ -40,27 +40,39 @@ test('manga landing preserves all featured titles, filters discovery, and opens 
   await expect(hero.getByRole('heading', { name: 'popular all manga 1' })).toBeVisible();
   await expect(hero.locator('.weekly-dot')).toHaveCount(8);
   await expect(hero.locator('.weekly-backdrop')).toHaveCount(0);
+  // Wait for the account/destination selection to settle before changing the hero.
+  await expect(
+    page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }),
+  ).toBeEnabled();
   await hero.getByRole('button', { name: 'Next featured manga' }).click();
   await expect(hero.getByRole('link', { name: 'Explore manga', exact: true })).toHaveAttribute(
     'href',
     '/title/mal-manga-2',
   );
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  const tabs = page.getByRole('tablist', { name: 'Discover manga' });
+  const tabs = page.getByRole('region', { name: 'Discover manga', exact: true });
+  await expect(tabs.locator('.discovery-panel')).toHaveCount(3);
+  await expect(tabs.locator('.is-expanded')).toHaveCount(1);
+  await expect(tabs.locator('.is-compact')).toHaveCount(2);
   await expect(
-    page.getByRole('tabpanel', { name: 'New series' }).getByText('Started Sep 2026').first(),
+    page.getByRole('region', { name: 'New series' }).getByText('Started Sep 2026').first(),
   ).toBeVisible();
-  await tabs.getByRole('tab', { name: 'Most popular' }).click();
-  let panel = page.getByRole('tabpanel', { name: 'Most popular' });
-  await panel.getByRole('button', { name: 'Last month' }).click();
+  await tabs
+    .getByRole('region', { name: 'Most popular' })
+    .getByRole('button', { name: 'Most popular' })
+    .click();
+  let panel = page.getByRole('region', { name: 'Most popular' });
   await expect(panel.getByText('September 2026 releases')).toBeVisible();
   await expect(panel.getByRole('link', { name: /popular month manga 1/ })).toHaveAttribute(
     'href',
     '/title/mal-manga-1',
   );
-  await tabs.getByRole('tab', { name: 'Most popular' }).focus();
-  await page.keyboard.press('ArrowRight');
-  panel = page.getByRole('tabpanel', { name: /Trending/ });
+  await tabs
+    .getByRole('region', { name: 'Trending', exact: true })
+    .getByRole('button', { name: 'Trending', exact: true })
+    .focus();
+  await page.keyboard.press('Enter');
+  panel = page.getByRole('region', { name: /Trending/ });
   await expect(panel.getByText('12 readers this week').first()).toBeVisible();
   expect(requests).toContain('trending:week');
   await page.emulateMedia({ reducedMotion: 'reduce' });
@@ -98,7 +110,12 @@ test('reading manga records a reader and never requests an anime player', async 
   let readers = 0,
     players = 0;
   page.on('request', (request) => {
-    if (request.url().endsWith('/read-view')) readers++;
+    const url = new URL(request.url());
+    if (url.pathname.endsWith('/read-view')) {
+      expect(url.searchParams.get('destination')).toBe('yoru');
+      expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
+      readers++;
+    }
     if (request.url().includes('/sources?')) players++;
   });
   await page.goto('/read/mal-manga-21/1');

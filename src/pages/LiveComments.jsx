@@ -41,6 +41,7 @@ function useCommentFeed() {
 }
 
 export default function LiveComments() {
+  const adultCollection = useCollection()?.active;
   const feed = useCommentFeed();
   const { event, connected } = useApp();
   const section = useRef(null);
@@ -154,7 +155,13 @@ export default function LiveComments() {
       </header>
       <div className="live-comments-body">
         <aside className="live-comments-mascot" aria-hidden="true">
-          <img src="/holo-comments.png" alt="" width="160" height="270" loading="lazy" />
+          <img
+            src={adultCollection ? '/holo-ara-comments.png' : '/holo-comments.png'}
+            alt=""
+            width="160"
+            height="270"
+            loading="lazy"
+          />
           <span>A little more conversation.</span>
         </aside>
         <div className="live-comments-feed">

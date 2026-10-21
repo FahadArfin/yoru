@@ -11,12 +11,31 @@ import {
 } from '../recommendations';
 import CoverImage from '../CoverImage';
 import PrefetchLink from '../PrefetchLink';
+import { useReaderFeed } from '../reader/use-feed';
+import { useReaderSelection } from '../useCatalogPreferences';
+import { visibleReadingItems } from '../reader/feed';
 
 export default function MangaRecommendations({ media }) {
-  const related = useResource(recommendationQuery(media));
-  const items = relatedTitles(media, related.data?.items);
-  const resource = related;
-  const loading = related.loading;
+  const selection = useReaderSelection();
+  const anime = kindOf(media) === 'ANIME';
+  const native = /^ext-manga-[a-f0-9]{32}$/.test(media.id);
+  const coreAllowed =
+    anime || (selection?.ready && selection.context.integrationMode !== 'extensions');
+  const related = useResource(coreAllowed && !native ? recommendationQuery(media) : null);
+  const remote = useReaderFeed(
+    !anime && recommendationGenre(media) ? '/api/reader/discovery?mode=popular&limit=48' : null,
+  );
+  const candidates = [
+    ...(coreAllowed ? related.data?.items || [] : []),
+    ...visibleReadingItems(remote.data?.items || [], {
+      context: selection?.context,
+      category: kindOf(media).toLowerCase(),
+    }),
+  ];
+  const items =
+    anime || selection?.ready ? relatedTitles(media, candidates, selection?.context || {}) : [];
+  const resource = native || !coreAllowed ? remote : related;
+  const loading = resource.loading;
   const browse = new URLSearchParams({ sort: 'popular' });
   const genre = recommendationGenre(media);
   if (genre) browse.set('genre', genre);

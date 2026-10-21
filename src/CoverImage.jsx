@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { coverCandidates } from './image-loading';
+import { coverCandidates, imageLookahead } from './image-loading';
+import { useReaderSelection } from './useCatalogPreferences';
+import { useCollection } from './collection-context';
 
 const recovered = new Map();
 const placeholder = '/cover-placeholder.svg';
@@ -34,7 +36,7 @@ function Cover({
           observer.disconnect();
         }
       },
-      { rootMargin: '400px' },
+      { rootMargin: `${imageLookahead()}px 400px` },
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
@@ -62,7 +64,7 @@ function Cover({
       className={`${className} cover-image`}
       src={src}
       alt={alt}
-      loading={loading}
+      loading={near ? 'eager' : loading}
       decoding="async"
       referrerPolicy="no-referrer"
       fetchPriority={fetchPriority}
@@ -82,6 +84,12 @@ function Cover({
   );
 }
 export default function CoverImage({ media, ...props }) {
-  const candidates = coverCandidates(media);
-  return <Cover key={candidates.join('|')} candidates={candidates} {...props} />;
+  const selection = useReaderSelection();
+  const collection = useCollection();
+  const allowed = !collection?.active || collection.confirmed;
+  const candidates = allowed
+    ? coverCandidates(media, selection?.ready ? selection.context : null)
+    : [];
+  const owner = /^ext-manga-[a-f0-9]{32}$/.test(media?.id) ? selection?.context?.owner : '';
+  return <Cover key={`${owner}:${candidates.join('|')}`} candidates={candidates} {...props} />;
 }

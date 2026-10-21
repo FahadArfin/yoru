@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { cachedApi, invalidateApi, invalidateScopedApi, peek } from '../src/api.js';
-import { chapterList, chapterListPath } from '../src/reader/requests.js';
+import { cachedApi, invalidateApi, invalidateScopedApi, peek, readerRequest } from '../src/api.js';
+import { chapterListPath } from '../src/reader/requests.js';
 
 test('chapter metadata cache separates accounts and honors a forced refresh', async () => {
   const original = globalThis.fetch;
@@ -44,7 +44,14 @@ test('an unresolved identity receives no personal vote and never seeds a guest c
   globalThis.fetch = async () =>
     Response.json({ items: [{ id: 'edition', stats: { views: 10, myRating: 5 } }] });
   try {
-    const result = await chapterList('mal-manga-21', { q: 'unknown-session' }, null);
+    const result = await readerRequest(chapterListPath('mal-manga-21', { q: 'unknown-session' }), {
+      scope: null,
+      owner: null,
+      destination: 'yoru',
+      integrationMode: 'all',
+      selectionFingerprint: 'unknown-public-session',
+      overrides: {},
+    });
     assert.equal(result.items[0].stats.myRating, 0);
     assert.equal(result.items[0].stats.views, 10);
     assert.equal(
@@ -74,6 +81,40 @@ test('changing identity discards old private requests while keeping public metad
     await pending;
     assert.equal(peek(path, 'old-account'), undefined);
     assert.equal(peek(publicPath).title, 'Public title');
+  } finally {
+    globalThis.fetch = original;
+  }
+});
+
+test('reader transport reuses only the same owner destination integration and selection', async () => {
+  const original = globalThis.fetch;
+  let requests = 0;
+  globalThis.fetch = async () => Response.json({ request: ++requests });
+  const selection = {
+    scope: 'scoped-reader-a',
+    destination: 'yoru',
+    integrationMode: 'all',
+    selectionFingerprint: 'first-selection',
+  };
+  const path = '/api/reader/discovery?q=cache-boundary';
+  try {
+    assert.equal((await readerRequest(path, selection)).request, 1);
+    assert.equal(
+      (await readerRequest(path, { ...selection, scope: 'scoped-reader-b' })).request,
+      2,
+    );
+    assert.equal((await readerRequest(path, { ...selection, destination: 'ara-ara' })).request, 3);
+    assert.equal(
+      (await readerRequest(path, { ...selection, integrationMode: 'extensions' })).request,
+      4,
+    );
+    assert.equal(
+      (await readerRequest(path, { ...selection, selectionFingerprint: 'other-selection' }))
+        .request,
+      5,
+    );
+    assert.equal((await readerRequest(path, selection)).request, 1);
+    assert.equal(requests, 5);
   } finally {
     globalThis.fetch = original;
   }

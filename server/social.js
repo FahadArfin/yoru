@@ -1,5 +1,4 @@
-import { getAraCatalog } from '../server/ara-ara.js';
-import { roomReaderPath, readerAtUnit } from '../shared/room-reader.js';
+import { readerAtUnit } from '../shared/room-reader.js';
 import { Router } from 'express';
 import { randomBytes, randomUUID } from 'node:crypto';
 import { all, get, run, transaction, now } from './db.js';
@@ -15,29 +14,103 @@ import {
   requireAuth,
   text,
 } from './auth.js';
-import { getMedia } from './catalog.js';
+import { getMedia, coreAccountMedia } from './catalog.js';
 import { touchVisitor, PRESENCE_COOKIE } from './visitor-presence.js';
 import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from './community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { readerMarkers } from './reader-markers.js';
 import { resumeInput, resumeUpsert } from './resume.js';
+import { nodeReaderDb } from './reader-db.js';
+import { resolveReaderContext, nodeReaderSignal } from './reader-context.js';
+import { createExtensionGateway } from './extension-gateway.js';
+import { socialRequest, socialAccess, socialTransaction } from './native-social-request.js';
+import {
+  roomReadingPredicate,
+  commentReadingPredicate,
+  liveSocialPolicy,
+} from './native-social-policy.js';
+import { roomReferenceEligible } from '../shared/native-social-contract.js';
+import {
+  listReadingLibrary,
+  listReadingResume,
+  resolveAccountMedia,
+  accountAtomic,
+  accountSnapshotStatement,
+  resumeMetadata,
+  exportReadingAccount,
+} from './reading-account.js';
+
+const accountDb = nodeReaderDb({ all, get, run, transaction });
+async function accountRequest(req, res) {
+  const context = await resolveReaderContext(req.query, {
+    db: accountDb,
+    userId: req.user.id,
+    sessionHash: req.sessionHash,
+    extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+    signal: nodeReaderSignal(req, res),
+  });
+  return {
+    context,
+    deps: {
+      db: accountDb,
+      coreMedia: getMedia,
+      coreAccountMedia,
+      bridge: createExtensionGateway({
+        ...scheduleOptions,
+        bridgeUrl: process.env.READER_BRIDGE_URL,
+        bridgeKey: process.env.READER_BRIDGE_KEY,
+        extensionsEnabled: process.env.READER_EXTENSIONS_ENABLED,
+      }),
+    },
+  };
+}
 
 export const socialRouter = Router();
-socialRouter.get('/resume', requireAuth, (req, res) => {
-  res.json({
-    items: all(
-      'SELECT payload FROM resume_progress WHERE user_id=? ORDER BY updated_at DESC LIMIT 100',
-      req.user.id,
-    ).map((row) => JSON.parse(row.payload)),
-  });
-});
+socialRouter.use(asyncRoute(socialAccess));
+for (const method of ['get', 'put'])
+  socialRouter[method](
+    '/reader-markers/:mediaId',
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const request = await accountRequest(req, res);
+      res
+        .set('Cache-Control', 'no-store')
+        .json(
+          await readerMarkers(
+            mediaId(req.params.mediaId),
+            method === 'put' ? req.body : null,
+            req.user.id,
+            request,
+          ),
+        );
+    }),
+  );
+socialRouter.get(
+  '/resume',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await listReadingResume(context, req.query, deps));
+  }),
+);
 socialRouter.put(
   '/resume/:mediaId',
   requireAuth,
   asyncRoute(async (req, res) => {
     const id = mediaId(req.params.mediaId);
-    const item = resumeInput(req.body, await getMedia(id), req.user.id);
+    const request = await accountRequest(req, res);
+    const { context, media } = await resolveAccountMedia(
+      id,
+      req.body.chapterId,
+      request.context,
+      request.deps,
+    );
+    const item = {
+      ...resumeInput(req.body, media, req.user.id),
+      ...resumeMetadata(media, context),
+    };
     // Recheck after the catalog lookup, which may outlive a sign-out.
     if (
       !get(
@@ -48,7 +121,15 @@ socialRouter.put(
       )
     )
       throw apiError(401, 'Your session changed. Sign in again.');
-    run(resumeUpsert, req.user.id, id, JSON.stringify(item), item.updatedAt);
+    await accountAtomic(
+      context,
+      [
+        { sql: resumeUpsert, values: [req.user.id, id, JSON.stringify(item), item.updatedAt] },
+        accountSnapshotStatement(context, media, 'resume', item),
+      ],
+      request.deps,
+      { media },
+    );
     res.json({
       item: JSON.parse(
         get('SELECT payload FROM resume_progress WHERE user_id=? AND media_id=?', req.user.id, id)
@@ -66,6 +147,7 @@ socialRouter.get(
         offline: isOffline(),
         db: { all },
         media: getMedia,
+        policy: await socialRequest(req, res),
       }),
     );
   }),
@@ -107,24 +189,43 @@ export const onlineState = () => {
   return { count: users.length, users };
 };
 function emit(connection, event, data) {
-  if (connection.res.writableLength > 512 * 1024) {
-    disconnect(connection);
+  if (event === 'left') {
+    if (!connection.res.writableEnded)
+      connection.res.write(`event: left\ndata: ${JSON.stringify(data)}\n\n`);
     return;
   }
-  if (!sessionAlive(connection)) {
-    disconnect(connection);
-    return;
-  }
-  if (
-    connection.roomId &&
-    ['room', 'chat', 'snapshot'].includes(event) &&
-    !activeMember(connection.roomId, connection.user?.id)
-  ) {
-    disconnect(connection);
-    return;
-  }
-  if (!connection.res.writableEnded)
-    connection.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+  if (connection.res.writableLength > 512 * 1024 || (connection.pending || 0) >= 256)
+    return disconnect(connection);
+  connection.pending = (connection.pending || 0) + 1;
+  connection.delivery = (connection.delivery || Promise.resolve())
+    .then(async () => {
+      if (connection.res.writableEnded || !sessionAlive(connection)) return disconnect(connection);
+      const policy = await connection.policy.delivery();
+      if (connection.roomId) {
+        const room = checkedRoom(connection.roomId);
+        await policy.room(room);
+        if (!activeMember(room.id, connection.user?.id)) return disconnect(connection);
+        if (['room', 'snapshot'].includes(event))
+          data = { ...data, room: roomShape(room, connection.user?.id) };
+      }
+      if (data.mediaId) {
+        const accepted = await policy.mediaBatch([data.mediaId]);
+        if (!accepted.has(data.mediaId)) return;
+        if (data.media) data = { ...data, media: accepted.get(data.mediaId) };
+      }
+      await policy.atomic([]);
+      if (
+        !sessionAlive(connection) ||
+        (connection.roomId && !activeMember(connection.roomId, connection.user?.id))
+      )
+        return disconnect(connection);
+      if (!connection.res.writableEnded)
+        connection.res.write(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`);
+    })
+    .catch(() => disconnect(connection))
+    .finally(() => {
+      connection.pending--;
+    });
 }
 function sessionAlive(connection) {
   return (
@@ -205,14 +306,24 @@ function roomShape(room, viewerId) {
     position: room.position,
     sourceUrl: joined ? room.source_url : '',
     sourceKind: room.source_kind,
+    destination: room.destination || 'yoru',
+    readerSourceId: joined ? room.reader_source_id || null : null,
+    readerEditionId: joined ? room.reader_edition_id || null : null,
+    readerProvenance: joined && room.reader_provenance ? JSON.parse(room.reader_provenance) : null,
     version: room.version,
     stateUpdatedAt: room.state_updated_at,
     updatedAt: room.state_updated_at,
     createdAt: room.created_at,
   };
 }
-async function enrichedRoom(room, viewerId) {
-  return { ...roomShape(room, viewerId), media: await getMedia(room.media_id) };
+async function enrichedRoom(room, viewerId, policy, attempt = 0) {
+  const media = await policy.room(room),
+    fresh = checkedRoom(room.id);
+  if (fresh.version !== room.version) {
+    if (attempt >= 2) throw apiError(409, 'The room changed. Refresh and try again.');
+    return enrichedRoom(fresh, viewerId, policy, attempt + 1);
+  }
+  return { ...roomShape(fresh, viewerId), media };
 }
 function notifyRoom(roomId) {
   const room = get('SELECT * FROM rooms WHERE id=? AND closed_at IS NULL', roomId);
@@ -284,7 +395,7 @@ function messageShape(message) {
 }
 function messages(roomId = null) {
   return all(
-    'SELECT messages.*,users.name,users.avatar FROM messages JOIN users ON users.id=messages.user_id WHERE room_id IS ? ORDER BY messages.created_at DESC LIMIT 100',
+    'SELECT messages.*,users.name,users.avatar FROM messages JOIN users ON users.id=messages.user_id WHERE room_id IS ? AND channel_id IS NULL ORDER BY messages.created_at DESC LIMIT 100',
     roomId,
   )
     .reverse()
@@ -320,25 +431,19 @@ export function safeSourceUrl(value) {
 }
 
 socialRouter.get(
+  '/library/export',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await exportReadingAccount(context, deps));
+  }),
+);
+socialRouter.get(
   '/library',
   requireAuth,
   asyncRoute(async (req, res) => {
-    const entries = all(
-      'SELECT * FROM library WHERE user_id=? ORDER BY updated_at DESC LIMIT 5000',
-      req.user.id,
-    );
-    const items = await Promise.all(
-      entries.map(async (entry) => ({
-        mediaId: entry.media_id,
-        media: await getMedia(entry.media_id),
-        favorite: Boolean(entry.favorite),
-        status: entry.status,
-        progress: entry.progress,
-        score: entry.score,
-        updatedAt: entry.updated_at,
-      })),
-    );
-    res.json({ items });
+    const { context, deps } = await accountRequest(req, res);
+    res.set('Cache-Control', 'no-store').json(await listReadingLibrary(context, req.query, deps));
   }),
 );
 socialRouter.put(
@@ -346,8 +451,8 @@ socialRouter.put(
   requireAuth,
   asyncRoute(async (req, res) => {
     const id = mediaId(req.params.mediaId);
-    const media = await getMedia(id);
-    if (!media) throw apiError(404, 'This title could not be found.');
+    const request = await accountRequest(req, res);
+    const { context, media } = await resolveAccountMedia(id, null, request.context, request.deps);
     // Read mutable user state after metadata loading so parallel partial updates merge.
     const existing = get('SELECT * FROM library WHERE user_id=? AND media_id=?', req.user.id, id);
     const favorite =
@@ -367,15 +472,17 @@ socialRouter.put(
           ? null
           : numeric(req.body.score, { name: 'Score', min: 0, max: 10 });
     const updatedAt = now();
-    run(
-      'INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET favorite=excluded.favorite,status=excluded.status,progress=excluded.progress,score=excluded.score,updated_at=excluded.updated_at',
-      req.user.id,
-      id,
-      Number(favorite),
-      status,
-      progress,
-      score,
-      updatedAt,
+    await accountAtomic(
+      context,
+      [
+        {
+          sql: 'INSERT INTO library(user_id,media_id,favorite,status,progress,score,updated_at) VALUES(?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET favorite=excluded.favorite,status=excluded.status,progress=excluded.progress,score=excluded.score,updated_at=excluded.updated_at',
+          values: [req.user.id, id, Number(favorite), status, progress, score, updatedAt],
+        },
+        accountSnapshotStatement(context, media),
+      ],
+      request.deps,
+      { media },
     );
     broadcast('library', { userId: req.user.id, mediaId: id });
     res.json({ item: { mediaId: id, media, favorite, status, progress, score, updatedAt } });
@@ -417,17 +524,19 @@ socialRouter.post('/reviews/:mediaId', requireAuth, (req, res) => {
   const existing = get('SELECT id FROM reviews WHERE user_id=? AND media_id=?', req.user.id, id);
   const reviewId = existing?.id || randomUUID();
   const timestamp = now();
-  run(
-    'INSERT INTO reviews(id,user_id,media_id,rating,title,body,spoiler,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET rating=excluded.rating,title=excluded.title,body=excluded.body,spoiler=excluded.spoiler,updated_at=excluded.updated_at',
-    reviewId,
-    req.user.id,
-    id,
-    rating,
-    title,
-    body,
-    Number(spoiler),
-    timestamp,
-    timestamp,
+  socialTransaction(req, () =>
+    run(
+      'INSERT INTO reviews(id,user_id,media_id,rating,title,body,spoiler,created_at,updated_at) VALUES(?,?,?,?,?,?,?,?,?) ON CONFLICT(user_id,media_id) DO UPDATE SET rating=excluded.rating,title=excluded.title,body=excluded.body,spoiler=excluded.spoiler,updated_at=excluded.updated_at',
+      reviewId,
+      req.user.id,
+      id,
+      rating,
+      title,
+      body,
+      Number(spoiler),
+      timestamp,
+      timestamp,
+    ),
   );
   const review = reviewShape(
     get(
@@ -439,7 +548,9 @@ socialRouter.post('/reviews/:mediaId', requireAuth, (req, res) => {
   res.status(existing ? 200 : 201).json({ review });
 });
 socialRouter.delete('/reviews/:id', requireAuth, (req, res) => {
-  const result = run('DELETE FROM reviews WHERE id=? AND user_id=?', req.params.id, req.user.id);
+  const result = socialTransaction(req, () =>
+    run('DELETE FROM reviews WHERE id=? AND user_id=?', req.params.id, req.user.id),
+  );
   if (!result.changes) throw apiError(404, 'Review not found.');
   res.json({ ok: true });
 });
@@ -449,6 +560,7 @@ function commentShape(comment) {
     id: comment.id,
     mediaId: comment.media_id,
     unit: comment.unit,
+    editionId: comment.edition_id || null,
     parentId: comment.parent_id,
     userId: comment.user_id,
     author: author(comment),
@@ -470,30 +582,31 @@ const COMMENT_QUERY = `SELECT comments.*,users.name,users.avatar,
   COALESCE((SELECT value FROM comment_votes WHERE comment_id=comments.id AND user_id=?),0) AS viewer_vote
   FROM comments JOIN users ON users.id=comments.user_id`;
 socialRouter.get('/comments/:mediaId', (req, res) => {
-  const unit = numeric(Number(req.query.unit || 0), { name: 'Episode or chapter', integer: true });
+  const { unit, editionId } = req.socialAccess.discussion;
   const items = all(
-    `${COMMENT_QUERY} WHERE media_id=? AND unit=? ORDER BY comments.created_at DESC LIMIT 500`,
+    `${COMMENT_QUERY} WHERE media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?) ORDER BY comments.created_at DESC LIMIT 500`,
     req.user?.id || '',
     req.params.mediaId,
+    editionId,
+    editionId,
     unit,
   ).map(commentShape);
   res.json({ items });
 });
 socialRouter.post('/comments/:mediaId', requireAuth, (req, res) => {
   const id = mediaId(req.params.mediaId);
-  const unit = numeric(Number(req.body.unit ?? req.query.unit ?? 0), {
-    name: 'Episode or chapter',
-    integer: true,
-  });
+  const { unit, editionId } = req.socialAccess.discussion;
   const body = text(req.body.body ?? req.body.text, { name: 'Comment', min: 1, max: 5000 });
   const mediaError = commentMediaError(body);
   if (mediaError) throw apiError(400, mediaError);
   const parentId = req.body.parentId || null;
   if (parentId) {
     const parent = get(
-      'SELECT * FROM comments WHERE id=? AND media_id=? AND unit=?',
+      'SELECT * FROM comments WHERE id=? AND media_id=? AND edition_id IS ? AND (? IS NOT NULL OR unit=?)',
       typeof parentId === 'string' ? parentId : '',
       id,
+      editionId,
+      editionId,
       unit,
     );
     if (!parent) throw apiError(400, 'Reply to a comment in this discussion.');
@@ -507,34 +620,39 @@ socialRouter.post('/comments/:mediaId', requireAuth, (req, res) => {
   }
   const spoiler = req.body.spoiler === undefined ? false : bool(req.body.spoiler, 'Spoiler');
   const commentId = randomUUID();
-  run(
-    'INSERT INTO comments(id,user_id,media_id,unit,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?)',
-    commentId,
-    req.user.id,
-    id,
-    unit,
-    parentId,
-    body,
-    Number(spoiler),
-    now(),
+  socialTransaction(req, () =>
+    run(
+      'INSERT INTO comments(id,user_id,media_id,unit,edition_id,parent_id,body,spoiler,created_at) VALUES(?,?,?,?,?,?,?,?,?)',
+      commentId,
+      req.user.id,
+      id,
+      unit,
+      editionId,
+      parentId,
+      body,
+      Number(spoiler),
+      now(),
+    ),
   );
   const comment = commentShape(get(`${COMMENT_QUERY} WHERE comments.id=?`, req.user.id, commentId));
-  broadcast('comments', { mediaId: id, unit });
+  broadcast('comments', { mediaId: id, unit, editionId });
   res.status(201).json({ comment });
 });
 socialRouter.post('/comments/:id/vote', requireAuth, (req, res) => {
   const value = numeric(req.body.value, { name: 'Vote', min: -1, max: 1, integer: true });
   const comment = get('SELECT * FROM comments WHERE id=?', req.params.id);
   if (!comment) throw apiError(404, 'Comment not found.');
-  if (value === 0)
-    run('DELETE FROM comment_votes WHERE comment_id=? AND user_id=?', comment.id, req.user.id);
-  else
-    run(
-      'INSERT INTO comment_votes(comment_id,user_id,value) VALUES(?,?,?) ON CONFLICT(comment_id,user_id) DO UPDATE SET value=excluded.value',
-      comment.id,
-      req.user.id,
-      value,
-    );
+  socialTransaction(req, () => {
+    if (value === 0)
+      run('DELETE FROM comment_votes WHERE comment_id=? AND user_id=?', comment.id, req.user.id);
+    else
+      run(
+        'INSERT INTO comment_votes(comment_id,user_id,value) VALUES(?,?,?) ON CONFLICT(comment_id,user_id) DO UPDATE SET value=excluded.value',
+        comment.id,
+        req.user.id,
+        value,
+      );
+  });
   const result = commentShape(get(`${COMMENT_QUERY} WHERE comments.id=?`, req.user.id, comment.id));
   broadcast('comments', { mediaId: comment.media_id, unit: comment.unit });
   res.json({ comment: result });
@@ -546,7 +664,7 @@ socialRouter.delete('/comments/:id', requireAuth, (req, res) => {
     req.user.id,
   );
   if (!comment) throw apiError(404, 'Comment not found.');
-  run('DELETE FROM comments WHERE id=?', comment.id);
+  socialTransaction(req, () => run('DELETE FROM comments WHERE id=?', comment.id));
   broadcast('comments', { mediaId: comment.media_id, unit: comment.unit });
   res.json({ ok: true });
 });
@@ -554,33 +672,36 @@ socialRouter.delete('/comments/:id', requireAuth, (req, res) => {
 socialRouter.get(
   '/community',
   asyncRoute(async (req, res) => {
-    const scopedIds =
-      req.query.collection === 'ara-ara'
-        ? (await getAraCatalog()).items.map((item) => item.id)
-        : null;
-    const filter = scopedIds
-      ? ` WHERE media_id IN (${scopedIds.map(() => '?').join(',') || 'NULL'})`
-      : '';
-    const bindings = scopedIds || [];
-    const comments = all(
-      `${COMMENT_QUERY}${filter} ORDER BY comments.created_at DESC LIMIT 20`,
-      '',
-      ...bindings,
-    ).map((row) => ({ ...commentShape(row), kind: 'comment', type: 'comment' }));
-    const reviews =
-      req.query.type === 'comment'
-        ? []
-        : all(
-            `SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id${filter} ORDER BY updated_at DESC LIMIT 20`,
-            ...bindings,
-          ).map((row) => ({ ...reviewShape(row), kind: 'review', type: 'review' }));
-    const items = await Promise.all(
-      [...comments, ...reviews]
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
-        .slice(0, 24)
-        .map(async (item) => ({ ...item, media: await getMedia(item.mediaId) })),
-    );
-    res.json({ items, online: onlineState() });
+    const policy = await socialRequest(req, res);
+    const page = await policy.select({
+      candidates: `SELECT id AS social_id,media_id,unit,edition_id,created_at AS social_sort,'comment' AS kind FROM comments
+        ${req.query.type === 'comment' ? '' : "UNION ALL SELECT id AS social_id,media_id,0 AS unit,NULL AS edition_id,created_at AS social_sort,'review' AS kind FROM reviews"}`,
+      where: `(a.kind='review' OR ${commentReadingPredicate})`,
+      scope: [req.query.type === 'comment' ? 'comment' : 'all'],
+      limit: 24,
+    });
+    const items = page.rows.map((row) => {
+      const item =
+        row.kind === 'comment'
+          ? commentShape(
+              get(`${COMMENT_QUERY} WHERE comments.id=?`, req.user?.id || '', row.social_id),
+            )
+          : reviewShape(
+              get(
+                'SELECT reviews.*,users.name,users.avatar FROM reviews JOIN users ON users.id=reviews.user_id WHERE reviews.id=?',
+                row.social_id,
+              ),
+            );
+      return { ...item, kind: row.kind, type: row.kind, media: page.mediaById.get(row.media_id) };
+    });
+    res.json({
+      items,
+      online: onlineState(),
+      complete: page.complete,
+      nextCursor: page.nextCursor,
+      nextSourceCursor: page.nextSourceCursor,
+      sourceStates: page.sourceStates,
+    });
   }),
 );
 socialRouter.get('/online', (_req, res) => res.json(onlineState()));
@@ -608,12 +729,25 @@ socialRouter.post('/chat', requireAuth, (req, res) => {
 socialRouter.get(
   '/rooms',
   asyncRoute(async (req, res) => {
-    const rows = all(
-      `SELECT DISTINCT rooms.* FROM rooms LEFT JOIN room_members ON rooms.id=room_members.room_id AND room_members.user_id=? AND room_members.last_seen>? WHERE rooms.closed_at IS NULL AND (visibility='public' OR room_members.user_id IS NOT NULL) ORDER BY rooms.created_at DESC LIMIT 60`,
-      req.user?.id || '',
-      Date.now() - PRESENCE_TTL,
+    const policy = await socialRequest(req, res);
+    const page = await policy.select({
+      candidates: `SELECT rooms.*,rooms.id AS social_id,rooms.created_at AS social_sort FROM rooms WHERE closed_at IS NULL AND destination=? AND (visibility='public' OR EXISTS(SELECT 1 FROM room_members WHERE room_members.room_id=rooms.id AND user_id=? AND last_seen>?))`,
+      candidateValues: [policy.context.destination, req.user?.id || '', Date.now() - PRESENCE_TTL],
+      where: roomReadingPredicate,
+      rowAllowed: roomReferenceEligible,
+      limit: 60,
+    });
+    const items = await Promise.all(
+      page.rows.map((room) => enrichedRoom(room, req.user?.id, policy)),
     );
-    res.json({ items: await Promise.all(rows.map((room) => enrichedRoom(room, req.user?.id))) });
+    await policy.atomic([]);
+    res.json({
+      items,
+      complete: page.complete,
+      nextCursor: page.nextCursor,
+      nextSourceCursor: page.nextSourceCursor,
+      sourceStates: page.sourceStates,
+    });
   }),
 );
 socialRouter.post(
@@ -636,7 +770,8 @@ socialRouter.post(
         .count >= 5
     )
       throw apiError(400, 'You can host up to five active rooms.');
-    const media = await getMedia(titleId);
+    const policy = await socialRequest(req, res),
+      media = await policy.media(titleId);
     if (!media) throw apiError(404, 'Choose an available title.');
     const invite = visibility === 'private' ? randomBytes(24).toString('base64url') : null;
     const unit =
@@ -648,15 +783,21 @@ socialRouter.post(
             max: 100000,
             integer: type !== 'read',
           });
+    const reading =
+      req.body.sourceKind === 'reader' && req.body.sourceUrl
+        ? await policy.reader(req.body.sourceUrl, titleId, unit)
+        : null;
     const initialSource =
       req.body.sourceKind === 'reader'
-        ? roomReaderPath(req.body.sourceUrl, titleId, unit)
+        ? (reading?.path ?? (req.body.sourceUrl === '' && unit === 0 ? '' : null))
         : req.body.sourceUrl === undefined
           ? ''
           : safeSourceUrl(req.body.sourceUrl);
     if (initialSource === null)
       throw apiError(400, 'Choose a reader link for this title and chapter.');
     const initialKind = req.body.sourceKind ?? 'external';
+    if (media.sourceRef && (type !== 'read' || (!reading && (unit !== 0 || initialSource))))
+      throw apiError(400, 'Choose an exact native chapter reader link or a whole-title room.');
     if (!['external', 'embed', 'hls', 'video', 'reader'].includes(initialKind))
       throw apiError(400, 'Choose a valid source type.');
     const initialPosition =
@@ -664,9 +805,16 @@ socialRouter.post(
         ? 0
         : numeric(req.body.position, { name: 'Playback position', max: 604800 });
     const timestamp = now();
-    transaction(() => {
+    socialTransaction(req, () => {
+      if (
+        get(
+          'SELECT COUNT(*) AS count FROM rooms WHERE host_id=? AND closed_at IS NULL',
+          req.user.id,
+        ).count >= 5
+      )
+        throw apiError(400, 'You can host up to five active rooms.');
       run(
-        'INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
+        'INSERT INTO rooms(id,host_id,name,media_id,type,visibility,invite_hash,capacity,unit,source_url,source_kind,position,state_updated_at,created_at,destination,reader_source_id,reader_edition_id,reader_provenance) VALUES(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)',
         id,
         req.user.id,
         name,
@@ -681,6 +829,10 @@ socialRouter.post(
         initialPosition,
         timestamp,
         timestamp,
+        policy.context.destination,
+        reading?.sourceId || null,
+        reading?.editionId || null,
+        reading?.provenance ? JSON.stringify(reading.provenance) : null,
       );
       run(
         'INSERT INTO room_members(room_id,user_id,joined_at,last_seen) VALUES(?,?,?,?)',
@@ -692,9 +844,11 @@ socialRouter.post(
     });
     const room = { ...roomShape(checkedRoom(id), req.user.id), media };
     broadcast('rooms', { changed: true });
-    res
-      .status(201)
-      .json({ room, inviteUrl: `/rooms/${id}${invite ? `?invite=${invite}` : ''}`, invite });
+    res.status(201).json({
+      room,
+      inviteUrl: `/rooms/${id}?destination=${policy.context.destination}${invite ? `&invite=${invite}` : ''}`,
+      invite,
+    });
   }),
 );
 socialRouter.get(
@@ -704,7 +858,7 @@ socialRouter.get(
     if (!canViewRoom(req, room))
       throw apiError(404, 'This room is private. Open its invitation link to join.');
     if (activeMember(room.id, req.user?.id)) touchMember(room.id, req.user.id);
-    res.json({ room: await enrichedRoom(room, req.user?.id) });
+    res.json({ room: await enrichedRoom(room, req.user?.id, await socialRequest(req, res)) });
   }),
 );
 socialRouter.post(
@@ -719,7 +873,7 @@ socialRouter.post(
       (typeof req.body.invite !== 'string' || hashToken(req.body.invite) !== room.invite_hash)
     )
       throw apiError(403, 'A valid invitation is required for this private room.');
-    transaction(() => {
+    socialTransaction(req, () => {
       if (!existing && members(room.id).length >= room.capacity)
         throw apiError(409, 'This room is full.');
       run(
@@ -733,7 +887,9 @@ socialRouter.post(
         run('UPDATE rooms SET host_id=?,version=version+1 WHERE id=?', req.user.id, room.id);
     });
     notifyRoom(room.id);
-    res.json({ room: await enrichedRoom(checkedRoom(room.id), req.user.id) });
+    res.json({
+      room: await enrichedRoom(checkedRoom(room.id), req.user.id, await socialRequest(req, res)),
+    });
   }),
 );
 socialRouter.post('/rooms/:id/leave', requireAuth, (req, res) => {
@@ -747,60 +903,85 @@ socialRouter.post('/rooms/:id/leave', requireAuth, (req, res) => {
   notifyRoom(room.id);
   res.json({ ok: true });
 });
-socialRouter.patch('/rooms/:id', requireAuth, (req, res) => {
-  const room = checkedRoom(req.params.id);
-  requireMember(req, room);
-  if (room.host_id !== req.user.id)
-    throw apiError(403, 'Only the room host can control the shared session.');
-  if (req.body.version !== undefined && req.body.version !== room.version)
-    throw apiError(409, 'The room has changed. Refresh its state and try again.');
-  const unit =
-    req.body.unit === undefined
-      ? room.unit
-      : numeric(req.body.unit, {
-          name: 'Episode or chapter',
-          min: room.type === 'read' ? 0 : 1,
-          max: 100000,
-          integer: room.type !== 'read',
-        });
-  const paused =
-    req.body.paused === undefined ? Boolean(room.paused) : bool(req.body.paused, 'Paused');
-  const elapsed = room.paused
-    ? 0
-    : Math.max(0, (Date.now() - Date.parse(room.state_updated_at)) / 1000);
-  const position =
-    req.body.position === undefined
-      ? unit === room.unit
-        ? Math.min(604800, room.position + elapsed)
-        : 0
-      : numeric(req.body.position, { name: 'Playback position', max: 604800 });
-  const sourceKind = req.body.sourceKind ?? room.source_kind;
-  const requestedSource =
-    req.body.sourceUrl === undefined
-      ? sourceKind === 'reader' && unit !== room.unit
-        ? readerAtUnit(room.source_url, room.media_id, unit)
-        : room.source_url
-      : req.body.sourceUrl;
-  const sourceUrl =
-    sourceKind === 'reader'
-      ? roomReaderPath(requestedSource, room.media_id, unit)
-      : safeSourceUrl(requestedSource);
-  if (sourceUrl === null) throw apiError(400, 'Choose a reader link for this title and chapter.');
-  if (!['external', 'embed', 'hls', 'video', 'reader'].includes(sourceKind))
-    throw apiError(400, 'Choose a valid source type.');
-  run(
-    'UPDATE rooms SET unit=?,paused=?,position=?,source_url=?,source_kind=?,version=version+1,state_updated_at=? WHERE id=?',
-    unit,
-    Number(paused),
-    position,
-    sourceUrl,
-    sourceKind,
-    now(),
-    room.id,
-  );
-  notifyRoom(room.id);
-  res.json({ room: roomShape(checkedRoom(room.id), req.user.id) });
-});
+socialRouter.patch(
+  '/rooms/:id',
+  requireAuth,
+  asyncRoute(async (req, res) => {
+    const policy = await socialRequest(req, res);
+    const room = checkedRoom(req.params.id);
+    requireMember(req, room);
+    if (room.host_id !== req.user.id)
+      throw apiError(403, 'Only the room host can control the shared session.');
+    if (req.body.version !== undefined && req.body.version !== room.version)
+      throw apiError(409, 'The room has changed. Refresh its state and try again.');
+    const unit =
+      req.body.unit === undefined
+        ? room.unit
+        : numeric(req.body.unit, {
+            name: 'Episode or chapter',
+            min: room.type === 'read' ? 0 : 1,
+            max: 100000,
+            integer: room.type !== 'read',
+          });
+    const paused =
+      req.body.paused === undefined ? Boolean(room.paused) : bool(req.body.paused, 'Paused');
+    const elapsed = room.paused
+      ? 0
+      : Math.max(0, (Date.now() - Date.parse(room.state_updated_at)) / 1000);
+    const position =
+      req.body.position === undefined
+        ? unit === room.unit
+          ? Math.min(604800, room.position + elapsed)
+          : 0
+        : numeric(req.body.position, { name: 'Playback position', max: 604800 });
+    const sourceKind = req.body.sourceKind ?? room.source_kind;
+    const requestedSource =
+      req.body.sourceUrl === undefined
+        ? sourceKind === 'reader' && unit !== room.unit
+          ? readerAtUnit(room.source_url, room.media_id, unit, {
+              destination: policy.context.destination,
+            })
+          : room.source_url
+        : req.body.sourceUrl;
+    const reading =
+      sourceKind === 'reader' && requestedSource
+        ? await policy.reader(requestedSource, room.media_id, unit)
+        : null;
+    const sourceUrl =
+      sourceKind === 'reader'
+        ? (reading?.path ?? (requestedSource === '' && unit === 0 ? '' : null))
+        : safeSourceUrl(requestedSource);
+    if (sourceUrl === null) throw apiError(400, 'Choose a reader link for this title and chapter.');
+    const media = await policy.media(room.media_id);
+    if (media.sourceRef && !reading && (unit !== 0 || sourceUrl))
+      throw apiError(400, 'Choose an exact native chapter reader link or a whole-title room.');
+    if (!['external', 'embed', 'hls', 'video', 'reader'].includes(sourceKind))
+      throw apiError(400, 'Choose a valid source type.');
+    socialTransaction(req, () => {
+      const currentRoom = checkedRoom(room.id);
+      requireMember(req, currentRoom);
+      if (currentRoom.host_id !== req.user.id)
+        throw apiError(403, 'Only the room host can control the shared session.');
+      if (currentRoom.version !== room.version)
+        throw apiError(409, 'The room has changed. Refresh and try again.');
+      run(
+        'UPDATE rooms SET unit=?,paused=?,position=?,source_url=?,source_kind=?,reader_source_id=?,reader_edition_id=?,reader_provenance=?,version=version+1,state_updated_at=? WHERE id=?',
+        unit,
+        Number(paused),
+        position,
+        sourceUrl,
+        sourceKind,
+        reading?.sourceId || null,
+        reading?.editionId || null,
+        reading?.provenance ? JSON.stringify(reading.provenance) : null,
+        now(),
+        room.id,
+      );
+    });
+    notifyRoom(room.id);
+    res.json({ room: roomShape(checkedRoom(room.id), req.user.id) });
+  }),
+);
 socialRouter.get('/rooms/:id/chat', requireAuth, (req, res) => {
   const room = checkedRoom(req.params.id);
   requireMember(req, room);
@@ -811,13 +992,15 @@ socialRouter.post('/rooms/:id/chat', requireAuth, (req, res) => {
   requireMember(req, room);
   const body = text(req.body.body ?? req.body.text, { name: 'Message', min: 1, max: 2000 });
   const id = randomUUID();
-  run(
-    'INSERT INTO messages(id,user_id,room_id,body,created_at) VALUES(?,?,?,?,?)',
-    id,
-    req.user.id,
-    room.id,
-    body,
-    now(),
+  socialTransaction(req, () =>
+    run(
+      'INSERT INTO messages(id,user_id,room_id,body,created_at) VALUES(?,?,?,?,?)',
+      id,
+      req.user.id,
+      room.id,
+      body,
+      now(),
+    ),
   );
   const message = messageShape(
     get(
@@ -829,54 +1012,83 @@ socialRouter.post('/rooms/:id/chat', requireAuth, (req, res) => {
   res.status(201).json({ message });
 });
 
-socialRouter.get('/events', (req, res) => {
-  const roomId = typeof req.query.roomId === 'string' ? req.query.roomId : null;
-  let room;
-  if (roomId) {
-    room = checkedRoom(roomId);
-    requireMember(req, room);
-  }
-  if (
-    connections.size >= 1000 ||
-    [...connections].filter((connection) => connection.ip === req.ip).length >= 60
-  )
-    throw apiError(429, 'Too many live connections.');
-  res.status(200).set({
-    'Content-Type': 'text/event-stream',
-    'Cache-Control': 'no-cache, no-transform',
-    Connection: 'keep-alive',
-    'X-Accel-Buffering': 'no',
-  });
-  res.flushHeaders();
-  res.write('retry: 3000\n\n');
-  const connection = { res, user: req.user, sessionHash: req.sessionHash, roomId, ip: req.ip };
-  connections.add(connection);
-  emit(connection, 'snapshot', {
-    online: onlineState(),
-    ...(room ? { room: roomShape(room, req.user?.id) } : {}),
-  });
-  broadcast('online', onlineState());
-  if (roomId) notifyRoom(roomId);
-  const interval = setInterval(() => {
-    // Revalidate session so logout/expiration terminates a pre-existing live connection.
-    if (!sessionAlive(connection)) return disconnect(connection);
+socialRouter.get(
+  '/events',
+  asyncRoute(async (req, res) => {
+    const roomId = typeof req.query.roomId === 'string' ? req.query.roomId : null;
+    let room;
     if (roomId) {
-      if (
-        !get('SELECT room_id FROM room_members WHERE room_id=? AND user_id=?', roomId, req.user.id)
-      )
-        return res.end();
-      touchMember(roomId, req.user.id);
+      room = checkedRoom(roomId);
+      requireMember(req, room);
     }
-    res.write(': heartbeat\n\n');
-  }, 15000);
-  interval.unref();
-  connection.interval = interval;
-  req.on('close', () => {
-    clearInterval(interval);
-    connections.delete(connection);
+    if (
+      connections.size >= 1000 ||
+      [...connections].filter((connection) => connection.ip === req.ip).length >= 60
+    )
+      throw apiError(429, 'Too many live connections.');
+    res.status(200).set({
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache, no-transform',
+      Connection: 'keep-alive',
+      'X-Accel-Buffering': 'no',
+    });
+    res.flushHeaders();
+    res.write('retry: 3000\n\n');
+    let initial = await socialRequest(req, res);
+    const policy = liveSocialPolicy(async () => {
+      if (initial) {
+        const value = initial;
+        initial = null;
+        return value;
+      }
+      return socialRequest(req, res, { fresh: true });
+    });
+    const connection = {
+      res,
+      user: req.user,
+      sessionHash: req.sessionHash,
+      roomId,
+      ip: req.ip,
+      policy,
+    };
+    connections.add(connection);
+    emit(connection, 'snapshot', {
+      online: onlineState(),
+      ...(room ? { room: roomShape(room, req.user?.id) } : {}),
+    });
     broadcast('online', onlineState());
-  });
-});
+    if (roomId) notifyRoom(roomId);
+    const interval = setInterval(() => {
+      // Revalidate session so logout/expiration terminates a pre-existing live connection.
+      if (!sessionAlive(connection)) return disconnect(connection);
+      if (roomId) {
+        if (
+          !get(
+            'SELECT room_id FROM room_members WHERE room_id=? AND user_id=?',
+            roomId,
+            req.user.id,
+          )
+        )
+          return res.end();
+        touchMember(roomId, req.user.id);
+      }
+      connection.policy
+        .delivery()
+        .then(async (policy) => {
+          if (roomId) await policy.room(checkedRoom(roomId));
+          if (!res.writableEnded) res.write(': heartbeat\n\n');
+        })
+        .catch(() => disconnect(connection));
+    }, 15000);
+    interval.unref();
+    connection.interval = interval;
+    req.on('close', () => {
+      clearInterval(interval);
+      connections.delete(connection);
+      broadcast('online', onlineState());
+    });
+  }),
+);
 
 const cleanup = setInterval(() => {
   const expiredRooms = all(

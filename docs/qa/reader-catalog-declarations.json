@@ -1,0 +1,4446 @@
+{
+  "artifactVersion": 1,
+  "checkedAt": "2026-10-19T03:56:23.43Z",
+  "scope": "Retained installed metadata declarations only. No live upstream browse, title, chapter, cover or page operation was performed.",
+  "totalCount": 177,
+  "externalSourceCount": 176,
+  "externalProviderCount": 21,
+  "runtimeOperationDefaults": {
+    "popular": "unverified",
+    "latest": "unverified unless explicitly declared unsupported",
+    "search": "unverified",
+    "details": "unverified",
+    "chapters": "unverified",
+    "pages": "unverified",
+    "resolveLink": "unverified"
+  },
+  "serviceAvailability": "unverified",
+  "sourceDeclarations": [
+    {
+      "id": "suwayomi:0",
+      "upstreamSourceId": "0",
+      "provider": "Local source",
+      "language": "localsourcelang",
+      "external": false,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.source.local",
+        "version": "1.2",
+        "versionCode": 0
+      }
+    },
+    {
+      "id": "suwayomi:27704135061035291",
+      "upstreamSourceId": "27704135061035291",
+      "provider": "Frieren Online",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": false,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": false
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.frierenonline",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:49558592523574241",
+      "upstreamSourceId": "49558592523574241",
+      "provider": "3Hentai",
+      "language": "id",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:72800122520214493",
+      "upstreamSourceId": "72800122520214493",
+      "provider": "MangaDex",
+      "language": "ur",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:79691962210322609",
+      "upstreamSourceId": "79691962210322609",
+      "provider": "NHentai.to",
+      "language": "zh",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaito",
+        "version": "1.6.10",
+        "versionCode": 106010
+      }
+    },
+    {
+      "id": "suwayomi:80965277100704155",
+      "upstreamSourceId": "80965277100704155",
+      "provider": "Luscious",
+      "language": "it",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:151111346668901230",
+      "upstreamSourceId": "151111346668901230",
+      "provider": "Luscious",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:202981519301875762",
+      "upstreamSourceId": "202981519301875762",
+      "provider": "HentaiHand",
+      "language": "id",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:259350817779848434",
+      "upstreamSourceId": "259350817779848434",
+      "provider": "HentaiHand",
+      "language": "sr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:264934399418113929",
+      "upstreamSourceId": "264934399418113929",
+      "provider": "Luscious",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:299569391162966579",
+      "upstreamSourceId": "299569391162966579",
+      "provider": "HentaiHand",
+      "language": "uk",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:356192691213044104",
+      "upstreamSourceId": "356192691213044104",
+      "provider": "Luscious",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:359674482170560410",
+      "upstreamSourceId": "359674482170560410",
+      "provider": "3Hentai",
+      "language": "tr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:373755159908438683",
+      "upstreamSourceId": "373755159908438683",
+      "provider": "3Hentai",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:392245224742696225",
+      "upstreamSourceId": "392245224742696225",
+      "provider": "HentaiHand",
+      "language": "th",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:419728421305339582",
+      "upstreamSourceId": "419728421305339582",
+      "provider": "3Hentai",
+      "language": "it",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:425785191804166217",
+      "upstreamSourceId": "425785191804166217",
+      "provider": "MangaDex",
+      "language": "da",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:474754362133655719",
+      "upstreamSourceId": "474754362133655719",
+      "provider": "HentaiHand",
+      "language": "vi",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:560822675588930101",
+      "upstreamSourceId": "560822675588930101",
+      "provider": "NHentai.xxx",
+      "language": "zh",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaixxx",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:685390685036083849",
+      "upstreamSourceId": "685390685036083849",
+      "provider": "3Hentai",
+      "language": "fi",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:737986167355114438",
+      "upstreamSourceId": "737986167355114438",
+      "provider": "MangaDex",
+      "language": "lt",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:764587568075398530",
+      "upstreamSourceId": "764587568075398530",
+      "provider": "MangaDex",
+      "language": "la",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:866133291730804205",
+      "upstreamSourceId": "866133291730804205",
+      "provider": "HentaiHand",
+      "language": "zh",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:874357157692405334",
+      "upstreamSourceId": "874357157692405334",
+      "provider": "NHentai.to",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaito",
+        "version": "1.6.10",
+        "versionCode": 106010
+      }
+    },
+    {
+      "id": "suwayomi:918523496924275699",
+      "upstreamSourceId": "918523496924275699",
+      "provider": "HentaiXDickgirl",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.hentaixdickgirl",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:954368055061084457",
+      "upstreamSourceId": "954368055061084457",
+      "provider": "MangaDex",
+      "language": "ne",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:987803387023224960",
+      "upstreamSourceId": "987803387023224960",
+      "provider": "MangaDex",
+      "language": "sq",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:993336618407081332",
+      "upstreamSourceId": "993336618407081332",
+      "provider": "Manhwa18.cc",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.manhwa18cc",
+        "version": "1.6.66",
+        "versionCode": 106066
+      }
+    },
+    {
+      "id": "suwayomi:1049245690865797006",
+      "upstreamSourceId": "1049245690865797006",
+      "provider": "HentaiHand",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:1089473637776666044",
+      "upstreamSourceId": "1089473637776666044",
+      "provider": "HentaiXYuri",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.hentaixyuri",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:1132983959765816866",
+      "upstreamSourceId": "1132983959765816866",
+      "provider": "3Hentai",
+      "language": "pt",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:1145824452519314725",
+      "upstreamSourceId": "1145824452519314725",
+      "provider": "MangaDex",
+      "language": "sv",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1203016038113719139",
+      "upstreamSourceId": "1203016038113719139",
+      "provider": "Webcomics",
+      "language": "id",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webcomics",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:1235047015955289468",
+      "upstreamSourceId": "1235047015955289468",
+      "provider": "HentaiHand",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:1337874080374168573",
+      "upstreamSourceId": "1337874080374168573",
+      "provider": "HentaiHand",
+      "language": "hi",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:1347402746269051958",
+      "upstreamSourceId": "1347402746269051958",
+      "provider": "MangaDex",
+      "language": "my",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1383462828430089842",
+      "upstreamSourceId": "1383462828430089842",
+      "provider": "Luscious",
+      "language": "other",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1411768577036936240",
+      "upstreamSourceId": "1411768577036936240",
+      "provider": "MangaDex",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1424273154577029558",
+      "upstreamSourceId": "1424273154577029558",
+      "provider": "MangaDex",
+      "language": "he",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1438773694780928937",
+      "upstreamSourceId": "1438773694780928937",
+      "provider": "HentaiHand",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:1470847599087460255",
+      "upstreamSourceId": "1470847599087460255",
+      "provider": "Cubari",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.cubari",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1471784905273036181",
+      "upstreamSourceId": "1471784905273036181",
+      "provider": "MangaDex",
+      "language": "ms",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1486822823904297379",
+      "upstreamSourceId": "1486822823904297379",
+      "provider": "Webtoons.com",
+      "language": "de",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:1493666528525752601",
+      "upstreamSourceId": "1493666528525752601",
+      "provider": "MangaDex",
+      "language": "zh-Hant",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1533969146563051444",
+      "upstreamSourceId": "1533969146563051444",
+      "provider": "3Hentai",
+      "language": "ar",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:1553736397938752611",
+      "upstreamSourceId": "1553736397938752611",
+      "provider": "MangaDex",
+      "language": "eu",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1573550798452063564",
+      "upstreamSourceId": "1573550798452063564",
+      "provider": "MangaDex",
+      "language": "jv",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1633661983859923604",
+      "upstreamSourceId": "1633661983859923604",
+      "provider": "3Hentai",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:1713554459881080228",
+      "upstreamSourceId": "1713554459881080228",
+      "provider": "MangaDex",
+      "language": "th",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:1759845183972082995",
+      "upstreamSourceId": "1759845183972082995",
+      "provider": "NHentai.xxx",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaixxx",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:1911624300824763845",
+      "upstreamSourceId": "1911624300824763845",
+      "provider": "NHentai.to",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaito",
+        "version": "1.6.10",
+        "versionCode": 106010
+      }
+    },
+    {
+      "id": "suwayomi:1952071260038453057",
+      "upstreamSourceId": "1952071260038453057",
+      "provider": "MangaDex",
+      "language": "it",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2013845246758512290",
+      "upstreamSourceId": "2013845246758512290",
+      "provider": "Cubari",
+      "language": "other",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.cubari",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2072928884077964642",
+      "upstreamSourceId": "2072928884077964642",
+      "provider": "MangaDex",
+      "language": "cv",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2098905203823335614",
+      "upstreamSourceId": "2098905203823335614",
+      "provider": "MangaDex",
+      "language": "ru",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2131019126180322627",
+      "upstreamSourceId": "2131019126180322627",
+      "provider": "Weeb Central",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.weebcentral",
+        "version": "1.6.25",
+        "versionCode": 106025
+      }
+    },
+    {
+      "id": "suwayomi:2136686110556284465",
+      "upstreamSourceId": "2136686110556284465",
+      "provider": "HentaiHand",
+      "language": "ceb",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:2158865776377405902",
+      "upstreamSourceId": "2158865776377405902",
+      "provider": "3Hentai",
+      "language": "bg",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:2304134427430911086",
+      "upstreamSourceId": "2304134427430911086",
+      "provider": "HentaiHand",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:2384499981488817067",
+      "upstreamSourceId": "2384499981488817067",
+      "provider": "NHentai.xxx",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaixxx",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:2472948389653215607",
+      "upstreamSourceId": "2472948389653215607",
+      "provider": "NHentai.to",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaito",
+        "version": "1.6.10",
+        "versionCode": 106010
+      }
+    },
+    {
+      "id": "suwayomi:2486465102799235219",
+      "upstreamSourceId": "2486465102799235219",
+      "provider": "Hennojin",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": false,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": false
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hennojin",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2499283573021220255",
+      "upstreamSourceId": "2499283573021220255",
+      "provider": "MangaDex",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2516244587139644000",
+      "upstreamSourceId": "2516244587139644000",
+      "provider": "HentaiHand",
+      "language": "pt-BR",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:2522335540328470744",
+      "upstreamSourceId": "2522335540328470744",
+      "provider": "Webtoons.com",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:2528986671771677900",
+      "upstreamSourceId": "2528986671771677900",
+      "provider": "Mangakakalot",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.mangakakalot",
+        "version": "1.6.24",
+        "versionCode": 106024
+      }
+    },
+    {
+      "id": "suwayomi:2638955581892699679",
+      "upstreamSourceId": "2638955581892699679",
+      "provider": "Luscious",
+      "language": "th",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2655149515337070132",
+      "upstreamSourceId": "2655149515337070132",
+      "provider": "MangaDex",
+      "language": "pt-BR",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2772498967425526818",
+      "upstreamSourceId": "2772498967425526818",
+      "provider": "HentaiHand",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:2774395484485436593",
+      "upstreamSourceId": "2774395484485436593",
+      "provider": "Luscious",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2819252027406613931",
+      "upstreamSourceId": "2819252027406613931",
+      "provider": "MangaDex",
+      "language": "eo",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2838715564514827672",
+      "upstreamSourceId": "2838715564514827672",
+      "provider": "MangaDex",
+      "language": "uz",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2859097949969075077",
+      "upstreamSourceId": "2859097949969075077",
+      "provider": "3Hentai",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:2875503798326600410",
+      "upstreamSourceId": "2875503798326600410",
+      "provider": "MangaDex",
+      "language": "sk",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:2959982438613576472",
+      "upstreamSourceId": "2959982438613576472",
+      "provider": "Webtoons.com",
+      "language": "zh-Hant",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:3039466073711396152",
+      "upstreamSourceId": "3039466073711396152",
+      "provider": "3Hentai",
+      "language": "th",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:3078530910469685147",
+      "upstreamSourceId": "3078530910469685147",
+      "provider": "HentaiHand",
+      "language": "la",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:3260701926561129943",
+      "upstreamSourceId": "3260701926561129943",
+      "provider": "MangaDex",
+      "language": "el",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3285208643537017688",
+      "upstreamSourceId": "3285208643537017688",
+      "provider": "MangaDex",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3330861233813615504",
+      "upstreamSourceId": "3330861233813615504",
+      "provider": "Webtoons.com",
+      "language": "th",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:3339599426223341161",
+      "upstreamSourceId": "3339599426223341161",
+      "provider": "MangaDex",
+      "language": "ar",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3386088694317815151",
+      "upstreamSourceId": "3386088694317815151",
+      "provider": "Manhwa Comics",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.manhwacomics",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:3396104446323720599",
+      "upstreamSourceId": "3396104446323720599",
+      "provider": "Webcomics",
+      "language": "pt",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webcomics",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:3482736208073357647",
+      "upstreamSourceId": "3482736208073357647",
+      "provider": "ManhwaClub.net",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.manhwaclubnet",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:3501213105339612791",
+      "upstreamSourceId": "3501213105339612791",
+      "provider": "3Hentai",
+      "language": "uk",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:3507378005483435886",
+      "upstreamSourceId": "3507378005483435886",
+      "provider": "MangaDex",
+      "language": "sr",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3523364768003208635",
+      "upstreamSourceId": "3523364768003208635",
+      "provider": "3Hentai",
+      "language": "my",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:3548394435548008920",
+      "upstreamSourceId": "3548394435548008920",
+      "provider": "HentaiHand",
+      "language": "sk",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:3578612018159256808",
+      "upstreamSourceId": "3578612018159256808",
+      "provider": "MangaDex",
+      "language": "cs",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3601180820582582605",
+      "upstreamSourceId": "3601180820582582605",
+      "provider": "MangaDex",
+      "language": "be",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3686775439235747344",
+      "upstreamSourceId": "3686775439235747344",
+      "provider": "MangaDex",
+      "language": "ga",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3781216447842245147",
+      "upstreamSourceId": "3781216447842245147",
+      "provider": "MangaDex",
+      "language": "fa",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3807502156582598786",
+      "upstreamSourceId": "3807502156582598786",
+      "provider": "MangaDex",
+      "language": "id",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3846770256925560569",
+      "upstreamSourceId": "3846770256925560569",
+      "provider": "MangaDex",
+      "language": "tr",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:3862668659803323645",
+      "upstreamSourceId": "3862668659803323645",
+      "provider": "3Hentai",
+      "language": "cs",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:3940534831604021485",
+      "upstreamSourceId": "3940534831604021485",
+      "provider": "3Hentai",
+      "language": "tl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:4150470519566206911",
+      "upstreamSourceId": "4150470519566206911",
+      "provider": "MangaDex",
+      "language": "bn",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4197081087116305652",
+      "upstreamSourceId": "4197081087116305652",
+      "provider": "HentaiHand",
+      "language": "mn",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:4273071356706429527",
+      "upstreamSourceId": "4273071356706429527",
+      "provider": "MangaDex",
+      "language": "ta",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4284949320785450865",
+      "upstreamSourceId": "4284949320785450865",
+      "provider": "MangaDex",
+      "language": "hu",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4290439286788644779",
+      "upstreamSourceId": "4290439286788644779",
+      "provider": "3Hentai",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:4290611657061143259",
+      "upstreamSourceId": "4290611657061143259",
+      "provider": "Luscious",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4505830566611664829",
+      "upstreamSourceId": "4505830566611664829",
+      "provider": "MangaDex",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4625881812440927464",
+      "upstreamSourceId": "4625881812440927464",
+      "provider": "Luscious",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4638673959522768501",
+      "upstreamSourceId": "4638673959522768501",
+      "provider": "MangaDex",
+      "language": "af",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4774459486579224459",
+      "upstreamSourceId": "4774459486579224459",
+      "provider": "MangaDex",
+      "language": "ro",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4841602236575491202",
+      "upstreamSourceId": "4841602236575491202",
+      "provider": "Manhwa18.cc",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.manhwa18cc",
+        "version": "1.6.66",
+        "versionCode": 106066
+      }
+    },
+    {
+      "id": "suwayomi:4855613465785451164",
+      "upstreamSourceId": "4855613465785451164",
+      "provider": "HentaiHand",
+      "language": "fi",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:4872213291993424667",
+      "upstreamSourceId": "4872213291993424667",
+      "provider": "MangaDex",
+      "language": "no",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4917651850397277037",
+      "upstreamSourceId": "4917651850397277037",
+      "provider": "3Hentai",
+      "language": "ru",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:4938773340256184018",
+      "upstreamSourceId": "4938773340256184018",
+      "provider": "MangaDex",
+      "language": "es-419",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:4992571563369273240",
+      "upstreamSourceId": "4992571563369273240",
+      "provider": "HentaiHand",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:5003216810967182175",
+      "upstreamSourceId": "5003216810967182175",
+      "provider": "3Hentai",
+      "language": "la",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:5098537545549490547",
+      "upstreamSourceId": "5098537545549490547",
+      "provider": "MangaDex",
+      "language": "de",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5148895169070562838",
+      "upstreamSourceId": "5148895169070562838",
+      "provider": "MangaDex",
+      "language": "zh-Hans",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5185485787190542529",
+      "upstreamSourceId": "5185485787190542529",
+      "provider": "Luscious",
+      "language": "de",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5189216366882819742",
+      "upstreamSourceId": "5189216366882819742",
+      "provider": "MangaDex",
+      "language": "pt",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5200417794129414472",
+      "upstreamSourceId": "5200417794129414472",
+      "provider": "Luscious",
+      "language": "zh",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5463447640980279236",
+      "upstreamSourceId": "5463447640980279236",
+      "provider": "MangaDex",
+      "language": "bg",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5494684486943087247",
+      "upstreamSourceId": "5494684486943087247",
+      "provider": "HentaiHand",
+      "language": "ar",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:5779037855201976894",
+      "upstreamSourceId": "5779037855201976894",
+      "provider": "MangaDex",
+      "language": "uk",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5788099943016900736",
+      "upstreamSourceId": "5788099943016900736",
+      "provider": "HentaiHand",
+      "language": "ru",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:5826725746643311801",
+      "upstreamSourceId": "5826725746643311801",
+      "provider": "Luscious",
+      "language": "pt-BR",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.luscious",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5830834696627804450",
+      "upstreamSourceId": "5830834696627804450",
+      "provider": "Webcomics",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webcomics",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:5860541308324630662",
+      "upstreamSourceId": "5860541308324630662",
+      "provider": "MangaDex",
+      "language": "ca",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:5885774493166465039",
+      "upstreamSourceId": "5885774493166465039",
+      "provider": "Webcomics",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webcomics",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:5939253174175011564",
+      "upstreamSourceId": "5939253174175011564",
+      "provider": "NHentai.xxx",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaixxx",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:5967745367608513818",
+      "upstreamSourceId": "5967745367608513818",
+      "provider": "MangaDex",
+      "language": "mn",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6096870058125388335",
+      "upstreamSourceId": "6096870058125388335",
+      "provider": "3Hentai",
+      "language": "vi",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:6173663752022195918",
+      "upstreamSourceId": "6173663752022195918",
+      "provider": "HentaiHand",
+      "language": "pl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:6189674531673390664",
+      "upstreamSourceId": "6189674531673390664",
+      "provider": "HentaiHand",
+      "language": "eo",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:6260479722543828095",
+      "upstreamSourceId": "6260479722543828095",
+      "provider": "3Hentai",
+      "language": "zh",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:6304497572870246566",
+      "upstreamSourceId": "6304497572870246566",
+      "provider": "HentaiHand",
+      "language": "tr",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:6338219619148105941",
+      "upstreamSourceId": "6338219619148105941",
+      "provider": "Cubari",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.cubari",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6353068724409812158",
+      "upstreamSourceId": "6353068724409812158",
+      "provider": "AllPornComics.co",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.allporncomicsco",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:6400665728063187402",
+      "upstreamSourceId": "6400665728063187402",
+      "provider": "MangaDex",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6490746811386262494",
+      "upstreamSourceId": "6490746811386262494",
+      "provider": "HentaiHand",
+      "language": "hu",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:6576302499429437207",
+      "upstreamSourceId": "6576302499429437207",
+      "provider": "Aunt Manhwa",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.auntmanhwa",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:6720687475375335817",
+      "upstreamSourceId": "6720687475375335817",
+      "provider": "ManhwaClub.net",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.manhwaclubnet",
+        "version": "1.6.55",
+        "versionCode": 106055
+      }
+    },
+    {
+      "id": "suwayomi:6750440049024086587",
+      "upstreamSourceId": "6750440049024086587",
+      "provider": "MangaDex",
+      "language": "nl",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6754172311859665554",
+      "upstreamSourceId": "6754172311859665554",
+      "provider": "Hennojin",
+      "language": "ja",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": false,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": false
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hennojin",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6818645358118704394",
+      "upstreamSourceId": "6818645358118704394",
+      "provider": "HentaiHand",
+      "language": "cs",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:6840513937945146538",
+      "upstreamSourceId": "6840513937945146538",
+      "provider": "MangaDex",
+      "language": "hi",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6864643444164576223",
+      "upstreamSourceId": "6864643444164576223",
+      "provider": "Manhwa18.cc",
+      "language": "ko",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.manhwa18cc",
+        "version": "1.6.66",
+        "versionCode": 106066
+      }
+    },
+    {
+      "id": "suwayomi:6886894829142702925",
+      "upstreamSourceId": "6886894829142702925",
+      "provider": "MangaDex",
+      "language": "te",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:6915411826598362561",
+      "upstreamSourceId": "6915411826598362561",
+      "provider": "3Hentai",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:7057309244033446342",
+      "upstreamSourceId": "7057309244033446342",
+      "provider": "3Hentai",
+      "language": "de",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:7302549142935671434",
+      "upstreamSourceId": "7302549142935671434",
+      "provider": "HentaiHand",
+      "language": "other",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:7561346598466986562",
+      "upstreamSourceId": "7561346598466986562",
+      "provider": "HentaiHand",
+      "language": "bg",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:7615826761003926053",
+      "upstreamSourceId": "7615826761003926053",
+      "provider": "3Hentai",
+      "language": "jv",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:7640863230103182507",
+      "upstreamSourceId": "7640863230103182507",
+      "provider": "3Hentai",
+      "language": "nl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:7689490563697355048",
+      "upstreamSourceId": "7689490563697355048",
+      "provider": "NineHentai",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.en.ninehentai",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:7819216870104067677",
+      "upstreamSourceId": "7819216870104067677",
+      "provider": "3Hentai",
+      "language": "en",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:7899387259192038112",
+      "upstreamSourceId": "7899387259192038112",
+      "provider": "HentaiHand",
+      "language": "nl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:7910220811455615939",
+      "upstreamSourceId": "7910220811455615939",
+      "provider": "NHentai.to",
+      "language": "all",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.nhentaito",
+        "version": "1.6.10",
+        "versionCode": 106010
+      }
+    },
+    {
+      "id": "suwayomi:7940950215101782907",
+      "upstreamSourceId": "7940950215101782907",
+      "provider": "3Hentai",
+      "language": "pl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:8033579885162383068",
+      "upstreamSourceId": "8033579885162383068",
+      "provider": "MangaDex",
+      "language": "pl",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8174384290387590645",
+      "upstreamSourceId": "8174384290387590645",
+      "provider": "HentaiHand",
+      "language": "jv",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:8205998909543626240",
+      "upstreamSourceId": "8205998909543626240",
+      "provider": "HentaiHand",
+      "language": "tl",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:8251758253314457060",
+      "upstreamSourceId": "8251758253314457060",
+      "provider": "Webtoons.com",
+      "language": "fr",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:8254121249433835847",
+      "upstreamSourceId": "8254121249433835847",
+      "provider": "MangaDex",
+      "language": "fi",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8272502917504358946",
+      "upstreamSourceId": "8272502917504358946",
+      "provider": "HentaiHand",
+      "language": "it",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:8300414741852788090",
+      "upstreamSourceId": "8300414741852788090",
+      "provider": "HentaiHand",
+      "language": "de",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:8548374501079910130",
+      "upstreamSourceId": "8548374501079910130",
+      "provider": "MangaDex",
+      "language": "hr",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8578871918181236609",
+      "upstreamSourceId": "8578871918181236609",
+      "provider": "MangaDex",
+      "language": "fil",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8615096170305162493",
+      "upstreamSourceId": "8615096170305162493",
+      "provider": "3Hentai",
+      "language": "mo",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:8643172240389130297",
+      "upstreamSourceId": "8643172240389130297",
+      "provider": "3Hentai",
+      "language": "hu",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:8664735734660636295",
+      "upstreamSourceId": "8664735734660636295",
+      "provider": "Webtoons.com",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:8749627068478740298",
+      "upstreamSourceId": "8749627068478740298",
+      "provider": "Webtoons.com",
+      "language": "id",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webtoons",
+        "version": "1.6.2",
+        "versionCode": 106002
+      }
+    },
+    {
+      "id": "suwayomi:8773024089257004344",
+      "upstreamSourceId": "8773024089257004344",
+      "provider": "MangaDex",
+      "language": "et",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8884149958776527952",
+      "upstreamSourceId": "8884149958776527952",
+      "provider": "MangaDex",
+      "language": "kk",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8884989104958593922",
+      "upstreamSourceId": "8884989104958593922",
+      "provider": "3Hentai",
+      "language": "is",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentai3",
+        "version": "1.6.5",
+        "versionCode": 106005
+      }
+    },
+    {
+      "id": "suwayomi:8952567078513962586",
+      "upstreamSourceId": "8952567078513962586",
+      "provider": "MangaDex",
+      "language": "ka",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:8965174723997547979",
+      "upstreamSourceId": "8965174723997547979",
+      "provider": "Webcomics",
+      "language": "es",
+      "external": true,
+      "classification": {
+        "rating": "safe",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "SAFE",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.webcomics",
+        "version": "1.6.11",
+        "versionCode": 106011
+      }
+    },
+    {
+      "id": "suwayomi:9098484674492839156",
+      "upstreamSourceId": "9098484674492839156",
+      "provider": "HentaiHand",
+      "language": "el",
+      "external": true,
+      "classification": {
+        "rating": "adult",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "NSFW",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.hentaihand",
+        "version": "1.6.1",
+        "versionCode": 106001
+      }
+    },
+    {
+      "id": "suwayomi:9127464796236242233",
+      "upstreamSourceId": "9127464796236242233",
+      "provider": "MangaDex",
+      "language": "az",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    },
+    {
+      "id": "suwayomi:9194073792736219759",
+      "upstreamSourceId": "9194073792736219759",
+      "provider": "MangaDex",
+      "language": "vi",
+      "external": true,
+      "classification": {
+        "rating": "mixed",
+        "provenance": {
+          "sourceField": "SourceType.contentWarning",
+          "value": "MIXED",
+          "checkedAt": "2026-10-19T03:56:23.43Z"
+        }
+      },
+      "latestDeclared": true,
+      "latestProvenance": {
+        "sourceField": "SourceType.supportsLatest",
+        "value": true
+      },
+      "extension": {
+        "package": "eu.kanade.tachiyomi.extension.all.mangadex",
+        "version": "1.6.0",
+        "versionCode": 106000
+      }
+    }
+  ],
+  "sourceInventorySha256": "67eb4d6f7fcff2e4d3eec29297932cbb483700a6f763f0fadaebda05a5ee683d"
+}

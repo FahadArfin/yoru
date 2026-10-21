@@ -1,4 +1,5 @@
 import RoomLauncher from '../RoomLauncher';
+import CoverImage from '../CoverImage';
 import React, { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from '../collection-router';
 import {
@@ -14,14 +15,17 @@ import {
   X,
 } from 'lucide-react';
 import { coverOf, safeLink, titleOf } from '../api';
-import { useApp, useResource } from '../state';
+import { useApp } from '../state';
 import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { dialogStack } from '../overlays';
 import { recordView } from '../watch-views';
 import { setWatchPage } from '../webmcp-state';
 import { useReadingState } from './hooks';
 import { useReaderChapters, rememberReadingSource } from './remote';
-import { warmReaderLink } from './requests';
+import { warmReaderLink, readerContextKey } from './requests';
+import { useReaderResource } from './use-resource';
+import ReaderEditionPicker from './ReaderEditionPicker';
+import CatalogIntegrationSelect from '../CatalogIntegrationSelect';
 import { getReadingState, saveReadingState } from './storage';
 import { chapterUnit, languageName, pageStep, readerLink, readerPreferences } from './model';
 import ChapterList from './ChapterList';
@@ -31,9 +35,15 @@ import ReaderSettings from './ReaderSettings';
 import ReaderMenu, { ReaderPagePicker } from './ReaderMenu';
 import './reader.css';
 import './reader-layout.css';
+import useCatalogPreferences, { useReaderSelection } from '../useCatalogPreferences';
+import { useCollection } from '../collection-context';
+import { catalogDefaults, catalogEnabled } from '../../shared/catalog-preferences';
+import { parseMediaReference } from '../../shared/media-reference';
 
 function ReadingSources({ media, close }) {
   const { notify } = useApp();
+  const preferences = useCatalogPreferences();
+  const destination = useCollection()?.active ? 'ara-ara' : 'yoru';
   const [url, setUrl] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem(`yoru:source:${media.id}`))?.url || '';
@@ -43,7 +53,11 @@ function ReadingSources({ media, close }) {
   });
   const [error, setError] = useState('');
   const sources = (media.externalLinks || []).filter(
-    (item) => item.type === 'reading' && safeLink(item.url),
+    (item) =>
+      item.type === 'reading' &&
+      safeLink(item.url) &&
+      (!Object.hasOwn(catalogDefaults, item.label) ||
+        catalogEnabled(item.label, destination, preferences.overrides)),
   );
   return (
     <Modal title="Reading sources" close={close}>
@@ -59,14 +73,16 @@ function ReadingSources({ media, close }) {
             <ExternalLink size={16} />
           </a>
         ))}
-        <a
-          href={`https://mangadex.org/titles?q=${encodeURIComponent(titleOf(media))}`}
-          target="_blank"
-          rel="noreferrer"
-        >
-          Search on MangaDex
-          <ExternalLink size={16} />
-        </a>
+        {catalogEnabled('MangaDex', destination, preferences.overrides) && (
+          <a
+            href={`https://mangadex.org/titles?q=${encodeURIComponent(titleOf(media))}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            Search on MangaDex
+            <ExternalLink size={16} />
+          </a>
+        )}
       </div>
       <form
         className="form-stack"
@@ -116,8 +132,9 @@ function ReadingSources({ media, close }) {
   );
 }
 
-function ReaderSession({ media, unit }) {
+function ReaderSession({ media, unit, priorMode }) {
   const navigate = useNavigate();
+  const selection = useReaderSelection();
   const [params, setParams] = useSearchParams();
   const { entryFor, updateEntry, user, authLoading, authKnown, resumeItems, saveResume } = useApp();
   const chapters = useReaderChapters(
@@ -134,6 +151,10 @@ function ReaderSession({ media, unit }) {
     readerPreferences(getReadingState(media.id).preferences, media.category),
   );
   const [dialog, setDialog] = useState('');
+  const [switchSource, setSwitchSource] = useState(null);
+  const context = chapters.context;
+  const contextKey = readerContextKey(context);
+  useEffect(() => setSwitchSource(null), [contextKey]);
   const [focus, setFocus] = useState(false);
   const [wide, setWide] = useState(() => window.matchMedia('(min-width: 901px)').matches);
   const [menuOpen, setMenuOpen] = useState(() => window.matchMedia('(min-width: 901px)').matches);
@@ -151,6 +172,22 @@ function ReaderSession({ media, unit }) {
     : chapters.items.find((item) => item.number === String(unit)) || chapters.items[0];
   const currentSaved = chapter ? saved.chapters[chapter.id] || {} : {};
   const total = chapter?.pages.length || 0;
+  useEffect(() => {
+    if (!chapter || requested) return;
+    // A legacy numeric entry may resolve once. Subsequent filters must keep that
+    // exact resolved edition, just like a direct edition link.
+    setParams(
+      (old) => {
+        if (old.get('chapter')) return old;
+        const next = new URLSearchParams(old);
+        next.set('chapter', chapter.id);
+        if (chapter.sourceRef?.id || chapter.source)
+          next.set('source', chapter.sourceRef?.id || chapter.source);
+        return next;
+      },
+      { replace: true },
+    );
+  }, [chapter?.id, requested]);
   useEffect(() => {
     const query = window.matchMedia('(min-width: 901px)');
     const resize = () => {
@@ -215,10 +252,7 @@ function ReaderSession({ media, unit }) {
     }
     const stored = getReadingState(media.id).chapters[chapter.id];
     const accountResume = resumeItems.find(
-      (item) =>
-        item.mediaId === media.id &&
-        item.chapterId === chapter.id &&
-        item.number === Number(chapter.number),
+      (item) => item.mediaId === media.id && item.chapterId === chapter.id,
     );
     const next = Math.max(
       1,
@@ -248,24 +282,29 @@ function ReaderSession({ media, unit }) {
       { page },
     );
     saveResume(media, {
-      number: Number(chapter.number),
+      number: chapterUnit(chapter.number) ?? 0,
       chapterId: chapter.id,
       page,
       language: chapter.language || '',
     });
   }, [chapter?.id, loadedChapter, page, media, write, saveResume]);
   useEffect(() => {
+    if (!context) return;
+    const controller = new AbortController();
     let recorded = false;
     const record = () => {
       if (!recorded && !document.hidden) {
         recorded = true;
-        recordView(media.id, true).catch(() => {});
+        recordView(media.id, true, { ...context, signal: controller.signal }).catch(() => {});
       }
     };
     record();
     document.addEventListener('visibilitychange', record);
-    return () => document.removeEventListener('visibilitychange', record);
-  }, [media.id]);
+    return () => {
+      controller.abort();
+      document.removeEventListener('visibilitychange', record);
+    };
+  }, [media.id, contextKey]);
   useEffect(() => {
     document.title = `${chapter ? `Ch. ${chapter.number} · ` : ''}${titleOf(media)} · Yoru Reader`;
     setWatchPage({
@@ -274,6 +313,11 @@ function ReaderSession({ media, unit }) {
       title: titleOf(media),
       unit: numericChapter,
       category: media.category,
+      destination: context?.destination || 'yoru',
+      sourceRef: chapter?.sourceRef || media.sourceRef || null,
+      sourceId: chapter?.sourceRef?.id || chapter?.source || chapters.source || null,
+      chapterId: chapter?.id || null,
+      provenance: media.provenance || null,
       language: chapter?.language || null,
       source: null,
       sources: [],
@@ -284,9 +328,10 @@ function ReaderSession({ media, unit }) {
       setWatchPage(null);
       document.title = 'Yoru · A little more obsessed';
     };
-  }, [media, chapter?.id, unit]);
+  }, [media, chapter?.id, unit, contextKey]);
   const updatePage = useCallback(
     (value, scroll = true) => {
+      if (!context) return;
       const next = Math.max(1, Math.min(total, Math.trunc(Number(value) || 1)));
       setPage(next);
       setParams(
@@ -299,7 +344,7 @@ function ReaderSession({ media, unit }) {
       );
       if (scroll) setJump((n) => n + 1);
     },
-    [total, setParams],
+    [total, setParams, !!context],
   );
   const goPage = useCallback((value) => updatePage(value), [updatePage]);
   const visiblePage = useCallback(
@@ -323,7 +368,7 @@ function ReaderSession({ media, unit }) {
     setHeaderVisible(true);
   }, []);
   const selectChapter = (next, startPage) => {
-    if (!next) return;
+    if (!next || !context) return;
     if (window.self !== window.top) {
       setError(
         'Use the host chapter control below the shared reader to change chapters for everyone.',
@@ -332,7 +377,11 @@ function ReaderSession({ media, unit }) {
     }
     setDialog('');
     if (!wide) setMenuOpen(false);
-    navigate(readerLink(media.id, next, startPage));
+    setSwitchSource(null);
+    rememberReadingSource(next.mediaId || media.id, next.sourceRef?.id || next.source || 'local');
+    navigate(
+      readerLink(next.mediaId || media.id, next, startPage, { destination: context?.destination }),
+    );
   };
   // Stay in the same language, favor the same edition, and skip alternative releases of the current number.
   const siblings = chapter
@@ -361,14 +410,21 @@ function ReaderSession({ media, unit }) {
     if (!halfway || !nextEdition) return;
     const controller = new AbortController();
     const timer = setTimeout(
-      () => warmReaderLink(readerLink(media.id, nextEdition), controller.signal, 3),
+      () =>
+        warmReaderLink(
+          readerLink(media.id, nextEdition, undefined, { destination: context?.destination }),
+          controller.signal,
+          3,
+          context,
+          nextEdition,
+        ),
       400,
     );
     return () => {
       clearTimeout(timer);
       controller.abort();
     };
-  }, [media.id, chapter?.id, nextEdition?.id, halfway]);
+  }, [media.id, chapter?.id, nextEdition?.id, halfway, contextKey]);
   useEffect(() => {
     const onKey = (event) => {
       if (
@@ -431,26 +487,59 @@ function ReaderSession({ media, unit }) {
     }
     setDialog('import');
   };
-  const sourcePicker = chapters.sources.length > 0 && (
-    <label className="reader-source-picker">
-      <span>Reading source</span>
-      <select
-        aria-label="Reading source"
-        disabled={window.self !== window.top}
-        title={window.self !== window.top ? 'The host chooses the shared source.' : undefined}
-        value={chapters.source}
-        onChange={(e) => {
-          rememberReadingSource(media.id, e.target.value);
-          setParams({ source: e.target.value });
+  const sourcePicker = (
+    <>
+      <CatalogIntegrationSelect
+        className="reader-source-picker"
+        value={context?.integrationMode || 'all'}
+        disabled={!context || window.self !== window.top}
+        onChange={(mode) => {
+          priorMode.current = context.integrationMode;
+          selection.setIntegrationMode(mode);
         }}
-      >
-        {chapters.sources.map((source) => (
-          <option key={source.id} value={source.id}>
-            {source.name}
-          </option>
-        ))}
-      </select>
-    </label>
+      />
+      {chapters.groupEmpty && (
+        <p role="status">
+          No verified sources in this group. Your current edition is unchanged.{' '}
+          <button
+            className="text-link"
+            onClick={() => selection.setIntegrationMode(priorMode.current)}
+          >
+            Restore previous group
+          </button>
+        </p>
+      )}
+      {chapters.sources.length > 0 && (
+        <label className="reader-source-picker">
+          <span>Reading source</span>
+          <select
+            aria-label="Reading source"
+            disabled={window.self !== window.top}
+            title={window.self !== window.top ? 'The host chooses the shared source.' : undefined}
+            value={chapters.source}
+            onChange={(e) => {
+              const target = chapters.sources.find((item) => item.id === e.target.value);
+              if (target && target.id !== chapters.source) setSwitchSource(target);
+            }}
+          >
+            {!chapters.sources.some((source) => source.id === chapters.source) && (
+              <option value={chapters.source} disabled>
+                Choose an enabled source
+              </option>
+            )}
+            {chapters.sources.map((source) => (
+              <option key={source.id} value={source.id}>
+                {source.name}
+                {source.sourceRef?.language ? ` · ${languageName(source.sourceRef.language)}` : ''}
+                {source.id === 'local'
+                  ? ''
+                  : ` · ${source.integration === 'suwayomi' || source.sourceRef?.integration === 'suwayomi' ? 'Suwayomi' : 'Core'}`}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
+    </>
   );
   const menu = (close) => (
     <ReaderMenu
@@ -474,6 +563,42 @@ function ReaderSession({ media, unit }) {
       currentSaved={currentSaved}
       read={read}
       discussionUnit={hasChapterDiscussion ? numericChapter : 0}
+      readTogether={
+        window.self === window.top && (
+          <RoomLauncher
+            className="reader-menu-action"
+            media={media}
+            unit={
+              chapter
+                ? (chapterUnit(chapter.number) ?? chapterUnit(unit) ?? 1)
+                : media.sourceRef
+                  ? 0
+                  : (chapterUnit(unit) ?? 1)
+            }
+            source={
+              media.sourceRef && !chapter
+                ? null
+                : {
+                    kind: 'reader',
+                    url: readerLink(
+                      media.id,
+                      chapter
+                        ? { ...chapter, source: chapters.source }
+                        : {
+                            number: String(unit),
+                            id: requested,
+                            kind: 'remote',
+                            language: chapters.language,
+                            source: chapters.source,
+                          },
+                      page,
+                      { destination: context?.destination },
+                    ),
+                  }
+            }
+          />
+        )
+      }
       sourcePicker={sourcePicker}
     />
   );
@@ -510,18 +635,6 @@ function ReaderSession({ media, unit }) {
           </div>
         </div>
         <nav className="reader-quick-bar" aria-label="Reader navigation">
-          {window.self === window.top && (
-            <RoomLauncher
-              media={media}
-              unit={chapterUnit(chapter?.number) ?? chapterUnit(unit) ?? 1}
-              source={{
-                kind: 'reader',
-                url: chapter
-                  ? `${readerLink(media.id, chapter, page)}&source=${encodeURIComponent(chapters.source)}`
-                  : `${readerLink(media.id, { number: String(unit), id: requested, kind: 'remote', language: chapters.language }, page)}&source=${encodeURIComponent(chapters.source)}`,
-              }}
-            />
-          )}
           <button onClick={() => setDialog('chapters')} aria-label="Choose chapter">
             {chapter ? `Ch. ${chapter.number}` : 'Chapters'}
             <ChevronRight size={14} />
@@ -560,6 +673,7 @@ function ReaderSession({ media, unit }) {
             <Loading />
           ) : chapter && loadedChapter === chapter.id ? (
             <ReaderCanvas
+              context={context}
               key={chapter.id}
               chapter={chapter}
               page={page}
@@ -569,11 +683,14 @@ function ReaderSession({ media, unit }) {
               onTurn={turn}
               onToggleControls={toggleControls}
               onScrollDirection={scrollDirection}
+              nextChapter={nextEdition}
+              onNextChapter={() => selectChapter(nextEdition, 1)}
+              onChooseChapter={() => setDialog('chapters')}
             />
           ) : (
             <div className="reader-welcome">
               <div className="reader-welcome-art">
-                <img src={coverOf(media)} alt="" />
+                <CoverImage media={media} alt="" />
                 <span>
                   <BookOpen size={30} />
                 </span>
@@ -595,9 +712,12 @@ function ReaderSession({ media, unit }) {
                   ? 'Try another source, choose a saved chapter, or retry this edition.'
                   : 'Choose a reading source or open your own pages. Your layout, bookmarks and place are remembered here.'}
               </p>
-              {sourcePicker}
+              {!menuOpen && sourcePicker}
               {chapters.error && <ErrorNotice message={chapters.error} retry={chapters.refresh} />}
               <div className="reader-actions">
+                {chapters.availableChapters.length > 0 && (
+                  <Button onClick={() => setDialog('chapters')}>Choose chapter edition</Button>
+                )}
                 <Button onClick={() => setDialog('sources')}>
                   <ExternalLink size={16} />
                   Reading sources
@@ -670,12 +790,22 @@ function ReaderSession({ media, unit }) {
         />
       )}
       {dialog === 'sources' && <ReadingSources media={media} close={() => setDialog('')} />}
+      {switchSource && (
+        <ReaderEditionPicker
+          mediaId={media.id}
+          source={switchSource}
+          context={context}
+          localItems={chapters.localItems}
+          close={() => setSwitchSource(null)}
+          onSelect={selectChapter}
+        />
+      )}
       {dialog === 'chapters' && (
         <Modal title="Chapters" close={() => setDialog('')} wide>
           <span className="eyebrow">PICK UP YOUR STORY</span>
           <h2>{titleOf(media)}</h2>
           <ChapterList
-            chapters={chapters.items}
+            chapters={chapters.availableChapters}
             states={saved.chapters}
             currentId={chapter?.id}
             onSelect={selectChapter}
@@ -686,7 +816,12 @@ function ReaderSession({ media, unit }) {
             languages={chapters.languages}
             onLanguageChange={
               chapters.remote && window.self === window.top
-                ? (language) => setParams({ source: chapters.source, language })
+                ? (language) =>
+                    setParams((old) => {
+                      const next = new URLSearchParams(old);
+                      next.set('language', language);
+                      return next;
+                    })
                 : undefined
             }
           />
@@ -701,7 +836,12 @@ function ReaderSession({ media, unit }) {
             </Button>
           </div>
           <div className="reader-account-note">
-            <span>Page position and bookmarks are saved on this device.</span>
+            <span>
+              {saved.syncError ||
+                (user
+                  ? 'Your reading position, bookmarks and read markers sync to your account.'
+                  : 'Page position and bookmarks are saved on this device. Sign in to sync new activity.')}
+            </span>
             <Button
               variant="subtle"
               disabled={numericChapter === null}
@@ -721,12 +861,148 @@ function ReaderSession({ media, unit }) {
   );
 }
 
+function UnavailableNativeReader({ id, retry }) {
+  const navigate = useNavigate();
+  const selection = useReaderSelection();
+  const context = selection?.ready ? selection.context : null;
+  const key = `${id}:${readerContextKey(context)}`;
+  const [continuation, setContinuation] = useState(null);
+  const [available, setAvailable] = useState({ key: '', choices: [] });
+  const cursor = continuation?.key === key ? continuation.cursor : null;
+  const alternatives = useReaderResource(
+    `/api/reader/media/${id}/alternatives${cursor ? `?cursor=${encodeURIComponent(cursor)}` : ''}`,
+  );
+  const [selected, setSelected] = useState(null);
+  useEffect(() => setSelected(null), [id, key]);
+  useEffect(() => {
+    if (!alternatives.data) return;
+    setAvailable((old) => ({
+      key,
+      choices: [
+        ...new Map(
+          [
+            ...(cursor && old.key === key ? old.choices : []),
+            ...(alternatives.data.choices || []),
+          ].map((choice) => [`${choice.mediaId}:${choice.sourceRef?.id}`, choice]),
+        ).values(),
+      ],
+    }));
+  }, [key, cursor, alternatives.data]);
+  const choices = (available.key === key ? available.choices : [])
+    .map((choice) => ({
+      ...choice,
+      id: choice.sourceRef?.id,
+      name: `${choice.sourceRef?.providerKey || 'Reading source'} · ${choice.sourceRef?.language ? languageName(choice.sourceRef.language) : 'Unknown language'} · ${choice.integration === 'core' ? 'Core' : 'Suwayomi'}`,
+    }))
+    .filter((choice) => choice.id && choice.mediaId);
+  return (
+    <div className="page">
+      <h1>This chapter source is unavailable here.</h1>
+      <p>
+        Your saved edition and page are unchanged. Choose an eligible source, then an exact chapter
+        edition.
+      </p>
+      <CatalogIntegrationSelect
+        className="reader-source-picker"
+        value={context?.integrationMode || 'all'}
+        disabled={!context}
+        onChange={(mode) => selection.setIntegrationMode(mode)}
+      />
+      {alternatives.loading && !choices.length ? (
+        <Loading />
+      ) : choices.length ? (
+        <label>
+          Reading source
+          <select
+            aria-label="Reading source"
+            value=""
+            onChange={(event) =>
+              setSelected(
+                choices.find((choice) => `${choice.mediaId}:${choice.id}` === event.target.value),
+              )
+            }
+          >
+            <option value="" disabled>
+              Choose an enabled source
+            </option>
+            {choices.map((choice) => (
+              <option
+                key={`${choice.mediaId}:${choice.id}`}
+                value={`${choice.mediaId}:${choice.id}`}
+              >
+                {choice.name}
+              </option>
+            ))}
+          </select>
+        </label>
+      ) : (
+        <p role="status">
+          No verified alternative is available in this integration group. Change the group or Reader
+          catalogs in Settings.
+        </p>
+      )}
+      {alternatives.data?.incomplete && (
+        <p role="status">
+          Some alternatives could not be checked. You can retry when their sources are available.
+        </p>
+      )}
+      {alternatives.data?.nextCursor && (
+        <Button
+          disabled={alternatives.loading}
+          onClick={() => setContinuation({ key, cursor: alternatives.data.nextCursor })}
+        >
+          Check more sources
+        </Button>
+      )}
+      {alternatives.error && cursor && (
+        <p role="status">
+          The source list changed or could not finish. Retry available sources to restart with the
+          current choices.
+        </p>
+      )}
+      <Button
+        variant="subtle"
+        onClick={() => {
+          retry();
+          setContinuation(null);
+          setAvailable({ key, choices: [] });
+          alternatives.refresh();
+        }}
+      >
+        Retry available sources
+      </Button>
+      {selected && context && (
+        <ReaderEditionPicker
+          mediaId={selected.mediaId}
+          source={selected}
+          context={context}
+          close={() => setSelected(null)}
+          onSelect={(chapter) =>
+            navigate(
+              readerLink(chapter.mediaId || selected.mediaId, chapter, 1, {
+                destination: context.destination,
+              }),
+            )
+          }
+        />
+      )}
+    </div>
+  );
+}
+
 export default function Reader() {
   const { user, resumeReady } = useApp();
   const { id, unit } = useParams();
-  const resource = useResource(`/api/media/${id}`);
+  const priorMode = useRef('all');
+  const resource = useReaderResource(`/api/media/${id}`, { retainPrepared: true });
+  const initialized = useRef('');
   const media = resource.data?.media || resource.data;
-  if (resource.loading || !resumeReady) return <Loading />;
+  if (!resource.displayKey || resource.error || !media) initialized.current = '';
+  if (media && resumeReady) initialized.current = resource.displayKey;
+  if ((!media && resource.loading) || (!resumeReady && initialized.current !== resource.displayKey))
+    return <Loading />;
+  if ((resource.error || !media) && parseMediaReference(id)?.kind === 'extension-manga')
+    return <UnavailableNativeReader id={id} retry={resource.refresh} />;
   if (resource.error || !media)
     return (
       <div className="page">
@@ -745,5 +1021,12 @@ export default function Reader() {
         </Link>
       </div>
     );
-  return <ReaderSession key={`${id}:${user?.id || 'guest'}`} media={media} unit={unit} />;
+  return (
+    <ReaderSession
+      key={`${id}:${user?.id || 'guest'}`}
+      media={media}
+      unit={unit}
+      priorMode={priorMode}
+    />
+  );
 }

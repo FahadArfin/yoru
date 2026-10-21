@@ -7,24 +7,25 @@ import React, {
   useRef,
   useState,
 } from 'react';
-import { api, cachedApi, invalidateScopedApi, peek, send, itemsOf } from './api';
+import { api, cachedApi, invalidateScopedApi, peek, send } from './api';
 import { connectEvents } from './realtime';
 import useVisitorPresence from './useVisitorPresence';
+import { accountPageUrl, createAccountPager } from './account-pages.js';
 import { useResume } from './resume';
 import { setReaderAccount } from './reader/storage';
-import { useCollection } from './collection-context';
+import {
+  useCollection,
+  collectionDestination,
+  collectionContentAllowed,
+} from './collection-context';
 import { collectionRequest, collectionView } from '../shared/collection-view';
+import { useLocation } from 'react-router-dom';
+import { confirmationKey } from './nsfw';
+import { useReaderSelectionState } from './reader/use-selection';
 const Context = createContext(null);
 export function useApp() {
   const app = useContext(Context);
-  const scope = useCollection();
-  if (!scope?.active) return app;
-  const ids = new Set((scope.catalog?.items || []).map((item) => item.id));
-  return {
-    ...app,
-    library: app.library.filter((item) => ids.has(item.mediaId)),
-    resumeItems: app.resumeItems.filter((item) => ids.has(item.mediaId)),
-  };
+  return app;
 }
 export function useResource(path, cache = true) {
   const scope = useCollection();
@@ -83,49 +84,170 @@ export function useRawResource(path, cache = true) {
   };
 }
 export function AppProvider({ children }) {
+  const { pathname } = useLocation();
+  const destination = collectionDestination(pathname);
+  const [confirmation, setConfirmation] = useState(false);
+  useEffect(() => {
+    const confirm = (e) => setConfirmation(Boolean(e.detail?.confirmed));
+    window.addEventListener('ara-confirmation', confirm);
+    return () => {
+      window.removeEventListener('ara-confirmation', confirm);
+    };
+  }, []);
+  let confirmed = confirmation;
+  try {
+    confirmed = confirmed || sessionStorage.getItem(confirmationKey) === '1';
+  } catch {}
+  const contentAllowed = collectionContentAllowed(destination, confirmed);
   const [user, setUserState] = useState(null);
   const visitors = useVisitorPresence(user?.id);
   const [authKnown, setAuthKnown] = useState(false);
+  const [authLoading, setAuthLoading] = useState(true);
   const setUser = useCallback((value) => {
     invalidateScopedApi();
     setReaderAccount(value?.id);
     setUserState(value);
     setAuthKnown(true);
   }, []);
-  const resume = useResume(user?.id, authKnown);
-  const [authLoading, setAuthLoading] = useState(true);
+  const accountScope = user?.id || 'guest';
+  const selectionScope = authKnown ? accountScope : null;
+  const readerSelection = useReaderSelectionState({
+    scope: selectionScope,
+    destination,
+    enabled: !authLoading && contentAllowed,
+  });
+  const policyReady = contentAllowed && readerSelection.ready;
+  const [sourceInventory, setSourceInventory] = useState({ key: null, sources: [] });
+  const [inventoryRefresh, setInventoryRefresh] = useState(0);
+  const viewKey = JSON.stringify([
+    selectionScope,
+    destination,
+    readerSelection.context?.selectionFingerprint || null,
+    contentAllowed,
+  ]);
+  const guestInventoryPager = useRef(null);
+  const loadMoreReaderSources = useCallback(() => guestInventoryPager.current?.loadMore(), []);
+  useEffect(() => {
+    if (!policyReady || user || !authKnown) return;
+    const pager = createAccountPager({
+      request: async (task, signal) => {
+        const sources = [];
+        let cursor = task.cursor || null;
+        const deadline = Date.now() + 12000;
+        for (let i = 0; i < 4 && Date.now() < deadline; i++) {
+          const result = await api(
+            `/api/reader/catalogs?destination=${destination}&limit=100${cursor ? `&cursor=${encodeURIComponent(cursor)}` : ''}`,
+            {
+              signal: AbortSignal.any([
+                signal,
+                AbortSignal.timeout(Math.max(1, deadline - Date.now())),
+              ]),
+            },
+          );
+          sources.push(...(result.sources || []));
+          cursor = result.nextCursor;
+          if (!cursor) break;
+        }
+        return {
+          items: sources.map((source) => ({ mediaId: source.id, source })),
+          nextCursor: cursor,
+          recordsComplete: !cursor,
+        };
+      },
+      publish: (page) =>
+        setSourceInventory((previous) => ({
+          ...page,
+          key: viewKey,
+          sources: page.items.map((item) => item.source),
+          observedAt: Math.max(Date.now(), (previous.observedAt || 0) + 1),
+        })),
+    });
+    guestInventoryPager.current = pager;
+    void pager.refresh();
+    return () => {
+      pager.stop();
+      if (guestInventoryPager.current === pager) guestInventoryPager.current = null;
+    };
+  }, [policyReady, user, authKnown, viewKey, destination, inventoryRefresh]);
+  useEffect(() => {
+    if (!policyReady || user || !authKnown) return;
+    const refresh = () => {
+      if (!document.hidden) setInventoryRefresh((v) => v + 1);
+    };
+    const timer = setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+    };
+  }, [policyReady, user, authKnown]);
+  const readingContext = useMemo(
+    () =>
+      readerSelection.context
+        ? {
+            ...readerSelection.context,
+            // Local history still requires fresh inventory or authoritative server IDs;
+            // this eligibility switch does not advertise a server feature capability.
+            extensionsEnabled: true,
+          }
+        : null,
+    [readerSelection.context],
+  );
+  const inventoryFresh =
+    sourceInventory.key === viewKey && Date.now() - (sourceInventory.observedAt || 0) < 60000;
+  const currentSources = inventoryFresh ? sourceInventory.sources : [];
+  const resume = useResume(user?.id, authKnown, {
+    context: readingContext,
+    ready: policyReady,
+    viewKey: `${viewKey}:${inventoryFresh ? sourceInventory.observedAt : 0}`,
+    readinessKey: viewKey,
+    currentSources,
+  });
   const [authOpen, setAuthOpen] = useState(false);
   const [config, setConfig] = useState({});
-  const [library, setLibrary] = useState([]);
+  const [librarySnapshot, setLibrarySnapshot] = useState({ key: null, items: [] });
+  const library = policyReady && librarySnapshot.key === viewKey ? librarySnapshot.items : [];
+  const libraryPage = policyReady && librarySnapshot.key === viewKey ? librarySnapshot : {};
+  const libraryPager = useRef(null);
   const [online, setOnline] = useState({ count: 0, users: [] });
   const [connected, setConnected] = useState(false);
   const [toast, setToast] = useState(null);
   const toastTimer = useRef();
   const [event, setEvent] = useState(null);
   const activeUser = useRef(null);
-  const libraryRequest = useRef(0);
+  const activeView = useRef(viewKey);
+  activeView.current = viewKey;
   activeUser.current = user?.id;
   const notify = useCallback((text, type = 'success') => {
     clearTimeout(toastTimer.current);
     setToast({ text, type });
     toastTimer.current = setTimeout(() => setToast(null), 4500);
   }, []);
-  const refreshLibrary = useCallback(async () => {
-    const requestId = ++libraryRequest.current;
-    const requestedUser = activeUser.current;
-    if (!requestedUser) {
-      setLibrary([]);
+  const refreshLibrary = useCallback(() => libraryPager.current?.refresh(), []);
+  const loadMoreLibrary = useCallback(() => libraryPager.current?.loadMore(), []);
+  useEffect(() => {
+    if (!user || !policyReady) {
+      setLibrarySnapshot({ key: viewKey, items: [] });
       return;
     }
-    try {
-      const data = await api('/api/library');
-      if (activeUser.current === requestedUser && libraryRequest.current === requestId)
-        setLibrary(itemsOf(data));
-    } catch {
-      if (activeUser.current === requestedUser && libraryRequest.current === requestId)
-        setLibrary([]);
-    }
-  }, []);
+    const requestedUser = user.id,
+      requestedView = viewKey;
+    const pager = createAccountPager({
+      request: (task, signal) => api(accountPageUrl('/api/library', destination, task), { signal }),
+      publish: (page) => {
+        if (activeUser.current === requestedUser && activeView.current === requestedView)
+          setLibrarySnapshot({ ...page, key: requestedView });
+      },
+    });
+    libraryPager.current = pager;
+    void pager.refresh();
+    return () => {
+      pager.stop();
+      if (libraryPager.current === pager) libraryPager.current = null;
+    };
+  }, [user?.id, viewKey, policyReady, destination]);
   useEffect(() => {
     api('/api/auth/me')
       .then((data) => setUser(data.user))
@@ -150,9 +272,19 @@ export function AppProvider({ children }) {
     };
   }, []);
   useEffect(() => {
-    if (user) refreshLibrary();
-    else setLibrary([]);
-  }, [user, refreshLibrary]);
+    if (!user || !policyReady) return;
+    const refresh = () => {
+      if (!document.hidden) void refreshLibrary();
+    };
+    const timer = setInterval(refresh, 30000);
+    window.addEventListener('focus', refresh);
+    window.addEventListener('online', refresh);
+    return () => {
+      clearInterval(timer);
+      window.removeEventListener('focus', refresh);
+      window.removeEventListener('online', refresh);
+    };
+  }, [user, policyReady, refreshLibrary]);
   useEffect(() => {
     if (!config.realtime?.transport) return;
     let active = true;
@@ -203,7 +335,12 @@ export function AppProvider({ children }) {
     async (media, patch) => {
       if (!requireUser()) return false;
       try {
-        await send(`/api/library/${encodeURIComponent(media.id)}`, patch, 'PUT');
+        if (!policyReady) return false;
+        await send(
+          `/api/library/${encodeURIComponent(media.id)}?destination=${destination}`,
+          patch,
+          'PUT',
+        );
         await refreshLibrary();
         notify('Saved to your library');
         return true;
@@ -212,12 +349,14 @@ export function AppProvider({ children }) {
         return false;
       }
     },
-    [requireUser, refreshLibrary, notify],
+    [requireUser, refreshLibrary, notify, policyReady, destination],
   );
   const logout = async () => {
     try {
-      await send('/api/auth/logout', {});
+      const result = await send('/api/auth/logout', {});
       setUser(null);
+      if (result.redirect?.startsWith('/signout-with-chatgpt?'))
+        window.location.assign(result.redirect);
       notify('Signed out');
     } catch (e) {
       notify(e.message, 'error');
@@ -239,6 +378,16 @@ export function AppProvider({ children }) {
         setAuthOpen,
         config,
         library,
+        libraryPage,
+        loadMoreLibrary,
+        readerSelection,
+        readingContext: policyReady ? readingContext : null,
+        currentReaderSources: currentSources,
+        readerInventoryPage:
+          !user && authKnown && policyReady && sourceInventory.key === viewKey
+            ? sourceInventory
+            : {},
+        loadMoreReaderSources,
         refreshLibrary,
         entryFor,
         updateEntry,

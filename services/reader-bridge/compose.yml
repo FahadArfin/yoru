@@ -16,7 +16,8 @@ services:
       EXTENSION_STORES: '["https://github.com/keiyoushi/extensions/raw/repo/index.pb"]'
       UPDATE_INTERVAL: '0'
       WEB_UI_UPDATE_INTERVAL: '0'
-      WEB_UI_ENABLED: 'false'
+      WEB_UI_ENABLED: 'true'
+      WEB_UI_CHANNEL: BUNDLED
       FLARESOLVERR_ENABLED: 'false'
       KCEF_ENABLED: 'false'
     volumes:
@@ -34,12 +35,18 @@ services:
       context: ../..
       dockerfile: services/reader-bridge/Dockerfile
     restart: unless-stopped
+    # Avoid host/router DNS failures for newly allocated Quick Tunnel names.
+    # Docker's embedded resolver still resolves the internal suwayomi service.
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     depends_on:
       - suwayomi
     ports:
       - '127.0.0.1:4568:3000'
     environment:
       READER_BRIDGE_KEY: ${READER_BRIDGE_KEY:?Set the private bridge key}
+      READER_EXTENSIONS_ENABLED: '${READER_EXTENSIONS_ENABLED:-0}'
       SUWAYOMI_URL: http://suwayomi:4567
       SUWAYOMI_PASSWORD: ${SUWAYOMI_PASSWORD}
       YORU_ORIGIN: https://yoru.fwad101.chatgpt.site

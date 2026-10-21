@@ -10,6 +10,7 @@ import {
 import { promisify } from 'node:util';
 import { EventEmitter } from 'node:events';
 import { get, run, now } from './db.js';
+import { parseMediaReference } from '../shared/media-reference.js';
 
 const scrypt = promisify(scryptCallback);
 const SESSION_TTL = 30 * 24 * 60 * 60 * 1000;
@@ -43,7 +44,12 @@ export const publicUser = (user) =>
     : null;
 export const ownUser = (user) =>
   user
-    ? { ...publicUser(user), email: user.email || '', discordConnected: Boolean(user.discord_id) }
+    ? {
+        ...publicUser(user),
+        email: user.email || '',
+        discordConnected: Boolean(user.discord_id),
+        chatgptConnected: Boolean(user.chatgpt_id),
+      }
     : null;
 
 export function sessionMiddleware(req, _res, next) {
@@ -94,8 +100,7 @@ export function numeric(value, { name = 'Value', min = 0, max = 100000, integer 
   return value;
 }
 export function mediaId(value) {
-  if (typeof value !== 'string' || !/^mal-(anime|manga)-[1-9]\d{0,8}$/.test(value))
-    throw apiError(400, 'Invalid title ID.');
+  if (!parseMediaReference(value)) throw apiError(400, 'Invalid title ID.');
   return value;
 }
 export const asyncRoute = (fn) => (req, res, next) =>
@@ -165,6 +170,11 @@ const authLimiter = rateLimit({
   message: { error: 'Too many sign-in attempts. Try again in a few minutes.' },
 });
 authRouter.get('/me', (req, res) => res.json({ user: ownUser(req.user) }));
+authRouter.patch('/profile', requireAuth, (req, res) => {
+  const name = text(req.body.name, { name: 'Display name', min: 2, max: 40 });
+  run('UPDATE users SET name=? WHERE id=?', name, req.user.id);
+  res.json({ user: ownUser(get('SELECT * FROM users WHERE id=?', req.user.id)) });
+});
 authRouter.post(
   '/register',
   authLimiter,

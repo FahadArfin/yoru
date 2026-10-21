@@ -1,4 +1,5 @@
 import { coverOf, kindOf } from './api.js';
+import { assertMediaEligible, assertSourceEligible } from '../shared/reading-eligibility.js';
 
 const genreKey = (value) =>
   String(value)
@@ -50,18 +51,42 @@ export function sharedRecommendationGenres(media, item) {
     .sort((a, b) => weight(genreKey(b)) - weight(genreKey(a)));
 }
 
-export function relatedTitles(media, items = []) {
+export function relatedTitles(
+  media,
+  items = [],
+  { destination = 'yoru', overrides = {}, integrationMode = 'all' } = {},
+) {
   const genres = new Set((media.genres || []).map(genreKey));
   const anchor = genreKey(recommendationGenre(media));
   if (!anchor) return [];
   const seen = new Set([String(media.id)]);
   return items
     .filter((item) => {
+      try {
+        const context = { destination, overrides, integrationMode, extensionsEnabled: true };
+        assertMediaEligible(item, context);
+        const sources = [
+          item.sourceRef,
+          ...(item.readingChoices || []).map((choice) => choice.sourceRef),
+        ].filter(Boolean);
+        if (sources.length) {
+          const eligible = sources.some((source) => {
+            try {
+              assertSourceEligible(source, context, { discovery: true });
+              return true;
+            } catch {
+              return false;
+            }
+          });
+          if (!eligible) return false;
+        } else if (kindOf(item) !== 'ANIME' && integrationMode === 'extensions') return false;
+      } catch {
+        return false;
+      }
       if (
         !item.id ||
         seen.has(String(item.id)) ||
         kindOf(item) !== kindOf(media) ||
-        item.isAdult ||
         item.imported ||
         coverOf(item) === '/icon.svg' ||
         !(item.genres || []).some((genre) => genreKey(genre) === anchor)

@@ -3,6 +3,10 @@ import assert from 'node:assert/strict';
 import { DatabaseSync } from 'node:sqlite';
 import { readFileSync, readdirSync } from 'node:fs';
 import * as views from '../server/watch-views.js';
+import { contextFixture } from './reader-context-fixture.mjs';
+import { accountSource } from './extension-account-contract.mjs';
+import { createExternalCatalogStore } from '../server/external-catalog-store.js';
+import { createSocialPolicy } from '../server/native-social-policy.js';
 import {
   recordWatchView,
   recordReadView,
@@ -10,6 +14,52 @@ import {
   getTrendingManga,
   VIEW_WINDOW,
 } from '../server/watch-views.js';
+
+test('native reading popularity applies current destination eligibility before ranking LIMIT', async (t) => {
+  const f = contextFixture();
+  t.after(f.close);
+  const safeSource = accountSource(),
+    adultSource = accountSource('124', 'adult', 'Aunt Manhwa');
+  const store = createExternalCatalogStore(f.db),
+    items = [];
+  for (let i = 0; i < 21; i++) {
+    const source = i === 20 ? safeSource : adultSource;
+    const item = await store.rememberTitle({
+      sourceRef: source,
+      upstreamRef: { sourceId: source.id, upstreamKey: `/views/${i}`, language: 'en' },
+      classification: source.classification,
+      metadata: { title: `Views ${i}`, category: 'MANGA' },
+    });
+    items.push(item);
+    await f.db.run(
+      'INSERT INTO watch_views(media_id,visitor_hash,last_seen,category) VALUES(?,?,?,?)',
+      item.id,
+      'fixture',
+      Date.now() + 100 - i,
+      'MANGA',
+    );
+  }
+  const context = { destination: 'yoru', extensionsEnabled: true, overrides: {}, revision: 0 };
+  const deps = {
+    db: f.db,
+    coreAccountMedia: async () => [],
+    refreshSources: async () => ({
+      currentSources: [safeSource, adultSource],
+      complete: true,
+      sourceStates: [],
+    }),
+  };
+  const policy = await createSocialPolicy(context, deps);
+  const result = await getTrendingManga({ db: f.db, policy, media: async () => null });
+  assert.deepEqual(
+    result.items.map((item) => item.id),
+    [items[20].id],
+  );
+  const ara = await createSocialPolicy({ ...context, destination: 'ara-ara' }, deps);
+  const visitor = await recordReadView(items[0].id, '', { db: f.db, policy: ara });
+  assert.match(visitor, /^[A-Za-z0-9_-]{43}$/);
+  await assert.rejects(recordReadView(items[0].id, '', { db: f.db, policy }), { status: 404 });
+});
 
 function migrateViews(sqlite) {
   const folder = new URL('../drizzle/', import.meta.url);

@@ -49,6 +49,18 @@ test('animation filters separate family shows, preserve release tracks and survi
   );
   await page.goto('/schedule');
   const filter = page.getByRole('group', { name: 'Animation category' });
+  const releaseTypes = page.getByRole('group', { name: 'Release type' });
+  if (page.viewportSize().width > 950) {
+    await expect
+      .poll(async () => {
+        const categoryBounds = await filter.boundingBox();
+        const typeBounds = await releaseTypes.boundingBox();
+        return Math.abs(
+          categoryBounds.y + categoryBounds.height / 2 - typeBounds.y - typeBounds.height / 2,
+        );
+      })
+      .toBeLessThan(2);
+  }
   await expect(filter.getByRole('button', { name: 'Japanese', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',
@@ -107,7 +119,11 @@ test('schedule groups local dates, sorts times, filters releases and identifies 
     }),
   );
   await page.goto('/schedule');
-  await expect(page.getByText('America/New York')).toBeVisible();
+  await expect(page.getByText('America/New York')).toHaveCount(0);
+  await expect(page.locator('.schedule-list').first().locator('.schedule-time small')).toHaveText([
+    'EDT',
+    'EDT',
+  ]);
   await expect(page.locator('.schedule-list').first().locator('h3')).toHaveText([
     'Tokyo Tuesday',
     'Later show',

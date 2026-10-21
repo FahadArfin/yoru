@@ -11,12 +11,24 @@ import {
   Search,
   Trash2,
 } from 'lucide-react';
-import { coverOf, isAnime, kindOf, send, titleOf } from '../api';
+import { api, isAnime, kindOf, send, titleOf } from '../api';
 import { useApp } from '../state';
 import { Button, Empty, ErrorNotice, Modal } from '../components';
 import FavoritesImport from '../FavoritesImport';
+import CoverImage from '../CoverImage';
+import { SpaceControls } from '../SpaceLayout';
 export default function Library() {
-  const { user, library, setAuthOpen, requireUser, updateEntry, refreshLibrary, notify } = useApp();
+  const {
+    user,
+    library,
+    libraryPage,
+    loadMoreLibrary,
+    setAuthOpen,
+    requireUser,
+    updateEntry,
+    refreshLibrary,
+    notify,
+  } = useApp();
   const [tab, setTab] = useState('all');
   const [search, setSearch] = useState('');
   const [importOpen, setImportOpen] = useState(false);
@@ -40,38 +52,43 @@ export default function Library() {
       notify(e.message, 'error');
     }
   };
-  const exportList = () => {
-    const url = URL.createObjectURL(
-      new Blob(
-        [
-          JSON.stringify(
-            {
-              application: 'Yoru',
-              version: 1,
-              exportedAt: new Date().toISOString(),
-              items: library,
-            },
-            null,
-            2,
-          ),
-        ],
-        { type: 'application/json' },
-      ),
-    );
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'yoru-library.json';
-    a.click();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  const exportList = async () => {
+    try {
+      const exported = await api('/api/library/export');
+      const url = URL.createObjectURL(
+        new Blob([JSON.stringify(exported, null, 2)], { type: 'application/json' }),
+      );
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'yoru-library.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    } catch (error) {
+      notify(error.message, 'error');
+    }
   };
   return (
-    <div className="page">
-      <div className="page-heading with-actions">
-        <div>
-          <span className="eyebrow">A COLLECTION THAT’S VERY YOU</span>
-          <h1>Your little universe.</h1>
-          <p>Every obsession. Every saved seat. Right where you left it.</p>
-        </div>
+    <div className="page library-page">
+      <h1 className="sr-only">Library</h1>
+      <SpaceControls label="Library view">
+        {[
+          ['all', 'All stories'],
+          ['active', 'In progress'],
+          ['planned', 'For later'],
+          ['completed', 'Completed'],
+          ['favorites', 'Favorites'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            className={tab === key ? 'active' : ''}
+            aria-pressed={tab === key}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </SpaceControls>
+      <div className="space-page-actions">
         <div className="heading-buttons">
           {user && (
             <button className="icon-button" aria-label="Export library" onClick={exportList}>
@@ -108,6 +125,18 @@ export default function Library() {
         </Empty>
       ) : (
         <>
+          {(libraryPage.incomplete || libraryPage.loading) && (
+            <div role="status">
+              <p>
+                {libraryPage.error
+                  ? 'Saved stories could not be verified.'
+                  : 'Some saved stories have not been checked yet.'}
+              </p>
+              <Button disabled={libraryPage.loading} onClick={loadMoreLibrary}>
+                {libraryPage.error ? 'Retry saved stories' : 'Load more saved stories'}
+              </Button>
+            </div>
+          )}
           <div className="library-stats">
             <div>
               <Bookmark size={19} />
@@ -133,23 +162,6 @@ export default function Library() {
             </div>
           </div>
           <div className="library-controls">
-            <div className="detail-tabs">
-              {[
-                ['all', 'All stories'],
-                ['active', 'In progress'],
-                ['planned', 'For later'],
-                ['completed', 'Completed'],
-                ['favorites', 'Favorites'],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  className={tab === key ? 'active' : ''}
-                  onClick={() => setTab(key)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
             <div className="inline-search">
               <Search size={17} />
               <input
@@ -165,7 +177,7 @@ export default function Library() {
               {list.map((item) => (
                 <article key={item.mediaId} className="library-row">
                   <Link to={`/title/${item.mediaId}`}>
-                    <img src={coverOf(item.media)} alt="" />
+                    <CoverImage media={item.media} alt="" />
                   </Link>
                   <div className="library-title">
                     <span className="eyebrow">{kindOf(item.media)}</span>

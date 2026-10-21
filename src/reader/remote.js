@@ -1,6 +1,17 @@
 import { useEffect, useState } from 'react';
 import { useChapters } from './hooks';
-import { chapterList, readerChapter, readingSources, savedReadingSource } from './requests';
+import {
+  chapterList,
+  readerChapter,
+  readingSources,
+  savedReadingSource,
+  readerContextKey,
+  readerSourceAllowed,
+} from './requests';
+import { useReaderSelection } from '../useCatalogPreferences';
+import { parseEditionReference, parseMediaReference } from '../../shared/media-reference';
+import { readerSourceChoices } from './model';
+import { useReaderContinuity } from './use-resource';
 export { savedReadingSource, rememberReadingSource } from './requests';
 
 export function useReaderChapters(
@@ -12,170 +23,216 @@ export function useReaderChapters(
   scope = null,
 ) {
   const local = useChapters(media.id);
-  const [sources, setSources] = useState(null);
+  const selection = useReaderSelection();
+  const context = selection?.ready ? selection.context : null;
+  const continuity = useReaderContinuity();
+  const contextKey = readerContextKey(context);
+  const sourceKey = `${contextKey}:${media.id}`;
+  const [sourceState, setSources] = useState({ key: '', data: null });
+  const sources = sourceState.key === sourceKey ? sourceState.data : null;
   const [listing, setListing] = useState({ items: [], key: '', loading: false, error: '' });
   const [edition, setEdition] = useState({ item: null, key: '', loading: false, error: '' });
   const [revision, setRevision] = useState(0);
+  const native = parseMediaReference(media.id)?.kind === 'extension-manga';
+  const remoteRef = parseEditionReference(requested);
   const localSelected = requested
-    ? local.items.some((x) => x.id === requested)
-    : sourceParam === 'local' || (local.items.length > 0 && !sourceParam);
+    ? local.items.some((item) => item.id === requested)
+    : sourceParam === 'local' || (!native && local.items.length > 0 && !sourceParam);
   const source = localSelected
     ? 'local'
-    : requested?.startsWith('sw-')
-      ? 'weebcentral'
-      : requested && /^[a-f0-9-]{36}$/i.test(requested)
-        ? 'mangadex'
-        : sourceParam ||
-          (sources?.sources.some((s) => s.id === savedReadingSource(media.id)) ||
-          (sources?.partial && savedReadingSource(media.id) === 'weebcentral')
-            ? savedReadingSource(media.id)
-            : sources?.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex');
+    : (remoteRef && remoteRef.kind !== 'extension' ? remoteRef.kind : null) ||
+      sourceParam ||
+      media.sourceRef?.id ||
+      (sources?.sources.some((s) => s.id === savedReadingSource(media.id))
+        ? savedReadingSource(media.id)
+        : sources?.sources.find((s) => s.id === 'weebcentral')?.id ||
+          sources?.sources[0]?.id ||
+          'mangadex');
+  const sourceChoice = sources?.sources.find(
+    (s) => s.id === source && (!s.mediaId || s.mediaId === media.id),
+  );
+  const sourceRef = media.sourceRef?.id === source ? media.sourceRef : sourceChoice?.sourceRef;
+  const pinned = {
+    id: source,
+    mediaId: media.id,
+    sourceRef,
+    integration: sourceRef?.integration || 'core',
+    name:
+      sourceRef?.providerKey ||
+      (source === 'weebcentral'
+        ? 'Weeb Central'
+        : source === 'local'
+          ? 'On this device'
+          : 'MangaDex'),
+  };
   const language =
     languageParam === 'all' || /^[a-z]{2}(?:-[a-z]{2,4})?$/.test(languageParam || '')
       ? languageParam
-      : requested && edition.key === `${media.id}:${source}:${requested}`
-        ? edition.item?.language || 'en'
-        : 'en';
-  const listingKey = `${media.id}:${source}:${language}`;
+      : sourceRef?.language || 'en';
+  const listingKey = `${sourceKey}:${source}:${language}`;
+  const sourceAllowed = readerSourceAllowed(sourceRef || source, continuity.displayContext);
+  const enabled = !!context && !local.loading && !localSelected && sourceAllowed;
+  const groupAllowed =
+    !context ||
+    context.integrationMode === 'all' ||
+    context.integrationMode === (sourceRef?.integration === 'suwayomi' ? 'extensions' : 'core');
+
   useEffect(() => {
     const controller = new AbortController();
-    setSources(null);
-    readingSources(media.id, revision > 0)
-      .then((result) => {
-        if (!controller.signal.aborted) setSources(result);
+    if (!context) return () => controller.abort();
+    readingSources(media.id, revision > 0, { ...context, signal: controller.signal })
+      .then((data) => {
+        if (!controller.signal.aborted) setSources({ key: sourceKey, data });
       })
-      .catch(() => {
-        if (!controller.signal.aborted) setSources({ sources: [], state: 'offline' });
+      .catch((error) => {
+        if (!controller.signal.aborted)
+          setSources({
+            key: sourceKey,
+            data: { sources: [], state: 'offline', error: error.message },
+          });
       });
     return () => controller.abort();
-  }, [media.id, revision]);
-  const explicitChapter = /^(?:[a-f0-9-]{36}|sw-weebcentral-\d+-\d+)$/i.test(requested || '');
-  // An exact edition can be verified by the reader endpoint without waiting for other providers.
-  const enabled =
-    !local.loading && !localSelected && (explicitChapter || sources?.state === 'ready');
+  }, [sourceKey, revision]);
+
   useEffect(() => {
     const controller = new AbortController();
-    setListing((old) => ({
-      items: [],
-      key: listingKey,
-      loading: !!enabled,
-      error: '',
-      languages: old.key.startsWith(`${media.id}:${source}:`) ? old.languages : [],
-    }));
-    if (!enabled) return () => controller.abort();
+    const shouldLoad =
+      enabled &&
+      groupAllowed &&
+      (remoteRef || sources?.state === 'ready' || sources?.state === 'external-only');
+    setListing({ items: [], key: listingKey, loading: !!shouldLoad, error: '', languages: [] });
+    if (!shouldLoad) return () => controller.abort();
     (async () => {
       let offset = 0,
+        page = 1,
         items = [];
-      // Fetch only the opened title. Keep the picker responsive while its editions load.
       for (let n = 0; n < 100; n++) {
         const result = await chapterList(
           media.id,
-          { source, language, sort: 'asc', offset },
-          scope,
+          { source, sourceRef, language, sort: 'asc', offset, ...(native ? { page } : {}) },
+          { ...context, signal: controller.signal },
           revision > 0,
         );
-        items = [
-          ...items,
-          ...result.items
-            .filter((c) => c.native && !c.external)
-            .map((c) => ({
-              ...c,
-              kind: 'remote',
-              group: c.groups.map((g) => g.name).join(', ') || c.readLabel,
-              pageCount: c.pages,
-              pages: [],
-            })),
-        ];
         if (controller.signal.aborted) return;
+        items = [
+          ...new Map(
+            [
+              ...items,
+              ...(result.items || [])
+                .filter((c) => c.native && !c.external)
+                .map((c) => ({
+                  ...c,
+                  mediaId: c.mediaId || media.id,
+                  sourceRef: c.sourceRef || sourceRef,
+                  source: c.source || source,
+                  kind: 'remote',
+                  group: c.groups?.map((g) => g.name).join(', ') || c.readLabel || '',
+                  pageCount: c.pageCount || c.pages,
+                  pages: [],
+                })),
+            ].map((c) => [c.id, c]),
+          ).values(),
+        ];
         setListing({
           items,
           key: listingKey,
           loading: false,
           error: '',
-          languages: result.languages || [],
+          languages: result.languages || [...new Set(items.map((c) => c.language).filter(Boolean))],
         });
-        if (result.nextOffset == null || result.nextOffset <= offset) break;
-        offset = result.nextOffset;
+        if (native) {
+          if (!result.hasMore || !result.nextPage || result.nextPage <= page) break;
+          page = result.nextPage;
+        } else {
+          if (result.nextOffset == null || result.nextOffset <= offset) break;
+          offset = result.nextOffset;
+        }
       }
-    })().catch((e) => {
+    })().catch((error) => {
       if (!controller.signal.aborted)
-        setListing((old) => ({ ...old, loading: false, error: e.message }));
+        setListing((old) => ({ ...old, loading: false, error: error.message }));
     });
     return () => controller.abort();
-  }, [enabled, media.id, source, language, revision, scope]);
-  const selected = enabled
-    ? requested ||
-      (listing.key === listingKey
-        ? listing.items.find((c) => c.number === String(unit))?.id || listing.items[0]?.id
-        : null)
-    : null;
-  const editionKey = `${media.id}:${source}:${selected}`;
+  }, [enabled, groupAllowed, listingKey, sources?.state, revision]);
+
+  const availableChapters = listing.key === listingKey ? listing.items : [];
+  const selected =
+    enabled || (continuity.key && requested && sourceAllowed)
+      ? requested ||
+        (!native
+          ? availableChapters.find((c) => c.number === String(unit))?.id || availableChapters[0]?.id
+          : null)
+      : null;
+  const editionKey = `${continuity.key}:${media.id}:${source}:${selected}`;
   useEffect(() => {
     const controller = new AbortController();
+    if (edition.key === editionKey && edition.item && revision === edition.revision)
+      return () => controller.abort();
+    if (!context && continuity.key) return () => controller.abort();
     setEdition({ item: null, key: editionKey, loading: !!selected, error: '' });
     if (!selected) return () => controller.abort();
-    readerChapter(media.id, selected, revision > 0)
+    readerChapter(media.id, { id: selected, sourceRef, source }, revision > 0, {
+      ...context,
+      signal: controller.signal,
+    })
       .then((item) => {
         if (!controller.signal.aborted)
-          setEdition({ item, key: editionKey, loading: false, error: '' });
+          setEdition({ item, key: editionKey, loading: false, error: '', revision });
       })
-      .catch((e) => {
+      .catch((error) => {
         if (!controller.signal.aborted)
-          setEdition({ item: null, key: editionKey, loading: false, error: e.message });
+          setEdition({ item: null, key: editionKey, loading: false, error: error.message });
       });
     return () => controller.abort();
-  }, [selected, media.id, source, revision]);
-  let items = localSelected ? local.items : [];
-  const loaded = !!(
-    selected &&
-    edition.item &&
-    edition.key === editionKey &&
-    edition.item.id === selected
-  );
-  if (enabled) {
-    items = listing.key === listingKey ? listing.items : [];
-    if (loaded)
-      items = items.some((c) => c.id === selected)
-        ? items.map((c) => (c.id === selected ? edition.item : c))
-        : [...items, edition.item];
-    // Metadata is not a loaded chapter; never mount the canvas with an empty page list.
-    if (!loaded) items = [];
-  }
+  }, [editionKey, revision, !!context]);
+  const loaded = !!(selected && edition.key === editionKey && edition.item?.id === selected);
+  const items = localSelected
+    ? local.items
+    : loaded
+      ? [...availableChapters.filter((c) => c.id !== selected), edition.item].sort(
+          (a, b) =>
+            (availableChapters.findIndex((c) => c.id === a.id) + 1 || Infinity) -
+            (availableChapters.findIndex((c) => c.id === b.id) + 1 || Infinity),
+        )
+      : [];
   return {
     ...local,
     items,
-    sources: [
-      ...(sources?.sources || []),
-      ...(!localSelected && source && sources && !sources.sources.some((s) => s.id === source)
-        ? [
-            {
-              id: source,
-              name:
-                source === 'weebcentral' ? 'Weeb Central (unavailable)' : 'MangaDex (unavailable)',
-            },
-          ]
-        : []),
-      ...(local.items.length ? [{ id: 'local', name: 'On this device' }] : []),
-    ],
+    localItems: local.items,
+    availableChapters: localSelected ? local.items : availableChapters,
+    groupEmpty: sources?.state === 'ready' && !sources.sources.length,
+    context,
+    sourceRef,
     source,
     remote: !localSelected,
     language,
-    languages: listing.languages || [],
+    sources: readerSourceChoices(
+      [
+        ...(sources?.sources || []),
+        ...(local.items.length ? [{ id: 'local', name: 'On this device', mediaId: media.id }] : []),
+      ],
+      context,
+      sourceAllowed ? pinned : null,
+    ),
+    languages: listing.key === listingKey ? listing.languages || [] : [],
     loading:
       local.loading ||
-      (!loaded && !localSelected && !sources && !explicitChapter) ||
-      (enabled &&
+      (!!context &&
+        !localSelected &&
         !loaded &&
-        (listing.key !== listingKey ||
-          listing.loading ||
-          (selected && (edition.key !== editionKey || edition.loading)))),
+        ((!sources && !remoteRef) ||
+          (enabled &&
+            (listing.key !== listingKey ||
+              listing.loading ||
+              (selected && (edition.key !== editionKey || edition.loading)))))),
     error:
       local.error ||
-      (enabled
-        ? listing.error || edition.error
-        : !localSelected && sources?.state === 'offline'
-          ? 'The reading server is offline. Try again shortly.'
-          : ''),
+      (!localSelected && !sourceAllowed && context
+        ? 'This chapter source is disabled for this section. Choose another source or change Reader catalogs in Settings.'
+        : !localSelected && sources?.state === 'offline' && !loaded
+          ? sources.error || 'The reading server is offline. Try again shortly.'
+          : (edition.key === editionKey ? edition.error : '') ||
+            (listing.key === listingKey ? listing.error : '')),
     refresh: () => {
       local.refresh();
       setRevision((n) => n + 1);

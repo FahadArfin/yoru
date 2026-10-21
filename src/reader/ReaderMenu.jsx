@@ -23,6 +23,7 @@ import {
 import { titleOf } from '../api';
 import { Button, Modal } from '../components';
 import { pageStep } from './model';
+import { chapterDiscussionLink } from '../../shared/chapter-discussion';
 
 export default function ReaderMenu({
   media,
@@ -46,8 +47,10 @@ export default function ReaderMenu({
   read,
   discussionUnit,
   sourcePicker,
+  readTogether,
 }) {
   const rtl = preferences.direction === 'rtl';
+  const discussionLink = chapterDiscussionLink(media.id, chapter);
   const paged = ['single', 'double'].includes(preferences.mode);
   const pageArrow = (forward, Icon) => (
     <button
@@ -142,10 +145,11 @@ export default function ReaderMenu({
         </button>
       </div>
       <div className="reader-menu-section">
+        {readTogether}
         <Link
           className="reader-menu-action"
-          aria-label={discussionUnit ? 'Chapter discussion' : 'Title discussion'}
-          to={`/title/${media.id}?unit=${discussionUnit}`}
+          aria-label={discussionLink || discussionUnit ? 'Chapter discussion' : 'Title discussion'}
+          to={discussionLink || `/title/${media.id}?unit=${discussionUnit}`}
         >
           <MessageCircle size={17} />
           Discussion

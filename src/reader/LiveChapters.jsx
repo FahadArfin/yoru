@@ -10,65 +10,45 @@ import {
   Star,
   Users,
 } from 'lucide-react';
-import { invalidateApi, peek, send } from '../api';
+import { invalidateApi } from '../api';
 import { useApp } from '../state';
 import { Button, ErrorNotice, Loading, Modal } from '../components';
 import { recordChapterView } from '../watch-views';
 import ChapterDirectory, { languageLabel } from './ChapterDirectory';
 import { savedReadingSource, rememberReadingSource } from './remote';
-import { chapterList, chapterListPath, readingSources } from './requests';
+import { chapterList, readingSources, readerContextKey, readerMutation } from './requests';
+import { useReaderSelection } from '../useCatalogPreferences';
+import CatalogIntegrationSelect from '../CatalogIntegrationSelect';
 
-const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
+const chapterLabel = (item) =>
+  item.number != null && item.number !== '' ? `Chapter ${item.number}` : 'Special chapter';
 
 export default function LiveChapters({ media }) {
-  const { user, authLoading, authKnown, setAuthOpen, notify } = useApp();
-  const [language, setLanguage] = useState('en');
+  const { user, setAuthOpen, notify } = useApp();
+  const selection = useReaderSelection();
+  const context = selection?.ready ? selection.context : null;
+  const contextKey = readerContextKey(context);
+  const [language, setLanguage] = useState(media.sourceRef?.language || 'en');
   const [source, setSource] = useState(
-    () =>
-      savedReadingSource(media.id) ||
-      peek(`/api/media/${media.id}/reading-sources`, '', 30000)?.sources?.find(
-        (item) => item.id === 'weebcentral',
-      )?.id ||
-      'mangadex',
+    media.sourceRef?.id || savedReadingSource(media.id) || 'mangadex',
   );
-  const [sources, setSources] = useState([{ id: 'mangadex', name: 'MangaDex' }]);
+  const [sourceState, setSourceState] = useState({ key: '', items: [] });
+  const sources = sourceState.key === contextKey ? sourceState.items : [];
   const [sourceIssue, setSourceIssue] = useState('');
   const [sourceRevision, setSourceRevision] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    readingSources(media.id, sourceRevision > 0)
-      .then((result) => {
-        if (controller.signal.aborted) return;
-        const unavailable = result.partial || result.state === 'offline';
-        setSourceIssue(unavailable ? 'Some reading sources are temporarily unavailable.' : '');
-        const preferred = savedReadingSource(media.id);
-        const choices = [...result.sources];
-        if (unavailable && preferred === 'weebcentral' && !choices.some((s) => s.id === preferred))
-          choices.push({ id: preferred, name: 'Weeb Central (unavailable)' });
-        setSources(choices);
-        setSource(
-          choices.some((s) => s.id === preferred)
-            ? preferred
-            : result.sources.find((s) => s.id === 'weebcentral')?.id || 'mangadex',
-        );
-      })
-      .catch(() => {
-        if (!controller.signal.aborted)
-          setSourceIssue('Some reading sources are temporarily unavailable.');
-      });
-    return () => controller.abort();
-  }, [media.id, sourceRevision]);
   const [group, setGroup] = useState('all');
   const [search, setSearch] = useState('');
   const [query, setQuery] = useState('');
   const [sort, setSort] = useState('desc');
   const [revision, setRevision] = useState(0);
-  const scope = authLoading || !authKnown ? null : user?.id || 'guest';
-  const initial = peek(chapterListPath(media.id, { source }), scope, 30000);
-  const [data, setData] = useState(initial || null);
+  const picked = sources.find((item) => item.id === source);
+  const targetId = picked?.mediaId || media.id;
+  const key = `${contextKey}:${targetId}:${source}:${language}:${group}:${query}:${sort}`;
+  const [snapshot, setSnapshot] = useState({ key: '', data: null });
+  const data = snapshot.key === key ? snapshot.data : null;
   const [groups, setGroups] = useState([]);
   const [languages, setLanguages] = useState([]);
-  const [loading, setLoading] = useState(!initial);
+  const [loading, setLoading] = useState(true);
   const [more, setMore] = useState(false);
   const [error, setError] = useState('');
   const [rating, setRating] = useState(null);
@@ -76,87 +56,140 @@ export default function LiveChapters({ media }) {
   const [saving, setSaving] = useState(false);
   const [ratingError, setRatingError] = useState('');
   const generation = useRef(0);
-  const path = `/api/media/${media.id}/chapters`;
-  function request(offset) {
+  const operation = useRef(null);
+  const path = `/api/media/${targetId}/chapters`;
+  const setData = (value) =>
+    setSnapshot((old) => ({
+      key,
+      data: typeof value === 'function' ? value(old.key === key ? old.data : null) : value,
+    }));
+  useEffect(() => {
+    const controller = new AbortController();
+    setSourceIssue('');
+    if (!context) return () => controller.abort();
+    readingSources(media.id, sourceRevision > 0, { ...context, signal: controller.signal })
+      .then((result) => {
+        if (controller.signal.aborted) return;
+        const choices = result.sources;
+        setSourceState({ key: contextKey, items: choices });
+        const preferred = savedReadingSource(media.id);
+        setSource(
+          choices.some((s) => s.id === preferred)
+            ? preferred
+            : choices.some((s) => s.id === media.sourceRef?.id)
+              ? media.sourceRef.id
+              : choices.find((s) => s.id === 'weebcentral')?.id || choices[0]?.id || '',
+        );
+        setSourceIssue(
+          result.partial || result.state === 'offline'
+            ? 'Some reading sources are temporarily unavailable.'
+            : result.disabled
+              ? 'No chapter sources are enabled in this integration group. Choose another group or change Reader catalogs in Settings.'
+              : '',
+        );
+      })
+      .catch((error) => {
+        if (!controller.signal.aborted) {
+          setSourceState({ key: contextKey, items: [] });
+          setSourceIssue(error.message);
+        }
+      });
+    return () => controller.abort();
+  }, [media.id, contextKey, sourceRevision]);
+  function request(offset, signal) {
     return chapterList(
-      media.id,
-      { source, language, group, q: query, sort, offset },
-      scope,
+      targetId,
+      {
+        source,
+        sourceRef:
+          picked?.sourceRef || (media.sourceRef?.id === source ? media.sourceRef : undefined),
+        language,
+        group,
+        q: query,
+        sort,
+        ...(picked?.integration === 'suwayomi' || picked?.sourceRef?.integration === 'suwayomi'
+          ? { page: offset || 1 }
+          : { offset }),
+      },
+      { ...context, signal },
       revision > 0,
     );
   }
   function remember(result) {
-    setLanguages(result.languages || []);
+    setLanguages(
+      result.languages || [...new Set(result.items.map((item) => item.language).filter(Boolean))],
+    );
     setGroups((old) =>
       [
         ...new Map(
-          [...old, ...result.items.flatMap((item) => item.groups)].map((item) => [item.id, item]),
+          [...old, ...result.items.flatMap((item) => item.groups || [])].map((item) => [
+            item.id,
+            item,
+          ]),
         ).values(),
       ].sort((a, b) => a.name.localeCompare(b.name)),
     );
   }
   useEffect(() => {
     const token = ++generation.current;
-    const abort = new AbortController();
-    const existing = peek(
-      chapterListPath(media.id, { source, language, group, q: query, sort }),
-      scope,
-      30000,
-    );
-    setLoading(!existing);
+    const controller = new AbortController();
+    operation.current = controller;
+    setLoading(!!context && !!picked);
     setMore(false);
     setError('');
-    setData(existing || null);
-    if (authLoading)
-      return () => {
-        abort.abort();
-        generation.current++;
-      };
-    if (existing) remember(existing);
-    request(0)
-      .then((result) => {
-        if (generation.current !== token) return;
-        setData(result);
-        remember(result);
-      })
-      .catch((e) => {
-        if (!abort.signal.aborted) setError(e.message);
-      })
-      .finally(() => {
-        if (!abort.signal.aborted) setLoading(false);
-      });
+    setSnapshot({ key, data: null });
+    setGroups([]);
+    setLanguages([]);
+    if (context && picked)
+      request(0, controller.signal)
+        .then((result) => {
+          if (generation.current === token && !controller.signal.aborted) {
+            setData(result);
+            remember(result);
+          }
+        })
+        .catch((error) => {
+          if (!controller.signal.aborted) setError(error.message);
+        })
+        .finally(() => {
+          if (!controller.signal.aborted) setLoading(false);
+        });
     return () => {
-      abort.abort();
+      controller.abort();
       generation.current++;
     };
-  }, [media.id, source, language, group, query, sort, revision, scope, authLoading]);
+  }, [key, !!picked, revision]);
   useEffect(() => {
     setRating(null);
     setRatingError('');
-  }, [user?.id]);
+  }, [contextKey]);
   async function loadMore() {
     const token = generation.current;
+    const controller = operation.current;
+    if (!context || !controller || controller.signal.aborted) return;
     setMore(true);
     setError('');
     try {
-      const result = await request(data.nextOffset);
-      if (generation.current !== token) return;
+      const result = await request(data.nextPage ?? data.nextOffset, controller.signal);
+      if (generation.current !== token || controller.signal.aborted) return;
       setData((old) => ({
         ...result,
         items: [
-          ...new Map([...old.items, ...result.items].map((item) => [item.id, item])).values(),
+          ...new Map(
+            [...(old?.items || []), ...result.items].map((item) => [item.id, item]),
+          ).values(),
         ],
       }));
       remember(result);
-    } catch (e) {
-      if (generation.current === token) setError(e.message);
+    } catch (error) {
+      if (generation.current === token) setError(error.message);
     } finally {
       if (generation.current === token) setMore(false);
     }
   }
   function updateStats(id, stats) {
     invalidateApi(path);
-    const visibleStats = scope === null ? { ...stats, myRating: 0 } : stats;
+    const visibleStats = context?.scope === null ? { ...stats, myRating: 0 } : stats;
     setData(
       (old) =>
         old && {
@@ -168,10 +201,13 @@ export default function LiveChapters({ media }) {
     );
   }
   function opened(item) {
+    if (!context || !operation.current) return;
     const token = generation.current;
-    recordChapterView(media.id, item.id)
+    recordChapterView(item.mediaId || targetId, item.id, {
+      ...context,
+      signal: operation.current.signal,
+    })
       .then((stats) => {
-        invalidateApi(path);
         if (generation.current === token) updateStats(item.id, stats);
       })
       .catch(() => {});
@@ -186,20 +222,23 @@ export default function LiveChapters({ media }) {
     setRating(item);
   }
   async function saveRating() {
+    if (!context || !operation.current) return;
     setSaving(true);
     setRatingError('');
     const token = generation.current;
     try {
-      const stats = await send(`${path}/${rating.id}/rating`, { rating: stars });
-      invalidateApi(path);
+      const stats = await readerMutation(`${path}/${rating.id}/rating`, { rating: stars }, 'POST', {
+        ...context,
+        signal: operation.current.signal,
+      });
       if (generation.current !== token) return;
       updateStats(rating.id, stats);
       setRating(null);
       notify('Your chapter rating is saved.');
-    } catch (e) {
-      if (generation.current === token) setRatingError(e.message);
+    } catch (error) {
+      if (generation.current === token) setRatingError(error.message);
     } finally {
-      setSaving(false);
+      if (generation.current === token) setSaving(false);
     }
   }
   return (
@@ -216,14 +255,17 @@ export default function LiveChapters({ media }) {
           href={
             source === 'weebcentral'
               ? 'https://weebcentral.com/'
-              : data?.mangaId
-                ? `https://mangadex.org/title/${data.mangaId}`
-                : 'https://mangadex.org/'
+              : source !== 'mangadex'
+                ? undefined
+                : data?.mangaId
+                  ? `https://mangadex.org/title/${data.mangaId}`
+                  : 'https://mangadex.org/'
           }
           target="_blank"
           rel="noopener noreferrer"
         >
-          {sources.find((s) => s.id === source)?.name || 'MangaDex'} <ExternalLink size={13} />
+          {sources.find((s) => s.id === source)?.name || 'Reading source'}{' '}
+          <ExternalLink size={13} />
         </a>
       </header>
       {sourceIssue && (
@@ -241,7 +283,13 @@ export default function LiveChapters({ media }) {
         </p>
       )}
       <div className="live-chapter-controls">
-        {sources.length > 1 && (
+        <CatalogIntegrationSelect
+          className="chapter-translation-filter reader-integration-filter"
+          value={context?.integrationMode || 'all'}
+          onChange={(mode) => selection.setIntegrationMode(mode)}
+          disabled={!context}
+        />
+        {sources.length > 0 && (
           <label className="chapter-translation-filter">
             <BookOpen size={15} />
             <span>Source</span>
@@ -255,9 +303,15 @@ export default function LiveChapters({ media }) {
                 rememberReadingSource(media.id, e.target.value);
               }}
             >
+              {!sources.some((item) => item.id === source) && (
+                <option value={source} disabled>
+                  Choose an enabled source
+                </option>
+              )}
               {sources.map((s) => (
                 <option key={s.id} value={s.id}>
-                  {s.name}
+                  {s.name} · {s.integration === 'suwayomi' ? 'Suwayomi' : 'Core'}
+                  {s.sourceRef?.language ? ` · ${languageLabel(s.sourceRef.language)}` : ''}
                 </option>
               ))}
             </select>
@@ -357,7 +411,9 @@ export default function LiveChapters({ media }) {
               <>
                 <div className="chapter-catalog-caption">
                   <span>
-                    {data.items.length.toLocaleString()} of {data.total.toLocaleString()} editions
+                    {data.items.length.toLocaleString()}
+                    {Number.isFinite(data.total) ? ` of ${data.total.toLocaleString()}` : ''}{' '}
+                    editions
                   </span>
                   <span title="Opens and ratings belong to each translation edition on Yoru. They are not MangaDex statistics.">
                     Activity on Yoru <Eye size={12} />
@@ -370,7 +426,14 @@ export default function LiveChapters({ media }) {
                   </p>
                 )}
                 {data.items.length ? (
-                  <ChapterDirectory items={data.items} sort={sort} opened={opened} rate={rate} />
+                  <ChapterDirectory
+                    items={data.items}
+                    mediaId={targetId}
+                    context={context}
+                    sort={sort}
+                    opened={opened}
+                    rate={rate}
+                  />
                 ) : (
                   <div className="chapter-catalog-empty">
                     <BookOpen size={28} />
@@ -397,7 +460,7 @@ export default function LiveChapters({ media }) {
                     )}
                   </div>
                 )}
-                {data.nextOffset !== null && (
+                {(data.nextOffset != null || data.hasMore) && (
                   <div className="chapter-load-more">
                     <Button variant="secondary" busy={more} onClick={loadMore}>
                       Load more editions <ChevronDown size={15} />
@@ -435,7 +498,7 @@ export default function LiveChapters({ media }) {
             <p>{rating.title || 'Untitled chapter'}</p>
             <small>
               {languageLabel(rating.language)} ·{' '}
-              {rating.groups.map((g) => g.name).join(', ') || 'No group credited'}
+              {rating.groups?.map((g) => g.name).join(', ') || 'No group credited'}
             </small>
             <div className="chapter-stars" role="group" aria-label="Chapter rating">
               {[1, 2, 3, 4, 5].map((value) => (

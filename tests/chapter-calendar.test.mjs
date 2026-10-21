@@ -48,6 +48,19 @@ test('calendar day boundaries honor local dates, DST and extreme offsets', () =>
   assert.equal(localDayBounds('2026-10-18', 'Pacific/Pago_Pago').end, '2026-10-19T11:00:00.000Z');
 });
 
+test('calendar never invents extension release dates from chapter order or fetch timestamps', () => {
+  const undated = chapter({ publishAt: undefined, readableAt: undefined });
+  undated.attributes.chapter = '0.5';
+  undated.attributes.sourceOrder = 17;
+  undated.attributes.fetchedAt = String(now);
+  undated.attributes.uploadDate = '0';
+  assert.equal(normalizeChapterRelease(undated, 'manga', now), null);
+  assert.equal(
+    normalizeChapterRelease({ ...undated, id: 'ext-chapter-' + 'a'.repeat(32) }, 'manga', now),
+    null,
+  );
+});
+
 test('release normalization preserves source identity and excludes unsafe or misleading entries', () => {
   const item = normalizeChapterRelease(chapter(), 'manga', now);
   assert.equal(item.mediaId, 'mal-manga-123');
