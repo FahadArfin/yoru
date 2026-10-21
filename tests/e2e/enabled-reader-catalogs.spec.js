@@ -39,6 +39,44 @@ const core = {
   availableIntegrations: [],
 };
 
+for (const slow of ['core', 'native']) {
+  test(`fast search results appear while ${slow} suggestions are still pending`, async ({
+    context,
+    page,
+    baseURL,
+  }) => {
+    await fixture({ context, page, baseURL });
+    let release;
+    const held = new Promise((resolve) => {
+      release = resolve;
+    });
+    for (const provider of ['core', 'native']) {
+      await page.route(
+        provider === 'core' ? '**/api/search/suggestions?*' : '**/api/reader/suggestions?*',
+        async (route) => {
+          if (slow === provider) await held;
+          await route
+            .fulfill({ json: { items: [provider === 'core' ? core : safe], pending: false } })
+            .catch(() => {});
+        },
+      );
+    }
+    await openNativeCatalog(page, '/browse/all?q=native');
+    try {
+      await page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' }).fill('native');
+      await expect(
+        page.getByRole('option').filter({ hasText: slow === 'core' ? safe.title : core.title }),
+      ).toBeVisible();
+      release();
+      await expect(
+        page.getByRole('listbox', { name: 'Suggested titles' }).getByRole('option'),
+      ).toHaveCount(2);
+    } finally {
+      release();
+    }
+  });
+}
+
 test('Ara Manhwa offers only related enabled extension sources', async ({
   context,
   page,
