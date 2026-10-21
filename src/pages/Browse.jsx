@@ -84,7 +84,6 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
     if (!('page' in changes)) next.delete('page');
     setParams(next);
   };
-  const collectionControlsBelow = chosen === 'anime' && discovery;
   const filters = (
     <div className="filter-bar" role="region" aria-label="Catalog filters">
       <form
@@ -197,12 +196,9 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
           </button>
         )}
       </div>
-      {!collectionControlsBelow && filters}
+      {filters}
       {discovery ? (
-        <GenreCollections
-          category={chosen}
-          collectionControls={collectionControlsBelow ? filters : null}
-        />
+        <GenreCollections category={chosen} />
       ) : (
         <>
           <div className="results-bar">

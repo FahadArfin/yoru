@@ -49,8 +49,12 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
   const filters = page.getByRole('region', { name: 'Catalog filters' });
   await expect(filters).toHaveCount(1);
   const fullCollection = page.getByRole('region', { name: 'Full collection', exact: true });
-  await expect(fullCollection.getByRole('region', { name: 'Catalog filters' })).toHaveCount(1);
+  await expect(fullCollection.getByRole('region', { name: 'Catalog filters' })).toHaveCount(0);
   expect((await filters.boundingBox()).y).toBeGreaterThan((await genres.boundingBox()).y);
+  expect((await filters.boundingBox()).y).toBeLessThan(
+    (await page.getByRole('navigation', { name: 'Explore genres', exact: true }).boundingBox()).y,
+  );
+  await expect(filters.getByLabel('Catalog type')).toHaveValue('anime');
   await expect(filters.getByLabel('Anime format')).toHaveValue('');
 
   expect((await discovery.boundingBox()).y).toBeLessThan((await genres.boundingBox()).y);
@@ -78,10 +82,10 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
     .getByRole('navigation', { name: 'Explore genres', exact: true })
     .getByRole('link', { name: 'Full collection', exact: true })
     .click();
-  await expect(fullCollection.getByLabel('Search catalog')).toBeInViewport();
+  await expect(fullCollection).toBeInViewport();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
-  await fullCollection.getByLabel('Search catalog').fill('New anime');
-  await fullCollection.getByRole('button', { name: 'Search', exact: true }).click();
+  await filters.getByLabel('Search catalog').fill('New anime');
+  await filters.getByRole('button', { name: 'Search', exact: true }).click();
   await expect(page).toHaveURL(/q=New\+anime/);
   await expect(page.getByRole('heading', { name: 'Results for “New anime”' })).toBeVisible();
   await expect(filters).toHaveCount(1);

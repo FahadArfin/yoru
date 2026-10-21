@@ -167,7 +167,7 @@ function CollectionShelf({ category, genre = '', children }) {
   );
 }
 
-export default function GenreCollections({ category, collectionControls }) {
+export default function GenreCollections({ category }) {
   const scope = useCollection();
   const genres = scope?.active
     ? browseGenres.filter((genre) =>
@@ -191,9 +191,7 @@ export default function GenreCollections({ category, collectionControls }) {
       {genres.map((genre) => (
         <CollectionShelf key={`${category}-${genre}`} category={category} genre={genre} />
       ))}
-      <CollectionShelf key={`${category}-all`} category={category}>
-        {collectionControls}
-      </CollectionShelf>
+      <CollectionShelf key={`${category}-all`} category={category} />
     </div>
   );
 }
