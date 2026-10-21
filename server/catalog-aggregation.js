@@ -5,8 +5,12 @@ import { refreshReaderSources, INVENTORY_FRESH_MS } from './reader-source-invent
 import { apiError } from './validation.js';
 import { withinReaderDeadline } from './reader-operation.js';
 import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
+import { sourceSupportsReadingCategory } from '../shared/catalog-preferences.js';
 
 function selection(input, context) {
+  const category = String(input.category || 'all').toLowerCase();
+  if (!['all', 'manga', 'manhwa'].includes(category))
+    throw apiError(400, 'Invalid reading category.');
   const integration = input.integration || context.integrationMode;
   if (!['all', 'core', 'extensions'].includes(integration))
     throw apiError(400, 'Invalid reader integration.');
@@ -25,6 +29,7 @@ function selection(input, context) {
   )
     throw apiError(400, 'Invalid reading source.');
   return {
+    category,
     integration,
     mode,
     q,
@@ -36,7 +41,11 @@ function selection(input, context) {
 const eligibleSource = (s, c, p) => {
   try {
     assertSourceEligible(s, { ...c, integrationMode: p.integration }, { discovery: true });
-    return (!p.source || p.source === s.id) && (!p.language || p.language === s.language);
+    return (
+      sourceSupportsReadingCategory(s, p.category) &&
+      (!p.source || p.source === s.id) &&
+      (!p.language || p.language === s.language)
+    );
   } catch {
     return false;
   }
@@ -177,7 +186,7 @@ async function aggregate(input, context, deps) {
               ? deps.coreSearch(
                   {
                     q: params.q,
-                    category: 'MANGA',
+                    category: params.category === 'manhwa' ? 'MANHWA' : 'MANGA',
                     page: pos.page,
                     limit: params.limit,
                     sort: params.mode === 'latest' ? 'newest' : 'trending',
@@ -351,6 +360,7 @@ async function aggregate(input, context, deps) {
         media = row && JSON.parse(row.payload);
       }
       assertMediaEligible(media, context);
+      if (params.category === 'manhwa' && media.category !== 'MANHWA') continue;
     } catch {
       continue;
     }

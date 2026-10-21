@@ -1,6 +1,7 @@
 import { apiError } from './validation.js';
 import { parseMediaReference } from '../shared/media-reference.js';
 import { decimalSourceId } from '../services/reader-bridge/suwayomi-operations.mjs';
+import { readingTitleCategory } from '../shared/catalog-preferences.js';
 
 // Permanent identity records are deliberately separate from catalog/image caches.
 export const externalCatalogSchema = `
@@ -272,8 +273,8 @@ export function createExternalCatalogStore(
       rank: null,
       ...metadata,
       id: row.id,
-      category: metadata.category === 'MANHWA' ? 'MANHWA' : 'MANGA',
-      type: metadata.category === 'MANHWA' ? 'MANHWA' : 'MANGA',
+      category: readingTitleCategory(metadata),
+      type: readingTitleCategory(metadata),
       malId: null,
       idMal: null,
       sourceRef: source,

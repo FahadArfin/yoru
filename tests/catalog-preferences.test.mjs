@@ -3,7 +3,37 @@ import { test } from 'node:test';
 import { DatabaseSync } from 'node:sqlite';
 import { nodeReaderDb } from '../server/reader-db.js';
 import { readerSettingsContract } from './reader-settings-contract.mjs';
-import { catalogDefaults, catalogEnabled } from '../shared/catalog-preferences.js';
+import {
+  catalogDefaults,
+  catalogEnabled,
+  sourceSupportsReadingCategory,
+  readingTitleCategory,
+} from '../shared/catalog-preferences.js';
+
+test('Manhwa source coverage recognizes exact package families, not language or name fragments', () => {
+  for (const providerKey of [
+    'Manhwa18.cc',
+    'ManhwaClub.net',
+    'Aunt Manhwa',
+    'eu.kanade.tachiyomi.extension.all.manhwa18cc',
+  ])
+    assert.equal(sourceSupportsReadingCategory({ providerKey }, 'manhwa'), true);
+  for (const providerKey of [
+    '3Hentai',
+    'eu.kanade.tachiyomi.extension.all.hentai3',
+    'NHentai.to',
+    'Unknown Manhwa',
+  ]) {
+    assert.equal(sourceSupportsReadingCategory({ providerKey, language: 'ko' }, 'manhwa'), false);
+    assert.equal(sourceSupportsReadingCategory({ providerKey }, 'manga'), true);
+  }
+  assert.equal(readingTitleCategory({ category: 'MANGA', genres: ['Manhwa'] }), 'MANHWA');
+  assert.equal(
+    readingTitleCategory({ category: 'MANGA', genres: ['Webtoon', 'Full Color'] }),
+    'MANGA',
+  );
+  assert.equal(readingTitleCategory({ genres: 'Manhwa' }), 'MANGA');
+});
 
 function database(sql) {
   return nodeReaderDb({

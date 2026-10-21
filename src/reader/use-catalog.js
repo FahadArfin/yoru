@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useReaderFeed } from './use-feed';
 import { assertSourceEligible } from '../../shared/reading-eligibility';
 import { visibleReadingItems } from './feed';
+import { sourceSupportsReadingCategory } from '../../shared/catalog-preferences';
 
 // One cursor chain serves the landing banner, highlights and catalog together.
 export function useReaderCatalog({
@@ -21,7 +22,12 @@ export function useReaderCatalog({
   // URL until the visitor navigates to a different genre.
   const selectedGenre = genreChoice.base === genre ? genreChoice.value : genre;
   const setGenre = (value) => setGenreChoice({ base: genre, value });
-  const parameters = new URLSearchParams({ mode: query ? 'search' : sort, q: query, limit: '24' });
+  const parameters = new URLSearchParams({
+    mode: query ? 'search' : sort,
+    q: query,
+    limit: '24',
+    category,
+  });
   if (source) parameters.set('source', source);
   if (language) parameters.set('language', language);
   const feed = useReaderFeed(
@@ -31,7 +37,7 @@ export function useReaderCatalog({
   const selection = feed.selection;
   const context = selection?.context;
   const sources = (inventory.data?.sources || []).filter((item) => {
-    if (!context) return false;
+    if (!context || !sourceSupportsReadingCategory(item, category)) return false;
     try {
       assertSourceEligible(item, { ...context, extensionsEnabled: true }, { discovery: true });
       return true;

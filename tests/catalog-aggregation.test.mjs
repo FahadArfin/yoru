@@ -37,6 +37,54 @@ export const context = {
   extensionsEnabled: true,
 };
 
+test('Manhwa discovery skips unrelated extensions and requires title evidence', async () => {
+  const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
+  const f = contextFixture();
+  const sources = [
+    { ...source(11), providerKey: '3Hentai' },
+    { ...source(12), providerKey: 'Manhwa18.cc' },
+  ];
+  const calls = [];
+  try {
+    const result = await getReadingDiscovery(
+      { category: 'manhwa' },
+      {
+        ...context,
+        destination: 'ara-ara',
+        overrides: {},
+      },
+      {
+        db: f.db,
+        currentSources: sources,
+        bridge: {
+          browse: async ({ sourceId }) => {
+            calls.push(sourceId);
+            return {
+              items: [
+                {
+                  ...title(sources[1], 1),
+                  metadata: { title: 'Tagged title', category: 'MANGA', genres: ['Manhwa'] },
+                },
+                {
+                  ...title(sources[1], 2),
+                  metadata: { title: 'Unknown origin', category: 'MANGA' },
+                },
+              ],
+              hasMore: false,
+            };
+          },
+        },
+      },
+    );
+    assert.deepEqual(calls, ['suwayomi:12']);
+    assert.equal(result.items.length, 1);
+    assert.equal(result.items[0].category, 'MANHWA');
+    assert.equal(result.items[0].title, 'Tagged title');
+  } finally {
+    f.close();
+  }
+});
+
 test('partial feeds remain fair within four operations and twelve seconds', async () => {
   const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
   const { createContinuationStore } = await import('../server/reader-continuation.js');

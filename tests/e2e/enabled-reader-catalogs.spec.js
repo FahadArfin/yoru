@@ -39,6 +39,46 @@ const core = {
   availableIntegrations: [],
 };
 
+test('Ara Manhwa offers only related enabled extension sources', async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  await fixture({ context, page, baseURL });
+  const manhwa = {
+    ...adult,
+    category: 'MANHWA',
+    sourceRef: { ...adult.sourceRef, providerKey: 'eu.kanade.tachiyomi.extension.all.manhwa18cc' },
+  };
+  await page.route('**/api/reader/catalogs*', (route) =>
+    route.fulfill({
+      json: {
+        sources: [adult.sourceRef, manhwa.sourceRef],
+        complete: true,
+        hasMore: false,
+      },
+    }),
+  );
+  const categories = [];
+  await page.route('**/api/reader/discovery?*', (route) => {
+    categories.push(new URL(route.request().url()).searchParams.get('category'));
+    return route.fulfill({ json: { items: [manhwa, adult], hasMore: false, sourceStates: [] } });
+  });
+  await page.goto('/ara-ara/manhwa');
+  await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  const catalog = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
+  const source = catalog.getByRole('combobox', { name: 'Reading source', exact: true });
+  await expect(source.locator('option')).toHaveCount(2);
+  expect(await source.locator('option').allTextContents()).toEqual([
+    'All enabled sources',
+    'eu.kanade.tachiyomi.extension.all.manhwa18cc · en · extension',
+  ]);
+  await expect(catalog.locator('.poster-card')).toHaveCount(1);
+  expect(categories.length).toBeGreaterThan(0);
+  expect(categories.every((category) => category === 'manhwa')).toBe(true);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
 test('Ara enters on Suwayomi and offers one-click integration switches', async ({
   context,
   page,

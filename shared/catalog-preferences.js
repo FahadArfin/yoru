@@ -61,6 +61,35 @@ const packageFamilies = Object.freeze(
 const familyPackages = Object.freeze(
   Object.fromEntries(Object.entries(packageFamilies).map(([pkg, name]) => [name, pkg])),
 );
+export const catalogProviderFamily = (provider) =>
+  Object.hasOwn(packageFamilies, provider) ? packageFamilies[provider] : provider;
+
+// Explicit provider coverage, independent of a visitor's enabled memberships.
+// Unknown providers are not advertised in Manhwa until their coverage is known.
+const manhwaProviders = new Set([
+  'Manhwa18.cc',
+  'ManhwaClub.net',
+  'Aunt Manhwa',
+  'Manhwa Comics',
+  'MangaDex',
+  'Mangakakalot',
+  'Weeb Central',
+  'Webcomics',
+  'Webtoons.com',
+]);
+export const sourceSupportsReadingCategory = (source, category) =>
+  category !== 'manhwa' ||
+  manhwaProviders.has(catalogProviderFamily(source?.providerKey || readingProvider(source?.id)));
+
+// Source language and an adult rating do not establish a title's format/origin.
+export const readingTitleCategory = (metadata) =>
+  metadata.category === 'MANHWA' ||
+  (Array.isArray(metadata.genres) &&
+    metadata.genres.some(
+      (genre) => typeof genre === 'string' && genre.trim().toLowerCase() === 'manhwa',
+    ))
+    ? 'MANHWA'
+    : 'MANGA';
 export function catalogEnabled(provider, destination = 'yoru', overrides = {}) {
   const family = Object.hasOwn(packageFamilies, provider) ? packageFamilies[provider] : provider;
   const aliases = [family, Object.hasOwn(familyPackages, family) ? familyPackages[family] : null];
