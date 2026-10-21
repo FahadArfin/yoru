@@ -10,6 +10,7 @@ import Forum from '../Forum';
 import CoverImage from '../CoverImage';
 import '../section-pages.css';
 import { commentPreview } from '../../shared/comment-media';
+import { SpaceControls } from '../SpaceLayout';
 export default function Community() {
   const resource = useResource('/api/community', false);
   const { visitors, event, config } = useApp();
@@ -30,19 +31,7 @@ export default function Community() {
   const feed = itemsOf(resource.data).filter((item) => filter === 'all' || item.kind === filter);
   return (
     <div className="page section-page community-page">
-      <header className="section-page-heading">
-        <div>
-          <span className="section-kicker">
-            <MessageCircle size={13} /> BETWEEN EPISODES & CHAPTERS
-          </span>
-          <h1>Community</h1>
-          <p>Good stories. Better company. Share what you’re watching and reading.</p>
-        </div>
-        <div className="section-heading-note">
-          <span className={`live-dot ${!connected ? 'muted-dot' : ''}`} />{' '}
-          {connected ? `${online.count || 0} online` : 'Connecting to the community'}
-        </div>
-      </header>
+      <h1 className="sr-only">Community</h1>
       {view === 'activity' && (
         <div className="community-banner">
           <span className="community-banner-icon">
@@ -57,7 +46,7 @@ export default function Community() {
           </Link>
         </div>
       )}
-      <div className="segmented community-view-tabs" role="group" aria-label="Community view">
+      <SpaceControls label="Community view">
         <button
           className={view === 'forums' ? 'active' : ''}
           aria-pressed={view === 'forums'}
@@ -79,7 +68,7 @@ export default function Community() {
         >
           Latest activity
         </button>
-      </div>
+      </SpaceControls>
       {view === 'chat' ? (
         <PublicChannels />
       ) : (

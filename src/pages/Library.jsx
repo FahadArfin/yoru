@@ -16,6 +16,7 @@ import { useApp } from '../state';
 import { Button, Empty, ErrorNotice, Modal } from '../components';
 import FavoritesImport from '../FavoritesImport';
 import CoverImage from '../CoverImage';
+import { SpaceControls } from '../SpaceLayout';
 export default function Library() {
   const {
     user,
@@ -67,13 +68,27 @@ export default function Library() {
     }
   };
   return (
-    <div className="page">
-      <div className="page-heading with-actions">
-        <div>
-          <span className="eyebrow">A COLLECTION THAT’S VERY YOU</span>
-          <h1>Your little universe.</h1>
-          <p>Every obsession. Every saved seat. Right where you left it.</p>
-        </div>
+    <div className="page library-page">
+      <h1 className="sr-only">Library</h1>
+      <SpaceControls label="Library view">
+        {[
+          ['all', 'All stories'],
+          ['active', 'In progress'],
+          ['planned', 'For later'],
+          ['completed', 'Completed'],
+          ['favorites', 'Favorites'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            className={tab === key ? 'active' : ''}
+            aria-pressed={tab === key}
+            onClick={() => setTab(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </SpaceControls>
+      <div className="space-page-actions">
         <div className="heading-buttons">
           {user && (
             <button className="icon-button" aria-label="Export library" onClick={exportList}>
@@ -147,23 +162,6 @@ export default function Library() {
             </div>
           </div>
           <div className="library-controls">
-            <div className="detail-tabs">
-              {[
-                ['all', 'All stories'],
-                ['active', 'In progress'],
-                ['planned', 'For later'],
-                ['completed', 'Completed'],
-                ['favorites', 'Favorites'],
-              ].map(([key, label]) => (
-                <button
-                  key={key}
-                  className={tab === key ? 'active' : ''}
-                  onClick={() => setTab(key)}
-                >
-                  {label}
-                </button>
-              ))}
-            </div>
             <div className="inline-search">
               <Search size={17} />
               <input

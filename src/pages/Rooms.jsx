@@ -9,6 +9,7 @@ import { useApp } from '../state';
 import { useReaderResource } from '../reader/use-resource';
 import { readerContextKey } from '../reader/requests';
 import { Avatar, Badge, Button, Empty, ErrorNotice, Loading } from '../components';
+import { SpaceControls } from '../SpaceLayout';
 export default function Rooms() {
   const [page, setPage] = useState(null);
   const [accumulated, setAccumulated] = useState({ key: '', items: [] });
@@ -48,12 +49,8 @@ export default function Rooms() {
   );
   return (
     <div className="page rooms-page">
-      <div className="page-heading with-actions">
-        <div>
-          <span className="eyebrow">ANOTHER EPISODE. A LITTLE COMPANY.</span>
-          <h1>Public rooms &amp; your invitations.</h1>
-          <p>Find a watch party, start a reading circle, or save a seat for your friends.</p>
-        </div>
+      <h1 className="sr-only">Rooms</h1>
+      <div className="space-page-actions">
         <Button
           onClick={() => {
             if (requireUser()) setCreating(true);
@@ -63,23 +60,22 @@ export default function Rooms() {
           Create a room
         </Button>
       </div>
-      <div className="section-heading">
-        <div>
-          <span className="eyebrow">THERE’S A SEAT WITH YOUR NAME ON IT</span>
-          <h2>Find your room</h2>
-        </div>
-        <div className="segmented">
-          {[
-            ['all', 'All rooms'],
-            ['watch', 'Watch'],
-            ['read', 'Read'],
-          ].map(([key, label]) => (
-            <button key={key} className={type === key ? 'active' : ''} onClick={() => setType(key)}>
-              {label}
-            </button>
-          ))}
-        </div>
-      </div>
+      <SpaceControls label="Room type">
+        {[
+          ['all', 'All rooms'],
+          ['watch', 'Watch'],
+          ['read', 'Read'],
+        ].map(([key, label]) => (
+          <button
+            key={key}
+            className={type === key ? 'active' : ''}
+            aria-pressed={type === key}
+            onClick={() => setType(key)}
+          >
+            {label}
+          </button>
+        ))}
+      </SpaceControls>
       {resource.loading && !list.length ? (
         <Loading />
       ) : resource.error ? (
