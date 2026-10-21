@@ -14,8 +14,10 @@ export default function SourcePlayer({
   volume = 1,
   onProgress,
   onEnded,
+  playerRef,
 }) {
-  const videoRef = useRef(null);
+  const internalVideoRef = useRef(null);
+  const videoRef = playerRef || internalVideoRef;
   const lastProgressRef = useRef(0);
   const onProgressRef = useRef(onProgress);
   const onEndedRef = useRef(onEnded);

@@ -28,6 +28,7 @@ import { recordView } from '../watch-views';
 import { useApp, useResource } from '../state';
 import { Button, Empty, ErrorNotice, Loading } from '../components';
 import SourcePlayer from '../SourcePlayer';
+import ChromecastControls from '../ChromecastControls';
 import Discussion from '../Discussion';
 import { ExternalPlayer, SourceForm } from '../Playback';
 import { defaultAnimeSources } from '../../shared/anime-sources';
@@ -85,6 +86,7 @@ function WatchSession() {
   const [episodeGroup, setEpisodeGroup] = useState(Math.floor((unit - 1) / 50));
   const [bookmarkBusy, setBookmarkBusy] = useState(false);
   const endedRef = useRef(false);
+  const videoRef = useRef(null);
   const positionRef = useRef(0);
   const savePreference = (key, value, setter) => {
     setter(value);
@@ -288,6 +290,7 @@ function WatchSession() {
               <SourcePlayer
                 key={`${id}:${unit}:${source.id}`}
                 source={source}
+                playerRef={videoRef}
                 poster={bannerOf(media)}
                 title={titleOf(media)}
                 autoplay={autoplay}
@@ -324,6 +327,18 @@ function WatchSession() {
                 <Monitor size={16} />
                 Theater
               </button>
+              {anime && !blocked && source && (
+                <ChromecastControls
+                  key={`${id}:${unit}:${source.id}:${source.url}`}
+                  source={source}
+                  mediaId={id}
+                  title={titleOf(media)}
+                  episode={unit}
+                  poster={bannerOf(media)}
+                  videoRef={videoRef}
+                  onProgress={onProgress}
+                />
+              )}
               <button
                 aria-pressed={canAutoNext && autoNext}
                 disabled={!canAutoNext || !total}

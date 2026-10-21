@@ -1,5 +1,13 @@
 # Research and attribution
 
+## Chromecast playback
+
+The watch-page Cast control uses Google's [Web Sender SDK](https://developers.google.com/cast/docs/web_sender/integrate) and Default Media Receiver. A direct HTTPS MP4/WebM or HLS source is sent to the TV with its title, episode and current playback position; Yoru does not mirror or transcode the browser tab. The TV fetches the original media, so quality is limited by the supplied stream, network and receiver's [supported formats](https://developers.google.com/cast/docs/media). HLS manifests, segments and keys must allow receiver CORS requests. Browser cookies, authorization headers and DRM licenses are not forwarded or bypassed.
+
+MegaPlay and other embedded pages do not expose a direct stream to Yoru. For these sources the Cast control explains the limitation and suggests the provider's own Cast control, if available. The Cast SDK loads only for eligible direct sources. Casting needs a supported HTTPS browser (Chrome desktop or Android); [Chrome on iOS does not support the Web Sender SDK](https://developers.google.com/cast/docs/web_sender). The Default Media Receiver needs no Yoru Cast developer registration.
+
+Native playback pauses only after the receiver accepts the media. The Cast panel supports play/pause, 30-second seeking and stop. Remote progress uses the existing resume storage for the current visitor/account. Stopping casting restores the local position without automatically playing. Navigation does not stop an already running TV session or silently replace it; each new source/episode requires an explicit Cast action. SDK events only control and save the matching Yoru media identity. Connection cancellation is quiet; errors leave local playback available. Browser tests simulate the SDK and receiver, so physical Chromecast playback remains a separate device acceptance check.
+
 Reviewed September 7, 2026.
 
 Automatic anime source methodology reviewed September 12, 2026:
