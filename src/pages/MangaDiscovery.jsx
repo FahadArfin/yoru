@@ -160,7 +160,7 @@ export default function MangaDiscovery(props) {
     !reading || (selection?.ready && selection.context.integrationMode !== 'extensions');
   return (
     <>
-      {reading && <ReaderCatalog category={props.category} />}
+      {reading && <ReaderCatalog category={props.category} catalog={props.readerCatalog} />}
       {coreAllowed && <CoreMangaDiscovery {...props} />}
     </>
   );

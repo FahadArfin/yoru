@@ -2,6 +2,18 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { contextFixture } from './reader-context-fixture.mjs';
 import { createExternalCatalogStore } from '../server/external-catalog-store.js';
+import { publicReadingMedia } from '../server/media-resolver.js';
+
+test('native catalog cards expose bounded provider genres for discovery', () => {
+  const media = publicReadingMedia(
+    {
+      id: 'ext-manga-' + 'a'.repeat(32),
+      genres: [' Fantasy ', 'Romance', null, { private: true }, 'x'.repeat(200)],
+    },
+    { destination: 'ara-ara' },
+  );
+  assert.deepEqual(media.genres, ['Fantasy', 'Romance']);
+});
 const classification = (rating) => ({
   rating,
   provenance: {

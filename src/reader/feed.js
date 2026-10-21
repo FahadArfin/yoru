@@ -48,7 +48,10 @@ export function visibleReadingItems(
     if (
       item.category === 'ANIME' ||
       (category === 'manhwa' && item.category !== 'MANHWA') ||
-      (genre && !item.genres?.includes(genre))
+      (genre &&
+        !item.genres?.some(
+          (value) => typeof value === 'string' && value.toLowerCase() === genre.toLowerCase(),
+        ))
     )
       return false;
     try {

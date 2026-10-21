@@ -1,52 +1,56 @@
-import React, { useState } from 'react';
-import { useReaderFeed } from './use-feed';
+import React from 'react';
+import { useReaderCatalog } from './use-catalog';
 import { Poster, ErrorNotice, Loading } from '../components';
 import CatalogIntegrationSelect from '../CatalogIntegrationSelect';
-import { assertSourceEligible } from '../../shared/reading-eligibility';
-import { visibleReadingItems } from './feed';
+import { browseGenres } from '../pages/GenreCollections';
 import './catalog.css';
 
-export default function ReaderCatalog({
-  category = 'manga',
-  query = '',
-  genre = '',
-  source: initialSource = '',
-  language: initialLanguage = '',
-  heading = 'Enabled reading catalogs',
-}) {
-  const [source, setSource] = useState(initialSource);
-  const [language, setLanguage] = useState(initialLanguage);
-  const [sort, setSort] = useState('popular');
-  const parameters = new URLSearchParams({ mode: query ? 'search' : sort, q: query, limit: '24' });
-  if (source) parameters.set('source', source);
-  if (language) parameters.set('language', language);
-  const feed = useReaderFeed(`/api/reader/${query ? 'browse' : 'discovery'}?${parameters}`);
-  const inventory = useReaderFeed('/api/reader/catalogs?limit=100');
-  const selection = feed.selection;
-  const context = selection?.context;
-  const sources = (inventory.data?.sources || []).filter((item) => {
-    if (!context) return false;
-    try {
-      assertSourceEligible(item, { ...context, extensionsEnabled: true }, { discovery: true });
-      return true;
-    } catch {
-      return false;
-    }
-  });
-  const languages = [...new Set(sources.map((item) => item.language).filter(Boolean))].sort();
-  const items = visibleReadingItems(feed.data?.items || [], {
+export default function ReaderCatalog(props) {
+  return props.catalog ? <ReaderCatalogView {...props} /> : <StandaloneReaderCatalog {...props} />;
+}
+function StandaloneReaderCatalog(props) {
+  const catalog = useReaderCatalog(props);
+  return <ReaderCatalogView {...props} catalog={catalog} />;
+}
+function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading catalogs' }) {
+  const {
+    feed,
+    inventory,
+    selection,
     context,
-    category,
-    genre,
+    sources,
+    languages,
     source,
+    setSource,
     language,
-  });
-  const partial = feed.data?.sourceStates?.some((item) => !['ready', 'empty'].includes(item.state));
+    setLanguage,
+    sort,
+    setSort,
+    items,
+    allItems,
+    genres,
+    genre,
+    setGenre,
+    partial,
+  } = catalog;
+  const genreChoices = [...new Set([...browseGenres, ...genres, ...(genre ? [genre] : [])])];
   return (
     <section className="content-section reader-catalog" aria-label={heading}>
       <div className="section-heading">
         <h2>{heading}</h2>
       </div>
+      <nav className="genre-jump-list reader-genre-list" aria-label="Explore reading genres">
+        {['', ...genreChoices].map((value) => (
+          <button
+            key={value}
+            type="button"
+            aria-pressed={genre === value}
+            onClick={() => setGenre(value)}
+          >
+            {value || 'All genres'}
+          </button>
+        ))}
+      </nav>
       <div className="filter-bar" role="region" aria-label="Reading catalog filters">
         <CatalogIntegrationSelect
           className="filter-select"
@@ -109,6 +113,7 @@ export default function ReaderCatalog({
         {feed.loading && !feed.data
           ? 'Loading enabled catalogs…'
           : `${items.length} titles loaded · Total unknown`}
+        {genre ? ` · ${genre}` : ''}
         {partial ? ' · Some sources are unavailable' : ''}
       </p>
       {partial && (
@@ -151,9 +156,11 @@ export default function ReaderCatalog({
       ) : (
         !feed.error && (
           <p className="muted">
-            {feed.data?.hasMore
-              ? 'No matches in this batch. Continue to check more enabled sources.'
-              : 'No matching titles from the enabled catalogs.'}
+            {genre && allItems.length && !genres.length
+              ? 'These titles do not have genre tags yet. Choose All genres to see them.'
+              : feed.data?.hasMore
+                ? 'No matches in this batch. Continue to check more enabled sources.'
+                : 'No matching titles from the enabled catalogs.'}
           </p>
         )
       )}

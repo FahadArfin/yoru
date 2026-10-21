@@ -14,11 +14,16 @@ import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import '../manga.css';
 import { useCollection } from '../collection-context';
 import { useReaderSelection } from '../useCatalogPreferences';
+import { useReaderCatalog } from '../reader/use-catalog';
 
 function MangaRow({ media }) {
   return (
     <PrefetchLink media={media} className="rail-media-row" to={`/title/${media.id}`}>
-      <img className="rail-backdrop" src={bannerOf(media)} alt="" loading="lazy" />
+      {media.id?.startsWith('ext-manga-') ? (
+        <CoverImage className="rail-backdrop" media={media} alt="" loading="lazy" />
+      ) : (
+        <img className="rail-backdrop" src={bannerOf(media)} alt="" loading="lazy" />
+      )}
       <CoverImage className="rail-poster" media={media} alt="" />
       <div className="rail-row-copy">
         <strong>{titleOf(media)}</strong>
@@ -40,6 +45,7 @@ export function MangaLanding({ category, label, homepage = false, children, cate
   const scope = useCollection();
   const selection = useReaderSelection();
   const coreAllowed = selection?.ready && selection.context.integrationMode !== 'extensions';
+  const readerCatalog = useReaderCatalog({ category, enabled: !homepage });
   const selectionKey = `${category}:${selection?.context?.owner}:${selection?.context?.destination}:${selection?.context?.selectionFingerprint}`;
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(
@@ -51,30 +57,26 @@ export function MangaLanding({ category, label, homepage = false, children, cate
   if (coreAllowed && Array.isArray(popular.data?.items))
     previousPopular.current = { key: selectionKey, items: popular.data.items };
   // Keep the featured lineup stable while the periodic background refresh is in flight.
-  const picks = previousPopular.current.items.length
+  const corePicks = previousPopular.current.items.length
     ? previousPopular.current.items
     : coreAllowed
       ? itemsOf(curated.data)
       : [];
+  const nativeFeatured = !homepage && (!coreAllowed || !corePicks.length);
+  const picks = nativeFeatured ? readerCatalog.allItems.slice(0, 8) : corePicks;
   const { user, setAuthOpen } = useApp();
   const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
   return (
     <div
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''} ${homepage ? '' : 'compact-category-page'}`}
     >
-      {coreAllowed ? (
-        <MangaHero
-          items={picks}
-          category={category}
-          label={label}
-          categoryControls={categoryControls}
-        />
-      ) : (
-        <div className="home-width">
-          <h1>{label}</h1>
-          {categoryControls}
-        </div>
-      )}
+      <MangaHero
+        key={selectionKey}
+        items={picks}
+        category={category}
+        label={label}
+        categoryControls={categoryControls}
+      />
       {homepage && (
         <div className="home-resume home-width">
           <PickUpWhereLeftOff />
@@ -84,26 +86,38 @@ export function MangaLanding({ category, label, homepage = false, children, cate
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
           {homepage && <LiveComments />}
-          {!homepage && <MangaDiscovery popular={popular} category={category} label={label} />}
+          {!homepage && (
+            <MangaDiscovery
+              popular={popular}
+              category={category}
+              label={label}
+              readerCatalog={readerCatalog}
+            />
+          )}
           {children}
         </div>
-        {coreAllowed && (
+        {(coreAllowed || picks.length > 0) && (
           <aside
             className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
             aria-label={`${label} highlights`}
           >
-            <section className="home-rail-panel" aria-label="Reader favorites">
+            <section
+              className="home-rail-panel"
+              aria-label={nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
+            >
               <div className="rail-heading">
                 <h2>
-                  <Crown size={14} /> Reader favorites
+                  <Crown size={14} /> {nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
                 </h2>
               </div>
               <p className="rail-note">
-                {scope?.active
-                  ? 'From the Ara Ara collection'
-                  : popular.data?.items?.length
-                    ? 'Popular with Kitsu readers'
-                    : 'From the Yoru collection'}
+                {nativeFeatured
+                  ? 'From your enabled reading catalogs'
+                  : scope?.active
+                    ? 'From the Ara Ara collection'
+                    : popular.data?.items?.length
+                      ? 'Popular with Kitsu readers'
+                      : 'From the Yoru collection'}
               </p>
               {picks.slice(0, 4).map((media) => (
                 <MangaRow key={media.id} media={media} />
@@ -152,7 +166,7 @@ export function MangaLanding({ category, label, homepage = false, children, cate
           </aside>
         )}
       </div>
-      {!homepage && (
+      {!homepage && coreAllowed && (
         <div className="manga-catalog-wrap home-width">
           <Browse embedded categoryOverride={category} />
         </div>

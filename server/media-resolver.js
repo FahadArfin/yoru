@@ -131,6 +131,15 @@ export function publicReadingMedia(media, context) {
     'isAdult',
   ])
     if (Object.hasOwn(media, key)) result[key] = media[key];
+  result.genres = Array.isArray(media.genres)
+    ? [
+        ...new Set(
+          media.genres
+            .filter((value) => typeof value === 'string' && value.trim() && value.length <= 128)
+            .map((value) => value.trim()),
+        ),
+      ].slice(0, 100)
+    : [];
   const cover = `/api/media/${media.id}/cover?destination=${context.destination}`;
   return { ...result, cover, coverImage: cover, image: cover };
 }

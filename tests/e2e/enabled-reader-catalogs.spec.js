@@ -39,6 +39,61 @@ const core = {
   availableIntegrations: [],
 };
 
+test('Ara extension discovery keeps the featured banner and working genre choices', async ({
+  context,
+  page,
+  baseURL,
+}, testInfo) => {
+  const { requests, forbidden } = await fixture({ context, page, baseURL });
+  await page.goto('/ara-ara/manga');
+  await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  await page
+    .getByRole('combobox', { name: 'Catalog integration', exact: true })
+    .first()
+    .selectOption('extensions');
+  const hero = page.getByRole('region', { name: 'Featured manga', exact: true });
+  await expect(hero.getByRole('heading', { name: adult.title, exact: true })).toBeVisible();
+  const catalog = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
+  const genres = catalog.getByRole('navigation', { name: 'Explore reading genres' });
+  const discoveryCalls = requests.filter((url) => url.pathname === '/api/reader/discovery').length;
+  await genres.getByRole('button', { name: 'Fantasy', exact: true }).click();
+  await expect(catalog.locator('.poster-card')).toHaveCount(1);
+  await genres.getByRole('button', { name: 'Romance', exact: true }).click();
+  await expect(catalog.locator('.poster-card')).toHaveCount(0);
+  await genres.getByRole('button', { name: 'All genres', exact: true }).click();
+  await expect(catalog.locator('.poster-card')).toHaveCount(1);
+  await expect(page.locator('.manga-intro')).toHaveCount(0);
+  expect(requests.filter((url) => url.pathname === '/api/reader/discovery')).toHaveLength(
+    discoveryCalls,
+  );
+  expect(forbidden).toEqual([]);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+  await page.screenshot({ path: testInfo.outputPath('ara-discovery.png'), fullPage: true });
+  await hero.getByRole('link', { name: 'Explore manga', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`/ara-ara/title/${adult.id}`));
+});
+
+test('URL genre round trips replace local genre overrides', async ({ context, page, baseURL }) => {
+  await fixture({ context, page, baseURL });
+  await page.goto('/browse/manga?genre=Fantasy');
+  const catalog = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
+  const genres = catalog.getByRole('navigation', { name: 'Explore reading genres' });
+  await genres.getByRole('button', { name: 'All genres', exact: true }).click();
+  const dropdown = page.getByRole('combobox', { name: 'Genre', exact: true });
+  await dropdown.selectOption('Romance');
+  await expect(genres.getByRole('button', { name: 'Romance', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(catalog.locator('.poster-card')).toHaveCount(0);
+  await dropdown.selectOption('Fantasy');
+  await expect(genres.getByRole('button', { name: 'Fantasy', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await expect(catalog.locator('.poster-card')).toHaveCount(2);
+});
+
 for (const mode of ['extensions', 'all']) {
   test(`native search failure remains retryable with core success in ${mode} mode`, async ({
     context,

@@ -4,7 +4,8 @@
   gap: 8px;
   margin: 22px 0 38px;
 }
-.genre-jump-list a {
+.genre-jump-list a,
+.genre-jump-list button {
   display: inline-flex;
   align-items: center;
   gap: 7px;
@@ -14,8 +15,11 @@
   color: rgb(var(--chrome-soft));
   background: rgb(var(--chrome-bright) / 0.016);
   font-size: 12px;
+  cursor: pointer;
 }
-.genre-jump-list a:hover {
+.genre-jump-list a:hover,
+.genre-jump-list button:hover,
+.genre-jump-list button[aria-pressed='true'] {
   color: rgb(var(--chrome-bright));
   background: rgb(var(--chrome-bright) / 0.047);
 }
