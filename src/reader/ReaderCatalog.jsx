@@ -34,13 +34,14 @@ function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading cat
     partial,
   } = catalog;
   const genreChoices = [...new Set([...browseGenres, ...genres, ...(genre ? [genre] : [])])];
+  const quickGenres = [...new Set([...browseGenres, ...(genre ? [genre] : [])])];
   return (
     <section className="content-section reader-catalog" aria-label={heading}>
       <div className="section-heading">
         <h2>{heading}</h2>
       </div>
       <nav className="genre-jump-list reader-genre-list" aria-label="Explore reading genres">
-        {['', ...genreChoices].map((value) => (
+        {['', ...quickGenres].map((value) => (
           <button
             key={value}
             type="button"
@@ -87,6 +88,19 @@ function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading cat
             <option value="">All languages</option>
             {languages.map((item) => (
               <option key={item}>{item}</option>
+            ))}
+          </select>
+        </label>
+        <label className="filter-select">
+          Genre
+          <select
+            aria-label="Reading genre"
+            value={genre}
+            onChange={(event) => setGenre(event.target.value)}
+          >
+            <option value="">All genres</option>
+            {genreChoices.map((value) => (
+              <option key={value}>{value}</option>
             ))}
           </select>
         </label>
