@@ -44,8 +44,12 @@ function MangaRow({ media }) {
 export function MangaLanding({ category, label, homepage = false, children, categoryControls }) {
   const scope = useCollection();
   const selection = useReaderSelection();
-  const coreAllowed = selection?.ready && selection.context.integrationMode !== 'extensions';
-  const readerCatalog = useReaderCatalog({ category, enabled: !homepage });
+  const coreAllowed =
+    !scope?.active || (selection?.ready && selection.context.integrationMode !== 'extensions');
+  const readerCatalog = useReaderCatalog({
+    category,
+    enabled: Boolean(scope?.active && !homepage),
+  });
   const selectionKey = `${category}:${selection?.context?.owner}:${selection?.context?.destination}:${selection?.context?.selectionFingerprint}`;
   const popular = useMangaFeed('popular', 'all', category);
   const curated = useResource(
@@ -62,7 +66,7 @@ export function MangaLanding({ category, label, homepage = false, children, cate
     : coreAllowed
       ? itemsOf(curated.data)
       : [];
-  const nativeFeatured = !homepage && (!coreAllowed || !corePicks.length);
+  const nativeFeatured = scope?.active && !homepage && (!coreAllowed || !corePicks.length);
   const picks = nativeFeatured ? readerCatalog.allItems.slice(0, 8) : corePicks;
   const { user, setAuthOpen } = useApp();
   const completed = picks

@@ -7,7 +7,7 @@ const manifestPath = `/api/media/mal-manga-21/reader/${chapterId}`;
 function readerContext(request) {
   const params = new URL(request.url()).searchParams;
   expect(params.get('destination')).toBe('yoru');
-  expect(params.get('integration')).toBe('all');
+  expect(['core', 'all']).toContain(params.get('integration'));
   expect(params.get('selectionFingerprint')).toBeTruthy();
 }
 async function fixtures(page, context, baseURL) {

@@ -116,7 +116,7 @@ test('account integration modes sync to another browser and stay separate from g
   const card = page.locator('.reader-connection');
   const selector = card.getByRole('combobox', { name: 'Catalog integration', exact: true });
   await expect(selector).toBeEnabled();
-  await expect(selector).toHaveValue('all');
+  await expect(selector).toHaveValue('core');
   await selector.selectOption('core');
   await expect(selector).toHaveValue('core');
   await card.getByRole('combobox', { name: 'Source list', exact: true }).selectOption('ara-ara');
@@ -162,5 +162,5 @@ test('account integration modes sync to another browser and stay separate from g
   }
   await context.request.post('/api/auth/logout', { headers: { Origin: baseURL }, data: {} });
   await page.reload();
-  await expect(selector).toHaveValue('extensions');
+  await expect(selector).toHaveValue('core');
 });

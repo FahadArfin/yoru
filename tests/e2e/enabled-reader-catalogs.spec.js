@@ -181,7 +181,7 @@ test('Ara extension discovery keeps the featured banner and working genre choice
 
 test('URL genre round trips replace local genre overrides', async ({ context, page, baseURL }) => {
   await fixture({ context, page, baseURL });
-  await page.goto('/browse/manga?genre=Fantasy');
+  await openNativeCatalog(page, '/browse/all?genre=Fantasy');
   const catalog = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
   const genres = catalog.getByRole('navigation', { name: 'Explore reading genres' });
   await genres.getByRole('button', { name: 'All genres', exact: true }).click();
@@ -215,7 +215,7 @@ for (const mode of ['extensions', 'all']) {
         ? route.fulfill({ status: 503, json: { error: 'Native catalog unavailable' } })
         : route.fulfill({ json: { items: [safe] } });
     });
-    await page.goto('/browse/manga?q=native');
+    await openNativeCatalog(page, '/browse/all?q=native');
     await page
       .getByRole('group', { name: 'Catalog integration', exact: true })
       .first()
@@ -280,7 +280,7 @@ test('exact mapped core recommendations remain visible in extensions mode', asyn
       },
     }),
   );
-  await page.goto('/browse/manga?q=native');
+  await openNativeCatalog(page, '/browse/all?q=native');
   await page
     .getByRole('group', { name: 'Catalog integration', exact: true })
     .first()
@@ -296,6 +296,15 @@ test('exact mapped core recommendations remain visible in extensions mode', asyn
 
 // These fixtures exercise the real browser consumer and both serving runtimes.
 // Native backend persistence/eligibility is separately proven by extension-account contracts.
+async function openNativeCatalog(page, path) {
+  await page.goto(path);
+  await page
+    .getByRole('group', { name: 'Catalog integration', exact: true })
+    .first()
+    .getByRole('button', { name: 'All sources', exact: true })
+    .click();
+}
+
 async function fixture({ context, page, baseURL }) {
   const requests = [];
   const forbidden = [];
@@ -394,7 +403,7 @@ test('enabled remote catalog titles browse and save without MAL', async ({
       password: 'Native discovery test 2026',
     },
   });
-  await page.goto('/browse/manga?q=native');
+  await openNativeCatalog(page, '/browse/all?q=native');
   const card = page.locator('.poster-card').filter({ hasText: safe.title });
   await expect(card).toBeVisible();
   await expect(card).toContainText('MangaDex');
@@ -439,7 +448,7 @@ test('source and language filters use native identity and preserve manga classif
   baseURL,
 }) => {
   const { requests } = await fixture({ context, page, baseURL });
-  await page.goto('/browse/manga?q=native');
+  await openNativeCatalog(page, '/browse/all?q=native');
   const shelf = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
   await expect(shelf.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
   await shelf.getByLabel('Reading language', { exact: true }).selectOption('fr');
@@ -467,7 +476,7 @@ test('integration and destination filters apply to cards suggestions and covers'
   baseURL,
 }) => {
   const { requests } = await fixture({ context, page, baseURL });
-  await page.goto('/browse/manga?q=native');
+  await openNativeCatalog(page, '/browse/all?q=native');
   const integration = page.getByRole('group', { name: 'Catalog integration', exact: true }).first();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
   await integration.getByRole('button', { name: 'MangaDex + Weeb Central', exact: true }).click();
@@ -475,7 +484,9 @@ test('integration and destination filters apply to cards suggestions and covers'
   await expect(page.getByRole('link', { name: 'View Death Note', exact: true })).toBeVisible();
   await integration.getByRole('button', { name: 'Suwayomi extensions', exact: true }).click();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
-  await expect(page.getByRole('link', { name: 'View Death Note', exact: true })).toHaveCount(0);
+  await expect(
+    page.locator('.reader-catalog').getByRole('link', { name: 'View Death Note', exact: true }),
+  ).toHaveCount(0);
   const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
   await search.fill('native');
   await expect(page.getByRole('option').filter({ hasText: safe.title })).toBeVisible();
@@ -529,7 +540,7 @@ test('late feed responses cannot restore a previous integration or disabled sour
       })
       .catch(() => {});
   });
-  await page.goto('/browse/manga?q=late');
+  await openNativeCatalog(page, '/browse/all?q=late');
   await expect.poll(() => started).toBe(true);
   const integration = page.getByRole('group', { name: 'Catalog integration', exact: true }).first();
   await integration.getByRole('button', { name: 'MangaDex + Weeb Central', exact: true }).click();
@@ -586,7 +597,7 @@ test('filtered empty pages offer continuation and apply terminal exact-choice up
       },
     });
   });
-  await page.goto('/browse/manga?q=continuation');
+  await openNativeCatalog(page, '/browse/all?q=continuation');
   const shelf = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
   await expect(shelf).toContainText('No matches in this batch');
   await expect(shelf).toContainText('Some sources are unavailable');
@@ -646,7 +657,7 @@ test('account and destination changes discard deferred discovery from the previo
       })
       .catch(() => {});
   });
-  await page.goto('/browse/manga?q=account');
+  await openNativeCatalog(page, '/browse/all?q=account');
   await expect.poll(() => started).toBe(true);
   await page.getByRole('button', { name: 'Sign in', exact: true }).first().click();
   const login = page.getByRole('dialog', { name: 'Sign in to Yoru' });
@@ -654,6 +665,11 @@ test('account and destination changes discard deferred discovery from the previo
   await login.getByLabel('Password', { exact: true }).fill(credentials.password);
   await login.getByRole('button', { name: 'Sign in', exact: true }).click();
   await expect(login).toHaveCount(0);
+  await page
+    .getByRole('group', { name: 'Catalog integration', exact: true })
+    .first()
+    .getByRole('button', { name: 'Suwayomi extensions', exact: true })
+    .click();
   await expect(page.getByRole('link', { name: `View ${french.title}`, exact: true })).toBeVisible();
   release();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toHaveCount(0);

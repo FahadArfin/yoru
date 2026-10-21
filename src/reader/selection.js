@@ -61,15 +61,15 @@ export function createReaderSelection({
       // Unknown identity receives defaults, never another account's saved settings.
       let settings = scope === null ? selectionProjection({}) : await loadSettings(scope, force);
       if (id !== generation) return;
-      // A new Ara visit starts with extensions. In-visit switches and background
+      // Each destination starts with its primary integration. In-visit switches and background
       // revalidation retain the visitor's choice; provider memberships are untouched.
+      const entryMode = destination === 'ara-ara' ? 'extensions' : 'core';
       if (
         action?.kind === 'enter' &&
-        destination === 'ara-ara' &&
         scope !== null &&
-        selectionProjection(settings).modes[destination] !== 'extensions'
+        selectionProjection(settings).modes[destination] !== entryMode
       ) {
-        await saveMode(scope, destination, 'extensions');
+        await saveMode(scope, destination, entryMode);
         // The preference event may already have started the synchronized selection.
         if (id !== generation || signal.aborted) return;
         settings = await loadSettings(scope, true);

@@ -5,7 +5,7 @@ import { readerRequest, syncGuestReaderContext, readingCacheScope, api } from '.
 const defaults = () => ({ overrides: {}, modes: { yoru: 'all', 'ara-ara': 'all' } });
 
 for (const scope of ['guest', 'account']) {
-  test(`Ara entry defaults to extensions and keeps in-visit switches for ${scope}`, async () => {
+  test(`destination entry defaults to core for Yoru and extensions for Ara, preserving in-visit choices for ${scope}`, async () => {
     let settings = { ...defaults(), overrides: { Webtoons: { yoru: false } }, revision: 0 };
     const writes = [];
     const controller = createReaderSelection({
@@ -35,10 +35,16 @@ for (const scope of ['guest', 'account']) {
     await controller.refresh();
     assert.equal(controller.getSnapshot().context.integrationMode, 'core');
     await controller.select({ ...ara, destination: 'yoru' }, false, { kind: 'enter' });
-    assert.equal(controller.getSnapshot().context.integrationMode, 'all');
+    assert.equal(controller.getSnapshot().context.integrationMode, 'core');
+    await controller.setIntegrationMode('extensions');
+    await controller.refresh();
+    assert.equal(controller.getSnapshot().context.integrationMode, 'extensions');
+    await controller.select({ ...ara, destination: 'yoru' }, false, { kind: 'enter' });
+    assert.equal(controller.getSnapshot().context.integrationMode, 'core');
     await controller.select(ara, false, { kind: 'enter' });
     assert.equal(controller.getSnapshot().context.integrationMode, 'extensions');
-    assert.equal(writes.length, 3);
+    assert.equal(writes.length, 6);
+    assert.deepEqual(settings.overrides, { Webtoons: { yoru: false } });
     controller.dispose();
   });
 }

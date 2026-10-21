@@ -17,6 +17,7 @@ import PrefetchLink from '../PrefetchLink';
 import '../discovery.css';
 import { useReaderSelection } from '../useCatalogPreferences';
 import ReaderCatalog from '../reader/ReaderCatalog';
+import { useCollection } from '../collection-context';
 
 const tabs = [
   { value: 'new', label: 'New series', icon: Sparkles },
@@ -30,8 +31,10 @@ const periods = [
 ];
 
 export function useMangaFeed(mode, period = 'all', category = 'manga') {
+  const scope = useCollection();
   const selection = useReaderSelection();
   const coreAllowed =
+    !scope?.active ||
     category === 'anime' ||
     (selection?.ready && selection.context.integrationMode !== 'extensions');
   const animeNew = category === 'anime' && mode === 'new';
@@ -154,13 +157,16 @@ export function MangaCard({ media, index, mode }) {
 }
 
 export default function MangaDiscovery(props) {
+  const scope = useCollection();
   const selection = useReaderSelection();
   const reading = props.category !== 'anime';
   const coreAllowed =
-    !reading || (selection?.ready && selection.context.integrationMode !== 'extensions');
+    !scope?.active ||
+    !reading ||
+    (selection?.ready && selection.context.integrationMode !== 'extensions');
   return (
     <>
-      {reading && (
+      {reading && scope?.active && (
         <ReaderCatalog category={props.category} catalog={props.readerCatalog} discovery />
       )}
       {coreAllowed && <CoreMangaDiscovery {...props} />}

@@ -8,6 +8,7 @@ import GenreCollections, { browseGenres } from './GenreCollections';
 import { animeFormats } from '../CategoryNavigation';
 import { useReaderSelection } from '../useCatalogPreferences';
 import ReaderCatalog from '../reader/ReaderCatalog';
+import { useCollection } from '../collection-context';
 const labels = {
   anime: ['Anime', 'Find a world worth getting lost in.'],
   manga: ['Manga', 'Great stories, one panel at a time.'],
@@ -15,16 +16,19 @@ const labels = {
   all: ['Explore everything', 'One universe. Endless ways to escape.'],
 };
 export default function Browse(props) {
+  const scope = useCollection();
   const route = useParams();
   const [params] = useSearchParams();
   const category = props.categoryOverride || route.category || 'all';
   const reading = category !== 'anime';
+  const yoruReadingPage = !scope?.active && ['manga', 'manhwa'].includes(category);
   const selection = useReaderSelection();
   const showCore =
+    yoruReadingPage ||
     !reading ||
     (selection?.ready &&
       (category === 'all' || selection.context.integrationMode !== 'extensions'));
-  const showRemote = reading && !props.embedded;
+  const showRemote = reading && !props.embedded && !yoruReadingPage;
   return (
     <>
       {showRemote && (
