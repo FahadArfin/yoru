@@ -30,6 +30,7 @@ import './nsfw.css';
 import './theme.css';
 import './mobile.css';
 import { useTheme } from './theme';
+import { isAssetLoadError, recoverAssetLoad } from './asset-recovery';
 const Title = lazy(() => import('./pages/Title'));
 const Library = lazy(() => import('./pages/Library'));
 const Community = lazy(() => import('./pages/Community'));
@@ -279,11 +280,21 @@ function Shell() {
   );
 }
 class ErrorBoundary extends React.Component {
-  state = { error: null };
+  state = { error: null, recoveryFailed: false };
   static getDerivedStateFromError(error) {
     return { error };
   }
+  componentDidCatch(error) {
+    if (isAssetLoadError(error) && !recoverAssetLoad(error))
+      this.setState({ recoveryFailed: true });
+  }
   render() {
+    if (isAssetLoadError(this.state.error) && !this.state.recoveryFailed)
+      return (
+        <div className="loading" role="status">
+          Updating Yoru…
+        </div>
+      );
     if (this.state.error)
       return (
         <div className="fatal">

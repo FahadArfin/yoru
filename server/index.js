@@ -122,7 +122,8 @@ if (existsSync(dist)) {
       setHeaders: (res, path) => {
         if (path.includes(`${join('dist', 'assets')}`))
           res.set('Cache-Control', 'public,max-age=31536000,immutable');
-        if (path.endsWith('sw.js')) res.set('Cache-Control', 'no-cache');
+        if (path.endsWith('sw.js') || path.endsWith('index.html'))
+          res.set('Cache-Control', 'no-cache');
       },
     }),
   );
