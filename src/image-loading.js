@@ -4,6 +4,15 @@ const waiting = new Map();
 const queue = [];
 let active = 0;
 
+export function imageLookahead(shelf = false) {
+  const connection = globalThis.navigator?.connection;
+  if (connection?.saveData || /^(slow-)?2g$/.test(connection?.effectiveType || '')) return 300;
+  const height = globalThis.innerHeight || 800;
+  return shelf
+    ? Math.min(3600, Math.max(1800, height * 3))
+    : Math.min(2400, Math.max(1200, height * 2));
+}
+
 export function canPreload() {
   const connection = globalThis.navigator?.connection;
   return (

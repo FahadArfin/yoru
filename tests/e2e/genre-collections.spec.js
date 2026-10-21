@@ -1,5 +1,48 @@
 import { test, expect } from '@playwright/test';
 
+test('genre data and covers start loading before the shelf reaches the viewport', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await context.route('**/*', (route) =>
+    new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+  );
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.route('**/api/catalog?**', (route) => {
+    const genre = new URL(route.request().url()).searchParams.get('genre');
+    return route.fulfill({
+      json: {
+        items: genre
+          ? [
+              {
+                id: 'mal-manga-21',
+                category: 'MANGA',
+                title: `${genre} story`,
+                cover: '/cover-placeholder.svg',
+              },
+            ]
+          : [],
+        pages: 1,
+      },
+    });
+  });
+  await page.goto('/browse/manga');
+  const shelf = page.getByRole('region', { name: 'Sci-Fi collection', exact: true });
+  await shelf.evaluate((element) =>
+    window.scrollTo({
+      top: element.getBoundingClientRect().top + window.scrollY - window.innerHeight - 1000,
+      behavior: 'instant',
+    }),
+  );
+  // Still 1,000px below the screen, with both data and artwork already loading.
+  await expect(shelf.locator('.poster-card')).toHaveCount(1);
+  await expect(shelf.locator('.cover-image')).toHaveAttribute('loading', 'eager');
+  expect(await shelf.evaluate((element) => element.getBoundingClientRect().top > innerHeight)).toBe(
+    true,
+  );
+});
+
 for (const category of ['anime', 'manga', 'manhwa']) {
   test(`${category} genre shelves stay in two rows and open the complete filtered collection`, async ({
     page,

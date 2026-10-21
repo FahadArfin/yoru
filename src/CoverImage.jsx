@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { coverCandidates } from './image-loading';
+import { coverCandidates, imageLookahead } from './image-loading';
 import { useReaderSelection } from './useCatalogPreferences';
 import { useCollection } from './collection-context';
 
@@ -36,7 +36,7 @@ function Cover({
           observer.disconnect();
         }
       },
-      { rootMargin: '400px' },
+      { rootMargin: `${imageLookahead()}px 400px` },
     );
     observer.observe(ref.current);
     return () => observer.disconnect();
@@ -64,7 +64,7 @@ function Cover({
       className={`${className} cover-image`}
       src={src}
       alt={alt}
-      loading={loading}
+      loading={near ? 'eager' : loading}
       decoding="async"
       referrerPolicy="no-referrer"
       fetchPriority={fetchPriority}

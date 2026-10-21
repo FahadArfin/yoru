@@ -6,6 +6,7 @@ import { useResource } from '../state';
 import { Poster } from '../components';
 import './genre-collections.css';
 import { useCollection } from '../collection-context';
+import { imageLookahead } from '../image-loading';
 
 export const browseGenres = [
   'Action',
@@ -52,7 +53,7 @@ function CollectionShelf({ category, genre = '', children }) {
           observer.disconnect();
         }
       },
-      { rootMargin: '300px' },
+      { rootMargin: `${imageLookahead(true)}px 0px` },
     );
     observer.observe(section.current);
     return () => observer.disconnect();
