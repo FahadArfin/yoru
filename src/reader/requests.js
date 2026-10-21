@@ -211,7 +211,10 @@ export async function warmReaderLink(href, signal, count = 2, context = null, ed
     const result = await readerChapter(match[2], selected, false, current);
     requireReaderContext(current);
     const start = Math.max(0, Number(url.searchParams.get('page') || 1) - 1);
-    result.pages.slice(start, start + count).forEach((page) => warmImage(page.url, signal));
+    // Remote page responses are no-store. Warm only their metadata here; the
+    // canvas loads nearby images once and retains them for this chapter.
+    if (result.kind !== 'remote')
+      result.pages.slice(start, start + count).forEach((page) => warmImage(page.url, signal));
   } catch {
     /* Navigation owns errors and retries. */
   }

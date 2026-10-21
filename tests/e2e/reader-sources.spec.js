@@ -8,7 +8,7 @@ const pixel = readerImage();
 function assertContext(request) {
   const query = new URL(request.url()).searchParams;
   expect(query.get('destination')).toBe('yoru');
-  expect(query.get('integration')).toBe('all');
+  expect(query.get('integration')).toBe('core');
   expect(query.get('selectionFingerprint')).toBeTruthy();
 }
 async function setup(page, context, baseURL) {
@@ -85,6 +85,99 @@ async function menu(page) {
   return page.getByRole('dialog', { name: 'Reader menu', exact: true });
 }
 
+async function expectEdition(page, id) {
+  const displayed = page.locator('.reader-canvas .comic-page').first();
+  await expect(displayed).toHaveAttribute('data-edition', id);
+  await expect(displayed).toHaveClass(/ready/);
+}
+
+test('reader automatically recovers a temporary page failure without changing pages', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  let attempts = 0;
+  await page.route('**/api/media/*/reader/*/page/0?*', (route) => {
+    attempts++;
+    return attempts === 1
+      ? route.fulfill({ status: 503, json: { error: 'Temporarily busy' } })
+      : route.fulfill({ contentType: 'image/png', body: pixel });
+  });
+  await page.goto(`/read/mal-manga-21/1?chapter=${md}&source=mangadex`);
+  await expect(page.locator('[data-page="1"]')).toHaveClass(/ready/, { timeout: 12000 });
+  expect(attempts).toBe(2);
+  await expect(page.getByRole('button', { name: 'Retry page 1', exact: true })).toHaveCount(0);
+  await expect(page).toHaveURL(/chapter=11111111/);
+});
+
+test('long chapters load nearby pages once with bounded concurrency', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  const requests = new Map();
+  let active = 0,
+    peak = 0;
+  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?.*)?$/, (route) => {
+    const path = new URL(route.request().url()).pathname;
+    return route.fulfill({
+      json: {
+        id: md,
+        kind: 'remote',
+        number: '1',
+        language: 'en',
+        pages: Array.from({ length: 40 }, (_, index) => ({ url: `${path}/page/${index}` })),
+      },
+    });
+  });
+  await page.route('**/api/media/*/reader/*/page/*', async (route) => {
+    const path = new URL(route.request().url()).pathname;
+    requests.set(path, (requests.get(path) || 0) + 1);
+    active++;
+    peak = Math.max(peak, active);
+    await new Promise((resolve) => setTimeout(resolve, 150));
+    await route.fulfill({ contentType: 'image/png', body: pixel });
+    active--;
+  });
+  await page.goto(`/read/mal-manga-121496/1?chapter=${md}&source=mangadex`);
+  await expect(page.locator('[data-page="1"]')).toHaveClass(/ready/);
+  await expect(page.locator('[data-page="2"]')).toHaveClass(/ready/);
+  expect(peak).toBeLessThanOrEqual(4);
+  expect(requests.size).toBeLessThan(12);
+  expect([...requests.values()].every((count) => count === 1)).toBe(true);
+  const controls = await menu(page);
+  await controls.getByLabel('Page number', { exact: true }).selectOption('33');
+  await expect(page.locator('[data-page="33"]')).toHaveClass(/ready/);
+  expect(peak).toBeLessThanOrEqual(4);
+  expect([...requests.values()].every((count) => count === 1)).toBe(true);
+});
+
+test('unavailable pages stop retrying and retain a working manual retry', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  let attempts = 0,
+    available = false;
+  await page.route('**/api/media/*/reader/*/page/0?*', (route) => {
+    attempts++;
+    return available
+      ? route.fulfill({ contentType: 'image/png', body: pixel })
+      : route.fulfill({ status: 503, json: { error: 'Unavailable' } });
+  });
+  await page.goto(`/read/mal-manga-21/1?chapter=${md}&source=mangadex`);
+  const retry = page.getByRole('button', { name: 'Retry page 1', exact: true });
+  await expect(retry).toBeVisible({ timeout: 15000 });
+  expect(attempts).toBe(4);
+  available = true;
+  await retry.click();
+  await expect(page.locator('[data-page="1"]')).toHaveClass(/ready/);
+  expect(attempts).toBe(5);
+});
+
 test('site catalog defaults drive chapter sources and guest overrides reset', async ({
   page,
   context,
@@ -138,7 +231,7 @@ test('live source switching retains the old edition until an exact target is cho
 }) => {
   await setup(page, context, baseURL);
   await page.goto('/read/mal-manga-21/1');
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(sw));
+  await expectEdition(page, sw);
   await expect(page.locator('.reader-canvas')).toHaveAttribute('data-mode', 'single');
   const controls = await menu(page);
   await expect(controls.getByLabel('Page direction', { exact: true })).toHaveValue('rtl');
@@ -164,7 +257,7 @@ test('live source switching retains the old edition until an exact target is cho
     });
   });
   await controls.getByLabel('Reading source', { exact: true }).selectOption('mangadex');
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(sw));
+  await expectEdition(page, sw);
   expect(page.url()).toBe(originalURL);
   await expect(controls.getByLabel('Page number', { exact: true })).toHaveValue('2');
   await page
@@ -176,7 +269,7 @@ test('live source switching retains the old edition until an exact target is cho
   const mobile = page.getByRole('dialog', { name: 'Reader menu', exact: true });
   if (await mobile.isVisible())
     await mobile.getByRole('button', { name: 'Close dialog', exact: true }).click();
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
+  await expectEdition(page, md);
   const nextControls = await menu(page);
   await nextControls.getByLabel('Page number', { exact: true }).selectOption('2');
   const saved = await page.evaluate(
@@ -241,18 +334,18 @@ test('remote translation choices fetch the selected language and retain chapter 
 }) => {
   await setup(page, context, baseURL);
   await page.goto('/read/mal-manga-21/1?source=mangadex');
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
+  await expectEdition(page, md);
   await (await menu(page)).getByLabel('Page number', { exact: true }).selectOption('2');
   await (await menu(page)).getByRole('button', { name: 'Chapters', exact: true }).click();
   const dialog = page.getByRole('dialog', { name: 'Chapters', exact: true });
   await expect(dialog.getByLabel('Chapter language')).toHaveValue('en');
   await expect(dialog.getByText('Available from this source', { exact: true })).toBeVisible();
   await dialog.getByLabel('Chapter language').selectOption('es');
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(md));
+  await expectEdition(page, md);
   expect(new URL(page.url()).searchParams.get('page')).toBe('2');
   expect(new URL(page.url()).searchParams.get('chapter')).not.toBe(es);
   await dialog.getByRole('button', { name: /Read chapter 2/ }).click();
-  await expect(page.locator('.reader-canvas img').first()).toHaveAttribute('src', new RegExp(es));
+  await expectEdition(page, es);
   await (await menu(page)).getByLabel('Page number', { exact: true }).selectOption('2');
   await page.goto(`/read/mal-manga-21/2?chapter=${es}&language=es`);
   await expect(page.getByRole('img', { name: 'Chapter 2, page 2', exact: true })).toBeVisible();

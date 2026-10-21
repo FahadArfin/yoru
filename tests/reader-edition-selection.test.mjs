@@ -237,7 +237,7 @@ test('unready, expired and cancelled reader contexts cannot start upstream work'
   assert.equal(calls, 0);
 });
 
-test('manifest pages and generic hover warmup keep source, destination, fingerprint and cancellation', async (t) => {
+test('generic hover warms scoped chapter metadata without duplicate no-store image downloads', async (t) => {
   const calls = [],
     images = [];
   const oldLocation = globalThis.location,
@@ -279,12 +279,12 @@ test('manifest pages and generic hover warmup keep source, destination, fingerpr
   assert.equal(calls.length, 0);
   await warmReaderLink(href, new AbortController().signal, 1, ara);
   assert.equal(calls.length, 2);
-  assert.equal(images.length, 1);
-  const image = new URL(images[0], 'https://yoru.test');
-  assert.ok(image.pathname.endsWith('/page/1'));
-  assert.equal(image.searchParams.get('destination'), 'ara-ara');
-  assert.equal(image.searchParams.get('selectionFingerprint'), 'ara-preload');
-  assert.equal(image.searchParams.get('integration'), 'all');
+  assert.equal(images.length, 0);
+  const request = new URL(calls[1], 'https://yoru.test');
+  assert.ok(request.pathname.endsWith(`/reader/${chapterId}`));
+  assert.equal(request.searchParams.get('destination'), 'ara-ara');
+  assert.equal(request.searchParams.get('selectionFingerprint'), 'ara-preload');
+  assert.equal(request.searchParams.get('integration'), 'all');
   await warmReaderLink(href, undefined, 1, { ...ara, expiresAt: 1 });
   assert.equal(calls.length, 2);
 });

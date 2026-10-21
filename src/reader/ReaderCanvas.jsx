@@ -2,8 +2,41 @@ import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
 import { ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
 import { warmImage } from '../image-loading';
 import { readerContextKey, readerContextPath } from './requests';
+import RemotePageImage from './RemotePageImage';
 
 function PageImage({ page, number, chapter, eager, onTap, context }) {
+  if (chapter.kind === 'remote') {
+    let url = null;
+    try {
+      url = readerContextPath(page.url, context);
+    } catch {
+      /* Pending selection. */
+    }
+    return (
+      <RemotePageImage
+        key={url}
+        url={url}
+        page={page}
+        number={number}
+        chapter={chapter}
+        eager={eager}
+        onTap={onTap}
+        context={context}
+      />
+    );
+  }
+  return (
+    <LocalPageImage
+      page={page}
+      number={number}
+      chapter={chapter}
+      eager={eager}
+      onTap={onTap}
+      context={context}
+    />
+  );
+}
+function LocalPageImage({ page, number, chapter, eager, onTap, context }) {
   const [status, setStatus] = useState('loading');
   const [attempt, setAttempt] = useState(0);
   const [preparedUrl, setPreparedUrl] = useState(null);
@@ -192,7 +225,9 @@ export default function ReaderCanvas({
   }, [paged]);
   useEffect(() => {
     const controller = new AbortController();
-    if (chapter.kind === 'remote' && !context) return () => controller.abort();
+    // Remote images are loaded once into the displayed page by its bounded queue.
+    // Preloading their no-store API URLs separately downloads them twice.
+    if (chapter.kind === 'remote') return () => controller.abort();
     const current = container.current.querySelector(`[data-page="${page}"] img`);
     // Give the page being read first use of the connection, then keep a small rolling buffer.
     const prepare = () =>
