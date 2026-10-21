@@ -13,6 +13,19 @@ for (const category of ['manga', 'manhwa']) {
     await page.route('**/api/reader/catalogs*', (route) =>
       route.fulfill({ json: { sources: [], complete: true } }),
     );
+    const title = {
+      id: 'mal-manga-1',
+      title: 'Completed reader favorite',
+      category: category.toUpperCase(),
+      status: 'Finished',
+      cover: '/icon.svg',
+      score: 8,
+    };
+    for (const endpoint of ['**/api/catalog?**', '**/api/home/discovery?**']) {
+      await page.route(endpoint, (route) =>
+        route.fulfill({ json: { items: [title], total: 1, pages: 1, state: 'ready' } }),
+      );
+    }
     const nativeRequests = [];
     page.on('request', (request) => {
       if (/\/api\/reader\/(browse|discovery)(\?|$)/.test(request.url()))
@@ -29,6 +42,23 @@ for (const category of ['manga', 'manhwa']) {
     await expect(hero).toBeVisible();
     await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
     await expect(page.locator('.reader-catalog')).toHaveCount(0);
+    const lastShelf = page.getByRole('region', { name: 'Full collection', exact: true });
+    const shelfBox = await lastShelf.boundingBox();
+    for (const name of ['Reader favorites', 'Completed stories']) {
+      const panel = page.getByRole('region', { name, exact: true });
+      await expect(panel).toContainText('Completed reader favorite');
+      await expect
+        .poll(() =>
+          page.evaluate((label) => {
+            const shelf = document.querySelector('[aria-label="Full collection"]');
+            const panel = document.querySelector(`[aria-label="${label}"]`);
+            return panel.getBoundingClientRect().top >= shelf.getBoundingClientRect().bottom;
+          }, name),
+        )
+        .toBe(true);
+    }
+    const discovery = page.getByRole('region', { name: `Discover ${category}`, exact: true });
+    expect((await discovery.boundingBox()).width).toBeGreaterThanOrEqual(shelfBox.width - 1);
     await expect
       .poll(() =>
         page.evaluate(

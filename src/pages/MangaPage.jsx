@@ -12,6 +12,7 @@ import HomeDiscovery from './HomeDiscovery';
 import LiveComments from './LiveComments';
 import { PickUpWhereLeftOff } from '../reader/ReadingCollection';
 import '../manga.css';
+import '../home-category.css';
 import { useCollection } from '../collection-context';
 import { useReaderSelection } from '../useCatalogPreferences';
 import { useReaderCatalog } from '../reader/use-catalog';
@@ -88,7 +89,7 @@ export function MangaLanding({ category, label, homepage = false, children, cate
           <PickUpWhereLeftOff />
         </div>
       )}
-      <div className={`home-content-layout home-width ${homepage ? 'home-discovery-layout' : ''}`}>
+      <div className="home-content-layout home-width home-discovery-layout">
         <div className="home-release-column">
           {homepage && <HomeDiscovery category={category} />}
           {homepage && <LiveComments />}
@@ -102,9 +103,16 @@ export function MangaLanding({ category, label, homepage = false, children, cate
           )}
           {children}
         </div>
-        {(coreAllowed || picks.length > 0 || !homepage) && (
+      </div>
+      {!homepage && coreAllowed && (
+        <div className="manga-catalog-wrap home-width">
+          <Browse embedded categoryOverride={category} />
+        </div>
+      )}
+      {(coreAllowed || picks.length > 0 || !homepage) && (
+        <div className="home-width">
           <aside
-            className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
+            className="home-right-rail home-lower-highlights"
             aria-label={`${label} highlights`}
           >
             {(coreAllowed || picks.length > 0) && (
@@ -172,11 +180,6 @@ export function MangaLanding({ category, label, homepage = false, children, cate
               </section>
             )}
           </aside>
-        )}
-      </div>
-      {!homepage && coreAllowed && (
-        <div className="manga-catalog-wrap home-width">
-          <Browse embedded categoryOverride={category} />
         </div>
       )}
     </div>
