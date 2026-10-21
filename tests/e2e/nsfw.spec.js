@@ -19,10 +19,14 @@ test('age gate protects deep links and header search, and leaving resets confirm
   ).toBeDisabled();
   expect(requests).toEqual([]);
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Enabled reading catalogs', exact: true }),
+  ).toBeVisible();
   await expect(page.locator('.compact-category-page')).toBeVisible();
   await page.reload();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Enabled reading catalogs', exact: true }),
+  ).toBeVisible();
 
   await navigateCollection(page, 'Manga', true);
   await expect(page).toHaveURL(/ara-ara\/manga$/);
@@ -33,7 +37,11 @@ test('age gate protects deep links and header search, and leaving resets confirm
       .getByRole('region', { name: 'Featured anime' })
       .getByRole('heading', { name: 'Vinland Saga', exact: true }),
   ).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await expect(
+    page
+      .getByRole('region', { name: 'New series', exact: true })
+      .getByRole('button', { name: 'New series', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await navigateCollection(page, 'Back to Yoru', true);
   await expect(page).toHaveURL(/\/$/);
@@ -52,7 +60,9 @@ test('confirmation remains usable when session storage is unavailable', async ({
   });
   await page.goto('/ara-ara/manhwa');
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await expect(
+    page.getByRole('region', { name: 'Enabled reading catalogs', exact: true }),
+  ).toBeVisible();
   await navigateCollection(page, 'Back to Yoru', true);
   await navigateCollection(page, 'NSFW · Ara Ara, 18+');
   await expect(page.getByRole('heading', { name: 'Adults only', exact: true })).toBeVisible();

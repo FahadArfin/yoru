@@ -43,15 +43,20 @@ test('manhwa discovery has independent feeds, working hero controls and catalog 
     'href',
     '/title/mal-manga-121497',
   );
-  await page.getByRole('tab', { name: 'Most popular', exact: true }).click();
-  const panel = page.getByRole('tabpanel', { name: 'Most popular', exact: true });
-  await panel.getByRole('button', { name: 'Last month' }).click();
+  await page
+    .getByRole('region', { name: 'Most popular', exact: true })
+    .getByRole('button', { name: 'Most popular', exact: true })
+    .click();
+  const panel = page.getByRole('region', { name: 'Most popular', exact: true });
   await expect(panel.getByRole('link', { name: /popular month manhwa 1/ })).toBeVisible();
-  await page.getByRole('tab', { name: /Trending/ }).click();
+  await page
+    .getByRole('region', { name: /Trending/ })
+    .getByRole('button', { name: /Trending/ })
+    .click();
   await expect(
     page
-      .getByRole('tabpanel', { name: /Trending/ })
-      .getByText('Manhwa appear here as visitors open their reading pages.'),
+      .getByRole('region', { name: /Trending/ })
+      .getByText('Stories will appear here as people visit their reading pages.'),
   ).toBeVisible();
   await page.getByLabel('Search catalog').fill('Solo Leveling');
   await page.locator('.inline-search').getByRole('button', { name: 'Search', exact: true }).click();
@@ -67,10 +72,11 @@ test('manhwa discovery has independent feeds, working hero controls and catalog 
   await expect(page.locator('.sidebar')).toBeHidden();
   await page.goto('/browse/manga');
   await expect(page.getByRole('region', { name: 'Featured manga', exact: true })).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
+  await expect(
+    page
+      .getByRole('region', { name: 'New series', exact: true })
+      .getByRole('button', { name: 'New series', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'true');
 });
 
 test('reading manhwa records readership without requesting anime sources', async ({

@@ -11,14 +11,26 @@ test('shared homepage, discovery, search and title pages stay inside the collect
 }, testInfo) => {
   await page.goto('/ara-ara?category=manhwa');
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  // This journey exercises metadata discovery; Ara Ara defaults to extensions.
+  await page
+    .getByRole('group', { name: 'Catalog integration', exact: true })
+    .getByRole('button', { name: 'MangaDex + Weeb Central', exact: true })
+    .click();
   await expect(page.getByRole('region', { name: 'Featured manhwa' })).toBeVisible();
   await expect(page.getByRole('region', { name: 'New series', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Most popular', exact: true })).toBeVisible();
   await expect(page.getByRole('region', { name: 'Trending', exact: true })).toBeVisible();
   await navigateCollection(page, 'Manhwa', true);
   await expect(page.locator('.compact-category-page')).toBeVisible();
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
-  await page.getByRole('tab', { name: 'New series', exact: true }).click();
+  await expect(
+    page
+      .getByRole('region', { name: 'New series', exact: true })
+      .getByRole('button', { name: 'New series', exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole('region', { name: 'New series', exact: true })
+    .getByRole('button', { name: 'New series', exact: true })
+    .click();
   const cards = page.locator('.discovery-section .release-card');
   await expect(cards).toHaveCount(4);
   for (const href of await cards.evaluateAll((els) => els.map((x) => x.getAttribute('href'))))
@@ -27,12 +39,17 @@ test('shared homepage, discovery, search and title pages stay inside the collect
   await search.fill('death');
   const results = page.getByRole('listbox');
   await expect(results).toContainText('Death Note');
-  await results.getByRole('option').first().click();
+  await search.press('ArrowDown');
+  await search.press('Enter');
   await expect(page).toHaveURL(/ara-ara\/title\/mal-manga-21$/);
   await expect(page.getByRole('heading', { name: 'Death Note', exact: true })).toBeVisible();
   await page.getByRole('tab', { name: 'Reviews', exact: true }).click();
   await expect(page).toHaveURL(/tab=reviews/);
   await page.goto('/ara-ara/manga?view=all&q=death');
+  await page
+    .getByRole('group', { name: 'Catalog integration', exact: true })
+    .getByRole('button', { name: 'MangaDex + Weeb Central', exact: true })
+    .click();
   await expect(page.locator('.browse-grid .poster-card')).toHaveCount(1);
   await page.getByRole('textbox', { name: 'Search catalog' }).fill('one piece');
   await page
@@ -46,7 +63,15 @@ test('shared homepage, discovery, search and title pages stay inside the collect
   await page.goto('/ara-ara/title/mal-anime-52991');
   await expect(page.getByRole('heading', { name: 'Title not in this collection' })).toBeVisible();
   await page.goto('/ara-ara/manhwa');
-  await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+  await page
+    .getByRole('group', { name: 'Catalog integration', exact: true })
+    .getByRole('button', { name: 'MangaDex + Weeb Central', exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole('region', { name: 'New series', exact: true })
+      .getByRole('button', { name: 'New series', exact: true }),
+  ).toBeVisible();
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
   await page.screenshot({ path: testInfo.outputPath('ara-parity.png') });
 });

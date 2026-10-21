@@ -40,7 +40,11 @@ for (const category of ['manga', 'manhwa']) {
     await page.goto(`/browse/${category}`);
     const hero = page.getByRole('region', { name: `Featured ${category}`, exact: true });
     await expect(hero).toBeVisible();
-    await expect(page.getByRole('tab', { name: 'New series', exact: true })).toBeVisible();
+    await expect(
+      page
+        .getByRole('region', { name: 'New series', exact: true })
+        .getByRole('button', { name: 'New series', exact: true }),
+    ).toBeVisible();
     await expect(page.locator('.reader-catalog')).toHaveCount(0);
     const lastShelf = page.getByRole('region', { name: 'Full collection', exact: true });
     const shelfBox = await lastShelf.boundingBox();

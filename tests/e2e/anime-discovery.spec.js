@@ -36,10 +36,11 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
   });
   await page.goto('/browse/anime');
   const discovery = page.getByRole('region', { name: 'Discover anime', exact: true });
-  await expect(discovery.getByRole('tab', { name: 'New series', exact: true })).toHaveAttribute(
-    'aria-selected',
-    'true',
-  );
+  await expect(
+    discovery
+      .getByRole('region', { name: 'New series', exact: true })
+      .getByRole('button', { name: 'New series', exact: true }),
+  ).toHaveAttribute('aria-expanded', 'true');
   await expect(discovery.getByRole('link', { name: /New anime series/ })).toHaveAttribute(
     'href',
     '/title/mal-anime-1',
@@ -58,15 +59,34 @@ test('anime discovery precedes genres and preserves title, episode and filtered 
   await expect(filters.getByLabel('Anime format')).toHaveValue('');
 
   expect((await discovery.boundingBox()).y).toBeLessThan((await genres.boundingBox()).y);
-  await discovery.getByRole('tab', { name: 'Most popular', exact: true }).click();
-  await discovery.getByRole('button', { name: 'Last month', exact: true }).click();
+  await discovery
+    .getByRole('region', { name: 'Most popular', exact: true })
+    .getByRole('button', { name: 'Most popular', exact: true })
+    .click();
   await expect(discovery.getByRole('link', { name: /popular month/ })).toBeVisible();
-  await discovery.getByRole('tab', { name: /Trending/ }).click();
+  await discovery
+    .getByRole('region', { name: /Trending/ })
+    .getByRole('button', { name: /Trending/ })
+    .click();
   await expect(discovery.getByRole('link', { name: /trending week/ })).toHaveAttribute(
     'href',
     '/watch/mal-anime-1/latest',
   );
   await expect(discovery).toContainText('3 viewers this week');
+  await expect(discovery.locator('.discovery-panel')).toHaveCount(3);
+  await expect(discovery.locator('.discovery-panel').first()).toHaveAttribute(
+    'data-category',
+    'trending',
+  );
+  const popular = discovery.getByRole('region', { name: 'Most popular', exact: true });
+  await popular.getByRole('button', { name: 'Most popular', exact: true }).click();
+  await popular.getByRole('button', { name: 'Last month', exact: true }).click();
+  await expect(popular.getByRole('link', { name: /popular year/ })).toBeVisible();
+  const newest = discovery.getByRole('region', { name: 'New series', exact: true });
+  await newest.getByRole('button', { name: 'New series', exact: true }).click();
+  await expect(popular.getByRole('button', { name: 'Last year', exact: true })).toHaveCount(0);
+  await popular.getByRole('button', { name: 'Most popular', exact: true }).click();
+  await expect(popular.getByRole('button', { name: 'Last year', exact: true })).toBeVisible();
   await page
     .getByRole('region', { name: 'Action collection', exact: true })
     .getByRole('link', { name: 'Show more action' })
