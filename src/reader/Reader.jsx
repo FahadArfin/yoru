@@ -680,6 +680,9 @@ function ReaderSession({ media, unit, priorMode }) {
               onTurn={turn}
               onToggleControls={toggleControls}
               onScrollDirection={scrollDirection}
+              nextChapter={nextEdition}
+              onNextChapter={() => selectChapter(nextEdition, 1)}
+              onChooseChapter={() => setDialog('chapters')}
             />
           ) : (
             <div className="reader-welcome">

@@ -91,6 +91,71 @@ async function expectEdition(page, id) {
   await expect(displayed).toHaveClass(/ready/);
 }
 
+test('scrolling manhwa continues from the chapter footer in the same source and language', async ({
+  page,
+  context,
+  baseURL,
+}) => {
+  await setup(page, context, baseURL);
+  const next = '33333333-2222-4333-8444-555555555555';
+  await page.route('**/api/media/*/chapters?*', (route) =>
+    route.fulfill({
+      json: {
+        state: 'ready',
+        total: 3,
+        nextOffset: null,
+        languages: ['en'],
+        items: [
+          { id: md, number: '1' },
+          { id: es, number: '1' },
+          { id: next, number: '2' },
+        ].map((item) => ({
+          ...item,
+          language: 'en',
+          source: 'mangadex',
+          native: true,
+          pages: 2,
+          groups: [{ name: 'MD group' }],
+        })),
+      },
+    }),
+  );
+  await page.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?.*)?$/, (route) => {
+    const url = new URL(route.request().url());
+    const id = url.pathname.split('/').at(-1);
+    return route.fulfill({
+      json: {
+        id,
+        kind: 'remote',
+        number: id === next ? '2' : '1',
+        language: 'en',
+        source: 'mangadex',
+        group: 'MD group',
+        pages: [0, 1].map((i) => ({ url: `${url.pathname}/page/${i}` })),
+      },
+    });
+  });
+  await page.goto(`/read/mal-manga-121496/1?chapter=${md}&source=mangadex&language=en`);
+  await expect(page.locator('.reader-canvas')).toHaveAttribute('data-mode', 'webtoon');
+  const footer = page.getByRole('region', { name: 'Chapter navigation', exact: true });
+  await footer.scrollIntoViewIfNeeded();
+  await expect(footer.getByText('Continue with chapter 2')).toBeVisible();
+  await footer.getByRole('button', { name: 'Next chapter', exact: true }).click();
+  await expect(page).toHaveURL(new RegExp(`chapter=${next}`));
+  const query = new URL(page.url()).searchParams;
+  expect(query.get('source')).toBe('mangadex');
+  expect(query.get('language')).toBe('en');
+  expect(query.get('page')).toBe('1');
+  await expect(page.locator('[data-page="1"]')).toHaveClass(/ready/);
+  await footer.scrollIntoViewIfNeeded();
+  await expect(
+    footer.getByText('No later chapter is available in this source and language.'),
+  ).toBeVisible();
+  await expect(footer.getByRole('button', { name: 'Next chapter', exact: true })).toHaveCount(0);
+  await footer.getByRole('button', { name: 'Choose chapter', exact: true }).click();
+  await expect(page.getByRole('dialog', { name: 'Chapters', exact: true })).toBeVisible();
+});
+
 test('reader automatically recovers a temporary page failure without changing pages', async ({
   page,
   context,

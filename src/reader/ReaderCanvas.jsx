@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from 'react';
-import { ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
+import { ArrowRight, ImageOff, LoaderCircle, RotateCw } from 'lucide-react';
 import { warmImage } from '../image-loading';
 import { readerContextKey, readerContextPath } from './requests';
 import RemotePageImage from './RemotePageImage';
@@ -111,6 +111,9 @@ export default function ReaderCanvas({
   onTurn,
   onToggleControls,
   onScrollDirection,
+  nextChapter,
+  onNextChapter,
+  onChooseChapter,
 }) {
   const container = useRef();
   const scrollPosition = useRef(0);
@@ -323,10 +326,24 @@ export default function ReaderCanvas({
         ))}
       </div>
       {!paged && (
-        <div className="reader-end">
+        <section className="reader-end" aria-label="Chapter navigation">
           <strong>You’ve reached the end of this chapter.</strong>
-          <span>Open the reader menu or scroll up to choose another chapter.</span>
-        </div>
+          <span>
+            {nextChapter
+              ? `Continue with chapter ${nextChapter.number}`
+              : 'No later chapter is available in this source and language.'}
+          </span>
+          <div className="reader-end-actions">
+            {nextChapter && (
+              <button className="btn btn-primary" disabled={!context} onClick={onNextChapter}>
+                Next chapter <ArrowRight size={18} />
+              </button>
+            )}
+            <button className="btn btn-secondary" onClick={onChooseChapter}>
+              Choose chapter
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );
