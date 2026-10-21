@@ -111,10 +111,6 @@ export default function ReaderCatalog({
           : `${items.length} titles loaded · Total unknown`}
         {partial ? ' · Some sources are unavailable' : ''}
       </p>
-      <p className="muted">
-        Source and language filter extension results. Core metadata collections are shown
-        separately.
-      </p>
       {partial && (
         <details className="reader-source-status">
           <summary>Source availability</summary>
