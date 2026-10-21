@@ -58,6 +58,22 @@ Generic metadata caches have age/byte bounds and retain explicit stale state. Pe
 
 The bridge uses a [Cloudflare Quick Tunnel](https://developers.cloudflare.com/tunnel/get-started/quick-tunnels/). Its random HTTPS address registers with Yoru every 45 seconds using the shared secret. Sites forgets the address after three minutes without renewal. A recreated tunnel registers its replacement automatically, so a PC or container restart does not require a new frontend publication. The cloudflared image supplies its trusted CA bundle; TLS validation remains enabled.
 
+The bridge now checks its public tunnel every 45 seconds through an authenticated,
+uncached `/health` endpoint that identifies the running bridge instance. This check
+does not query manga providers. Only a healthy address renews its registration.
+Three consecutive failed checks trigger a tunnel-only reconnect, with a two-minute
+startup grace period. A successful check resets the failure count. Startup stalls
+also reconnect; an unresponsive tunnel process is force-stopped after five seconds.
+Process-start retries back off from 10 to 60 seconds. Website registration failures
+are retried without rotating a healthy tunnel. Recovery normally takes a few
+minutes once internet access is available; this cannot prevent outages during PC
+sleep, Docker shutdown, or a Cloudflare service outage. Suwayomi and stored reading
+data are not restarted or cleared by this recovery.
+
+The bridge uses Cloudflare DNS (`1.1.1.1` and `1.0.0.1`) for external names;
+Docker still resolves the internal `suwayomi` service. This avoids the observed
+host-inherited resolver returning `ENOTFOUND` for valid new Quick Tunnel names.
+
 Quick Tunnels are intended for testing, have no uptime guarantee and a 200 in-flight-request limit. This is the temporary PC pilot requested by the owner. Move to a named tunnel or a secured HTTPS endpoint for the permanent server. The bridge permits 12 concurrent operations; transient failures show a retry/source choice rather than a fabricated chapter list.
 
 Sleep, network loss, Docker shutdown, registration expiry and provider outages can make reading unavailable even when the website still loads. Last-good metadata is labeled stale and does not imply that pages can be read offline. Unsupported, empty, unavailable, authentication-required, access-challenged and rate-limited states remain distinct; respect retry guidance and do not bypass upstream restrictions.

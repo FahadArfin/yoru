@@ -35,6 +35,11 @@ services:
       context: ../..
       dockerfile: services/reader-bridge/Dockerfile
     restart: unless-stopped
+    # Avoid host/router DNS failures for newly allocated Quick Tunnel names.
+    # Docker's embedded resolver still resolves the internal suwayomi service.
+    dns:
+      - 1.1.1.1
+      - 1.0.0.1
     depends_on:
       - suwayomi
     ports:

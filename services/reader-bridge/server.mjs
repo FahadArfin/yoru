@@ -1,20 +1,17 @@
 import { createServer } from 'node:http';
-import { timingSafeEqual, createHash } from 'node:crypto';
-import { spawn } from 'node:child_process';
+import { timingSafeEqual, createHash, randomUUID } from 'node:crypto';
+import { superviseTunnel } from './tunnel.mjs';
+export { tunnelAddress } from './tunnel.mjs';
 import { pathToFileURL } from 'node:url';
 import { Providers } from './providers.mjs';
 import { pruneSuwayomiCache } from './cache.mjs';
 
 const equal = (a, b) =>
   timingSafeEqual(createHash('sha256').update(a).digest(), createHash('sha256').update(b).digest());
-export function tunnelAddress(output) {
-  // Only accept the success banner, never an API URL mentioned in an error.
-  if (!output.includes('Your quick Tunnel has been created')) return '';
-  return output.match(/\|\s+(https:\/\/[a-z0-9-]+\.trycloudflare\.com)\s+\|/)?.[1] || '';
-}
 export function bridgeHandler({
   key,
   provider,
+  instanceId = randomUUID(),
   extensionsEnabled = process.env.READER_EXTENSIONS_ENABLED === '1',
 }) {
   let active = 0;
@@ -26,6 +23,8 @@ export function bridgeHandler({
     )
       return Response.json({ error: 'Unauthorized' }, { status: 401 });
     const path = new URL(request.url).pathname;
+    if (path === '/health' && request.method === 'GET')
+      return Response.json({ ok: true, instanceId }, { headers: { 'cache-control': 'no-store' } });
     const extensionOperation = {
       '/extension/catalogs': 'catalogs',
       '/extension/browse': 'browse',
@@ -195,7 +194,8 @@ async function start() {
     suwayomiUrl: process.env.SUWAYOMI_URL,
     password: process.env.SUWAYOMI_PASSWORD,
   });
-  const server = createBridgeServer({ key, provider });
+  const instanceId = randomUUID();
+  const server = createBridgeServer({ key, provider, instanceId });
   server.requestTimeout = 45000;
   server.listen(3000, '0.0.0.0', () => console.log('Yoru reader bridge listening.'));
   const cleanImages = () => provider.images.prune().catch(() => {});
@@ -207,66 +207,12 @@ async function start() {
     setInterval(clean, 15 * 60000).unref();
   }
   if (process.env.READER_TUNNEL === '1') {
-    let address = '',
-      registering = false;
-    const register = async () => {
-      if (!address || registering) return;
-      registering = true;
-      try {
-        const r = await fetch(`${process.env.YORU_ORIGIN}/api/reader-bridge/register`, {
-          method: 'POST',
-          headers: {
-            'content-type': 'application/json',
-            authorization: `Bearer ${key}`,
-            origin: process.env.YORU_ORIGIN,
-          },
-          body: JSON.stringify({ url: address }),
-          signal: AbortSignal.timeout(10000),
-          redirect: 'error',
-        });
-        console.log(
-          r.ok ? 'Reader connection renewed.' : `Reader connection pending (${r.status}).`,
-        );
-      } catch {
-        console.log('Reader connection pending.');
-      } finally {
-        registering = false;
-      }
-    };
-    function tunnel() {
-      const child = spawn(
-        'cloudflared',
-        ['tunnel', '--no-autoupdate', '--url', 'http://127.0.0.1:3000'],
-        { stdio: ['ignore', 'pipe', 'pipe'] },
-      );
-      let output = '';
-      const receive = (chunk) => {
-        output = (output + chunk.toString()).slice(-12000);
-        const url = tunnelAddress(output);
-        if (url && address !== url && output.includes('Registered tunnel connection')) {
-          address = url;
-          console.log('Secure reader tunnel established.');
-          register();
-        }
-      };
-      child.stdout.on('data', receive);
-      child.stderr.on('data', receive);
-      child.on('error', () => console.log('Reader tunnel could not start.'));
-      child.on('exit', (code) => {
-        address = '';
-        console.log(`Reader tunnel stopped (${code}); reconnecting.`);
-        setTimeout(tunnel, 10000).unref();
-      });
-      const stop = () => {
-        child.kill();
-        server.close();
-        process.exit(0);
-      };
-      process.once('SIGTERM', stop);
-      child.once('exit', () => process.removeListener('SIGTERM', stop));
-    }
-    tunnel();
-    setInterval(register, 45000).unref();
+    const tunnel = superviseTunnel({ key, instanceId, origin: process.env.YORU_ORIGIN });
+    process.once('SIGTERM', () => {
+      tunnel.stop();
+      server.close();
+      process.exit(0);
+    });
   }
 }
 if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
