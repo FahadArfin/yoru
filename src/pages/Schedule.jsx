@@ -138,8 +138,7 @@ function AnimeSchedule({ picker }) {
     </div>
   );
   return (
-    <div className="page section-page schedule-page">
-      <h1 className="sr-only">Airing schedule</h1>
+    <div className="page section-page schedule-page" aria-label="Airing schedule">
       <div className="schedule-category-bar">{picker}</div>
       <section className="schedule-calendar" aria-label="Choose a day and release type">
         <div className="schedule-toolbar">
