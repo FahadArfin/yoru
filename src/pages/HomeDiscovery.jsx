@@ -301,7 +301,7 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
           </button>
         </h2>
       </header>
-      {mode !== 'trending' && (
+      {mode !== 'trending' && (mode !== 'popular' || expanded) && (
         <div className="discovery-filter-row">
           {animeReleases ? (
             <div className="release-language" role="group" aria-label="Release filter">
@@ -339,7 +339,6 @@ function DiscoveryPanel({ mode, expanded, onExpand, home, language, onLanguage, 
                 <span aria-live="polite">
                   {periods.find((item) => item.value === period)?.label}
                 </span>
-                <RotateCw size={12} aria-hidden="true" />
               </button>
             </div>
           ) : null}
