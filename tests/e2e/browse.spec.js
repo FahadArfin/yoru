@@ -1,5 +1,58 @@
 import { test, expect } from '@playwright/test';
 
+for (const category of ['manga', 'manhwa']) {
+  test(`${category} full catalog shows 144 titles with working pagination and filters`, async ({
+    page,
+    context,
+    baseURL,
+  }) => {
+    await context.route('**/*', (route) =>
+      new URL(route.request().url()).origin === baseURL ? route.continue() : route.abort(),
+    );
+    const queries = [];
+    await page.route('**/api/catalog?**', (route) => {
+      const params = new URL(route.request().url()).searchParams;
+      queries.push(Object.fromEntries(params));
+      const current = Number(params.get('page'));
+      return route.fulfill({
+        json: {
+          items: Array.from({ length: current === 1 ? 144 : 6 }, (_, i) => ({
+            id: `mal-manga-${(current - 1) * 144 + i + 1}`,
+            title: `Long page title ${(current - 1) * 144 + i + 1}`,
+            category: category.toUpperCase(),
+            cover: '/icon.svg',
+            genres: ['Action'],
+          })),
+          total: 150,
+          pages: 2,
+          page: current,
+        },
+      });
+    });
+    await page.goto(`/browse/${category}?view=all`);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(144);
+    expect(queries.at(-1).limit).toBe('144');
+    await expect(page.locator('.results-bar')).toContainText('144 titles on this page');
+    expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(
+      false,
+    );
+    await page.getByRole('button', { name: 'Next', exact: true }).click();
+    await expect(page).toHaveURL(/page=2/);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(6);
+    await expect(
+      page.getByRole('link', { name: 'View Long page title 145', exact: true }),
+    ).toBeVisible();
+    await expect.poll(() => page.evaluate(() => scrollY)).toBe(0);
+    await expect(page.getByRole('button', { name: 'Next', exact: true })).toBeDisabled();
+    await page.getByLabel('Genre', { exact: true }).selectOption('Action');
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(144);
+    expect(queries.at(-1)).toMatchObject({ page: '1', limit: '144', genre: 'Action' });
+    await page.reload();
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(144);
+    await expect(page.getByLabel('Genre', { exact: true })).toHaveValue('Action');
+  });
+}
+
 test('compact catalog keeps 48-title pagination, filters and navigation usable', async ({
   page,
   context,

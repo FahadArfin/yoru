@@ -556,6 +556,7 @@ export function rememberImportedMedia(entries) {
 function optionsFor(input = {}) {
   const query = typeof input === 'string' ? { search: input } : input;
   const category = String(query.category || query.type).toUpperCase();
+  const maxLimit = ['MANGA', 'MANHWA'].includes(category) ? 144 : 48;
   const format = String(query.format || '')
     .toLowerCase()
     .replace(/[^a-z]/g, '');
@@ -581,11 +582,11 @@ function optionsFor(input = {}) {
       : 'trending',
     page:
       Number.isSafeInteger(Number(query.page)) &&
-      Number.isSafeInteger(Number(query.page) * 48) &&
+      Number.isSafeInteger(Number(query.page) * maxLimit) &&
       Number(query.page) > 0
         ? Number(query.page)
         : 1,
-    limit: Math.min(48, Math.max(1, Math.floor(Number(query.limit) || 24))),
+    limit: Math.min(maxLimit, Math.max(1, Math.floor(Number(query.limit) || 24))),
     curated: query.curated === '1' || query.curated === true,
   };
 }

@@ -48,6 +48,7 @@ export default function Browse(props) {
   );
 }
 function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
+  const scope = useCollection();
   const route = useParams();
   const category = categoryOverride || route.category;
   const navigate = useNavigate();
@@ -73,7 +74,7 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
     ...(format ? { format } : {}),
     sort,
     page,
-    limit: '48',
+    limit: !scope?.active && ['manga', 'manhwa'].includes(chosen) ? '144' : '48',
   });
   const { data, error, loading, refresh } = useResource(discovery ? null : `/api/catalog?${query}`);
   const update = (changes) => {
