@@ -138,11 +138,6 @@ export default function MangaHero({ items, category, label, categoryControls }) 
       {categoryControls}
       {picks.length > 0 && (
         <div className="weekly-bottom">
-          {!anime && (
-            <span className="weekly-caption">
-              Your next reading obsession <span> / </span> {label}
-            </span>
-          )}
           <div className="weekly-controls" aria-label={`Featured ${category} controls`}>
             {picks.length > 1 && !carousel.reduced && (
               <button
