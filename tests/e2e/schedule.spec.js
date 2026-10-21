@@ -115,7 +115,11 @@ test('schedule groups local dates, sorts times, filters releases and identifies 
     }),
   );
   await page.goto('/schedule');
-  await expect(page.getByText('America/New York')).toBeVisible();
+  await expect(page.getByText('America/New York')).toHaveCount(0);
+  await expect(page.locator('.schedule-list').first().locator('.schedule-time small')).toHaveText([
+    'EDT',
+    'EDT',
+  ]);
   await expect(page.locator('.schedule-list').first().locator('h3')).toHaveText([
     'Tokyo Tuesday',
     'Later show',

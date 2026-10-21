@@ -2,14 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import ReadingCalendar from './ReadingCalendar';
 import usePhoneDayStrip from '../usePhoneDayStrip';
-import {
-  CalendarDays,
-  Clock,
-  ExternalLink,
-  ChevronLeft,
-  ChevronRight,
-  RefreshCw,
-} from 'lucide-react';
+import { CalendarDays, ExternalLink, ChevronLeft, ChevronRight, RefreshCw } from 'lucide-react';
 import { useResource } from '../state';
 import { Empty, ErrorNotice } from '../components';
 import CoverImage from '../CoverImage';
@@ -180,11 +173,6 @@ function AnimeSchedule({ picker }) {
                 {label}
               </button>
             ))}
-          </div>
-          <div className="schedule-zone">
-            <Clock size={15} />
-            <span>{zone.replaceAll('_', ' ')}</span>
-            <small>Your local timezone</small>
           </div>
         </div>
         <div className="schedule-week">
