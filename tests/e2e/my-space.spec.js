@@ -79,13 +79,32 @@ test('watch together creates a private invitation for the selected episode and d
   await expect(page.getByLabel('Room invitation')).toHaveValue(invitation);
 });
 
+async function openReaderRoom(page) {
+  await expect(page.locator('.reader-quick-bar')).toBeAttached();
+  await expect(
+    page.locator('.reader-quick-bar').getByRole('button', { name: 'Read together', exact: true }),
+  ).toHaveCount(0);
+  if (!(await page.getByRole('complementary', { name: 'Reader menu' }).isVisible())) {
+    const reveal = page.getByRole('button', {
+      name: 'Show chapter and page controls',
+      exact: true,
+    });
+    if (await reveal.isVisible()) await reveal.click();
+    await page.getByRole('button', { name: 'Reader menu', exact: true }).click();
+  }
+  await page
+    .locator('.reader-menu-content')
+    .getByRole('button', { name: 'Read together', exact: true })
+    .click();
+}
+
 test('read together opens a contextual popup and the shared reader with live chat', async ({
   page,
   baseURL,
 }) => {
   await register(page, baseURL);
   await page.goto(`/read/${manhwa}/4`);
-  await page.getByRole('button', { name: 'Read together', exact: true }).click();
+  await openReaderRoom(page);
   await expect(page.getByLabel('Starting unit')).toHaveValue('4');
   await page.getByRole('button', { name: 'Create room', exact: true }).click();
   await page.getByRole('link', { name: 'Enter room', exact: true }).click();
@@ -222,14 +241,7 @@ test('reading rooms preserve an exact edition and language, including bonus chap
   );
   await page.goto(`/read/${manhwa}/4.5?source=mangadex&language=ja&chapter=${edition}`);
   await expect(page.getByRole('img', { name: 'Chapter 4.5, page 1', exact: true })).toBeVisible();
-  const closeReaderMenu = page.getByRole('button', { name: 'Close reader menu', exact: true });
-  if (await closeReaderMenu.isVisible()) await closeReaderMenu.click();
-  const revealControls = page.getByRole('button', {
-    name: 'Show chapter and page controls',
-    exact: true,
-  });
-  if (await revealControls.isVisible()) await revealControls.click();
-  await page.getByRole('button', { name: 'Read together', exact: true }).click();
+  await openReaderRoom(page);
   await expect(page.getByLabel('Starting unit')).toHaveValue('4.5');
   await page.getByRole('button', { name: 'Create room', exact: true }).click();
   await page.getByRole('link', { name: 'Enter room', exact: true }).click();

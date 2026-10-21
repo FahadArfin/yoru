@@ -563,6 +563,42 @@ function ReaderSession({ media, unit, priorMode }) {
       currentSaved={currentSaved}
       read={read}
       discussionUnit={hasChapterDiscussion ? numericChapter : 0}
+      readTogether={
+        window.self === window.top && (
+          <RoomLauncher
+            className="reader-menu-action"
+            media={media}
+            unit={
+              chapter
+                ? (chapterUnit(chapter.number) ?? chapterUnit(unit) ?? 1)
+                : media.sourceRef
+                  ? 0
+                  : (chapterUnit(unit) ?? 1)
+            }
+            source={
+              media.sourceRef && !chapter
+                ? null
+                : {
+                    kind: 'reader',
+                    url: readerLink(
+                      media.id,
+                      chapter
+                        ? { ...chapter, source: chapters.source }
+                        : {
+                            number: String(unit),
+                            id: requested,
+                            kind: 'remote',
+                            language: chapters.language,
+                            source: chapters.source,
+                          },
+                      page,
+                      { destination: context?.destination },
+                    ),
+                  }
+            }
+          />
+        )
+      }
       sourcePicker={sourcePicker}
     />
   );
@@ -599,39 +635,6 @@ function ReaderSession({ media, unit, priorMode }) {
           </div>
         </div>
         <nav className="reader-quick-bar" aria-label="Reader navigation">
-          {window.self === window.top && (
-            <RoomLauncher
-              media={media}
-              unit={
-                chapter
-                  ? (chapterUnit(chapter.number) ?? chapterUnit(unit) ?? 1)
-                  : media.sourceRef
-                    ? 0
-                    : (chapterUnit(unit) ?? 1)
-              }
-              source={
-                media.sourceRef && !chapter
-                  ? null
-                  : {
-                      kind: 'reader',
-                      url: readerLink(
-                        media.id,
-                        chapter
-                          ? { ...chapter, source: chapters.source }
-                          : {
-                              number: String(unit),
-                              id: requested,
-                              kind: 'remote',
-                              language: chapters.language,
-                              source: chapters.source,
-                            },
-                        page,
-                        { destination: context?.destination },
-                      ),
-                    }
-              }
-            />
-          )}
           <button onClick={() => setDialog('chapters')} aria-label="Choose chapter">
             {chapter ? `Ch. ${chapter.number}` : 'Chapters'}
             <ChevronRight size={14} />

@@ -47,6 +47,7 @@ export default function ReaderMenu({
   read,
   discussionUnit,
   sourcePicker,
+  readTogether,
 }) {
   const rtl = preferences.direction === 'rtl';
   const nativeEdition = parseEditionReference(chapter?.id)?.kind === 'extension';
@@ -144,6 +145,7 @@ export default function ReaderMenu({
         </button>
       </div>
       <div className="reader-menu-section">
+        {readTogether}
         <Link
           className="reader-menu-action"
           aria-label={discussionUnit || nativeEdition ? 'Chapter discussion' : 'Title discussion'}

@@ -13,7 +13,7 @@ import { readerContextKey, readerMutation } from './reader/requests';
 import { readerLink } from './reader/model';
 import { parseMediaReference } from '../shared/media-reference';
 
-export default function RoomLauncher({ media, unit = 1, source, getPosition }) {
+export default function RoomLauncher({ media, unit = 1, source, getPosition, className }) {
   if (media?.sourceRef && !source?.url) unit = 0;
   const { requireUser, user } = useApp();
   const selection = useReaderSelection();
@@ -26,6 +26,7 @@ export default function RoomLauncher({ media, unit = 1, source, getPosition }) {
     <>
       <Button
         variant="secondary"
+        className={className}
         disabled={!selection?.ready}
         onClick={() => {
           if (requireUser()) setContext({ source, position: getPosition?.() || 0 });
