@@ -7,6 +7,7 @@ import { Poster } from '../components';
 import './genre-collections.css';
 import { useCollection } from '../collection-context';
 import { imageLookahead } from '../image-loading';
+import GenreBrowser from './GenreBrowser';
 
 export const browseGenres = [
   'Action',
@@ -205,16 +206,20 @@ export default function GenreCollections({ category }) {
     : genresForCategory(category);
   return (
     <div className="genre-collections" key={category}>
-      <nav className="genre-jump-list" aria-label="Explore genres">
-        {genres.map((genre) => (
-          <a key={genre} href={`#${genreId(category, genre)}`}>
-            {genre}
+      {!scope?.active && ['manga', 'manhwa'].includes(category) ? (
+        <GenreBrowser key={category} category={category} shelves={genres} />
+      ) : (
+        <nav className="genre-jump-list" aria-label="Explore genres">
+          {genres.map((genre) => (
+            <a key={genre} href={`#${genreId(category, genre)}`}>
+              {genre}
+            </a>
+          ))}
+          <a href={`#${genreId(category, 'all')}`}>
+            Full collection <ArrowRight size={12} />
           </a>
-        ))}
-        <a href={`#${genreId(category, 'all')}`}>
-          Full collection <ArrowRight size={12} />
-        </a>
-      </nav>
+        </nav>
+      )}
       {genres.map((genre) => (
         <CollectionShelf key={`${category}-${genre}`} category={category} genre={genre} />
       ))}

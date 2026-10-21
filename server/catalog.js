@@ -16,6 +16,7 @@ import {
   fetchAnimeCast,
 } from './catalog-core.js';
 import { getMangaDiscovery } from './manga-discovery.js';
+import { getGenreDirectory } from './genre-directory.js';
 import { getAnimeEpisodes } from './anime-episodes.js';
 import { getAnimeCast } from './anime-cast.js';
 import { resolveAnimeSources } from './sources-core.js';
@@ -402,6 +403,12 @@ catalogRouter.get('/search/suggestions', async (req, res, next) => {
     next(error);
   }
 });
+catalogRouter.get(
+  '/catalog/genres',
+  asyncRoute(async (_req, res) => {
+    res.set('Cache-Control', 'public, max-age=3600').json(await getGenreDirectory());
+  }),
+);
 catalogRouter.get('/catalog', async (req, res, next) => {
   try {
     res.set('Cache-Control', 'private, max-age=30').json(await searchCatalog(req.query));

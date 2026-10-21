@@ -4,6 +4,56 @@
   gap: 8px;
   margin: 22px 0 38px;
 }
+.genre-browser {
+  margin: 22px 0 38px;
+}
+.genre-browser-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 600;
+}
+.genre-browser-heading button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 0;
+  background: transparent;
+  color: rgb(var(--chrome-text));
+  padding: 8px 0;
+  cursor: pointer;
+}
+.genre-browser .genre-jump-list {
+  margin: 12px 0;
+}
+.genre-count {
+  font-size: 10px;
+  opacity: 0.7;
+  font-variant-numeric: tabular-nums;
+}
+.genre-count-note {
+  font-size: 11px;
+  color: rgb(var(--chrome-muted));
+  margin: 10px 0 0;
+}
+.genre-browser-search {
+  display: grid;
+  gap: 6px;
+  font-size: 12px;
+  margin-top: 12px;
+  max-width: 420px;
+}
+.genre-browser-search input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border-radius: 8px;
+  border: 1px solid rgb(var(--chrome-bright) / 0.12);
+  background: rgb(var(--chrome-bright) / 0.02);
+  color: rgb(var(--chrome-text));
+}
 .genre-jump-list a,
 .genre-jump-list button {
   display: inline-flex;

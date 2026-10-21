@@ -60,6 +60,11 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
   const sort = params.get('sort') || 'trending';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
+  const { data: genreDirectory } = useResource(
+    !scope?.active && ['manga', 'manhwa'].includes(chosen) ? '/api/catalog/genres' : null,
+  );
+  const availableGenres =
+    genreDirectory?.items?.map((item) => item.name) || genresForCategory(chosen, scope?.active);
   const discovery =
     chosen !== 'all' &&
     !['q', 'genre', 'format', 'sort', 'page', 'view'].some((key) => params.get(key));
@@ -164,7 +169,7 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
           onChange={(e) => update({ genre: e.target.value })}
         >
           <option value="">All genres</option>
-          {genresForCategory(chosen, scope?.active).map((x) => (
+          {availableGenres.map((x) => (
             <option key={x}>{x}</option>
           ))}
         </select>

@@ -47,6 +47,7 @@ import {
   fetchAnimeCast,
 } from '../server/catalog-core.js';
 import { getMangaDiscovery } from '../server/manga-discovery.js';
+import { getGenreDirectory } from '../server/genre-directory.js';
 import { getAnimeEpisodes } from '../server/anime-episodes.js';
 import { getAnimeCast } from '../server/anime-cast.js';
 import { apiError } from '../server/validation.js';
@@ -175,6 +176,10 @@ app.get('/api/config', (c) => {
 });
 app.get('/api/ara-ara/catalog', async (c) => c.json(await getAraCatalog()));
 app.get('/api/catalog', async (c) => c.json(await searchCatalog(c.req.query())));
+app.get('/api/catalog/genres', async (c) => {
+  c.header('Cache-Control', 'public, max-age=3600');
+  return c.json(await getGenreDirectory());
+});
 app.post('/api/presence', async (c) => {
   const result = await touchVisitor(
     c.get('db'),
