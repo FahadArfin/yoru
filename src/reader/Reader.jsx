@@ -836,7 +836,12 @@ function ReaderSession({ media, unit, priorMode }) {
             </Button>
           </div>
           <div className="reader-account-note">
-            <span>Page position and bookmarks are saved on this device.</span>
+            <span>
+              {saved.syncError ||
+                (user
+                  ? 'Your reading position, bookmarks and read markers sync to your account.'
+                  : 'Page position and bookmarks are saved on this device. Sign in to sync new activity.')}
+            </span>
             <Button
               variant="subtle"
               disabled={numericChapter === null}

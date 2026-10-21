@@ -294,6 +294,18 @@ export function AuthModal() {
       <p className="muted">
         Your favorites, late-night theories, and next chapter. All in one place.
       </p>
+      {config.auth?.chatgpt && (
+        <>
+          <a
+            className="btn btn-secondary auth-chatgpt"
+            target="_top"
+            href={`/api/auth/chatgpt/start?returnTo=${encodeURIComponent(window.location.pathname + window.location.search + window.location.hash)}`}
+          >
+            Continue with ChatGPT
+          </a>
+          <p className="small muted auth-divider">or use your email</p>
+        </>
+      )}
       {config.auth?.discord && (
         <a href="/api/auth/discord" className="btn btn-discord">
           Continue with Discord

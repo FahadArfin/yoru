@@ -353,8 +353,10 @@ export function AppProvider({ children }) {
   );
   const logout = async () => {
     try {
-      await send('/api/auth/logout', {});
+      const result = await send('/api/auth/logout', {});
       setUser(null);
+      if (result.redirect?.startsWith('/signout-with-chatgpt?'))
+        window.location.assign(result.redirect);
       notify('Signed out');
     } catch (e) {
       notify(e.message, 'error');

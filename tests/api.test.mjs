@@ -1021,3 +1021,40 @@ test('records survive server restart; session logout revokes future writes', asy
 
 test('public channels preserve General and isolate message history', () =>
   channelsContract(request, register));
+
+test('password accounts retain cloud chapter markers and ignore platform identity headers on Node', async () => {
+  const a = await register('MarkerAccount');
+  const b = await register('OtherMarkerAccount');
+  const path = '/api/reader-markers/mal-manga-121496';
+  const body = {
+    owner: a.user.id,
+    chapterId: 'local:1:en:files',
+    updatedAt: Date.now() - 100,
+    bookmark: 4,
+    read: true,
+  };
+  const saved = await request(path, { method: 'PUT', session: a, body });
+  assert.equal(saved.status, 200, JSON.stringify(saved.body));
+  assert.equal(saved.body.chapters[body.chapterId].bookmark, 4);
+  assert.deepEqual((await request(path, { session: b })).body.chapters, {});
+  assert.equal((await request(path)).status, 401);
+  assert.equal((await request(path, { method: 'PUT', session: b, body })).status, 409);
+  const rename = await request('/api/auth/profile', {
+    method: 'PATCH',
+    session: a,
+    body: { name: 'Updated reader' },
+  });
+  assert.equal(rename.body.user.name, 'Updated reader');
+  assert.equal(
+    (
+      await request('/api/auth/me', {
+        headers: {
+          'oai-authenticated-user-id': 'spoofed',
+          'oai-authenticated-user-email': 'markeraccount@example.test',
+        },
+      })
+    ).body.user,
+    null,
+  );
+  assert.equal((await request('/api/config')).body.auth.chatgpt, false);
+});

@@ -482,3 +482,14 @@
     padding-top: 20px;
   }
 }
+
+.account-connections {
+  margin-top: 1.25rem;
+}
+.account-connections .form-stack {
+  margin-block: 1rem;
+}
+.account-connections .setting-row {
+  flex-wrap: wrap;
+  gap: 1rem;
+}

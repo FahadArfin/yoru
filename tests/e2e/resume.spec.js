@@ -41,7 +41,7 @@ async function setup(context, baseURL) {
   await context.route(/\/api\/media\/[^/]+\/reader\/[^/?]+(?:\?.*)?$/, (route) => {
     const url = new URL(route.request().url());
     expect(url.searchParams.get('destination')).toBe('yoru');
-    expect(url.searchParams.get('integration')).toBe('all');
+    expect(url.searchParams.get('integration')).toBe('core');
     expect(url.searchParams.get('selectionFingerprint')).toBeTruthy();
     const path = url.pathname;
     return route.fulfill({
@@ -105,6 +105,16 @@ test('watch and chapter progress follow the account to a fresh device and stay p
   await page.goto(`/read/${manga}/1?chapter=${chapter}&language=en`);
   await expect(page.getByRole('img', { name: 'Chapter 1, page 1', exact: true })).toBeVisible();
   await selectPage(page, 2);
+  await page.getByRole('button', { name: 'Bookmark page', exact: true }).click();
+  await expect
+    .poll(
+      async () =>
+        (await (await context.request.get(`/api/reader-markers/${manga}`)).json()).chapters?.[
+          chapter
+        ]?.bookmark,
+    )
+    .toBe(2);
+
   await expect.poll(async () => (await read()).find((x) => x.mediaId === manga)?.page).toBe(2);
   await page.goto(`/read/${manhwa}/1?chapter=${chapter}&language=en&page=2`);
   await expect.poll(async () => (await read()).find((x) => x.mediaId === manhwa)?.page).toBe(2);
@@ -130,6 +140,9 @@ test('watch and chapter progress follow the account to a fresh device and stay p
     await rail.screenshot({ path: testInfo.outputPath('resume-rail.png') });
     await rail.getByRole('link', { name: /Death Note/ }).click();
     await expect(other.getByRole('img', { name: 'Chapter 1, page 2', exact: true })).toBeVisible();
+    await selectPage(other, 2);
+    await expect(other.getByRole('button', { name: 'Remove bookmark', exact: true })).toBeVisible();
+
     await other.goto(`/watch/${anime}/3?language=dub`);
     await expect
       .poll(() => other.locator('video').evaluate((v) => v.currentTime))

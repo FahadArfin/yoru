@@ -29,6 +29,7 @@ import {
   cookieOptions,
 } from './security.js';
 import { socialRoutes } from './social.js';
+import { chatgptRoutes } from './chatgpt-auth.js';
 import { channelRoutes } from './channels.js';
 import { roomRoutes, reconcileRooms } from './rooms.js';
 import { eventRoutes } from './events.js';
@@ -147,6 +148,7 @@ app.get('/api/config', (c) => {
         db.statement('DELETE FROM presence_leases WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM favorite_previews WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM oauth_states WHERE expires_at<=?', timestamp),
+        db.statement('DELETE FROM chatgpt_states WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM mal_oauth_states WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM rate_limits WHERE expires_at<=?', timestamp),
         db.statement('DELETE FROM sessions WHERE expires_at<=?', timestamp),
@@ -155,7 +157,7 @@ app.get('/api/config', (c) => {
       .catch((error) => console.warn('[yoru] Expired record cleanup deferred:', error.message)),
   );
   return c.json({
-    auth: { email: true, discord, mal },
+    auth: { email: true, chatgpt: true, discord, mal },
     discordEnabled: discord,
     discordInviteUrl: c.env.DISCORD_INVITE_URL || null,
     features: {
@@ -433,6 +435,7 @@ app.get('/api/chapter-calendar', async (c) => {
   );
 });
 
+chatgptRoutes(app);
 authRoutes(app, { onLogout: reconcileRooms });
 app.use('/api/*', socialAccess);
 socialRoutes(app);

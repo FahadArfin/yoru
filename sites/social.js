@@ -14,6 +14,7 @@ import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from '../server/community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { readerMarkers } from '../server/reader-markers.js';
 import { resumeInput, resumeUpsert } from '../server/resume.js';
 import { forumRoutes } from './forum.js';
 import { resolveReaderContext } from '../server/reader-context.js';
@@ -138,6 +139,18 @@ export async function onlineState(db) {
 }
 export function socialRoutes(app) {
   forumRoutes(app);
+  for (const method of ['get', 'put'])
+    app[method]('/api/reader-markers/:mediaId', requireAuth, async (c) => {
+      const request = await accountRequest(c);
+      return c.json(
+        await readerMarkers(
+          mediaId(c.req.param('mediaId')),
+          method === 'put' ? await c.req.json() : null,
+          c.get('user').id,
+          request,
+        ),
+      );
+    });
   app.get('/api/resume', requireAuth, async (c) => {
     const { context, deps } = await accountRequest(c);
     c.header('Cache-Control', 'no-store');

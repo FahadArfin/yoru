@@ -9,6 +9,7 @@ import { externalCatalogSchema } from './external-catalog-store.js';
 import { readerContextSchema } from './reader-context.js';
 import { continuationSchema } from './reader-continuation.js';
 import { readingAccountSchema } from './reading-account.js';
+import { markerSchema } from './reader-marker-schema.js';
 import { channelSchema } from './channels.js';
 
 export const databasePath =
@@ -129,6 +130,8 @@ db.exec(readerContextSchema);
 db.exec(continuationSchema);
 db.exec(readingAccountSchema);
 for (const [table, column, definition] of [
+  ['users', 'chatgpt_id', 'TEXT'],
+  ['sessions', 'auth_provider', "TEXT NOT NULL DEFAULT 'password'"],
   ['comments', 'edition_id', 'TEXT'],
   ['rooms', 'destination', "TEXT NOT NULL DEFAULT 'yoru'"],
   ['rooms', 'reader_source_id', 'TEXT'],
@@ -147,10 +150,12 @@ db.exec(
   'CREATE INDEX IF NOT EXISTS comments_media_edition ON comments(media_id,edition_id,created_at)',
 );
 db.exec('CREATE INDEX IF NOT EXISTS rooms_destination_open ON rooms(destination,closed_at)');
+db.exec('CREATE UNIQUE INDEX IF NOT EXISTS users_chatgpt_id_unique ON users(chatgpt_id)');
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);
 db.exec(channelSchema);
+db.exec(markerSchema);
 if (
   !db
     .prepare('PRAGMA table_info(messages)')

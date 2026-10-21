@@ -1,7 +1,9 @@
+import { useMarkerSync } from './use-marker-sync';
 import { useEffect, useState } from 'react';
 import { getReadingState, loadCollection, READER_EVENT } from './storage';
 
 export function useReadingState(id) {
+  const syncError = useMarkerSync(id);
   const [value, setValue] = useState(() => getReadingState(id));
   useEffect(() => {
     const update = () => setValue(getReadingState(id));
@@ -13,7 +15,7 @@ export function useReadingState(id) {
       window.removeEventListener('storage', update);
     };
   }, [id]);
-  return value;
+  return { ...value, syncError };
 }
 export function useChapters(id) {
   const [value, setValue] = useState({ items: [], loading: true, error: '' });

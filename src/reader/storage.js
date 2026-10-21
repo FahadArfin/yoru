@@ -1,4 +1,4 @@
-import { sortChapters } from './model';
+import { sortChapters } from './model.js';
 import { parseMediaReference } from '../../shared/media-reference.js';
 import { visibleAccountHistory } from '../../shared/reading-account-view.js';
 
@@ -131,12 +131,32 @@ export function saveReadingState(id, patch, chapterId, chapterPatch) {
       ...old.chapters,
       [chapterId]: { ...old.chapters[chapterId], ...chapterPatch },
     };
+  if (account && chapterId && chapterPatch) {
+    next.markerPending = { ...old.markerPending };
+    const pending = { ...next.markerPending[chapterId] };
+    for (const field of ['bookmark', 'read'])
+      if (Object.hasOwn(chapterPatch, field)) {
+        const at = Math.max(Date.now(), (old.chapters[chapterId]?.[field + 'At'] || 0) + 1);
+        pending[field] = { value: chapterPatch[field], at };
+        next.chapters[chapterId][field + 'At'] = at;
+      }
+    if (Object.keys(pending).length) next.markerPending[chapterId] = pending;
+  }
   try {
     localStorage.setItem(statePrefix() + id, JSON.stringify(next));
   } catch {
     throw new Error('Your browser could not save your reading position. Reading still works.');
   }
-  window.dispatchEvent(new Event(READER_EVENT));
+  window.dispatchEvent(
+    new CustomEvent(READER_EVENT, {
+      detail: {
+        id,
+        markers:
+          !!chapterPatch &&
+          ['bookmark', 'read'].some((field) => Object.hasOwn(chapterPatch, field)),
+      },
+    }),
+  );
   return next;
 }
 export function readingHistory(category, context, options = {}) {
@@ -174,4 +194,56 @@ export function hasStoredNativeReadingHistory() {
   } catch {
     return false;
   }
+}
+
+// Cloud results are applied only to the account that started the request.
+export function mergeReaderMarkers(owner, id, chapters, acknowledged = null) {
+  if (!owner || owner !== account) return;
+  const state = getReadingState(id);
+  const next = {
+    ...state,
+    chapters: { ...state.chapters },
+    markerPending: { ...state.markerPending },
+  };
+  for (const [chapterId, remote] of Object.entries(chapters || {})) {
+    const local = { ...next.chapters[chapterId] };
+    for (const field of ['bookmark', 'read']) {
+      const at = field + 'At';
+      if ((remote[at] || 0) >= (local[at] || 0) && remote[at]) {
+        local[field] = remote[field];
+        local[at] = remote[at];
+      }
+    }
+    next.chapters[chapterId] = local;
+  }
+  if (acknowledged) {
+    const { chapterId, field, at } = acknowledged;
+    const pending = { ...next.markerPending[chapterId] };
+    if (pending[field]?.at === at) delete pending[field];
+    if (Object.keys(pending).length) next.markerPending[chapterId] = pending;
+    else delete next.markerPending[chapterId];
+  }
+  localStorage.setItem(statePrefix() + id, JSON.stringify(next));
+  window.dispatchEvent(new CustomEvent(READER_EVENT, { detail: { id, cloud: true } }));
+}
+export function prepareReaderMarkers(owner, id) {
+  if (!owner || owner !== account) return {};
+  const state = getReadingState(id);
+  // Preserve the old save time so migrating an older device cannot replace a newer cloud edit.
+  const at = Math.max(1, Math.min(Number(state.updatedAt) || 1, Date.now()));
+  let changed = false;
+  state.markerPending = { ...state.markerPending };
+  for (const [chapterId, chapter] of Object.entries(state.chapters)) {
+    const pending = { ...state.markerPending[chapterId] };
+    for (const field of ['bookmark', 'read']) {
+      if (Object.hasOwn(chapter, field) && !chapter[field + 'At']) {
+        pending[field] = { value: chapter[field], at };
+        chapter[field + 'At'] = at;
+        changed = true;
+      }
+    }
+    if (Object.keys(pending).length) state.markerPending[chapterId] = pending;
+  }
+  if (changed) localStorage.setItem(statePrefix() + id, JSON.stringify(state));
+  return state.markerPending;
 }

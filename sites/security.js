@@ -9,6 +9,7 @@ import { promisify } from 'node:util';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { apiError, text } from '../server/validation.js';
 import { changes, liveSession, sessionValues, now } from './store.js';
+import { chatgptSignOutPath } from '../shared/chatgpt-auth.js';
 
 const scrypt = promisify(scryptCallback);
 export const hashToken = (value) => createHash('sha256').update(String(value)).digest('hex');
@@ -19,7 +20,12 @@ export const publicUser = (user) =>
     : null;
 export const ownUser = (user) =>
   user
-    ? { ...publicUser(user), email: user.email || '', discordConnected: Boolean(user.discord_id) }
+    ? {
+        ...publicUser(user),
+        email: user.email || '',
+        discordConnected: Boolean(user.discord_id),
+        chatgptConnected: Boolean(user.chatgpt_id),
+      }
     : null;
 export const cookieOptions = (c) => ({
   httpOnly: true,
@@ -37,7 +43,7 @@ export async function sessionMiddleware(c, next) {
     const user = await c
       .get('db')
       .get(
-        'SELECT users.* FROM sessions JOIN users ON users.id=sessions.user_id WHERE token_hash=? AND expires_at>?',
+        'SELECT users.*, sessions.auth_provider AS session_provider FROM sessions JOIN users ON users.id=sessions.user_id WHERE token_hash=? AND expires_at>?',
         hash,
         Date.now(),
       );
@@ -90,16 +96,17 @@ export async function originGuard(c, next) {
   }
   await next();
 }
-async function issueSession(c, userId) {
+export async function issueSession(c, userId, provider = 'password') {
   const token = randomToken();
   await c
     .get('db')
     .run(
-      'INSERT INTO sessions(token_hash,user_id,expires_at,created_at) VALUES(?,?,?,?)',
+      'INSERT INTO sessions(token_hash,user_id,expires_at,created_at,auth_provider) VALUES(?,?,?,?,?)',
       hashToken(token),
       userId,
       Date.now() + 30 * 86400000,
       Date.now(),
+      provider,
     );
   setCookie(c, 'yoru_session', token, { ...cookieOptions(c), maxAge: 30 * 86400 });
 }
@@ -141,6 +148,13 @@ export async function remoteJson(url, options = {}) {
 }
 export function authRoutes(app, { onLogout = async () => {} } = {}) {
   app.get('/api/auth/me', (c) => c.json({ user: ownUser(c.get('user')) }));
+  app.patch('/api/auth/profile', requireAuth, async (c) => {
+    const name = text((await c.req.json()).name, { name: 'Display name', min: 2, max: 40 });
+    await c.get('db').run('UPDATE users SET name=? WHERE id=?', name, c.get('user').id);
+    return c.json({
+      user: ownUser(await c.get('db').get('SELECT * FROM users WHERE id=?', c.get('user').id)),
+    });
+  });
   app.post('/api/auth/register', async (c) => {
     await rateLimit(c, 'auth', 30, 15 * 60000);
     const input = await c.req.json(),
@@ -187,7 +201,12 @@ export function authRoutes(app, { onLogout = async () => {} } = {}) {
       await c.get('db').run('DELETE FROM sessions WHERE token_hash=?', c.get('sessionHash'));
     await onLogout(c.get('db'));
     deleteCookie(c, 'yoru_session', cookieOptions(c));
-    return c.json({ user: null });
+    return c.json({
+      user: null,
+      ...(c.get('user')?.session_provider === 'chatgpt'
+        ? { redirect: chatgptSignOutPath('/') }
+        : {}),
+    });
   });
   app.get('/api/auth/discord', async (c) => {
     if (!discordEnabled(c.env))

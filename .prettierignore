@@ -7,3 +7,6 @@ playwright-report/
 test-results/
 docs/audit/
 docs/qa/
+
+# Local agent reports and archived build artifacts
+.superpowers/

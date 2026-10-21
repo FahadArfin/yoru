@@ -108,6 +108,7 @@ export const users = sqliteTable('users', {
   email: text().unique(),
   password_hash: text(),
   discord_id: text().unique(),
+  chatgpt_id: text().unique(),
   avatar: text().notNull().default(''),
   created_at: text().notNull(),
 });
@@ -150,6 +151,7 @@ export const sessions = sqliteTable(
   'sessions',
   {
     token_hash: text().primaryKey(),
+    auth_provider: text().notNull().default('password'),
     user_id: text()
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -163,6 +165,13 @@ export const oauthStates = sqliteTable('oauth_states', {
   expires_at: integer().notNull(),
   user_id: text(),
   session_hash: text(),
+});
+export const chatgptStates = sqliteTable('chatgpt_states', {
+  state_hash: text().primaryKey().notNull(),
+  user_id: text(),
+  session_hash: text(),
+  return_path: text().notNull(),
+  expires_at: integer().notNull(),
 });
 export const malConnections = sqliteTable('mal_connections', {
   user_id: text()
@@ -397,6 +406,7 @@ export const previews = sqliteTable(
   'favorite_previews',
   {
     token_hash: text().primaryKey(),
+    auth_provider: text().notNull().default('password'),
     session_hash: text()
       .notNull()
       .references(() => sessions.token_hash, { onDelete: 'cascade' }),
@@ -542,4 +552,20 @@ export const chapterRatings = sqliteTable(
     primaryKey({ columns: [t.media_id, t.chapter_id, t.user_id] }),
     check('chapter_rating_range', sql`${t.rating} BETWEEN 1 AND 5`),
   ],
+);
+
+export const readerMarkers = sqliteTable(
+  'reader_markers',
+  {
+    user_id: text()
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    media_id: text().notNull(),
+    chapter_id: text().notNull(),
+    bookmark: integer(),
+    bookmark_at: integer().notNull().default(0),
+    is_read: integer(),
+    read_at: integer().notNull().default(0),
+  },
+  (t) => [primaryKey({ columns: [t.user_id, t.media_id, t.chapter_id] })],
 );

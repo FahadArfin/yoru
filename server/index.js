@@ -82,7 +82,7 @@ app.get('/api/health', (_req, res) => {
 });
 app.get('/api/config', (_req, res) =>
   res.json({
-    auth: { email: true, discord: discordEnabled, mal: malEnabled },
+    auth: { email: true, chatgpt: false, discord: discordEnabled, mal: malEnabled },
     discordEnabled,
     discordInviteUrl: process.env.DISCORD_INVITE_URL || null,
     features: {

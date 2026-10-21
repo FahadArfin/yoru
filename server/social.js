@@ -20,6 +20,7 @@ import { commentMediaError } from '../shared/comment-media.js';
 import { getCommunityThreads } from './community-threads.js';
 import { scheduleOptions } from './schedule-storage.js';
 import { isOffline } from './catalog-storage.js';
+import { readerMarkers } from './reader-markers.js';
 import { resumeInput, resumeUpsert } from './resume.js';
 import { nodeReaderDb } from './reader-db.js';
 import { resolveReaderContext, nodeReaderSignal } from './reader-context.js';
@@ -68,6 +69,24 @@ async function accountRequest(req, res) {
 
 export const socialRouter = Router();
 socialRouter.use(asyncRoute(socialAccess));
+for (const method of ['get', 'put'])
+  socialRouter[method](
+    '/reader-markers/:mediaId',
+    requireAuth,
+    asyncRoute(async (req, res) => {
+      const request = await accountRequest(req, res);
+      res
+        .set('Cache-Control', 'no-store')
+        .json(
+          await readerMarkers(
+            mediaId(req.params.mediaId),
+            method === 'put' ? req.body : null,
+            req.user.id,
+            request,
+          ),
+        );
+    }),
+  );
 socialRouter.get(
   '/resume',
   requireAuth,

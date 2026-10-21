@@ -44,7 +44,12 @@ export const publicUser = (user) =>
     : null;
 export const ownUser = (user) =>
   user
-    ? { ...publicUser(user), email: user.email || '', discordConnected: Boolean(user.discord_id) }
+    ? {
+        ...publicUser(user),
+        email: user.email || '',
+        discordConnected: Boolean(user.discord_id),
+        chatgptConnected: Boolean(user.chatgpt_id),
+      }
     : null;
 
 export function sessionMiddleware(req, _res, next) {
@@ -165,6 +170,11 @@ const authLimiter = rateLimit({
   message: { error: 'Too many sign-in attempts. Try again in a few minutes.' },
 });
 authRouter.get('/me', (req, res) => res.json({ user: ownUser(req.user) }));
+authRouter.patch('/profile', requireAuth, (req, res) => {
+  const name = text(req.body.name, { name: 'Display name', min: 2, max: 40 });
+  run('UPDATE users SET name=? WHERE id=?', name, req.user.id);
+  res.json({ user: ownUser(get('SELECT * FROM users WHERE id=?', req.user.id)) });
+});
 authRouter.post(
   '/register',
   authLimiter,
