@@ -1031,6 +1031,22 @@
   display: grid;
   gap: 8px;
 }
+.chapter-discussion-link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 44px;
+  min-height: 44px;
+  flex-shrink: 0;
+  border-radius: 6px;
+  color: inherit;
+}
+.chapter-discussion-link:hover,
+.chapter-discussion-link:focus-visible {
+  background: #8882;
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+}
 .live-chapter-row {
   display: flex;
   align-items: center;

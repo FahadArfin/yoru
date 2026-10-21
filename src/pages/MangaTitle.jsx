@@ -53,11 +53,29 @@ export default function MangaTitle({ media }) {
     : params.get('tab') === 'reviews'
       ? 'reviews'
       : 'chapters';
-  const unit = Math.max(0, Math.min(100000, Math.trunc(Number(params.get('unit')) || 0)));
   const reference = parseEditionReference(params.get('edition'));
-  const edition = reference?.kind === 'extension' ? reference.id : undefined;
-  const discussion = useRef({ unit, edition });
-  if (params.has('unit')) discussion.current = { unit, edition };
+  const edition = reference?.id;
+  const requestedUnit = Number(params.get('unit')) || 0;
+  const unit = Math.max(
+    0,
+    Math.min(100000, reference?.kind === 'extension' ? requestedUnit : Math.trunc(requestedUnit)),
+  );
+  const chapterLabel = edition ? params.get('chapter')?.slice(0, 80) : null;
+  const discussion = useRef({ unit, edition, chapterLabel });
+  if (params.has('unit')) discussion.current = { unit, edition, chapterLabel };
+  const discussionHeading =
+    edition && chapterLabel
+      ? chapterLabel === 'Special chapter'
+        ? 'Special chapter discussion'
+        : `Chapter ${chapterLabel} discussion`
+      : unit > 0 || edition
+        ? `Chapter ${unit} discussion`
+        : 'Title discussion';
+  useEffect(() => {
+    if (tab === 'discussion' && window.location.hash === '#chapter-discussion') {
+      document.getElementById('chapter-discussion')?.focus();
+    }
+  }, [tab, unit, edition]);
   const [progress, setProgress] = useState(entry?.progress || 0);
   const dirty = useRef(false);
   const [expandedStory, setExpandedStory] = useState(false);
@@ -233,6 +251,9 @@ export default function MangaTitle({ media }) {
                         ...(discussion.current.edition
                           ? { edition: discussion.current.edition }
                           : {}),
+                        ...(discussion.current.chapterLabel
+                          ? { chapter: discussion.current.chapterLabel }
+                          : {}),
                       }
                     : { tab: key },
                 )
@@ -338,25 +359,38 @@ export default function MangaTitle({ media }) {
           <div className="manga-tab-content" id="manga-chapters">
             {tab === 'chapters' && <ChapterCollection media={media} />}
             {tab === 'discussion' && (
-              <>
-                <label className="unit-picker">
-                  Chapter
-                  <input
-                    aria-label="Discussion chapter"
-                    type="number"
-                    min="0"
-                    max={media.chapters || 100000}
-                    value={unit}
-                    onChange={(e) =>
-                      setParams({
-                        unit: String(
-                          Math.max(0, Math.min(100000, Math.trunc(Number(e.target.value) || 0))),
-                        ),
-                      })
-                    }
-                  />
-                </label>
-                {unit === 0 && <p className="muted">Discussion for the whole title.</p>}
+              <section
+                id="chapter-discussion"
+                className="chapter-discussion-panel"
+                tabIndex={-1}
+                aria-label={discussionHeading}
+              >
+                <h2>
+                  {title} — {discussionHeading}
+                </h2>
+                <Link className="text-link" to={`/title/${media.id}?tab=chapters#manga-chapters`}>
+                  <ArrowLeft size={16} /> Back to chapters
+                </Link>
+                {!edition && (
+                  <label className="unit-picker">
+                    Chapter
+                    <input
+                      aria-label="Discussion chapter"
+                      type="number"
+                      min="0"
+                      max={media.chapters || 100000}
+                      value={unit}
+                      onChange={(e) =>
+                        setParams({
+                          unit: String(
+                            Math.max(0, Math.min(100000, Math.trunc(Number(e.target.value) || 0))),
+                          ),
+                        })
+                      }
+                    />
+                  </label>
+                )}
+                {unit === 0 && !edition && <p className="muted">Discussion for the whole title.</p>}
                 <Discussion
                   key={`${media.id}-${unit}-${edition || ''}`}
                   mediaId={media.id}
@@ -364,7 +398,7 @@ export default function MangaTitle({ media }) {
                   unit={unit}
                   edition={edition}
                 />
-              </>
+              </section>
             )}
             {tab === 'reviews' && <Reviews mediaId={media.id} />}
           </div>

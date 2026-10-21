@@ -23,7 +23,7 @@ import {
 import { titleOf } from '../api';
 import { Button, Modal } from '../components';
 import { pageStep } from './model';
-import { parseEditionReference } from '../../shared/media-reference';
+import { chapterDiscussionLink } from '../../shared/chapter-discussion';
 
 export default function ReaderMenu({
   media,
@@ -50,7 +50,7 @@ export default function ReaderMenu({
   readTogether,
 }) {
   const rtl = preferences.direction === 'rtl';
-  const nativeEdition = parseEditionReference(chapter?.id)?.kind === 'extension';
+  const discussionLink = chapterDiscussionLink(media.id, chapter);
   const paged = ['single', 'double'].includes(preferences.mode);
   const pageArrow = (forward, Icon) => (
     <button
@@ -148,8 +148,8 @@ export default function ReaderMenu({
         {readTogether}
         <Link
           className="reader-menu-action"
-          aria-label={discussionUnit || nativeEdition ? 'Chapter discussion' : 'Title discussion'}
-          to={`/title/${media.id}?unit=${discussionUnit}${nativeEdition ? `&edition=${encodeURIComponent(chapter.id)}` : ''}`}
+          aria-label={discussionLink || discussionUnit ? 'Chapter discussion' : 'Title discussion'}
+          to={discussionLink || `/title/${media.id}?unit=${discussionUnit}`}
         >
           <MessageCircle size={17} />
           Discussion

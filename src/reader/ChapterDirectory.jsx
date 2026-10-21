@@ -1,8 +1,20 @@
 import React, { useMemo, useRef, useState } from 'react';
-import { BookOpen, ChevronDown, Clock3, ExternalLink, Eye, List, Star, Users } from 'lucide-react';
+import {
+  BookOpen,
+  ChevronDown,
+  Clock3,
+  ExternalLink,
+  Eye,
+  List,
+  MessageCircle,
+  Star,
+  Users,
+} from 'lucide-react';
 import { groupChapterEditions } from './chapter-groups';
 import { languageName, readerLink } from './model';
 import PrefetchLink from '../PrefetchLink';
+import { Link } from '../collection-router';
+import { chapterDiscussionLink } from '../../shared/chapter-discussion';
 
 const compact = new Intl.NumberFormat(undefined, { notation: 'compact', maximumFractionDigits: 1 });
 const relative = new Intl.RelativeTimeFormat(undefined, { numeric: 'auto' });
@@ -30,7 +42,8 @@ const flags = {
   tr: 'tr',
   pl: 'pl',
 };
-const chapterLabel = (item) => (item.number ? `Chapter ${item.number}` : 'Special chapter');
+const chapterLabel = (item) =>
+  item.number != null && item.number !== '' ? `Chapter ${item.number}` : 'Special chapter';
 function dateLabel(value) {
   const days = (Date.parse(value) - Date.now()) / 86400000;
   if (!Number.isFinite(days)) return '';
@@ -41,6 +54,7 @@ function dateLabel(value) {
 }
 function Edition({ item, opened, rate, nested, mediaId, context }) {
   const ChapterLink = item.native ? PrefetchLink : 'a';
+  const discussionLink = chapterDiscussionLink(item.mediaId || mediaId, item);
   return (
     <article className={`live-chapter-row${nested ? ' nested-edition' : ''}`}>
       <ChapterLink
@@ -98,6 +112,16 @@ function Edition({ item, opened, rate, nested, mediaId, context }) {
               : `Read on ${item.readLabel}`}
         </span>
       </span>
+      {discussionLink && (
+        <Link
+          className="chapter-discussion-link"
+          to={discussionLink}
+          title={`${chapterLabel(item)} discussion`}
+          aria-label={`${chapterLabel(item)} discussion`}
+        >
+          <MessageCircle size={18} />
+        </Link>
+      )}
       <div className="chapter-activity">
         <span
           className="chapter-open-count"
