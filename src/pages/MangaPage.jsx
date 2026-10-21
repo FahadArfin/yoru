@@ -65,7 +65,9 @@ export function MangaLanding({ category, label, homepage = false, children, cate
   const nativeFeatured = !homepage && (!coreAllowed || !corePicks.length);
   const picks = nativeFeatured ? readerCatalog.allItems.slice(0, 8) : corePicks;
   const { user, setAuthOpen } = useApp();
-  const completed = picks.filter((item) => item.status === 'Finished').slice(0, 4);
+  const completed = picks
+    .filter((item) => ['finished', 'completed'].includes(item.status?.toLowerCase()))
+    .slice(0, 4);
   return (
     <div
       className={`home-page cinema-home manga-home ${category === 'manhwa' ? 'manhwa-home' : ''} ${homepage ? '' : 'compact-category-page'}`}
@@ -96,33 +98,35 @@ export function MangaLanding({ category, label, homepage = false, children, cate
           )}
           {children}
         </div>
-        {(coreAllowed || picks.length > 0) && (
+        {(coreAllowed || picks.length > 0 || !homepage) && (
           <aside
             className={`home-right-rail ${homepage ? 'home-lower-highlights' : ''}`}
             aria-label={`${label} highlights`}
           >
-            <section
-              className="home-rail-panel"
-              aria-label={nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
-            >
-              <div className="rail-heading">
-                <h2>
-                  <Crown size={14} /> {nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
-                </h2>
-              </div>
-              <p className="rail-note">
-                {nativeFeatured
-                  ? 'From your enabled reading catalogs'
-                  : scope?.active
-                    ? 'From the Ara Ara collection'
-                    : popular.data?.items?.length
-                      ? 'Popular with Kitsu readers'
-                      : 'From the Yoru collection'}
-              </p>
-              {picks.slice(0, 4).map((media) => (
-                <MangaRow key={media.id} media={media} />
-              ))}
-            </section>
+            {(coreAllowed || picks.length > 0) && (
+              <section
+                className="home-rail-panel"
+                aria-label={nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
+              >
+                <div className="rail-heading">
+                  <h2>
+                    <Crown size={14} /> {nativeFeatured ? 'Catalog highlights' : 'Reader favorites'}
+                  </h2>
+                </div>
+                <p className="rail-note">
+                  {nativeFeatured
+                    ? 'From your enabled reading catalogs'
+                    : scope?.active
+                      ? 'From the Ara Ara collection'
+                      : popular.data?.items?.length
+                        ? 'Popular with Kitsu readers'
+                        : 'From the Yoru collection'}
+                </p>
+                {picks.slice(0, 4).map((media) => (
+                  <MangaRow key={media.id} media={media} />
+                ))}
+              </section>
+            )}
             {completed.length > 0 && (
               <section className="home-rail-panel" aria-label="Completed stories">
                 <div className="rail-heading">

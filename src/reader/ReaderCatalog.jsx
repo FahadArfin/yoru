@@ -12,7 +12,12 @@ function StandaloneReaderCatalog(props) {
   const catalog = useReaderCatalog(props);
   return <ReaderCatalogView {...props} catalog={catalog} />;
 }
-function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading catalogs' }) {
+function ReaderCatalogView({
+  catalog,
+  query = '',
+  heading = 'Enabled reading catalogs',
+  discovery = false,
+}) {
   const {
     feed,
     inventory,
@@ -40,6 +45,24 @@ function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading cat
       <div className="section-heading">
         <h2>{heading}</h2>
       </div>
+      {discovery && !query && (
+        <div className="discovery-tabs" role="group" aria-label="Discover reading catalogs">
+          {[
+            ['popular', 'Most popular'],
+            ['latest', 'Recently updated'],
+          ].map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              className={sort === value ? 'active' : ''}
+              aria-pressed={sort === value}
+              onClick={() => setSort(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
       <nav className="genre-jump-list reader-genre-list" aria-label="Explore reading genres">
         {['', ...quickGenres].map((value) => (
           <button
@@ -105,7 +128,7 @@ function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading cat
             ))}
           </select>
         </label>
-        {!query && (
+        {!query && !discovery && (
           <label className="filter-select">
             Sort
             <select

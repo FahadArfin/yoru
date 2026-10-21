@@ -48,6 +48,8 @@ test('Ara Manhwa offers only related enabled extension sources', async ({
   const manhwa = {
     ...adult,
     category: 'MANHWA',
+    status: 'COMPLETED',
+    description: 'A provider supplied manhwa description.',
     sourceRef: { ...adult.sourceRef, providerKey: 'eu.kanade.tachiyomi.extension.all.manhwa18cc' },
   };
   await page.route('**/api/reader/catalogs*', (route) =>
@@ -74,6 +76,19 @@ test('Ara Manhwa offers only related enabled extension sources', async ({
     'eu.kanade.tachiyomi.extension.all.manhwa18cc · en · extension',
   ]);
   await expect(catalog.locator('.poster-card')).toHaveCount(1);
+  const hero = page.getByRole('region', { name: 'Featured manhwa', exact: true });
+  await expect(hero.getByRole('heading', { name: manhwa.title, exact: true })).toBeVisible();
+  // The shared compact hero hides its description on narrow screens.
+  await expect(hero.locator('.weekly-description')).toHaveText(manhwa.description);
+  await expect(page.getByRole('complementary', { name: 'Manhwa highlights' })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Completed stories', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Your reading list', exact: true })).toBeVisible();
+  await expect(page.getByRole('region', { name: 'Manhwa community', exact: true })).toBeVisible();
+  const discovery = page.getByRole('group', { name: 'Discover reading catalogs', exact: true });
+  await discovery.getByRole('button', { name: 'Recently updated', exact: true }).click();
+  await expect(
+    discovery.getByRole('button', { name: 'Recently updated', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   expect(categories.length).toBeGreaterThan(0);
   expect(categories.every((category) => category === 'manhwa')).toBe(true);
   expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);

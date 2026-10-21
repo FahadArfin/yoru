@@ -37,6 +37,64 @@ export const context = {
   extensionsEnabled: true,
 };
 
+test('Manhwa summaries hydrate in bounded batches without losing continuation titles', async () => {
+  const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
+  const f = contextFixture();
+  const s = { ...source(55), providerKey: 'Manhwa18.cc' };
+  let browses = 0,
+    details = 0;
+  const deps = {
+    db: f.db,
+    currentSources: [s],
+    bridge: {
+      browse: async () => {
+        browses++;
+        return {
+          items: Array.from({ length: 6 }, (_, i) => title(s, i + 1)),
+          hasMore: false,
+        };
+      },
+      details: async (ref) => {
+        details++;
+        const n = Number(ref.upstreamKey.split('/').pop());
+        return {
+          ...title(s, n),
+          metadata: {
+            title: `Detailed ${n}`,
+            genres: n === 6 ? ['Manga'] : ['Manhwa'],
+            description: 'Provider description',
+            status: 'COMPLETED',
+          },
+        };
+      },
+    },
+  };
+  const ctx = { ...context, destination: 'ara-ara' };
+  try {
+    const first = await getReadingDiscovery({ category: 'manhwa' }, ctx, deps);
+    assert.equal(first.items.length, 4);
+    assert.equal(details, 4);
+    assert.equal(first.hasMore, true);
+    assert.ok(
+      first.items.every(
+        (item) => item.category === 'MANHWA' && item.description === 'Provider description',
+      ),
+    );
+    const second = await getReadingDiscovery(
+      { category: 'manhwa', cursor: first.nextCursor },
+      ctx,
+      deps,
+    );
+    assert.equal(second.items.length, 1);
+    assert.equal(second.items[0].title, 'Detailed 5');
+    assert.equal(second.hasMore, false);
+    assert.equal(browses, 1);
+    assert.equal(details, 6);
+  } finally {
+    f.close();
+  }
+});
+
 test('Manhwa discovery skips unrelated extensions and requires title evidence', async () => {
   const { getReadingDiscovery } = await import('../server/catalog-aggregation.js');
   const f = contextFixture();

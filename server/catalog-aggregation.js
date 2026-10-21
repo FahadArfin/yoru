@@ -1,5 +1,10 @@
 import { createExternalCatalogStore, validateReaderSource } from './external-catalog-store.js';
-import { assertMediaEligible, assertSourceEligible, publicReadingMedia } from './media-resolver.js';
+import {
+  assertMediaEligible,
+  assertSourceEligible,
+  publicReadingMedia,
+  resolveMedia,
+} from './media-resolver.js';
 import { createContinuationStore, restartRequired } from './reader-continuation.js';
 import { refreshReaderSources, INVENTORY_FRESH_MS } from './reader-source-inventory.js';
 import { apiError } from './validation.js';
@@ -146,7 +151,8 @@ async function aggregate(input, context, deps) {
   let pointer = state.pointer % Math.max(1, sources.length),
     cycled = false;
   const candidates = [];
-  for (let n = 0; n < sources.length && candidates.length < 4; n++) {
+  const drainingDetails = params.category === 'manhwa' && state.pending.length > 0;
+  for (let n = 0; !drainingDetails && n < sources.length && candidates.length < 4; n++) {
     const index = (pointer + n) % sources.length,
       s = sources[index],
       pos = state.positions[s.id];
@@ -161,7 +167,7 @@ async function aggregate(input, context, deps) {
     }
     candidates.push({ source: s, pos, sourceIndex: index });
   }
-  if (!candidates.length && sources.length) cycled = true;
+  if (!candidates.length && sources.length && !drainingDetails) cycled = true;
   const sourceStates = [...inventory.sourceStates],
     results = [],
     current = new Map(inventory.currentSources.map((s) => [s.id, s]));
@@ -335,7 +341,8 @@ async function aggregate(input, context, deps) {
   }
   const items = [],
     updates = new Map();
-  let updateChoices = 0;
+  let updateChoices = 0,
+    detailReads = 0;
   const seen = new Set(state.seen);
   const pending = [...new Set(state.pending)];
   state.pending = [];
@@ -360,6 +367,33 @@ async function aggregate(input, context, deps) {
         media = row && JSON.parse(row.payload);
       }
       assertMediaEligible(media, context);
+      // Popular/latest summaries often omit genres entirely. Resolve a small,
+      // deadline-bounded batch before deciding whether these are manhwa. Keep
+      // the remainder in the cursor instead of discarding potentially valid titles.
+      if (
+        params.category === 'manhwa' &&
+        media.upstreamRef &&
+        media.category !== 'MANHWA' &&
+        !media.genres?.length &&
+        deps.bridge?.details
+      ) {
+        if (detailReads >= 4 || now() >= deadlineAt || context.signal?.aborted) {
+          state.pending.push(id);
+          continue;
+        }
+        detailReads++;
+        try {
+          media = await withinReaderDeadline(
+            { ...context, deadlineAt },
+            (operation) => resolveMedia(id, operation, deps),
+            now,
+          );
+        } catch (error) {
+          sourceStates.push(safeState(media.sourceRef.id, error, 'details', now()));
+          if ([429, 502, 503, 504].includes(error.status)) state.pending.push(id);
+          continue;
+        }
+      }
       if (params.category === 'manhwa' && media.category !== 'MANHWA') continue;
     } catch {
       continue;
@@ -400,10 +434,11 @@ async function aggregate(input, context, deps) {
     );
   }
   state.seen = [...seen];
-  if ((cycled || !sources.length) && inventory.nextCursor) {
+  const waitingForDetails = params.category === 'manhwa' && state.pending.length > 0;
+  if (!waitingForDetails && (cycled || !sources.length) && inventory.nextCursor) {
     state.inventoryStart = inventory.nextCursor;
     state.pointer = 0;
-  } else if (cycled && inventory.complete) state.inventoryStart = null;
+  } else if (!waitingForDetails && cycled && inventory.complete) state.inventoryStart = null;
   const hasMore =
     !!state.pending.length ||
     !!inventory.nextCursor ||
