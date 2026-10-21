@@ -111,8 +111,28 @@ for (const category of ['anime', 'manga', 'manhwa']) {
     await action.getByRole('link', { name: 'Show more action' }).click();
     await expect(page).toHaveURL(new RegExp(`/browse/${category}\\?genre=Action$`));
     await expect(page.getByLabel('Genre', { exact: true })).toHaveValue('Action');
-    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(48);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(
+      category === 'anime' ? 48 : 144,
+    );
     await page.goBack();
+    if (category !== 'anime') {
+      const historical = page.getByRole('region', { name: 'Historical collection', exact: true });
+      await historical.scrollIntoViewIfNeeded();
+      await expect(historical.locator('.poster-card')).toHaveCount(12);
+      expect(
+        await historical
+          .locator('.genre-shelf-track')
+          .evaluate(
+            (el) =>
+              new Set([...el.children].map((card) => Math.round(card.getBoundingClientRect().top)))
+                .size,
+          ),
+      ).toBe(2);
+      await historical.getByRole('link', { name: 'Show more historical' }).click();
+      await expect(page.getByLabel('Genre', { exact: true })).toHaveValue('Historical');
+      await expect(page.locator('.browse-grid .poster-card')).toHaveCount(144);
+      await page.goBack();
+    }
     const full = page.getByRole('region', { name: 'Full collection', exact: true });
     await full.scrollIntoViewIfNeeded();
     await expect(full.locator('.poster-card')).toHaveCount(12);
@@ -120,9 +140,16 @@ for (const category of ['anime', 'manga', 'manhwa']) {
       .locator('.genre-collection')
       .evaluateAll((els) => els.map((el) => el.getAttribute('aria-label')));
     expect(order.at(-1)).toBe('Full collection');
+    expect(order).toHaveLength(category === 'anime' ? 14 : 34);
+    if (category !== 'anime') {
+      expect(order).toContain('Time Travel collection');
+      expect(order).toContain('Award Winning collection');
+    }
     await full.getByRole('link', { name: 'Show more full collection' }).click();
     await expect(page).toHaveURL(new RegExp(`/browse/${category}\\?view=all$`));
-    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(48);
+    await expect(page.locator('.browse-grid .poster-card')).toHaveCount(
+      category === 'anime' ? 48 : 144,
+    );
     expect(queries.filter((q) => q.genre).every((q) => q.category === category.toUpperCase())).toBe(
       true,
     );

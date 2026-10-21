@@ -23,6 +23,33 @@ export const browseGenres = [
   'Horror',
   'Suspense',
 ];
+// Supported manga genres and themes, shared by discovery shelves and their filters.
+const readingGenres = [
+  ...browseGenres,
+  'Historical',
+  'Martial Arts',
+  'School',
+  'Psychological',
+  'Isekai',
+  'Reincarnation',
+  'Time Travel',
+  'Survival',
+  'Detective',
+  'Military',
+  'Mecha',
+  'Super Power',
+  'Vampire',
+  'Video Game',
+  'Workplace',
+  'Music',
+  'Gourmet',
+  'Medical',
+  'Team Sports',
+  'Award Winning',
+];
+export const genresForCategory = (category, customCollection = false) =>
+  !customCollection && ['manga', 'manhwa'].includes(category) ? readingGenres : browseGenres;
+
 const genreId = (category, genre) =>
   `${category}-shelf-${genre.toLowerCase().replaceAll(' ', '-')}`;
 
@@ -175,7 +202,7 @@ export default function GenreCollections({ category }) {
           (item) => item.category.toLowerCase() === category && item.genres?.includes(genre),
         ),
       )
-    : browseGenres;
+    : genresForCategory(category);
   return (
     <div className="genre-collections" key={category}>
       <nav className="genre-jump-list" aria-label="Explore genres">

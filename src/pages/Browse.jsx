@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Search, SlidersHorizontal, X } from 'lucide-reac
 import { itemsOf } from '../api';
 import { useResource } from '../state';
 import { Empty, ErrorNotice, Loading, Poster } from '../components';
-import GenreCollections, { browseGenres } from './GenreCollections';
+import GenreCollections, { genresForCategory } from './GenreCollections';
 import { animeFormats } from '../CategoryNavigation';
 import { useReaderSelection } from '../useCatalogPreferences';
 import ReaderCatalog from '../reader/ReaderCatalog';
@@ -164,7 +164,7 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
           onChange={(e) => update({ genre: e.target.value })}
         >
           <option value="">All genres</option>
-          {browseGenres.map((x) => (
+          {genresForCategory(chosen, scope?.active).map((x) => (
             <option key={x}>{x}</option>
           ))}
         </select>
