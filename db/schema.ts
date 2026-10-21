@@ -322,6 +322,18 @@ export const members = sqliteTable(
     index('room_members_expiry').on(t.last_seen),
   ],
 );
+export const chatChannels = sqliteTable(
+  'chat_channels',
+  {
+    id: text().primaryKey(),
+    name: text().notNull(),
+    name_key: text().notNull().unique(),
+    description: text().notNull().default(''),
+    creator_id: text().references(() => users.id, { onDelete: 'set null' }),
+    created_at: text().notNull(),
+  },
+  (t) => [index('chat_channels_creator_time').on(t.creator_id, t.created_at)],
+);
 export const messages = sqliteTable(
   'messages',
   {
@@ -330,10 +342,15 @@ export const messages = sqliteTable(
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     room_id: text().references(() => rooms.id, { onDelete: 'cascade' }),
+    channel_id: text().references(() => chatChannels.id),
     body: text().notNull(),
     created_at: text().notNull(),
   },
-  (t) => [index('messages_room_time').on(t.room_id, t.created_at)],
+  (t) => [
+    index('messages_room_time').on(t.room_id, t.created_at),
+    index('messages_channel_room').on(t.channel_id, t.room_id),
+    index('messages_user_time').on(t.user_id, t.created_at),
+  ],
 );
 export const events = sqliteTable(
   'event_log',

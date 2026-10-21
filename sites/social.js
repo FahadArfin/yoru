@@ -117,7 +117,7 @@ export const MESSAGE_QUERY =
 export async function messages(db, roomId = null) {
   return (
     await db.all(
-      `${MESSAGE_QUERY} WHERE room_id IS ? ORDER BY messages.created_at DESC LIMIT 100`,
+      `${MESSAGE_QUERY} WHERE room_id IS ? AND channel_id IS NULL ORDER BY messages.created_at DESC LIMIT 100`,
       roomId,
     )
   )

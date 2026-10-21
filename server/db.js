@@ -9,6 +9,7 @@ import { externalCatalogSchema } from './external-catalog-store.js';
 import { readerContextSchema } from './reader-context.js';
 import { continuationSchema } from './reader-continuation.js';
 import { readingAccountSchema } from './reading-account.js';
+import { channelSchema } from './channels.js';
 
 export const databasePath =
   process.env.YORU_DB_PATH || resolve(process.env.DATA_DIR || 'data', 'yoru.sqlite');
@@ -149,6 +150,16 @@ db.exec('CREATE INDEX IF NOT EXISTS rooms_destination_open ON rooms(destination,
 db.exec(presenceSchema);
 db.exec(resumeSchema);
 db.exec(forumSchema);
+db.exec(channelSchema);
+if (
+  !db
+    .prepare('PRAGMA table_info(messages)')
+    .all()
+    .some((column) => column.name === 'channel_id')
+)
+  db.exec('ALTER TABLE messages ADD COLUMN channel_id TEXT REFERENCES chat_channels(id)');
+db.exec('CREATE INDEX IF NOT EXISTS messages_channel_room ON messages(channel_id,room_id)');
+db.exec('CREATE INDEX IF NOT EXISTS messages_user_time ON messages(user_id,created_at)');
 export const get = (sql, ...values) => db.prepare(sql).get(...values);
 export const all = (sql, ...values) => db.prepare(sql).all(...values);
 export const run = (sql, ...values) => db.prepare(sql).run(...values);

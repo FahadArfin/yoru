@@ -376,7 +376,7 @@ function messageShape(message) {
 }
 function messages(roomId = null) {
   return all(
-    'SELECT messages.*,users.name,users.avatar FROM messages JOIN users ON users.id=messages.user_id WHERE room_id IS ? ORDER BY messages.created_at DESC LIMIT 100',
+    'SELECT messages.*,users.name,users.avatar FROM messages JOIN users ON users.id=messages.user_id WHERE room_id IS ? AND channel_id IS NULL ORDER BY messages.created_at DESC LIMIT 100',
     roomId,
   )
     .reverse()

@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { resumeContract } from '../resume-contract.mjs';
 import { forumContract } from '../forum-contract.mjs';
+import { channelsContract } from '../channels-contract.mjs';
 import { before, after, test } from 'node:test';
 import { mkdtempSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
@@ -680,4 +681,12 @@ test('hosted polling delivers bursts across Workers and rechecks private members
     ).status,
     404,
   );
+});
+
+test('public channels persist across Workers and enforce authentication', async () => {
+  let instance = 'a';
+  await channelsContract((...args) => {
+    instance = instance === 'a' ? 'b' : 'a';
+    return request(instance, ...args);
+  }, register);
 });

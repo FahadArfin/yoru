@@ -29,6 +29,7 @@ import {
   cookieOptions,
 } from './security.js';
 import { socialRoutes } from './social.js';
+import { channelRoutes } from './channels.js';
 import { roomRoutes, reconcileRooms } from './rooms.js';
 import { eventRoutes } from './events.js';
 import { importRoutes } from './imports.js';
@@ -435,6 +436,7 @@ app.get('/api/chapter-calendar', async (c) => {
 authRoutes(app, { onLogout: reconcileRooms });
 app.use('/api/*', socialAccess);
 socialRoutes(app);
+channelRoutes(app);
 roomRoutes(app);
 eventRoutes(app);
 importRoutes(app);

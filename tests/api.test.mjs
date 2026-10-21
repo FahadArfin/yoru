@@ -1,6 +1,7 @@
 import assert from 'node:assert/strict';
 import { resumeContract } from './resume-contract.mjs';
 import { forumContract } from './forum-contract.mjs';
+import { channelsContract } from './channels-contract.mjs';
 import { after, before, test } from 'node:test';
 import { spawn } from 'node:child_process';
 import { mkdtempSync, rmSync } from 'node:fs';
@@ -1017,3 +1018,6 @@ test('records survive server restart; session logout revokes future writes', asy
     201,
   );
 });
+
+test('public channels preserve General and isolate message history', () =>
+  channelsContract(request, register));

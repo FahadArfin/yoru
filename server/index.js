@@ -13,6 +13,7 @@ import { createImportRouter } from './import.js';
 import { createMalRouter, malEnabled } from './mal.js';
 import { createFavoritesRouter } from './favorites.js';
 import { forumRouter } from './forum-routes.js';
+import { channelRouter } from './channel-routes.js';
 import { readerErrorMiddleware } from './reader-errors.js';
 
 export const app = express();
@@ -109,6 +110,7 @@ app.use(
   createMalRouter({ onLibraryChange: (userId) => broadcast('library', { userId }) }),
 );
 app.use('/api', socialRouter);
+app.use('/api/channels', channelRouter());
 app.use(
   '/api/forum',
   forumRouter((data) => broadcast('forum', data)),
