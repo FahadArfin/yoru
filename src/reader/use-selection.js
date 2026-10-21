@@ -25,7 +25,7 @@ export function useReaderSelectionState({ scope, destination, enabled }) {
   );
   const snapshot = useSyncExternalStore(controller.subscribe, controller.getSnapshot);
   useEffect(() => {
-    void controller.select({ scope, destination, enabled });
+    void controller.select({ scope, destination, enabled }, false, { kind: 'enter' });
     const changed = (event) => {
       if (event.detail?.scope === scope)
         void controller.preferencesChanged(event.detail.destination, event.detail);

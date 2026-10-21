@@ -54,6 +54,7 @@ function ReaderCatalogView({ catalog, query = '', heading = 'Enabled reading cat
       </nav>
       <div className="filter-bar" role="region" aria-label="Reading catalog filters">
         <CatalogIntegrationSelect
+          buttons
           className="filter-select"
           value={context?.integrationMode || 'all'}
           disabled={!selection?.ready || context?.scope === null}

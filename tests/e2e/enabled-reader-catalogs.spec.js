@@ -39,6 +39,56 @@ const core = {
   availableIntegrations: [],
 };
 
+test('Ara enters on Suwayomi and offers one-click integration switches', async ({
+  context,
+  page,
+  baseURL,
+}) => {
+  const { requests } = await fixture({ context, page, baseURL });
+  await page.addInitScript(() =>
+    localStorage.setItem(
+      'yoru:reader-integration-modes:guest:v1',
+      JSON.stringify({ yoru: 'core', 'ara-ara': 'all' }),
+    ),
+  );
+  await page.goto('/ara-ara/manga');
+  await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  const controls = page.getByRole('group', { name: 'Catalog integration', exact: true }).first();
+  const extensions = controls.getByRole('button', { name: 'Suwayomi extensions', exact: true });
+  await expect(extensions).toHaveAttribute('aria-pressed', 'true');
+  await expect(
+    page.getByRole('combobox', { name: 'Catalog integration', exact: true }),
+  ).toHaveCount(0);
+  await expect(
+    page
+      .getByRole('region', { name: 'Enabled reading catalogs', exact: true })
+      .locator('.poster-card'),
+  ).toHaveCount(1);
+  const firstReads = requests.filter(
+    (url) =>
+      url.pathname === '/api/reader/discovery' && url.searchParams.get('destination') === 'ara-ara',
+  );
+  expect(firstReads.length).toBeGreaterThan(0);
+  expect(firstReads.every((url) => url.searchParams.get('integration') === 'extensions')).toBe(
+    true,
+  );
+  await controls.getByRole('button', { name: 'All sources', exact: true }).click();
+  await expect(controls.getByRole('button', { name: 'All sources', exact: true })).toHaveAttribute(
+    'aria-pressed',
+    'true',
+  );
+  await navigateCollection(page, 'Back to Yoru', true);
+  await page.goto('/ara-ara/manga');
+  await page.getByRole('button', { name: 'I’m 18 or older' }).click();
+  await expect(extensions).toHaveAttribute('aria-pressed', 'true');
+  expect(
+    await page.evaluate(
+      () => JSON.parse(localStorage.getItem('yoru:reader-integration-modes:guest:v1')).yoru,
+    ),
+  ).toBe('core');
+  expect(await page.evaluate(() => document.documentElement.scrollWidth > innerWidth)).toBe(false);
+});
+
 test('Ara extension discovery keeps the featured banner and working genre choices', async ({
   context,
   page,
@@ -48,9 +98,10 @@ test('Ara extension discovery keeps the featured banner and working genre choice
   await page.goto('/ara-ara/manga');
   await page.getByRole('button', { name: 'I’m 18 or older' }).click();
   await page
-    .getByRole('combobox', { name: 'Catalog integration', exact: true })
+    .getByRole('group', { name: 'Catalog integration', exact: true })
     .first()
-    .selectOption('extensions');
+    .getByRole('button', { name: 'Suwayomi extensions', exact: true })
+    .click();
   const hero = page.getByRole('region', { name: 'Featured manga', exact: true });
   await expect(hero.getByRole('heading', { name: adult.title, exact: true })).toBeVisible();
   const catalog = page.getByRole('region', { name: 'Enabled reading catalogs', exact: true });
@@ -111,9 +162,13 @@ for (const mode of ['extensions', 'all']) {
     });
     await page.goto('/browse/manga?q=native');
     await page
-      .getByRole('combobox', { name: 'Catalog integration', exact: true })
+      .getByRole('group', { name: 'Catalog integration', exact: true })
       .first()
-      .selectOption(mode);
+      .getByRole('button', {
+        name: mode === 'all' ? 'All sources' : 'Suwayomi extensions',
+        exact: true,
+      })
+      .click();
     const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
     await search.fill('native');
     await expect(page.locator('.search-status')).toContainText('Search is temporarily limited');
@@ -172,9 +227,10 @@ test('exact mapped core recommendations remain visible in extensions mode', asyn
   );
   await page.goto('/browse/manga?q=native');
   await page
-    .getByRole('combobox', { name: 'Catalog integration', exact: true })
+    .getByRole('group', { name: 'Catalog integration', exact: true })
     .first()
-    .selectOption('extensions');
+    .getByRole('button', { name: 'Suwayomi extensions', exact: true })
+    .click();
   await page.getByRole('link', { name: `View ${safe.title}`, exact: true }).click();
   await expect(
     page
@@ -357,14 +413,12 @@ test('integration and destination filters apply to cards suggestions and covers'
 }) => {
   const { requests } = await fixture({ context, page, baseURL });
   await page.goto('/browse/manga?q=native');
-  const integration = page
-    .getByRole('combobox', { name: 'Catalog integration', exact: true })
-    .first();
+  const integration = page.getByRole('group', { name: 'Catalog integration', exact: true }).first();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
-  await integration.selectOption('core');
+  await integration.getByRole('button', { name: 'MangaDex + Weeb Central', exact: true }).click();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toHaveCount(0);
   await expect(page.getByRole('link', { name: 'View Death Note', exact: true })).toBeVisible();
-  await integration.selectOption('extensions');
+  await integration.getByRole('button', { name: 'Suwayomi extensions', exact: true }).click();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
   await expect(page.getByRole('link', { name: 'View Death Note', exact: true })).toHaveCount(0);
   const search = page.getByRole('combobox', { name: 'Search anime, manga, and manhwa' });
@@ -422,14 +476,14 @@ test('late feed responses cannot restore a previous integration or disabled sour
   });
   await page.goto('/browse/manga?q=late');
   await expect.poll(() => started).toBe(true);
-  const integration = page
-    .getByRole('combobox', { name: 'Catalog integration', exact: true })
-    .first();
-  await integration.selectOption('core');
-  await expect(integration).toHaveValue('core');
+  const integration = page.getByRole('group', { name: 'Catalog integration', exact: true }).first();
+  await integration.getByRole('button', { name: 'MangaDex + Weeb Central', exact: true }).click();
+  await expect(
+    integration.getByRole('button', { name: 'MangaDex + Weeb Central', exact: true }),
+  ).toHaveAttribute('aria-pressed', 'true');
   release();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toHaveCount(0);
-  await integration.selectOption('extensions');
+  await integration.getByRole('button', { name: 'Suwayomi extensions', exact: true }).click();
   await expect(page.getByRole('link', { name: `View ${safe.title}`, exact: true })).toBeVisible();
   await page.evaluate(() => {
     localStorage.setItem(

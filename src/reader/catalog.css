@@ -22,3 +22,19 @@
 .reader-genre-list {
   margin: 16px 0 24px;
 }
+
+.catalog-integration-toggle {
+  display: flex;
+  flex: 1 1 100%;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.catalog-integration-toggle .btn {
+  min-height: 44px;
+  white-space: normal;
+}
+.catalog-integration-toggle [aria-pressed='true'] {
+  border-color: var(--section-accent);
+  background: rgb(var(--chrome-soft) / 0.16);
+  box-shadow: inset 0 0 0 1px var(--section-accent);
+}

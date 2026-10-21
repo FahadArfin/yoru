@@ -3,6 +3,45 @@ import { test } from 'node:test';
 import { createReaderSelection } from '../src/reader/selection.js';
 import { readerRequest, syncGuestReaderContext, readingCacheScope, api } from '../src/api.js';
 const defaults = () => ({ overrides: {}, modes: { yoru: 'all', 'ara-ara': 'all' } });
+
+for (const scope of ['guest', 'account']) {
+  test(`Ara entry defaults to extensions and keeps in-visit switches for ${scope}`, async () => {
+    let settings = { ...defaults(), overrides: { Webtoons: { yoru: false } }, revision: 0 };
+    const writes = [];
+    const controller = createReaderSelection({
+      loadSettings: async () => settings,
+      saveMode: async (owner, destination, mode) => {
+        writes.push({ owner, destination, mode });
+        settings = { ...settings, modes: { ...settings.modes, [destination]: mode } };
+      },
+      syncGuest: async (destination) => ({
+        destination,
+        revision: 0,
+        selectionFingerprint: 'guest',
+      }),
+      readContext: async (destination) => ({
+        destination,
+        revision: 0,
+        selectionFingerprint: 'account',
+      }),
+    });
+    const ara = { scope, destination: 'ara-ara', enabled: true };
+    await controller.select({ ...ara, enabled: false }, false, { kind: 'enter' });
+    assert.equal(writes.length, 0);
+    await controller.select(ara, false, { kind: 'enter' });
+    assert.equal(controller.getSnapshot().context.integrationMode, 'extensions');
+    assert.deepEqual(settings.overrides, { Webtoons: { yoru: false } });
+    await controller.setIntegrationMode('core');
+    await controller.refresh();
+    assert.equal(controller.getSnapshot().context.integrationMode, 'core');
+    await controller.select({ ...ara, destination: 'yoru' }, false, { kind: 'enter' });
+    assert.equal(controller.getSnapshot().context.integrationMode, 'all');
+    await controller.select(ara, false, { kind: 'enter' });
+    assert.equal(controller.getSnapshot().context.integrationMode, 'extensions');
+    assert.equal(writes.length, 3);
+    controller.dispose();
+  });
+}
 const defer = () => {
   let resolve;
   const promise = new Promise((r) => {
