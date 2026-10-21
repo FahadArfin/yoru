@@ -175,23 +175,10 @@
   margin-bottom: 30px;
 }
 .section-page .schedule-toolbar {
-  margin: 0 0 22px;
-  gap: 15px;
-}
-.schedule-animation-header {
-  display: flex;
+  margin: 0 0 16px;
+  gap: 10px 16px;
   flex-wrap: wrap;
   align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-  padding-bottom: 18px;
-  margin-bottom: 18px;
-  border-bottom: 1px solid var(--section-line);
-}
-.schedule-animation-header p {
-  margin: 0;
-  font-size: 11px;
-  color: var(--section-muted);
 }
 .schedule-animation-filters {
   display: flex;

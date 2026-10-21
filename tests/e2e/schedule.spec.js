@@ -49,6 +49,14 @@ test('animation filters separate family shows, preserve release tracks and survi
   );
   await page.goto('/schedule');
   const filter = page.getByRole('group', { name: 'Animation category' });
+  const releaseTypes = page.getByRole('group', { name: 'Release type' });
+  if (page.viewportSize().width > 950) {
+    const categoryBounds = await filter.boundingBox();
+    const typeBounds = await releaseTypes.boundingBox();
+    expect(
+      Math.abs(categoryBounds.y + categoryBounds.height / 2 - typeBounds.y - typeBounds.height / 2),
+    ).toBeLessThan(2);
+  }
   await expect(filter.getByRole('button', { name: 'Japanese', exact: true })).toHaveAttribute(
     'aria-pressed',
     'true',

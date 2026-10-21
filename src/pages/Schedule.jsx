@@ -157,11 +157,12 @@ function AnimeSchedule({ picker }) {
         {picker}
       </header>
       <section className="schedule-calendar" aria-label="Choose a day and release type">
-        <div className="schedule-animation-header">
+        <div className="schedule-toolbar">
           <div className="schedule-animation-filters" role="group" aria-label="Animation category">
             {Object.entries(animationCategories).map(([value, label]) => (
               <button
                 key={value}
+                title={value === 'cartoons' ? 'Children’s and family series' : undefined}
                 aria-pressed={animation === value}
                 onClick={() => {
                   const next = new URLSearchParams(params);
@@ -173,9 +174,6 @@ function AnimeSchedule({ picker }) {
               </button>
             ))}
           </div>
-          <p>Cartoons groups children’s and family series.</p>
-        </div>
-        <div className="schedule-toolbar">
           <div className="schedule-types" role="group" aria-label="Release type">
             {Object.entries(types).map(([value, label]) => (
               <button key={value} aria-pressed={value === type} onClick={() => setType(value)}>
