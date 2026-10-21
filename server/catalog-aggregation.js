@@ -1,4 +1,4 @@
-import { createExternalCatalogStore } from './external-catalog-store.js';
+import { createExternalCatalogStore, validateReaderSource } from './external-catalog-store.js';
 import { assertMediaEligible, assertSourceEligible, publicReadingMedia } from './media-resolver.js';
 import { createContinuationStore, restartRequired } from './reader-continuation.js';
 import { refreshReaderSources, INVENTORY_FRESH_MS } from './reader-source-inventory.js';
@@ -56,6 +56,22 @@ const safeState = (sourceId, error, mode, now) => ({
   reason: error?.reason || 'offline',
 });
 const key = (p) => JSON.stringify(p);
+const jsonBytes = (value) => new TextEncoder().encode(JSON.stringify(value)).byteLength;
+function* cacheBatches(rows) {
+  let batch = [],
+    bytes = 2;
+  for (const row of rows) {
+    const size = jsonBytes(row) + 1;
+    if (batch.length && bytes + size > 1024 * 1024) {
+      yield batch;
+      batch = [];
+      bytes = 2;
+    }
+    batch.push(row);
+    bytes += size;
+  }
+  if (batch.length) yield batch;
+}
 const effectiveSource = (observed, snapshot) =>
   observed.classification.rating === 'safe' && snapshot.classification?.rating !== 'safe'
     ? snapshot
@@ -206,44 +222,93 @@ async function aggregate(input, context, deps) {
       pos = state.positions[s.id];
     let expectedSource = entry.expectedSource,
       persistenceFailure;
+    const prepared = [];
     for (const item of result.items) {
-      let media;
+      if (s.integration === 'suwayomi') {
+        try {
+          validateReaderSource(item?.sourceRef);
+        } catch {
+          continue;
+        }
+        if (
+          item?.sourceRef?.id !== s.id ||
+          item.sourceRef.providerKey !== s.providerKey ||
+          item.sourceRef.language !== s.language ||
+          item.upstreamRef?.sourceId !== s.id
+        )
+          continue;
+        const observed = effectiveSource(
+          { ...current.get(s.id), capabilities: item.sourceRef.capabilities },
+          item.sourceRef,
+        );
+        current.set(s.id, observed);
+        prepared.push({ ...item, sourceRef: observed });
+      } else prepared.push({ ...item, readingState: 'metadata-only', availableIntegrations: [] });
+    }
+    for (let offset = 0; offset < prepared.length; ) {
+      // Establish the source with the existing single-title path, then commit
+      // bounded same-policy batches instead of hundreds of network round trips.
+      const group = [prepared[offset++]];
+      let groupBytes = jsonBytes(group[0]) + 256;
+      if (s.integration === 'suwayomi' && offset > 1)
+        while (
+          group.length < 50 &&
+          offset < prepared.length &&
+          JSON.stringify(prepared[offset].sourceRef) === JSON.stringify(group[0].sourceRef) &&
+          groupBytes + jsonBytes(prepared[offset]) + 256 <= 512 * 1024
+        ) {
+          groupBytes += jsonBytes(prepared[offset]) + 256;
+          group.push(prepared[offset++]);
+        }
+      let saved;
       try {
-        if (s.integration === 'suwayomi') {
-          if (
-            item.sourceRef?.id !== s.id ||
-            item.sourceRef.providerKey !== s.providerKey ||
-            item.sourceRef.language !== s.language ||
-            item.upstreamRef?.sourceId !== s.id
-          )
-            continue;
-          // The freshly installed source rating wins over an older title/feed snapshot.
-          const source = current.get(s.id);
-          const observed = effectiveSource(
-            { ...source, capabilities: item.sourceRef.capabilities },
-            item.sourceRef,
-          );
-          current.set(s.id, observed);
-          media = await store.rememberTitle({ ...item, sourceRef: observed }, { expectedSource });
-          // Reuse only the proof produced by our own committed CAS. A fresh DB
-          // read here could authorize overwriting a concurrent adult observation.
-          expectedSource = media.sourceAuthority;
-        } else media = { ...item, readingState: 'metadata-only', availableIntegrations: [] };
-        assertMediaEligible(media, context);
+        saved =
+          s.integration !== 'suwayomi'
+            ? group
+            : group.length === 1
+              ? [await store.rememberTitle(group[0], { expectedSource })]
+              : await store.rememberTitles(group, { expectedSource });
       } catch (error) {
         if (error.status === 409) {
           persistenceFailure = error;
           break;
         }
-        continue;
+        // Preserve the single-record rejection behavior for malformed upstream rows.
+        if (group.length > 1) {
+          for (const item of group) {
+            try {
+              const media = await store.rememberTitle(item, { expectedSource });
+              expectedSource = media.sourceAuthority;
+              (saved ||= []).push(media);
+            } catch (e) {
+              if (e.status === 409) {
+                persistenceFailure = e;
+                break;
+              }
+            }
+          }
+        }
       }
-      await deps.db.run(
-        'INSERT INTO reader_feed_cache(media_id,payload,observed_at) VALUES(?,?,?) ON CONFLICT(media_id) DO UPDATE SET payload=excluded.payload,observed_at=excluded.observed_at',
-        media.id,
-        JSON.stringify(media),
-        now(),
-      );
-      state.pending.push(media.id);
+      const eligible = [];
+      for (const media of saved || []) {
+        if (s.integration === 'suwayomi') expectedSource = media.sourceAuthority;
+        try {
+          assertMediaEligible(media, context);
+        } catch {
+          continue;
+        }
+        eligible.push({ id: media.id, payload: JSON.stringify(media) });
+        state.pending.push(media.id);
+      }
+      for (const cacheBatch of cacheBatches(eligible))
+        await deps.db.run(
+          `INSERT INTO reader_feed_cache(media_id,payload,observed_at)
+         SELECT json_extract(value,'$.id'),json_extract(value,'$.payload'),? FROM json_each(?) WHERE true
+         ON CONFLICT(media_id) DO UPDATE SET payload=excluded.payload,observed_at=excluded.observed_at`,
+          now(),
+          JSON.stringify(cacheBatch),
+        );
+      if (persistenceFailure) break;
     }
     if (persistenceFailure) {
       const failure = safeState(s.id, persistenceFailure, params.mode, now());

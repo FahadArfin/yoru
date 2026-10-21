@@ -79,7 +79,15 @@ test('two Workers gate native metadata manifests covers and pages by current des
               }
             : title,
         );
-      if (path === '/extension/reader') return Response.json({ edition: chapter, pages: [0] });
+      if (path === '/extension/reader')
+        return Response.json({
+          // Details and chapter observations must agree on the current source
+          // policy. A stale safe chapter correctly conflicts with mixed authority.
+          edition: changed
+            ? { ...chapter, sourceRef: { ...source, classification: rating('mixed') } }
+            : chapter,
+          pages: [0],
+        });
       if (path === '/extension/page' || path === '/extension/cover') {
         imageCalls++;
         return new Response(new Uint8Array([137, 80, 78, 71]), {

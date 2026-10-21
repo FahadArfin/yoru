@@ -28,7 +28,7 @@ export async function resolveMedia(mediaId, context, deps) {
       refreshed.sourceRef?.id !== media.sourceRef.id
     )
       throw unavailable();
-    media = await store.rememberTitle(refreshed, { expectedSource });
+    media = await store.rememberTitle(refreshed, { expectedSource, preserveSource: true });
     assertMediaEligible(media, context);
   }
   const result = ref.kind === 'extension-manga' ? publicReadingMedia(media, context) : media;

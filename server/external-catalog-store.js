@@ -118,6 +118,27 @@ export function validateReaderSource(value) {
   return value;
 }
 const sourceRef = validateReaderSource;
+const sourcePolicy = (value) => [
+  value.id,
+  value.integration,
+  value.upstreamSourceId,
+  value.providerKey,
+  value.language,
+  value.classification.rating,
+  json(value.capabilities, 'source capabilities', 16384),
+  value.bridgeInstance,
+];
+function compatibleSourcePolicy(observed, expected) {
+  return (
+    Object.keys(expected.capabilities).every(
+      (key) =>
+        observed.capabilities[key] === expected.capabilities[key] ||
+        (expected.capabilities[key] === 'unverified' && observed.capabilities[key] === 'supported'),
+    ) &&
+    JSON.stringify(sourcePolicy({ ...observed, capabilities: expected.capabilities })) ===
+      JSON.stringify(sourcePolicy(expected))
+  );
+}
 function titleRef(value, source) {
   object(value, 'canonical title reference');
   if (value.sourceId !== source.id) throw conflict();
@@ -230,8 +251,10 @@ export function createExternalCatalogStore(
   async function getTitle(id) {
     const row = await db.get('SELECT * FROM external_media WHERE id=?', id);
     if (!row) return null;
-    const metadata = publicMetadata(row.metadata),
-      source = await readSource(row.source_id);
+    return titleFromRow(row, await readSource(row.source_id));
+  }
+  function titleFromRow(row, source) {
+    const metadata = publicMetadata(row.metadata);
     const upstreamRef = {
       sourceId: row.source_id,
       upstreamKey: row.upstream_key,
@@ -348,20 +371,35 @@ export function createExternalCatalogStore(
         (expected?.id !== s.id || typeof expected.version !== 'string')
       )
         throw invalid('source authority');
+      // Title/cover refreshes with the same policy are not new source observations.
+      // Keep the canonical authority intact so concurrent refreshes can coexist.
+      const preserveSource =
+        options.preserveSource === true &&
+        expected?.source &&
+        compatibleSourcePolicy(s, sourceRef(expected.source));
       const committed = await atomic([
         // Omitted means unguarded initialization; explicit null guards absence.
         // Compare before ANY source/title persistence in this transaction.
-        ...(guarded
+        ...(preserveSource
           ? [
-              expected === null
-                ? assertion('NOT EXISTS(SELECT 1 FROM reader_sources WHERE id=?)', [s.id])
-                : assertion('EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND updated_at=?)', [
-                    s.id,
-                    expected.version,
-                  ]),
+              assertion(
+                `EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND integration=? AND upstream_source_id IS ?
+          AND provider_key=? AND language=? AND json_extract(classification,'$.rating')=?
+          AND capabilities=? AND bridge_instance IS ?)`,
+                sourcePolicy(expected.source),
+              ),
             ]
-          : []),
-        ...sourceStatements(s),
+          : guarded
+            ? [
+                expected === null
+                  ? assertion('NOT EXISTS(SELECT 1 FROM reader_sources WHERE id=?)', [s.id])
+                  : assertion('EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND updated_at=?)', [
+                      s.id,
+                      expected.version,
+                    ]),
+              ]
+            : []),
+        ...(preserveSource ? [] : sourceStatements(s)),
         {
           sql: `INSERT INTO external_media(id,source_id,upstream_key,language,classification,metadata,created_at,updated_at)
           VALUES(?,?,?,?,?,?,?,?) ON CONFLICT(source_id,upstream_key,language) DO UPDATE SET
@@ -391,6 +429,66 @@ export function createExternalCatalogStore(
         value: authorityFromRow(committed.at(-1)[0]),
       });
       return result;
+    },
+    async rememberTitles(inputs, options = {}) {
+      if (!Array.isArray(inputs) || !inputs.length || inputs.length > 50)
+        throw invalid('title batch');
+      const s = sourceRef(inputs[0].sourceRef),
+        at = timestamp();
+      const expected = options.expectedSource;
+      if (expected !== null && (expected?.id !== s.id || typeof expected.version !== 'string'))
+        throw invalid('source authority');
+      const records = inputs.map((input) => {
+        object(input, 'title');
+        if (JSON.stringify(sourceRef(input.sourceRef)) !== JSON.stringify(s))
+          throw invalid('batch source');
+        const ref = titleRef(input.upstreamRef, s);
+        classification(input.classification);
+        return {
+          id: mint('ext-manga-'),
+          key: ref.upstreamKey,
+          language: ref.language,
+          classification: json(input.classification, 'classification', 16384),
+          metadata: json(object(input.metadata, 'title metadata'), 'title metadata'),
+        };
+      });
+      const payload = JSON.stringify(records);
+      if (new TextEncoder().encode(payload).byteLength > 1024 * 1024)
+        throw invalid('title batch size');
+      const committed = await atomic([
+        expected === null
+          ? assertion('NOT EXISTS(SELECT 1 FROM reader_sources WHERE id=?)', [s.id])
+          : assertion('EXISTS(SELECT 1 FROM reader_sources WHERE id=? AND updated_at=?)', [
+              s.id,
+              expected.version,
+            ]),
+        ...sourceStatements(s),
+        {
+          sql: `INSERT INTO external_media(id,source_id,upstream_key,language,classification,metadata,created_at,updated_at)
+          SELECT json_extract(value,'$.id'),?,json_extract(value,'$.key'),json_extract(value,'$.language'),
+          json_extract(value,'$.classification'),json_extract(value,'$.metadata'),?,?
+          FROM json_each(?) WHERE true
+          ON CONFLICT(source_id,upstream_key,language) DO UPDATE SET
+          classification=excluded.classification,metadata=excluded.metadata,updated_at=excluded.updated_at`,
+          values: [s.id, at, at, payload],
+        },
+        {
+          sql: `SELECT m.* FROM external_media m JOIN json_each(?) p
+          ON m.upstream_key=json_extract(p.value,'$.key') AND m.language=json_extract(p.value,'$.language')
+          WHERE m.source_id=? ORDER BY CAST(p.key AS INTEGER)`,
+          values: [payload, s.id],
+        },
+        { sql: 'SELECT * FROM reader_sources WHERE id=?', values: [s.id] },
+      ]);
+      // A concurrent newer observation may narrow visibility after this commit.
+      // Read it for delivery, but NEVER adopt it as authority for the next write.
+      const currentSource = await readSource(s.id);
+      const proof = authorityFromRow(committed.at(-1)[0]);
+      return committed.at(-2).map((row) => {
+        const result = titleFromRow(row, currentSource);
+        Object.defineProperty(result, 'sourceAuthority', { value: proof });
+        return result;
+      });
     },
     getTitle,
     async rememberEdition(mediaId, input, { expectedSource = input?.sourceRef } = {}) {
