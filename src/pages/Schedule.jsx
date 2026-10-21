@@ -139,16 +139,8 @@ function AnimeSchedule({ picker }) {
   );
   return (
     <div className="page section-page schedule-page">
-      <header className="section-page-heading">
-        <div>
-          <span className="section-kicker">
-            <CalendarDays size={13} /> THE WEEK AHEAD
-          </span>
-          <h1>Airing schedule</h1>
-          <p>Your next episode, on your time. Explore the week in your local timezone.</p>
-        </div>
-        {picker}
-      </header>
+      <h1 className="sr-only">Airing schedule</h1>
+      <div className="schedule-category-bar">{picker}</div>
       <section className="schedule-calendar" aria-label="Choose a day and release type">
         <div className="schedule-toolbar">
           <div className="schedule-animation-filters" role="group" aria-label="Animation category">

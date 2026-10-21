@@ -1,5 +1,10 @@
 @import './section-polish.css';
 /* Schedule and Community share the catalog's width, surfaces and typography. */
+.schedule-category-bar {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 16px;
+}
 .schedule-categories {
   display: flex;
   flex: none;
