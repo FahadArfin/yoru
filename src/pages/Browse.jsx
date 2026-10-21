@@ -55,7 +55,7 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
   const q = params.get('q') || '';
   const [search, setSearch] = useState(q);
   const genre = params.get('genre') || '';
-  const format = category === 'anime' ? params.get('format') || '' : '';
+  const format = ['anime', 'manga'].includes(category) ? params.get('format') || '' : '';
   const sort = params.get('sort') || 'trending';
   const page = Math.max(1, Number(params.get('page')) || 1);
   const chosen = labels[category] ? category : 'all';
@@ -133,15 +133,21 @@ function CoreBrowse({ embedded = false, categoryOverride, readingMode }) {
           ))}
         </select>
       </label>
-      {chosen === 'anime' && (
+      {['anime', 'manga'].includes(chosen) && (
         <label className="filter-select">
           <select
-            aria-label="Anime format"
+            aria-label={chosen === 'anime' ? 'Anime format' : 'Manga format'}
             value={format}
             onChange={(e) => update({ format: e.target.value })}
           >
             <option value="">All types</option>
-            {animeFormats.map(([value, label]) => (
+            {(chosen === 'anime'
+              ? animeFormats
+              : [
+                  ['manga', 'Series'],
+                  ['oneshot', 'One-shots'],
+                ]
+            ).map(([value, label]) => (
               <option key={value} value={value}>
                 {label}
               </option>

@@ -305,7 +305,7 @@ async function kitsuSearch(query, category, offset, limit) {
           query.genre.toLowerCase().replace(/\s+/g, '-'),
       );
     if (category === 'MANHWA') params.set('filter[subtype]', 'manhwa');
-    if (category === 'MANGA') params.set('filter[subtype]', 'manga');
+    if (category === 'MANGA') params.set('filter[subtype]', query.format || 'manga');
     if (category === 'ANIME' && query.format) params.set('filter[subtype]', query.format);
     const data = await kitsu(`/${kind}?${params}`);
     result.total = Number(data.meta?.count) || result.items.length;
@@ -555,6 +555,16 @@ export function rememberImportedMedia(entries) {
 
 function optionsFor(input = {}) {
   const query = typeof input === 'string' ? { search: input } : input;
+  const category = String(query.category || query.type).toUpperCase();
+  const format = String(query.format || '')
+    .toLowerCase()
+    .replace(/[^a-z]/g, '');
+  const formats =
+    category === 'ANIME'
+      ? ['tv', 'movie', 'ova', 'ona', 'special']
+      : category === 'MANGA'
+        ? ['manga', 'oneshot']
+        : [];
   return {
     category: categories.includes(String(query.category || query.type).toUpperCase())
       ? String(query.category || query.type).toUpperCase()
@@ -565,10 +575,7 @@ function optionsFor(input = {}) {
     genre: String(query.genre || '')
       .trim()
       .slice(0, 60),
-    ...(String(query.category || query.type).toUpperCase() === 'ANIME' &&
-    ['tv', 'movie', 'ova', 'ona', 'special'].includes(String(query.format).toLowerCase())
-      ? { format: String(query.format).toLowerCase() }
-      : {}),
+    ...(formats.includes(format) ? { format } : {}),
     sort: ['trending', 'popular', 'score', 'title', 'newest'].includes(query.sort)
       ? query.sort
       : 'trending',
@@ -588,7 +595,10 @@ function matches(item, query) {
     !item.isAdult &&
     !item.imported &&
     (!query.category || item.type === query.category) &&
-    (!query.format || String(item.format).toLowerCase() === query.format) &&
+    (!query.format ||
+      String(item.format)
+        .toLowerCase()
+        .replace(/[^a-z]/g, '') === query.format) &&
     (!query.search || titleRelevance(item, query.search) >= 0) &&
     (!query.genre || item.genres.some((genre) => genreKey(genre) === genreKey(query.genre)))
   );
@@ -646,7 +656,7 @@ async function categoryPage(query, category) {
         sort: ['score', 'newest'].includes(query.sort) ? 'desc' : 'asc',
       });
       if (category !== 'ANIME') params.set('type', category.toLowerCase());
-      if (category === 'ANIME' && query.format) params.set('type', query.format);
+      if (query.format) params.set('type', query.format);
       if (query.search) params.set('q', query.search);
       if (genreId) params.set('genres', String(genreId));
       const data = await tenrai(`/${kind}?${params}`);

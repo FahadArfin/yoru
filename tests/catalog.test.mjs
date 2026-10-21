@@ -148,6 +148,45 @@ test('anime type filters reach both providers, isolate caches, and constrain sav
   }
 });
 
+test('one-shot collections isolate caches and preserve their format across providers and offline reads', async () => {
+  const query = { category: 'MANGA', format: 'oneshot', sort: 'score', limit: 6 };
+  assert.notEqual(catalogQueryKey(query), catalogQueryKey({ ...query, format: '' }));
+  assert.equal(catalogQueryKey(query), catalogQueryKey({ ...query, format: 'One-shot' }));
+  const previousFetch = globalThis.fetch;
+  const urls = [];
+  process.env.CATALOG_OFFLINE = '0';
+  try {
+    globalThis.fetch = async (input) => {
+      urls.push(new URL(input));
+      return Response.json({
+        data: [{ mal_id: 920106, type: 'One-shot', title: 'A complete short story', score: 8.1 }],
+        pagination: { items: { total: 1 } },
+      });
+    };
+    const result = await searchCatalog(query);
+    assert.equal(urls.at(-1).searchParams.get('type'), 'oneshot');
+    assert.equal(result.items[0].type, 'MANGA');
+    process.env.CATALOG_OFFLINE = '1';
+    const saved = await searchCatalog({ ...query, limit: 7 });
+    assert.deepEqual(
+      saved.items.map((item) => item.id),
+      ['mal-manga-920106'],
+    );
+    process.env.CATALOG_OFFLINE = '0';
+    globalThis.fetch = async (input) => {
+      const url = new URL(input);
+      urls.push(url);
+      if (url.hostname === 'api.tenrai.org') return new Response('{}', { status: 503 });
+      return Response.json({ data: [], meta: { count: 0 } });
+    };
+    await searchCatalog({ ...query, sort: 'title' });
+    assert.ok(urls.some((url) => url.searchParams.get('filter[subtype]') === 'oneshot'));
+  } finally {
+    globalThis.fetch = previousFetch;
+    process.env.CATALOG_OFFLINE = '1';
+  }
+});
+
 test('MAL import preserves separate media IDs, status, progress, ratings, and favorites', () => {
   const preview =
     parseMalXml(`<?xml version="1.0"?><myanimelist><myinfo><user_name>Fahad</user_name></myinfo>

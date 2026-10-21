@@ -116,10 +116,14 @@ test('homepage switches complete categories, retains links, filters and saved pr
       .getByRole('heading', { name: 'manhwa popular all 1' }),
   ).toBeVisible();
   const explorer = page.getByRole('region', { name: 'Explore manhwa', exact: true });
-  await expect(explorer.getByRole('heading', { name: 'More stories' })).toBeVisible();
-  await expect(explorer.getByRole('link', { name: /Fantasy/ })).toHaveAttribute(
+  await expect(explorer.getByRole('heading', { name: 'Find your next favorite' })).toBeVisible();
+  await expect(explorer.getByRole('tab', { name: /Manhwa favorites/ })).toHaveAttribute(
+    'aria-selected',
+    'true',
+  );
+  await expect(explorer.getByRole('link', { name: 'View full list' })).toHaveAttribute(
     'href',
-    '/browse/manhwa?genre=Fantasy',
+    '/browse/manhwa?sort=score',
   );
   await expect(page.getByRole('region', { name: 'Manhwa community', exact: true })).toHaveCount(0);
   await checkBannerSwitch();
@@ -362,6 +366,7 @@ test('banner controls sit at bottom center, reveal on hover or keyboard, and sta
   const bar = page.locator('.home-category-bar');
   const controls = hero.locator('.weekly-controls');
   await expect(controls).toBeAttached();
+  await expect(hero).toBeVisible();
   const frame = await hero.boundingBox();
   const bounds = await bar.boundingBox();
   expect(Math.abs(bounds.x + bounds.width / 2 - (frame.x + frame.width / 2))).toBeLessThan(2);

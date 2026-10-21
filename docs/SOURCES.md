@@ -1,5 +1,11 @@
 # Research and attribution
 
+## Homepage discovery collections
+
+Yoru's lower homepage offers top-rated anime, anime films, manga, manhwa and manga one-shots. Each collection requests six titles through `/api/catalog`, ordered by rating across all years, and links to the equivalent full filtered catalog. These are provider catalog rankings, not Yoru votes or editorial claims. Saved fallback results are labeled and do not display ranking numbers. The section starts loading within 1,000 pixels of the viewport and reuses the existing client and server caches; only the selected collection is requested.
+
+Manga one-shots use Tenrai's `type=oneshot` and Kitsu's `filter[subtype]=oneshot` ([Kitsu's subtype definitions](https://github.com/hummingbird-me/kitsu-server/blob/master/app/models/manga.rb)). Cache keys distinguish this format from manga series, and offline matching normalizes `One-shot` and `oneshot`. The community link opens the existing Recommendations board; it does not create poll results. Ara Ara retains its scoped genre navigation.
+
 ## Chromecast playback
 
 The watch-page Cast control uses Google's [Web Sender SDK](https://developers.google.com/cast/docs/web_sender/integrate) and Default Media Receiver. A direct HTTPS MP4/WebM or HLS source is sent to the TV with its title, episode and current playback position; Yoru does not mirror or transcode the browser tab. The TV fetches the original media, so quality is limited by the supplied stream, network and receiver's [supported formats](https://developers.google.com/cast/docs/media). HLS manifests, segments and keys must allow receiver CORS requests. Browser cookies, authorization headers and DRM licenses are not forwarded or bypassed.

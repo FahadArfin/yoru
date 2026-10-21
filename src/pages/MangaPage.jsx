@@ -189,8 +189,8 @@ export function MangaLanding({ category, label, homepage = false, children, cate
 export default function MangaPage({ category = 'manga' }) {
   const label = category === 'manhwa' ? 'Manhwa' : 'Manga';
   const [params] = useSearchParams();
-  const filtered = ['q', 'genre', 'sort', 'page', 'view', 'source', 'language'].some((key) =>
-    params.get(key),
+  const filtered = ['q', 'genre', 'format', 'sort', 'page', 'view', 'source', 'language'].some(
+    (key) => params.get(key),
   );
   return filtered ? (
     <>
